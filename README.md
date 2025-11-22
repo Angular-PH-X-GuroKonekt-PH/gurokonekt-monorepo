@@ -30,6 +30,54 @@ These targets are either [inferred automatically](https://nx.dev/concepts/inferr
 
 [More about running tasks in the docs &raquo;](https://nx.dev/features/run-tasks?utm_source=nx_project&utm_medium=readme&utm_campaign=nx_projects)
 
+## Commit Guidelines
+
+This project uses [Conventional Commits](https://www.conventionalcommits.org/) specification for commit messages. All commit messages must follow this format:
+
+```
+<type>[optional scope]: <description>
+
+[optional body]
+
+[optional footer(s)]
+```
+
+### Commit Types
+
+- **feat**: A new feature
+- **fix**: A bug fix
+- **docs**: Documentation only changes
+- **style**: Changes that do not affect the meaning of the code (white-space, formatting, missing semi-colons, etc)
+- **refactor**: A code change that neither fixes a bug nor adds a feature
+- **perf**: A code change that improves performance
+- **test**: Adding missing tests or correcting existing tests
+- **build**: Changes that affect the build system or external dependencies (example scopes: webpack, npm)
+- **ci**: Changes to CI configuration files and scripts
+- **chore**: Other changes that don't modify src or test files
+- **revert**: Reverts a previous commit
+
+### Examples
+
+```bash
+# Simple commit
+git commit -m "feat: add user authentication"
+
+# Commit with scope
+git commit -m "fix(api): resolve memory leak in request handler"
+
+# Commit with scope and body
+git commit -m "docs: update README with commit guidelines" -m "Added detailed documentation on how to write conventional commits"
+
+# Refactor commit
+git commit -m "refactor(web): simplify component structure"
+```
+
+### Pre-commit Hook
+
+A git hook automatically validates your commit messages before they are accepted. If your commit message doesn't follow the conventional commit format, the commit will be rejected with an error message showing the expected format.
+
+**Note**: The pre-commit hook automatically ensures the commit-msg hook has the correct permissions, so you don't need to manually set them.
+
 ## Versioning and releasing
 
 To version and release the library use
