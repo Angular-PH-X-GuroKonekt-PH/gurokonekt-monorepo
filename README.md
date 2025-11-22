@@ -11,6 +11,47 @@
 ```sh
 npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
 ```
+# Libraries
+This library contains shared TypeScript type definitions and models and ui used across the application.
+
+## Overview
+
+The `models` library provides type-safe data structures that can be imported and used throughout the monorepo. All models are exported from the main entry point.
+
+## Models
+
+### User
+
+The `User` type represents a user entity in the application.
+
+**Location:** `lib/models/src/lib/models.ts`
+
+**Type Definition:**
+```typescript
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+};
+```
+
+**Properties:**
+- `id` (string): Unique identifier for the user
+- `name` (string): Full name of the user
+- `email` (string): Email address of the user
+- `password` (string): User's password (should be hashed in production)
+
+**Usage Example:**
+```typescript
+export type User = {
+  id: string;
+  name: string;
+  email: string;
+  password: string;
+};
+```
+
 
 ## Creating Shared UI Components
 
