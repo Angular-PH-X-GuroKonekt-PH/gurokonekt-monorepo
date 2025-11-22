@@ -12,6 +12,45 @@
 npx nx g @nx/js:lib packages/pkg1 --publishable --importPath=@my-org/pkg1
 ```
 
+## Creating Shared UI Components
+
+This workspace includes a shared UI library (`@gurokonekt/ui`) for reusable Angular components. To create a new component in the UI library:
+
+```sh
+npx nx generate @nx/angular:component --path=lib/ui/src/lib/component-name/component-name --export=true --standalone=true --name=component-name --prefix=gk --style=scss --no-interactive
+```
+
+**Example: Creating a Button component**
+
+```sh
+npx nx generate @nx/angular:component --path=lib/ui/src/lib/button/button --export=true --standalone=true --name=button --prefix=gk --style=scss --no-interactive
+```
+
+This will create:
+- Component files in `lib/ui/src/lib/button/` folder
+- Automatically export the component from the library's `index.ts`
+- Use the `gk` prefix for component selectors (e.g., `gk-button`)
+- Use SCSS for styling
+
+**Using components in your app:**
+
+```typescript
+import { Button } from '@gurokonekt/ui';
+
+@Component({
+  imports: [Button],
+  // ...
+})
+export class MyComponent {}
+```
+
+**Note:** After generating a component, create an `index.ts` file in the component folder to export it:
+
+```typescript
+// lib/ui/src/lib/button/index.ts
+export * from './button';
+```
+
 ## Run tasks
 
 To build the library use:

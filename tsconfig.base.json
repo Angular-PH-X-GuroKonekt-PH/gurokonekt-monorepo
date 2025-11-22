@@ -15,7 +15,8 @@
     "skipDefaultLibCheck": true,
     "baseUrl": ".",
     "paths": {
-      "@gurokonekt/models": ["lib/models/src/index.ts"]
+      "@gurokonekt/models": ["lib/models/src/index.ts"],
+      "@gurokonekt/ui": ["lib/ui/src/index.ts"]
     }
   },
   "exclude": ["node_modules", "tmp"]
