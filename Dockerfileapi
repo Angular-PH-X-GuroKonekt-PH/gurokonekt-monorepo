@@ -16,4 +16,5 @@ WORKDIR /app
 COPY --from=builder /app/dist/apps/api .
 COPY --from=builder /app/node_modules ./node_modules
 
+
 CMD ["node", "main.js"]
