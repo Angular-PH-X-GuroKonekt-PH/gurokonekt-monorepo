@@ -72,12 +72,6 @@ git commit -m "docs: update README with commit guidelines" -m "Added detailed do
 git commit -m "refactor(web): simplify component structure"
 ```
 
-### Pre-commit Hook
-
-A git hook automatically validates your commit messages before they are accepted. If your commit message doesn't follow the conventional commit format, the commit will be rejected with an error message showing the expected format.
-
-**Note**: The pre-commit hook automatically ensures the commit-msg hook has the correct permissions, so you don't need to manually set them.
-
 ## Versioning and releasing
 
 To version and release the library use

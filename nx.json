@@ -59,5 +59,10 @@
       "style": "scss",
       "unitTestRunner": "vitest"
     }
+  },
+  "release": {
+    "version": {
+      "conventionalCommits": true
+    }
   }
 }
