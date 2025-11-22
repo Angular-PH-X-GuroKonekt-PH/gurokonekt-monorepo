@@ -95,14 +95,36 @@ This project uses [Conventional Commits](https://www.conventionalcommits.org/) s
 - **chore**: Other changes that don't modify src or test files
 - **revert**: Reverts a previous commit
 
+### Subject Case Formatting
+
+The commit subject (description) can use any of these case formats:
+
+**✅ Accepted Formats:**
+
+| Format | Example | Description |
+|--------|---------|-------------|
+| **Lower-case** | `feat: add user authentication` | All words in lowercase |
+| **Sentence-case** | `feat: Add user authentication` | First word capitalized, rest lowercase |
+| **Start-case** | `feat: Add User Authentication` | Each word capitalized with spaces |
+
+**❌ Rejected Formats:**
+
+| Format | Example | Why Rejected |
+|--------|---------|--------------|
+| **Pascal-case** | `feat: AddUserAuthentication` | Words joined without spaces |
+| **Upper-case** | `feat: ADD USER AUTHENTICATION` | All uppercase letters |
+
 ### Examples
 
 ```bash
-# Simple commit
+# Simple commit (lower-case)
 git commit -m "feat: add user authentication"
 
-# Commit with scope
-git commit -m "fix(api): resolve memory leak in request handler"
+# Commit with scope (sentence-case)
+git commit -m "fix(api): Resolve memory leak in request handler"
+
+# Commit with scope (start-case)
+git commit -m "feat(project): Added Shared UI Library"
 
 # Commit with scope and body
 git commit -m "docs: update README with commit guidelines" -m "Added detailed documentation on how to write conventional commits"
