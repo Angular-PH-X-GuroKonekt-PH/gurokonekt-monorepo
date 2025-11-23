@@ -92,6 +92,96 @@ export class MyComponent {}
 export * from './button';
 ```
 
+## Generating Angular Components
+
+To generate a standalone Angular component in the web application:
+
+```sh
+npx nx g @nx/angular:component apps/web/src/app/pages/home/home --standalone
+```
+
+**Example: Creating a Home component**
+
+```sh
+npx nx g @nx/angular:component apps/web/src/app/pages/home/home --standalone
+```
+
+This will create:
+- Component TypeScript file (`home.ts`)
+- Component HTML template (`home.html`)
+- Component stylesheet (`home.scss`)
+- Component spec file (`home.spec.ts`)
+
+The component will be created as a standalone component, which means it can be used without being declared in an NgModule.
+
+## Generating Angular Services
+
+To generate an Angular service in the web application:
+
+```sh
+npx nx g @nx/angular:service services/user/user-service --project=web
+```
+
+**Example: Creating a User Service**
+
+```sh
+npx nx g @nx/angular:service services/user/user-service --project=web
+```
+
+This will create:
+- Service TypeScript file (`user-service.ts`) in `apps/web/src/app/services/user/`
+- Service spec file (`user-service.spec.ts`) for testing
+
+The service will be automatically provided in the root injector (using `providedIn: 'root'`), making it available throughout the application.
+
+**Usage Example:**
+
+```typescript
+import { UserService } from './services/user/user-service';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class MyComponent {
+  constructor(private userService: UserService) {}
+}
+```
+
+## Generating NestJS API Resources
+
+To generate a NestJS resource (controller, service, and module) in the API application:
+
+```sh
+npx nx g @nx/nest:resource apps/api/src/app/users/users
+```
+
+**Example: Creating a Users resource**
+
+```sh
+npx nx g @nx/nest:resource apps/api/src/app/users/users
+```
+
+This will create:
+- Controller file (`users.controller.ts`) - handles HTTP requests
+- Service file (`users.service.ts`) - contains business logic
+- Module file (`users.module.ts`) - organizes the resource
+- DTO files for creating and updating entities
+- Spec files for testing
+
+The resource will be created in `apps/api/src/app/users/` and will include CRUD operations by default.
+
+**Note:** After generating a resource, make sure to import the module in your main `app.module.ts`:
+
+```typescript
+import { UsersModule } from './users/users.module';
+
+@Module({
+  imports: [UsersModule],
+  // ...
+})
+export class AppModule {}
+```
+
 ## Run tasks
 
 To build the library use:
