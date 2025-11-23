@@ -228,6 +228,106 @@ npx nx serve web
 npx nx serve api
 ```
 
+## Docker Compose
+
+This project uses Docker Compose to manage local development services, such as the PostgreSQL database.
+
+### Starting Services
+
+To start all services defined in `compose.yaml`:
+
+```sh
+docker compose up
+```
+
+This will:
+- Start the PostgreSQL database container
+- Expose PostgreSQL on port `5432`
+- Create a persistent volume for database data
+
+### Running in Detached Mode
+
+To run services in the background (detached mode):
+
+```sh
+docker compose up -d
+```
+
+This allows you to continue using your terminal while the services run in the background.
+
+### Viewing Service Logs
+
+To view logs from all services:
+
+```sh
+docker compose logs
+```
+
+To follow logs in real-time:
+
+```sh
+docker compose logs -f
+```
+
+To view logs for a specific service:
+
+```sh
+docker compose logs postgres
+```
+
+### Stopping Services
+
+To stop all running services:
+
+```sh
+docker compose down
+```
+
+To stop services and remove volumes (⚠️ **Warning:** This will delete all database data):
+
+```sh
+docker compose down -v
+```
+
+### Database Configuration
+
+The PostgreSQL service is configured with the following connection details:
+
+- **Host:** `localhost`
+- **Port:** `5432`
+- **Database:** Check `compose.yaml` for the database name
+- **Username:** Check `compose.yaml` for the username
+- **Password:** Check `compose.yaml` for the password
+
+**Connection String Format:**
+```
+postgresql://<username>:<password>@localhost:5432/<database>
+```
+
+Refer to the `compose.yaml` file for the specific credentials used in your environment.
+
+### Checking Service Status
+
+To see which services are running:
+
+```sh
+docker compose ps
+```
+
+### Restarting Services
+
+To restart all services:
+
+```sh
+docker compose restart
+```
+
+To restart a specific service:
+
+```sh
+docker compose restart postgres
+```
+
 ## Run tasks
 
 To build the library use:
