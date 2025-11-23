@@ -182,6 +182,52 @@ import { UsersModule } from './users/users.module';
 export class AppModule {}
 ```
 
+## Running Development Servers
+
+To run an application in development mode, use the `serve` command:
+
+```sh
+npx nx serve <project-name>
+```
+
+### Running the Web Application
+
+To start the Angular web application in development mode:
+
+```sh
+npx nx serve web
+```
+
+This will:
+- Start the development server (typically on `http://localhost:4200`)
+- Enable hot module replacement (HMR) for fast development
+- Watch for file changes and automatically rebuild
+
+### Running the API Application
+
+To start the NestJS API application in development mode:
+
+```sh
+npx nx serve api
+```
+
+This will:
+- Start the NestJS development server (typically on `http://localhost:3000`)
+- Enable hot reload for automatic server restarts on file changes
+- Watch for changes in the API codebase
+
+### Running Multiple Applications
+
+You can run multiple applications simultaneously by opening separate terminal windows/tabs:
+
+```sh
+# Terminal 1 - Web app
+npx nx serve web
+
+# Terminal 2 - API
+npx nx serve api
+```
+
 ## Run tasks
 
 To build the library use:
