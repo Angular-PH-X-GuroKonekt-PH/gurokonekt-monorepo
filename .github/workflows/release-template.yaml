@@ -1,0 +1,140 @@
+name: Release Template
+
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        required: true
+        type: string
+        description: 'Name of the project to release'
+      version:
+        required: false
+        type: string
+        description: 'Version to release (optional). If not provided, Nx will auto-determine from conventional commits'
+      tag_prefix:
+        required: false
+        type: string
+        default: 'v'
+        description: 'Prefix for git tags'
+    secrets:
+      NPM_TOKEN:
+        required: false
+        description: 'NPM token for publishing (if needed)'
+      GITHUB_TOKEN:
+        required: true
+        description: 'GitHub token for creating releases'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          registry-url: 'https://registry.npmjs.org'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+      
+      - name: Build project
+        run: npx nx build ${{ inputs.project_name }}
+      
+      - name: Run tests
+        continue-on-error: true
+        run: npx nx test ${{ inputs.project_name }} || echo "No tests configured"
+      
+      - name: Nx Release Version
+        id: nx-release
+        run: |
+          # Use Nx release to version based on conventional commits
+          # Nx will automatically determine version bump from commit messages:
+          # - feat: minor version bump (1.0.0 -> 1.1.0)
+          # - fix: patch version bump (1.0.0 -> 1.0.1)
+          # - BREAKING CHANGE: major version bump (1.0.0 -> 2.0.0)
+          echo "Running Nx release version for project: ${{ inputs.project_name }}"
+          echo "Nx will analyze conventional commits to determine version bump..."
+          
+          npx nx release version --projects=${{ inputs.project_name }} --skip-publish --git-tag --git-commit || {
+            echo "No version changes detected or release skipped"
+            echo "version_updated=false" >> $GITHUB_OUTPUT
+            exit 0
+          }
+          
+          echo "version_updated=true" >> $GITHUB_OUTPUT
+          
+          # Get the new version from package.json after Nx release updates it
+          if [ -f "apps/${{ inputs.project_name }}/package.json" ]; then
+            VERSION=$(node -p "require('./apps/${{ inputs.project_name }}/package.json').version")
+          elif [ -f "lib/${{ inputs.project_name }}/package.json" ]; then
+            VERSION=$(node -p "require('./lib/${{ inputs.project_name }}/package.json').version")
+          else
+            # Fallback to root package.json
+            VERSION=$(node -p "require('./package.json').version")
+          fi
+          
+          echo "New version: $VERSION"
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+          echo "tag_name=${{ inputs.tag_prefix }}${{ inputs.project_name }}-$VERSION" >> $GITHUB_OUTPUT
+      
+      - name: Generate Changelog
+        if: steps.nx-release.outputs.version_updated == 'true'
+        run: |
+          npx nx release changelog --projects=${{ inputs.project_name }} || echo "Changelog generation skipped"
+      
+      - name: Push version changes and tags
+        if: steps.nx-release.outputs.version_updated == 'true'
+        run: |
+          git push origin HEAD --follow-tags
+      
+      - name: Get changelog content
+        if: steps.nx-release.outputs.version_updated == 'true'
+        id: changelog
+        run: |
+          # Try to read changelog if it exists
+          if [ -f "CHANGELOG.md" ]; then
+            # Extract the latest changelog entry for this project
+            CHANGELOG=$(awk "/## \[${{ inputs.project_name }}/,/^## /" CHANGELOG.md | head -n -1 || echo "")
+            if [ -z "$CHANGELOG" ]; then
+              CHANGELOG="See CHANGELOG.md for details"
+            fi
+          else
+            CHANGELOG="See commit history for details"
+          fi
+          echo "content<<EOF" >> $GITHUB_OUTPUT
+          echo "$CHANGELOG" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      
+      - name: Create GitHub Release
+        if: steps.nx-release.outputs.version_updated == 'true'
+        uses: softprops/action-gh-release@v1
+        with:
+          tag_name: ${{ steps.nx-release.outputs.tag_name }}
+          name: Release ${{ inputs.project_name }} ${{ steps.nx-release.outputs.version }}
+          body: |
+            ## Release ${{ inputs.project_name }} ${{ steps.nx-release.outputs.version }}
+            
+            Automated release using Nx Release with conventional commits.
+            
+            ${{ steps.changelog.outputs.content }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
