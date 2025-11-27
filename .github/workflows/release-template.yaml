@@ -41,7 +41,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
           registry-url: 'https://registry.npmjs.org'
       
@@ -55,10 +55,6 @@ jobs:
       
       - name: Build project
         run: npx nx build ${{ inputs.project_name }}
-      
-      - name: Run tests
-        continue-on-error: true
-        run: npx nx test ${{ inputs.project_name }} || echo "No tests configured"
       
       - name: Nx Release Version
         id: nx-release

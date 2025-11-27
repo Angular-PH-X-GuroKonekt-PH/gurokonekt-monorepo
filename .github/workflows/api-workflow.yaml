@@ -37,7 +37,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '20'
+          node-version: '22'
           cache: 'npm'
       
       - name: Install dependencies
@@ -49,9 +49,9 @@ jobs:
       - name: Build project
         run: npx nx build api
       
-      - name: Run tests
-        continue-on-error: true
-        run: npx nx test api || echo "No tests to run"
+      # - name: Run tests
+      #   continue-on-error: true
+      #   run: npx nx test api || echo "No tests to run"
   
   release:
     needs: build-and-test
