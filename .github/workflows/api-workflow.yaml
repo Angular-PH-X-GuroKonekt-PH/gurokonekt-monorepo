@@ -12,17 +12,17 @@ on:
         type: boolean
         default: false
         description: 'Skip release step'
-    workflow_dispatch:
-      inputs:
-        version:
-          required: false
-          type: string
-          description: 'Version to release (optional)'
-        skip_release:
-          required: false
-          type: boolean
-          default: false
-          description: 'Skip release step'
+  workflow_dispatch:
+    inputs:
+      version:
+        required: false
+        type: string
+        description: 'Version to release (optional)'
+      skip_release:
+        required: false
+        type: boolean
+        default: false
+        description: 'Skip release step'
 
 jobs:
   build-and-test:
