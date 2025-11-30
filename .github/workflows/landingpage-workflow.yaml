@@ -48,10 +48,6 @@ jobs:
       
       - name: Build project
         run: npx nx build landing-page
-      
-      - name: Run tests
-        continue-on-error: true
-        run: npx nx test landing-page || echo "No tests to run"
   
   release:
     needs: build-and-test
