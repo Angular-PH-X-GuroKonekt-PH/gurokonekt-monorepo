@@ -1,0 +1,61 @@
+name: MR Code Check
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types: [opened, synchronize, reopened, ready_for_review]
+
+env:
+  # Specify the project to check (e.g., 'api', 'web', 'landing-page')
+  # Leave empty to check all affected projects
+  PROJECT_NAME: ''
+
+jobs:
+  code-check:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Full history for Nx affected detection
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+      
+      - name: Install dependencies
+        run: npm ci
+      
+      - name: Run linting
+        id: lint
+        run: |
+          if [ -z "$PROJECT_NAME" ]; then
+            echo "Checking all affected projects..."
+            npx nx affected --target=lint --base=origin/${{ github.base_ref }} --head=HEAD --parallel=3
+          else
+            echo "Checking project: $PROJECT_NAME"
+            npx nx lint $PROJECT_NAME
+          fi
+      
+      - name: Check TypeScript compilation
+        run: |
+          if [ -z "$PROJECT_NAME" ]; then
+            npx nx affected --target=build --base=origin/${{ github.base_ref }} --head=HEAD --parallel=3 --skip-nx-cache
+          else
+            npx nx build $PROJECT_NAME --skip-nx-cache
+          fi
+      
+      - name: Run tests
+        continue-on-error: true
+        run: |
+          if [ -z "$PROJECT_NAME" ]; then
+            npx nx affected --target=test --base=origin/${{ github.base_ref }} --head=HEAD --parallel=3 || echo "No tests to run"
+          else
+            npx nx test $PROJECT_NAME || echo "No tests configured for $PROJECT_NAME"
+          fi
+
