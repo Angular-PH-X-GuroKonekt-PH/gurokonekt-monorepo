@@ -60,6 +60,3 @@ jobs:
     with:
       project_name: 'api'
       version: ${{ inputs.version }}
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}

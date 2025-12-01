@@ -27,7 +27,6 @@ on:
 jobs:
   build-and-test:
     runs-on: ubuntu-latest
-    
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -48,10 +47,6 @@ jobs:
       
       - name: Build project
         run: npx nx build web
-      
-      - name: Run tests
-        continue-on-error: true
-        run: npx nx test web || echo "No tests to run"
   
   release:
     needs: build-and-test
@@ -60,7 +55,4 @@ jobs:
     with:
       project_name: 'web'
       version: ${{ inputs.version }}
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 

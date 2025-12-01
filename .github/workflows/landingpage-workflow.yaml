@@ -56,7 +56,4 @@ jobs:
     with:
       project_name: 'landing-page'
       version: ${{ inputs.version }}
-    secrets:
-      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-      NPM_TOKEN: ${{ secrets.NPM_TOKEN }}
 

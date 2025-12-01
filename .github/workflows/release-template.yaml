@@ -16,13 +16,6 @@ on:
         type: string
         default: 'v'
         description: 'Prefix for git tags'
-    secrets:
-      NPM_TOKEN:
-        required: false
-        description: 'NPM token for publishing (if needed)'
-      GITHUB_TOKEN:
-        required: true
-        description: 'GitHub token for creating releases'
 
 jobs:
   release:
@@ -43,7 +36,6 @@ jobs:
         with:
           node-version: '22'
           cache: 'npm'
-          registry-url: 'https://registry.npmjs.org'
       
       - name: Install dependencies
         run: npm ci
