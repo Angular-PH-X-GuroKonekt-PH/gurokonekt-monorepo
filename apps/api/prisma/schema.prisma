@@ -24,6 +24,9 @@ model User {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
+  // Profile type
+  profileType String?
+
   // Soft delete / archive
   isArchived Boolean     @default(false)
   archivedAt DateTime?

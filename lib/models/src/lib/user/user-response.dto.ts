@@ -1,4 +1,4 @@
-import { MentorStatus, WeeklyAvailability } from "./models";
+import { MentorStatus, WeeklyAvailability } from "../models";
 
 export interface User {
   id: string;
@@ -20,6 +20,11 @@ export interface User {
   updatedAt: Date;
 
   profile: MenteeProfile | MentorProfile | null;
+  profileType?: 'mentee' | 'mentor';
+  
+  // Archive fields
+  isArchived: boolean;
+  archivedAt?: Date;
 }
 
 /** ===============================
