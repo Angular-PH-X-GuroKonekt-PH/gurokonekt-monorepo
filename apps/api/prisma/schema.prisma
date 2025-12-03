@@ -1,0 +1,64 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model User {
+  id                String   @id @default(uuid())
+  email             String   @unique
+  passwordHash      String?
+  firstName         String
+  middleName        String?
+  lastName          String
+  extensionName     String?
+  countryOrTimezone String
+  preferredLanguage String?
+
+  acceptedTerms Boolean
+  emailVerified Boolean
+
+  lastLoginAt DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  // Soft delete / archive
+  isArchived Boolean     @default(false)
+  archivedAt DateTime?
+
+  // Relations
+  menteeProfile  MenteeProfile?
+  mentorProfile  MentorProfile?
+}
+
+model MenteeProfile {
+  id                String   @id @default(uuid())
+  userId            String   @unique
+  profilePictureUrl String?
+  shortBio          String
+  learningGoals     String
+  areasOfInterest   String[] 
+  preferredSessionType String
+  availability      String?
+  completed         Boolean
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model MentorProfile {
+  id                   String   @id @default(uuid())
+  userId               String   @unique
+  expertiseAreas       String[]
+  yearsOfExperience    Int
+  linkedInUrl          String
+  professionalBio      String
+  additionalSkills     String[]
+  sessionRate          Float?
+  isProfileCompleted   Boolean
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+

@@ -49,3 +49,6 @@ vitest.config.*.timestamp*
 
 apps/api/.env.example
 apps/api/.env
+/lib/generated/prisma
+
+/lib/generated/prisma
