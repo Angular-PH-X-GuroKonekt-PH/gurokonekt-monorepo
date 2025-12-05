@@ -57,11 +57,13 @@ jobs:
     needs: build-and-test
     if: inputs.skip_release == false && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
     uses: ./.github/workflows/release-template.yaml
+    secrets: inherit
     with:
       project_name: 'api'
       version: ${{ inputs.version }}
   deploy:
     needs: release
     uses: ./.github/workflows/deploy.yml
+    secrets: inherit
     with:
       project_name: 'api'
