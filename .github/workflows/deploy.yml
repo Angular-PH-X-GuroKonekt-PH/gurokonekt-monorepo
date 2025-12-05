@@ -81,7 +81,7 @@ jobs:
           file: ${{ steps.dockerfile.outputs.DOCKERFILE }}
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.set-project.outputs.PROJECT_NAME }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/${{ steps.set-project.outputs.PROJECT_NAME }}:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ steps.set-project.outputs.PROJECT_NAME }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ steps.set-project.outputs.PROJECT_NAME }}:${{ github.sha }}
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli

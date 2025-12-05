@@ -1,23 +1,31 @@
 FROM node:20-alpine AS builder
 
-WORKDIR /app
+WORKDIR /build
 
+# Copy package files first for better layer caching
 COPY package*.json ./
-COPY . .
 
+# Install dependencies
 RUN npm ci --legacy-peer-deps
 
-RUN npx nx build landing-page
+# Copy the rest of the source code
+COPY . .
 
+# Build the Angular SSR application
+RUN npx nx build landing-page
 
 FROM node:20-alpine AS runner
 
 WORKDIR /app
 
+# Copy the entire build output to /app
+COPY --from=builder /build/dist/apps/landing-page/server .
 
-COPY --from=builder /app/dist/apps/landing-page .
-COPY --from=builder /app/node_modules ./node_modules
-RUN ls -la /app
+# Copy node_modules to /app/node_modules
+COPY --from=builder /build/node_modules ./node_modules
 
+# Clean up unnecessary files to reduce image size
+RUN rm -rf /tmp/* /var/cache/apk/* /var/tmp/*
 
-CMD ["node", "/app/server/server.mjs"]
+# Run the server
+CMD ["node", "server.mjs"]
