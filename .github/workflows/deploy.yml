@@ -10,7 +10,7 @@ on:
     secrets:
       DOCKERHUB_USERNAME:
         required: true
-      CR_PAT:
+      DOCKERHUB_SECRET:
         required: true
       RAILWAY_TOKEN:
         required: true
@@ -72,5 +72,5 @@ jobs:
           file: ${{ steps.dockerfile.outputs.DOCKERFILE }}
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:${{ github.sha }}
+          tags: ghcr.io/${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:latest,ghcr.io/${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:${{ github.sha }}
 
