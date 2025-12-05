@@ -10,11 +10,6 @@ on:
       - main
       - develop
     types: [closed]
-secrets:
-  DOCKERHUB_USERNAME:
-    required: true
-  DOCKERHUB_SECRET:
-    required: true
 
 jobs:
   detect-changes:
@@ -65,17 +60,44 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.web-changed == 'true'
     uses: ./.github/workflows/web-workflow.yaml
-    secrets: inherit
+    # Option 1: Inherit all secrets (current approach - simpler but less explicit)
+    # secrets: inherit
+    
+    # Option 2: Explicitly pass only the secrets needed (more secure and clear)
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}
   
   trigger-api:
     needs: detect-changes
     if: needs.detect-changes.outputs.api-changed == 'true'
     uses: ./.github/workflows/api-workflow.yaml
-    secrets: inherit
+    # Option 1: Inherit all secrets (current approach - simpler but less explicit)
+    # secrets: inherit
+    
+    # Option 2: Explicitly pass only the secrets needed (more secure and clear)
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}
   
   trigger-landing-page:
     needs: detect-changes
     if: needs.detect-changes.outputs.landing-page-changed == 'true'
     uses: ./.github/workflows/landingpage-workflow.yaml
-    secrets: inherit
+    # Option 1: Inherit all secrets (current approach - simpler but less explicit)
+    # secrets: inherit
+    
+    # Option 2: Explicitly pass only the secrets needed (more secure and clear)
+    secrets:
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
+      RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}
 
