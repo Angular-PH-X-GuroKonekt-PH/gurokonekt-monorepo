@@ -10,6 +10,11 @@ on:
       - main
       - develop
     types: [closed]
+secrets:
+  DOCKERHUB_USERNAME:
+    required: true
+  DOCKERHUB_SECRET:
+    required: true
 
 jobs:
   detect-changes:
