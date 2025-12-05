@@ -17,7 +17,6 @@ RUN npx nx build landing-page
 FROM node:20-alpine AS runner
 
 WORKDIR /app
-
 # Copy the entire build output to /app
 COPY --from=builder /build/dist/apps/landing-page/server .
 
