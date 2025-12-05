@@ -7,6 +7,17 @@ on:
         description: 'Project name to deploy (e.g., api, landing-page, web)'
         required: true
         type: string
+    secrets:
+      DOCKERHUB_TOKEN:
+        required: true
+      RAILWAY_TOKEN:
+        required: true
+      RAILWAY_SERVICE_ID_API:
+        required: true
+      RAILWAY_SERVICE_ID_LANDING_PAGE:
+        required: true
+      RAILWAY_SERVICE_ID_WEB:
+        required: true
 
 jobs:
   docker-and-deploy:
@@ -51,7 +62,7 @@ jobs:
         uses: docker/login-action@v3
         with:
           registry: ghcr.io
-          username: ${{ github.actor }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Build and push Docker image
