@@ -21,11 +21,16 @@ on:
 
 jobs:
   docker-and-deploy:
-    permissions:
-      contents: write
-      pull-requests: write
     runs-on: ubuntu-latest
     steps:
+      - name: Check secrets
+        run: |
+          echo "DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}"
+          echo "RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}"
+          echo "RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}"
+          echo "RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}"
+          echo "RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}"
+
       - name: Checkout code
         uses: actions/checkout@v4
 
