@@ -55,4 +55,9 @@ jobs:
     with:
       project_name: 'web'
       version: ${{ inputs.version }}
+  deploy:
+    needs: release
+    uses: ./.github/workflows/deploy.yml
+    with:
+      project_name: 'web'
 
