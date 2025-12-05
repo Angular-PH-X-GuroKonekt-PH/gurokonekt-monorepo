@@ -2,23 +2,15 @@
 # Posted by Rudraprasad, modified by community. See post 'Timeline' for change history
 # Retrieved 2025-12-04, License - CC BY-SA 4.0
 
-name: Deploy
+name: Deploy Template
 
 on:
-  workflow_dispatch:
+  workflow_call:
     inputs:
       project_name:
-        description: 'Project name to deploy (e.g., api, landing-page)'
+        description: 'Project name to deploy (e.g., api, landing-page, web)'
         required: true
         type: string
-  push:
-    branches:
-      - main
-      - master
-    paths:
-      - 'apps/**'
-      - 'Dockerfile*'
-      - '.github/workflows/deploy.yml'
 
 jobs:
   docker-and-deploy:
@@ -27,22 +19,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set project name
-        id: set-project
-        run: |
-          if [ "${{ github.event_name }}" == "workflow_dispatch" ]; then
-            echo "PROJECT_NAME=${{ github.event.inputs.project_name }}" >> $GITHUB_OUTPUT
-          else
-            # Auto-detect project from changed files or use default
-            CHANGED_FILES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | grep -E '^apps/' | head -1 | cut -d'/' -f2 || echo "api")
-            echo "PROJECT_NAME=${CHANGED_FILES}" >> $GITHUB_OUTPUT
-          fi
-          echo "Project name: ${{ steps.set-project.outputs.PROJECT_NAME }}"
-
       - name: Determine Dockerfile
         id: dockerfile
         run: |
-          PROJECT_NAME="${{ steps.set-project.outputs.PROJECT_NAME }}"
+          PROJECT_NAME="${{ inputs.project_name }}"
           if [ "$PROJECT_NAME" == "api" ]; then
             echo "DOCKERFILE=Dockerfileapi" >> $GITHUB_OUTPUT
           elif [ "$PROJECT_NAME" == "landing-page" ]; then
@@ -55,7 +35,7 @@ jobs:
       - name: Determine Railway Service ID
         id: railway-service
         run: |
-          PROJECT_NAME="${{ steps.set-project.outputs.PROJECT_NAME }}"
+          PROJECT_NAME="${{ inputs.project_name }}"
           if [ "$PROJECT_NAME" == "api" ]; then
             echo "RAILWAY_SERVICE_ID=${{ secrets.RAILWAY_SERVICE_ID_API }}" >> $GITHUB_OUTPUT
           elif [ "$PROJECT_NAME" == "landing-page" ]; then
@@ -82,7 +62,7 @@ jobs:
           file: ${{ steps.dockerfile.outputs.DOCKERFILE }}
           platforms: linux/amd64
           push: true
-          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ steps.set-project.outputs.PROJECT_NAME }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ steps.set-project.outputs.PROJECT_NAME }}:${{ github.sha }}
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:${{ github.sha }}
 
       - name: Install Railway CLI
         run: npm install -g @railway/cli
@@ -91,7 +71,7 @@ jobs:
         run: |
           SERVICE_ID="${{ steps.railway-service.outputs.RAILWAY_SERVICE_ID }}"
           if [ -z "$SERVICE_ID" ]; then
-            echo "Error: Railway service ID not found for project: ${{ steps.set-project.outputs.PROJECT_NAME }}"
+            echo "Error: Railway service ID not found for project: ${{ inputs.project_name }}"
             echo "Please ensure the secret RAILWAY_SERVICE_ID_<PROJECT_NAME> is set in GitHub secrets"
             exit 1
           fi
