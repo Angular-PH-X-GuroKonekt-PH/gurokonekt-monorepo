@@ -1,7 +1,3 @@
-# Source - https://stackoverflow.com/q
-# Posted by Rudraprasad, modified by community. See post 'Timeline' for change history
-# Retrieved 2025-12-04, License - CC BY-SA 4.0
-
 name: Deploy Template
 
 on:
@@ -14,6 +10,9 @@ on:
 
 jobs:
   docker-and-deploy:
+    permissions:
+      contents: write
+      pull-requests: write
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
