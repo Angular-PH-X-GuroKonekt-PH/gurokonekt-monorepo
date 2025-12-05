@@ -65,11 +65,5 @@ jobs:
     needs: release
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
-      # DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      # DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}
-      # RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      # RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}
-      # RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}
-      # RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}
     with:
       project_name: 'api'

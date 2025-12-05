@@ -28,8 +28,8 @@ jobs:
       - name: Check secrets
         run: |
           echo "DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}"
-          echo "DOCKERHUB_TOKEN: [REDACTED]"
-          echo "RAILWAY_TOKEN: [REDACTED]"
+          echo "DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}"
+          echo "RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}"
           echo "RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}"
           echo "RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}"
           echo "RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}"
@@ -71,7 +71,7 @@ jobs:
         with:
           registry: ghcr.io
           username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
+          password: ${{ secrets.DOCKERHUB_SECRET }}
 
       - name: Build and push Docker image
         uses: docker/build-push-action@v5
