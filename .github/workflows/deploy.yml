@@ -25,15 +25,6 @@ jobs:
   docker-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Check secrets
-        run: |
-          echo "DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}"
-          echo "DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}"
-          echo "RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}"
-          echo "RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}"
-          echo "RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}"
-          echo "RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}"
-
       - name: Checkout code
         uses: actions/checkout@v4
 
@@ -81,20 +72,4 @@ jobs:
           platforms: linux/amd64
           push: true
           tags: ${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:latest,${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:${{ github.sha }}
-
-      - name: Install Railway CLI
-        run: npm install -g @railway/cli
-
-      - name: Deploy to Railway
-        run: |
-          SERVICE_ID="${{ steps.railway-service.outputs.RAILWAY_SERVICE_ID }}"
-          if [ -z "$SERVICE_ID" ]; then
-            echo "Error: Railway service ID not found for project: ${{ inputs.project_name }}"
-            echo "Please ensure the secret RAILWAY_SERVICE_ID_<PROJECT_NAME> is set in GitHub secrets"
-            exit 1
-          fi
-          echo "Deploying to Railway service: $SERVICE_ID"
-          railway redeploy --service "$SERVICE_ID" -y
-        env:
-          RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
 
