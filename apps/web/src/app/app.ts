@@ -9,5 +9,5 @@ import { NxWelcome } from './nx-welcome';
   styleUrl: './app.scss',
 })
 export class App {
-  protected title = 'web';
+  protected title = 'Test 123';
 }
