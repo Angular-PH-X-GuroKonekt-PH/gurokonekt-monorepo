@@ -8,6 +8,8 @@ on:
         required: true
         type: string
     secrets:
+      DOCKERHUB_USERNAME:
+        required: true
       DOCKERHUB_TOKEN:
         required: true
       RAILWAY_TOKEN:
@@ -25,8 +27,9 @@ jobs:
     steps:
       - name: Check secrets
         run: |
-          echo "DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}"
-          echo "RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}"
+          echo "DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}"
+          echo "DOCKERHUB_TOKEN: [REDACTED]"
+          echo "RAILWAY_TOKEN: [REDACTED]"
           echo "RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}"
           echo "RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}"
           echo "RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}"
