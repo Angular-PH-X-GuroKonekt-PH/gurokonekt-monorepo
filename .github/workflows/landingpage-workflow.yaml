@@ -2,7 +2,6 @@ name: Landing Page Workflow
 
 on:
   workflow_call:
-    secrets: inherit
     inputs:
       version:
         required: false
@@ -14,7 +13,6 @@ on:
         default: false
         description: 'Skip release step'
   workflow_dispatch:
-    secrets: inherit
     inputs:
       version:
         required: false
@@ -55,11 +53,13 @@ jobs:
     needs: build-and-test
     if: inputs.skip_release == false && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
     uses: ./.github/workflows/release-template.yaml
+    secrets: inherit
     with:
       project_name: 'landing-page'
       version: ${{ inputs.version }}
   deploy:
     needs: release
     uses: ./.github/workflows/deploy.yml
+    secrets: inherit
     with:
       project_name: 'landing-page'
