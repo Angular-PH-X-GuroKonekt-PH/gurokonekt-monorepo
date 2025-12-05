@@ -25,12 +25,12 @@ jobs:
   docker-and-deploy:
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-      - name: Log in to GitHub Container Registry
-        id: login-to-ghcr
+      - uses: actions/checkout@v4
+      - name: Login to GitHub Package Registry
         run: |
           echo ${{ secrets.DOCKERHUB_SECRET }} | docker login ghcr.io -u ${{ secrets.DOCKERHUB_USERNAME }} --password-stdin
+
+        
 
       - name: Determine Dockerfile
         id: dockerfile
