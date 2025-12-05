@@ -6,17 +6,6 @@ name: Deploy Template
 
 on:
   workflow_call:
-    secrets:
-      DOCKERHUB_USERNAME:
-        required: true
-      DOCKERHUB_SECRET:
-        required: true
-      RAILWAY_SERVICE_ID_API:
-        required: false
-      RAILWAY_SERVICE_ID_LANDING_PAGE:
-        required: false
-      RAILWAY_SERVICE_ID_WEB:
-        required: false
     inputs:
       project_name:
         description: 'Project name to deploy (e.g., api, landing-page, web)'
