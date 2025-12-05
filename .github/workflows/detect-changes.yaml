@@ -60,35 +60,18 @@ jobs:
     needs: detect-changes
     if: needs.detect-changes.outputs.web-changed == 'true'
     uses: ./.github/workflows/web-workflow.yaml
-    secrets: 
-      DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}
-      RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}
-      RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}
+    secrets: inherit
   
   trigger-api:
     needs: detect-changes
     if: needs.detect-changes.outputs.api-changed == 'true'
     uses: ./.github/workflows/api-workflow.yaml
-    secrets: 
-      DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}
-      RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}
-      RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}
+    secrets: inherit
   
   trigger-landing-page:
     needs: detect-changes
     if: needs.detect-changes.outputs.landing-page-changed == 'true'
     uses: ./.github/workflows/landingpage-workflow.yaml
-    secrets: 
-      DOCKERHUB_SECRET: ${{ secrets.DOCKERHUB_SECRET }}
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      RAILWAY_TOKEN: ${{ secrets.RAILWAY_TOKEN }}
-      RAILWAY_SERVICE_ID_API: ${{ secrets.RAILWAY_SERVICE_ID_API }}
-      RAILWAY_SERVICE_ID_LANDING_PAGE: ${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}
-      RAILWAY_SERVICE_ID_WEB: ${{ secrets.RAILWAY_SERVICE_ID_WEB }}
+    secrets: inherit
+
 

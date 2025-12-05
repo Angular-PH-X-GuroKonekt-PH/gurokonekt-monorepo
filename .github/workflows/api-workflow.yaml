@@ -2,6 +2,7 @@ name: API Workflow
 
 on:
   workflow_call:
+    secrets: inherit
     inputs:
       version:
         required: false
@@ -13,6 +14,7 @@ on:
         default: false
         description: 'Skip release step'
   workflow_dispatch:
+    secrets: inherit
     inputs:
       version:
         required: false

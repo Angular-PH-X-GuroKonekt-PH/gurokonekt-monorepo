@@ -9,5 +9,5 @@ import { NxWelcome } from './nx-welcome';
   styleUrl: './app.scss',
 })
 export class App {
-  protected title = 'GuroKonekt-TEST';
+  protected title = 'GuroKonekt';
 }
