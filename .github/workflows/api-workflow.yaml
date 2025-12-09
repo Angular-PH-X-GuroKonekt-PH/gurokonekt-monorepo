@@ -62,7 +62,7 @@ jobs:
   #     project_name: 'api'
   #     version: ${{ inputs.version }}
   deploy:
-    needs: release
+    # needs: release
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     with:

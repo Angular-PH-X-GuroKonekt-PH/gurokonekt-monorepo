@@ -49,7 +49,7 @@ jobs:
   #     project_name: 'web'
   #     version: ${{ inputs.version }}
   deploy:
-    needs: release
+    # needs: release
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     with:
