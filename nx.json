@@ -74,5 +74,11 @@
     "@nx/nest:resource": {
       "unitTestRunner": "none"
     }
+  },
+  "release": {
+    "projectsRelationship": "independent",
+    "version": {
+      "conventionalCommits": true
+    }
   }
 }

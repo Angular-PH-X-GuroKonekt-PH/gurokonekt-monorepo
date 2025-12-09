@@ -49,18 +49,18 @@ jobs:
       - name: Build project
         run: npx nx build api
 
-      # - name: Run tests
-      #   continue-on-error: true
-      #   run: npx nx test api || echo "No tests to run"
+      - name: Run tests
+        continue-on-error: true
+        run: npx nx test api || echo "No tests to run"
 
-  release:
-    needs: build-and-test
-    if: inputs.skip_release == false && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
-    uses: ./.github/workflows/release-template.yaml
-    secrets: inherit
-    with:
-      project_name: 'api'
-      version: ${{ inputs.version }}
+  # release:
+  #   needs: build-and-test
+  #   if: inputs.skip_release == false && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+  #   uses: ./.github/workflows/release-template.yaml
+  #   secrets: inherit
+  #   with:
+  #     project_name: 'api'
+  #     version: ${{ inputs.version }}
   deploy:
     needs: release
     uses: ./.github/workflows/deploy.yml
