@@ -58,7 +58,7 @@ jobs:
   #     project_name: 'landing-page'
   #     version: ${{ inputs.version }}
   deploy:
-    # needs: release
+    needs: build-and-test
     uses: ./.github/workflows/deploy.yml
     secrets: inherit
     with:
