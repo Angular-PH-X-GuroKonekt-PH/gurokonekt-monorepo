@@ -1,3 +1,31 @@
-<app-nx-welcome></app-nx-welcome>
-<gk-button/>
+<div class="min-h-screen bg-gray-50">
+  <!-- Header -->
+  <header class="bg-white shadow-sm border-b border-gray-200">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <div class="flex items-center justify-between h-16">
+        <h1 class="text-2xl font-bold text-gray-900">{{ title }}</h1>
+        <nav class="flex space-x-4">
+          <button class="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50">Login</button>
+          <button class="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700">Sign Up</button>
+        </nav>
+      </div>
+    </div>
+  </header>
+
+  <!-- Main Content -->
+  <main class="py-12">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <!-- Hero Section-->
+      <div class="text-center mb-12">
+        <h2 class="text-4xl font-bold text-gray-900 mb-4">Welcome to GuroKonekt</h2>
+        <p class="text-xl text-gray-600 mb-8">Your platform for professional networking and growth</p>
+        <div class="flex justify-center space-x-4">
+          <button class="px-6 py-3 bg-blue-600 text-white font-semibold rounded-lg hover:bg-blue-700 transition-colors">Get Started</button>
+          <button class="px-6 py-3 bg-white text-gray-700 font-semibold rounded-lg border border-gray-300 hover:bg-gray-50 transition-colors">Learn More</button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
 <router-outlet></router-outlet>

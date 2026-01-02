@@ -432,7 +432,7 @@ import { CommonModule } from '@angular/common';
         <div id="welcome">
           <h1>
             <span> Hello there, </span>
-            Welcome landing-page 👋
+            Welcome {{ title }} 👋
           </h1>
         </div>
         <!--  HERO  -->
@@ -869,4 +869,6 @@ nx g &#64;nx/angular:component ui/src/lib/button</pre>
   styles: [],
   encapsulation: ViewEncapsulation.None,
 })
-export class NxWelcome {}
+export class NxWelcome {
+  protected title = 'GuroKonekt';
+}

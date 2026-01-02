@@ -1,0 +1,76 @@
+name: Deploy Template
+
+on:
+  workflow_call:
+    inputs:
+      project_name:
+        description: 'Project name to deploy (e.g., api, landing-page, web)'
+        required: true
+        type: string
+    secrets:
+      DOCKERHUB_USERNAME:
+        required: true
+      DOCKERHUB_SECRET:
+        required: true
+      RAILWAY_TOKEN:
+        required: true
+      RAILWAY_SERVICE_ID_API:
+        required: true
+      RAILWAY_SERVICE_ID_LANDING_PAGE:
+        required: true
+      RAILWAY_SERVICE_ID_WEB:
+        required: true
+
+jobs:
+  docker-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Determine Dockerfile
+        id: dockerfile
+        run: |
+          PROJECT_NAME="${{ inputs.project_name }}"
+          if [ "$PROJECT_NAME" == "api" ]; then
+            echo "DOCKERFILE=Dockerfileapi" >> $GITHUB_OUTPUT
+          elif [ "$PROJECT_NAME" == "landing-page" ]; then
+            echo "DOCKERFILE=Dockerfilessr" >> $GITHUB_OUTPUT
+          else
+            echo "DOCKERFILE=Dockerfile$PROJECT_NAME" >> $GITHUB_OUTPUT
+          fi
+          echo "Using Dockerfile: ${{ steps.dockerfile.outputs.DOCKERFILE }}"
+
+      - name: Determine Railway Service ID
+        id: railway-service
+        run: |
+          PROJECT_NAME="${{ inputs.project_name }}"
+          if [ "$PROJECT_NAME" == "api" ]; then
+            echo "RAILWAY_SERVICE_ID=${{ secrets.RAILWAY_SERVICE_ID_API }}" >> $GITHUB_OUTPUT
+          elif [ "$PROJECT_NAME" == "landing-page" ]; then
+            echo "RAILWAY_SERVICE_ID=${{ secrets.RAILWAY_SERVICE_ID_LANDING_PAGE }}" >> $GITHUB_OUTPUT
+          elif [ "$PROJECT_NAME" == "web" ]; then
+            echo "RAILWAY_SERVICE_ID=${{ secrets.RAILWAY_SERVICE_ID_WEB }}" >> $GITHUB_OUTPUT
+          else
+            echo "Error: No Railway service ID configured for project: $PROJECT_NAME"
+            echo "RAILWAY_SERVICE_ID=" >> $GITHUB_OUTPUT
+          fi
+          echo "Railway Service ID determined for project: $PROJECT_NAME"
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.CR_PAT }}
+
+
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: ${{ steps.dockerfile.outputs.DOCKERFILE }}
+          platforms: linux/amd64
+          push: true
+          tags: ghcr.io/${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:latest,ghcr.io/${{ secrets.DOCKERHUB_USERNAME }}/gurokonek-${{ inputs.project_name }}:${{ github.sha }}
+

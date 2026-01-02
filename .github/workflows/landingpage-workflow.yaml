@@ -49,11 +49,17 @@ jobs:
       - name: Build project
         run: npx nx build landing-page
   
-  release:
+  # release:
+  #   needs: build-and-test
+  #   if: inputs.skip_release == false && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+  #   uses: ./.github/workflows/release-template.yaml
+  #   secrets: inherit
+  #   with:
+  #     project_name: 'landing-page'
+  #     version: ${{ inputs.version }}
+  deploy:
     needs: build-and-test
-    if: inputs.skip_release == false && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
-    uses: ./.github/workflows/release-template.yaml
+    uses: ./.github/workflows/deploy.yml
+    secrets: inherit
     with:
       project_name: 'landing-page'
-      version: ${{ inputs.version }}
-
