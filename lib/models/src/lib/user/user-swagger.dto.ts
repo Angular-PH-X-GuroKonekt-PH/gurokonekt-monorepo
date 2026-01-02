@@ -1,6 +1,6 @@
 import { IsString, IsEmail, IsBoolean, IsDate, IsOptional, IsArray, IsNumber, IsEnum } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { MentorStatus, Weekday } from '../models';
+import { MentorStatus, ProfileType, Weekday } from '../models';
 
 export class TimeSlotDto {
   @ApiProperty({
@@ -155,9 +155,9 @@ export class MentorProfileDto {
   @ApiProperty({
     description: 'Mentor status',
     example: 'ACTIVE',
-    enum: ['PENDING', 'ACTIVE', 'REJECTED']
+    enum: MentorStatus
   })
-  @IsEnum(['PENDING', 'ACTIVE', 'REJECTED'])
+  @IsEnum(MentorStatus)
   status: MentorStatus;
 
   @ApiProperty({
@@ -332,13 +332,13 @@ export class UserDto {
 
   @ApiProperty({
     description: 'User profile type',
-    example: 'mentee',
+    example: ProfileType.MENTEE,
     required: false,
-    enum: ['mentee', 'mentor']
+    enum: ProfileType,
   })
   @IsString()
   @IsOptional()
-  profileType?: 'mentee' | 'mentor';
+  profileType?: ProfileType;
 
   @ApiProperty({
     description: 'Whether the user is archived',

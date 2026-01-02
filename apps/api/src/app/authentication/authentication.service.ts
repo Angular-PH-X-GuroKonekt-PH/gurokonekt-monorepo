@@ -3,6 +3,7 @@ import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { LoginDto } from '@gurokonekt/models/authentication/login.dto';
 import { SignupDto } from '@gurokonekt/models/authentication/signup.dto';
 import { AuthResponseDto } from '@gurokonekt/models/authentication/auth-response.dto';
+import { AppErrorMessages } from '../error/error';
 
 @Injectable()
 export class AuthenticationService {
@@ -22,7 +23,7 @@ export class AuthenticationService {
 
   async login(loginDto: LoginDto): Promise<AuthResponseDto> {
     if (!this.supabase) {
-      const error = new Error('Supabase client not initialized. Check environment variables.');
+      const error = new Error(AppErrorMessages.SUPABASE_NOT_INITIALIZED);
       return {
         user: null,
         session: null,
@@ -46,7 +47,7 @@ export class AuthenticationService {
 
   async signup(signupDto: SignupDto): Promise<AuthResponseDto> {
     if (!this.supabase) {
-      const error = new Error('Supabase client not initialized. Check environment variables.');
+      const error = new Error(AppErrorMessages.SUPABASE_NOT_INITIALIZED);
       return {
         user: null,
         session: null,
@@ -75,7 +76,7 @@ export class AuthenticationService {
 
   async logout(accessToken: string): Promise<{ error: Error | null }> {
     if (!this.supabase) {
-      const error = new Error('Supabase client not initialized. Check environment variables.');
+      const error = new Error(AppErrorMessages.SUPABASE_NOT_INITIALIZED);
       return {
         error,
       };
@@ -91,7 +92,7 @@ export class AuthenticationService {
 
   async getUser(accessToken: string): Promise<{ user: any; error: Error | null }> {
     if (!this.supabase) {
-      const error = new Error('Supabase client not initialized. Check environment variables.');
+      const error = new Error(AppErrorMessages.SUPABASE_NOT_INITIALIZED);
       return {
         user: null,
         error,

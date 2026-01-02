@@ -1,5 +1,7 @@
 import { IsBoolean, IsEmail, IsEnum, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
+import { ProfileType } from '../models';
+
 
 export class CreateUserDto {
   @ApiProperty({
@@ -82,20 +84,19 @@ export class CreateUserDto {
   @ApiProperty({
     description: 'Whether the user email is verified',
     example: false,
-    required: false
+    default: false
   })
   @IsBoolean()
-  @IsOptional()
-  emailVerified?: boolean;
+  emailVerified = false;
 
   @ApiProperty({
     description: 'User profile type',
-    example: 'mentee',
+    example: ProfileType.MENTEE,
     required: false,
-    enum: ['mentee', 'mentor']
+    enum: ProfileType,
   })
   @IsString()
   @IsOptional()
-  @IsEnum(['mentee', 'mentor'])
-  profileType?: 'mentee' | 'mentor';
+  @IsEnum(ProfileType)
+  profileType?: ProfileType;
 }

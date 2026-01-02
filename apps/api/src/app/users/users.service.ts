@@ -1,32 +1,20 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { CreateUserDto, UpdateUserDto, ListUsersDto, ArchiveUserDto } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
+import { Prisma } from '@prisma/client';
+import { ProfileType } from '@gurokonekt/models';
 
 @Injectable()
 export class UsersService {
   constructor(private readonly prisma: PrismaService) {}
 
   async create(createUserDto: CreateUserDto) {
-    const userData = {
-      email: createUserDto.email,
-      firstName: createUserDto.firstName,
-      middleName: createUserDto.middleName,
-      lastName: createUserDto.lastName,
-      extensionName: createUserDto.extensionName,
-      countryOrTimezone: createUserDto.countryOrTimezone,
-      preferredLanguage: createUserDto.preferredLanguage,
-      acceptedTerms: createUserDto.acceptedTerms,
-      passwordHash: createUserDto.passwordHash,
-      emailVerified: createUserDto.emailVerified || false,
-      profileType: createUserDto.profileType,
-    };
-
     const user = await this.prisma.db.user.create({
-      data: userData,
+      data: createUserDto,
     });
 
     // If a profile type is specified, create an empty profile
-    if (createUserDto.profileType === 'mentee') {
+    if (createUserDto.profileType === ProfileType.MENTEE) {
       await this.prisma.db.menteeProfile.create({
         data: {
           userId: user.id,
@@ -37,7 +25,7 @@ export class UsersService {
           completed: false,
         },
       });
-    } else if (createUserDto.profileType === 'mentor') {
+    } else if (createUserDto.profileType === ProfileType.MENTOR) {
       await this.prisma.db.mentorProfile.create({
         data: {
           userId: user.id,
@@ -57,7 +45,7 @@ export class UsersService {
   async findAll(listUsersDto?: ListUsersDto) {
     const { limit = 10, offset = 0, search, includeArchived = false, sortBy = 'createdAt', sortOrder = 'DESC' } = listUsersDto || {};
     
-    const where: any = {};
+    const where: Prisma.UserWhereInput = {};
     
     if (!includeArchived) {
       where.isArchived = false;
@@ -110,7 +98,7 @@ export class UsersService {
   async archive(id: string, archiveUserDto?: ArchiveUserDto) {
     await this.ensureExistsAndNotArchived(id);
 
-    const data: any = {
+    const data: Prisma.UserUpdateInput = {
       isArchived: archiveUserDto?.isArchived ?? true,
     };
     

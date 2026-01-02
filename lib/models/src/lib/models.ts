@@ -2,6 +2,11 @@
  *  Common Types
  *  =============================== */
 
+export enum ProfileType {
+  MENTEE = "mentee",
+  MENTOR = "mentor",
+}
+
 export type Weekday =
   | "MONDAY"
   | "TUESDAY"
@@ -21,9 +26,10 @@ export interface WeeklyAvailability {
   slots: TimeSlot[];
 }
 
-export type MentorStatus = 
-  | "PENDING"
-  | "ACTIVE"
-  | "REJECTED";
+export enum MentorStatus {
+  PENDING = "PENDING",
+  ACTIVE = "ACTIVE",
+  REJECTED = "REJECTED",
+}
 
 
