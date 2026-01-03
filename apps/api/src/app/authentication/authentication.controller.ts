@@ -38,10 +38,10 @@ export class AuthenticationController {
   @HttpCode(HttpStatus.OK)
   @Post('logout')
   @ApiOperation({ summary: 'Logout a user' })
-  @ApiBody({ schema: { type: 'object', properties: { accessToken: { type: 'string' } } } })
+  @ApiBody({})
   @ApiResponse({ status: 200, description: 'User logged out successfully' })
   @ApiResponse({ status: 401, description: 'Unauthorized' })
-  async logout(@Body('accessToken') accessToken: string) {
-    return this.authenticationService.logout(accessToken);
+  async logout() {
+    return this.authenticationService.logout();
   }
 }

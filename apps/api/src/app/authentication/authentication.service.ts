@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
 import { LoginDto } from '@gurokonekt/models/authentication/login.dto';
 import { SignupDto } from '@gurokonekt/models/authentication/signup.dto';
 import { AuthResponseDto } from '@gurokonekt/models/authentication/auth-response.dto';
@@ -74,7 +74,7 @@ export class AuthenticationService {
     };
   }
 
-  async logout(accessToken: string): Promise<{ error: Error | null }> {
+  async logout(): Promise<{ error: Error | null }> {
     if (!this.supabase) {
       const error = new Error(AppErrorMessages.SUPABASE_NOT_INITIALIZED);
       return {
@@ -82,7 +82,6 @@ export class AuthenticationService {
       };
     }
 
-    // Set the auth token for this request
     const { error } = await this.supabase.auth.signOut();
     
     return {
@@ -90,7 +89,7 @@ export class AuthenticationService {
     };
   }
 
-  async getUser(accessToken: string): Promise<{ user: any; error: Error | null }> {
+  async getUser(): Promise<{ user: User | null; error: Error | null }> {
     if (!this.supabase) {
       const error = new Error(AppErrorMessages.SUPABASE_NOT_INITIALIZED);
       return {
@@ -99,8 +98,7 @@ export class AuthenticationService {
       };
     }
 
-    // Set the auth token for this request
-    const { data, error } = await this.supabase.auth.getUser(accessToken);
+    const { data, error } = await this.supabase.auth.getUser();
     
     return {
       user: data?.user || null,
