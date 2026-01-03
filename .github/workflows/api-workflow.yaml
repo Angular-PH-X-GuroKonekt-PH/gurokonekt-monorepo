@@ -48,6 +48,8 @@ jobs:
 
       - name: Build project
         run: npx nx build api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run tests
         continue-on-error: true
