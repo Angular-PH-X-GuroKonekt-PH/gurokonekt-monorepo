@@ -3,7 +3,7 @@ name: API Workflow
 on:
   workflow_call:
     secrets:
-      DATABASE_URL:
+      DATABASE_URL: 
         required: true
     inputs:
       version:
@@ -16,9 +16,6 @@ on:
         default: false
         description: 'Skip release step'
   workflow_dispatch:
-    secrets:
-      DATABASE_URL:
-        required: true
     inputs:
       version:
         required: false
@@ -53,9 +50,9 @@ jobs:
         run: npx nx lint api
 
       - name: Build project
-        run: npx nx build api
-        env:
-          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+        run: |
+          echo ${{ secrets.DATABASE_URL }}
+          npx nx build api
 
       - name: Run tests
         continue-on-error: true
