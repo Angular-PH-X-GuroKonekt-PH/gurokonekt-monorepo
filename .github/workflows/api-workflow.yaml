@@ -2,6 +2,9 @@ name: API Workflow
 
 on:
   workflow_call:
+    secrets:
+      DATABASE_URL:
+        required: true
     inputs:
       version:
         required: false
@@ -13,6 +16,9 @@ on:
         default: false
         description: 'Skip release step'
   workflow_dispatch:
+    secrets:
+      DATABASE_URL:
+        required: true
     inputs:
       version:
         required: false
