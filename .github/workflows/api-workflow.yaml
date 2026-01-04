@@ -50,9 +50,9 @@ jobs:
         run: npx nx lint api
 
       - name: Build project
-        run: |
-          echo ${{ secrets.DATABASE_URL }}
-          npx nx build api
+        run: npx nx build api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run tests
         continue-on-error: true
