@@ -2,6 +2,9 @@ name: API Workflow
 
 on:
   workflow_call:
+    secrets:
+      DATABASE_URL: 
+        required: true
     inputs:
       version:
         required: false
@@ -48,6 +51,8 @@ jobs:
 
       - name: Build project
         run: npx nx build api
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
       - name: Run tests
         continue-on-error: true

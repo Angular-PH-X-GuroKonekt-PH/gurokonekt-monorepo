@@ -49,6 +49,8 @@ jobs:
           else
             npx nx build $PROJECT_NAME --skip-nx-cache
           fi
+        env:
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
       
       - name: Run tests
         continue-on-error: true
