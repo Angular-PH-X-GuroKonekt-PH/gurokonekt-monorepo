@@ -23,7 +23,7 @@ module.exports = {
         },
         tertiary: {
           50: '#FF8E1C',
-          600: '#FF8E1C',
+          100: '#1B99F4',
           700: '#FF8E1C',
           900: '#FF8E1C',
         }
