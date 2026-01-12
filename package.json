@@ -50,6 +50,7 @@
     "eslint": "^9.8.0",
     "eslint-config-prettier": "^10.0.0",
     "eslint-plugin-playwright": "^1.6.2",
+    "flowbite": "^4.0.1",
     "husky": "^9.1.7",
     "jsdom": "~22.1.0",
     "jsonc-eslint-parser": "^2.1.0",
