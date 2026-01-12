@@ -83,8 +83,12 @@
     "axios": "^1.6.0",
     "contentful": "^11.10.1",
     "express": "^4.21.2",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "react-refresh": "^0.18.0",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.0",
+    "scheduler": "^0.27.0",
     "zone.js": "~0.15.0"
   }
 }
