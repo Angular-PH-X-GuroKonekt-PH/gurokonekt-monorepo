@@ -1,3 +1,5 @@
+import { SignInWithOAthProviders } from "../../models";
+
 export interface SignInInputInterface {
   email: string;
   password: string;
@@ -20,11 +22,6 @@ export interface ResendEmailSignUpConfirmation {
 
 export interface ResendEmailChangeEmail {
     email: string;
-}
-
-export enum SignInWithOAthProviders {
-    Google = 'google',
-    Github = 'github',
 }
 
 export interface SignInWithOAth {

@@ -15,6 +15,11 @@ export enum UserRole {
   Admin = "admin",
 }
 
+export enum SignInWithOAthProviders {
+  Google = 'google',
+  Github = 'github',
+}
+
 export enum UserStatus {
   Active = "active",
   Inactive = "inactive",

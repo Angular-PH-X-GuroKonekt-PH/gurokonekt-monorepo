@@ -1,5 +1,5 @@
 export * from './lib/models';
-export * from './lib/messages';
+export * from './lib/constants';
 export * from './lib/api/auth/auth';
 export * from './lib/api/logs/logs';
 export * from './lib/api/user/user';
