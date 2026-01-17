@@ -8,12 +8,17 @@
     "build": {
       "executor": "nx:run-commands",
       "options": {
-        "commands": ["npx prisma generate", "webpack-cli build --node-env=production"],
-        "cwd": "apps/api"
+        "commands": ["npx prisma generate", "webpack-cli build"],
+        "cwd": "apps/api",
+        "env": {
+          "NODE_ENV": "production"
+        }
       },
       "configurations": {
         "development": {
-          "args": ["--node-env=development"]
+          "env": {
+            "NODE_ENV": "development"
+          }
         }
       }
     },
