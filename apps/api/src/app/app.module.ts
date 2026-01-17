@@ -1,12 +1,21 @@
 import { Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
-import { UsersModule } from './users/users.module';
-import { AuthenticationModule } from './authentication/authentication.module';
 import { PrismaService } from './prisma/prisma.service';
+import { AuthModule } from './auth/auth.module';
+import { MenteeModule } from './user/mentee/mentee.module';
+import { MentorModule } from './user/mentor/mentor.module';
+import { AdminModule } from './user/admin/admin.module';
+import { UploadModule } from './storage/upload/upload.module';
 
 @Module({
-  imports: [UsersModule, AuthenticationModule],
+  imports: [
+    AuthModule,
+    MenteeModule,
+    MentorModule,
+    AdminModule,
+    UploadModule,
+  ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
 })

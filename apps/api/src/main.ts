@@ -12,6 +12,7 @@ import { ValidationPipe } from '@nestjs/common';
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
   const globalPrefix = 'api';
+  const swaggerPrefix = 'api-docs';
   
   // Set the global prefix first
   app.setGlobalPrefix(globalPrefix);
@@ -23,6 +24,7 @@ async function bootstrap() {
     forbidNonWhitelisted: true,
   }));
 
+  // =========== Swagger setup ===========
   const config = new DocumentBuilder()
     .setTitle('API Documentation')
     .setDescription('API documentation for the application')
@@ -32,7 +34,7 @@ async function bootstrap() {
     
   const document = SwaggerModule.createDocument(app, config);
   
-  SwaggerModule.setup('api-docs', app, document, {
+  SwaggerModule.setup(swaggerPrefix, app, document, {
     swaggerOptions: {
       deepLinking: false,
     },
@@ -41,6 +43,7 @@ async function bootstrap() {
 
   const port = process.env.PORT || 3000;
   await app.listen(port);
+  Logger.log(`🚀 Swagger setup at: http://localhost:${port}/${swaggerPrefix}`);
   Logger.log(
     `🚀 Application is running on: http://localhost:${port}/${globalPrefix}`
   );
