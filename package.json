@@ -86,6 +86,7 @@
     "@prisma/client": "^7.0.1",
     "@supabase/supabase-js": "^2.84.0",
     "axios": "^1.6.0",
+    "contentful": "^11.10.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "express": "^4.21.2",
