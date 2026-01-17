@@ -1,35 +1,46 @@
-/** ===============================
- *  Common Types
- *  =============================== */
-
-export enum ProfileType {
-  MENTEE = "mentee",
-  MENTOR = "mentor",
+export interface AsyncReturn<T = unknown> {
+  status: AsyncStatus
+  message: string | null
+  data: T | null
 }
 
-export type Weekday =
-  | "MONDAY"
-  | "TUESDAY"
-  | "WEDNESDAY"
-  | "THURSDAY"
-  | "FRIDAY"
-  | "SATURDAY"
-  | "SUNDAY";
-
-export interface TimeSlot {
-  startTime: string; // "09:00"
-  endTime: string;   // "12:00"
+export enum AsyncStatus {
+  Success = "success",
+  Error = "error",
 }
 
-export interface WeeklyAvailability {
-  day: Weekday;
-  slots: TimeSlot[];
+export enum UserRole {
+  Mentee = "mentee",
+  Mentor = "mentor",
+  Admin = "admin",
 }
 
-export enum MentorStatus {
-  PENDING = "PENDING",
-  ACTIVE = "ACTIVE",
-  REJECTED = "REJECTED",
+export enum UserStatus {
+  Active = "active",
+  Inactive = "inactive",
+  PendingApproval = "pending approval",
+  PendingReview = "pending review",
+  Approved = "approved",
+  Rejected = "rejected",
+  Banned = "banned",
+  Suspended = "suspended",
+  Deleted = "deleted",
+  Unknown = "unknown",
+  NotApplicable = "not applicable",
+  NotSpecified = "not specified",
 }
 
+export enum MenteePreferredSessionType {
+  Online = "online",
+  InPerson = "in-person",
+}
 
+export enum LogsActionType {
+  Create = "create",
+  Read = "read",
+  Update = "update",
+  Delete = "delete",
+  Signin = "signin",
+  SignUp = "signup",
+  Signout = "signout",
+}
