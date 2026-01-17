@@ -6,62 +6,140 @@ datasource db {
   provider = "postgresql"
 }
 
+enum UserRole {
+  Mentee
+  Mentor
+  Admin
+}
+
+enum UserStatus {
+  Active
+  Inactive
+  PendingApproval
+  PendingReview
+  Approved
+  Rejected
+  Banned
+  Suspended
+  Deleted
+  Unknown
+  NotApplicable
+  NotSpecified
+}
+
+enum MenteePreferredSessionType {
+  Online
+  InPerson
+}
+
+enum LogsActionType {
+  Create
+  Read
+  Update
+  Delete
+  Signin
+  SignUp
+  Signout
+}
+
+
 model User {
-  id                String   @id @default(uuid())
-  email             String   @unique
-  passwordHash      String?
-  firstName         String
-  middleName        String?
-  lastName          String
-  extensionName     String?
-  countryOrTimezone String
-  preferredLanguage String?
-
-  acceptedTerms Boolean
-  emailVerified Boolean
-
-  lastLoginAt DateTime?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-
-  // Profile type
-  profileType String?
-
-  // Soft delete / archive
-  isArchived Boolean     @default(false)
-  archivedAt DateTime?
+  id                    String            @id @default(uuid())
+  firstName             String
+  middleName            String?
+  lastName              String
+  suffix                String?
+  email                 String            @unique
+  role                  UserRole
+  status                UserStatus
+  createdBy             User?             @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdById           String?
+  updatedBy             User?             @relation("UserUpdatedBy", fields: [updatedById], references: [id])
+  updatedById           String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
 
   // Relations
-  menteeProfile  MenteeProfile?
-  mentorProfile  MentorProfile?
+  createdUsers          User[]            @relation("UserCreatedBy") 
+  updatedUsers          User[]            @relation("UserUpdatedBy")
+  menteeProfiles        MenteeProfile[]   @relation("MenteeBaseUser")
+  menteeUpdated         MenteeProfile[]   @relation("MenteeUpdatedBy")
+  mentorProfiles        MentorProfile[]   @relation("MentorBaseUser")
+  mentorUpdated         MentorProfile[]   @relation("MentorUpdatedBy")
+  avatarAttachments     AvatarAttachments[]
+  documentsAttachments  DocumentAttachments[]
+  logsCreated           Logs[]            @relation("LogsCreatedBy")
+  logsUpdated           Logs[]            @relation("LogsUpdatedBy")
 }
 
 model MenteeProfile {
-  id                String   @id @default(uuid())
-  userId            String   @unique
-  profilePictureUrl String?
-  shortBio          String
-  learningGoals     String
-  areasOfInterest   String[] 
-  preferredSessionType String
-  availability      String?
-  completed         Boolean
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id                      String    @id @default(uuid())
+  userId                  String    @unique
+  user                    User      @relation("MenteeBaseUser", fields: [userId], references: [id])
+  country                 String?
+  language                String?
+  bio                     String?
+  learningGoals           String[]
+  areasOfInterest         String[]
+  preferredSessionType    MenteePreferredSessionType
+  availability            String[]
+  updatedById             String?
+  updatedBy               User?     @relation("MenteeUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt               DateTime  @updatedAt
 }
 
 model MentorProfile {
-  id                   String   @id @default(uuid())
-  userId               String   @unique
-  expertiseAreas       String[]
-  yearsOfExperience    Int
-  linkedInUrl          String
-  professionalBio      String
-  additionalSkills     String[]
+  id                   String     @id @default(uuid())
+  userId               String     @unique
+  user                 User       @relation("MentorBaseUser", fields: [userId], references: [id])
+  country              String?
+  language             String?
+  yearsOfExperience    Int?
+  linkedInUrl          String?
+  bio                  String?
+  skills               String[]
   sessionRate          Float?
-  isProfileCompleted   Boolean
+  availability         String[]
+  updatedById          String?
+  updatedBy            User?      @relation("MentorUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt            DateTime   @updatedAt
+}
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model AvatarAttachments {
+  id                    String     @id @default(uuid())
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id])
+  avatarStoragePath     String
+  avatarPublicUrl       String
+  avatarFileType        String
+  avatarFileSize        Int
+  avatarFileName        String
+}
+
+model DocumentAttachments {
+  id                   String   @id @default(uuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id])
+  documentStoragePath  String
+  documentPublicUrl    String
+  documentFileType     String
+  documentFileSize     Int
+  documentFileName     String
 }
 
 
+model Logs {
+  id           String          @id @default(uuid())
+  actionType   LogsActionType
+  targetId     String
+  details      String
+  metadata     Json?
+  ipAddress    String
+  userAgent    String
+  createdById  String?
+  createdBy    User?           @relation("LogsCreatedBy", fields: [createdById], references: [id])
+  updatedById  String?
+  updatedBy    User?           @relation("LogsUpdatedBy", fields: [updatedById], references: [id])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
