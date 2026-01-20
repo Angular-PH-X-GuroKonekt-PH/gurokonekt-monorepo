@@ -1,0 +1,143 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum UserRole {
+  Mentee
+  Mentor
+  Admin
+}
+
+enum UserStatus {
+  Active
+  Inactive
+  PendingApproval
+  PendingReview
+  Approved
+  Rejected
+  Banned
+  Suspended
+  Deleted
+  Unknown
+  NotApplicable
+  NotSpecified
+}
+
+enum MenteePreferredSessionType {
+  Online
+  InPerson
+}
+
+enum LogsActionType {
+  Create
+  Read
+  Update
+  Delete
+  Signin
+  SignUp
+  Signout
+}
+
+
+model User {
+  id                    String            @id @default(uuid())
+  firstName             String
+  middleName            String?
+  lastName              String
+  suffix                String?
+  email                 String            @unique
+  country               String?
+  language              String?
+  role                  UserRole
+  status                UserStatus
+  createdBy             User?             @relation("UserCreatedBy", fields: [createdById], references: [id])
+  createdById           String?
+  updatedBy             User?             @relation("UserUpdatedBy", fields: [updatedById], references: [id])
+  updatedById           String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+
+  // Relations
+  createdUsers          User[]            @relation("UserCreatedBy") 
+  updatedUsers          User[]            @relation("UserUpdatedBy")
+  menteeProfiles        MenteeProfile[]   @relation("MenteeBaseUser")
+  menteeUpdated         MenteeProfile[]   @relation("MenteeUpdatedBy")
+  mentorProfiles        MentorProfile[]   @relation("MentorBaseUser")
+  mentorUpdated         MentorProfile[]   @relation("MentorUpdatedBy")
+  avatarAttachments     AvatarAttachments[]
+  documentsAttachments  DocumentAttachments[]
+  logsCreated           Logs[]            @relation("LogsCreatedBy")
+  logsUpdated           Logs[]            @relation("LogsUpdatedBy")
+}
+
+model MenteeProfile {
+  id                      String    @id @default(uuid())
+  userId                  String    @unique
+  user                    User      @relation("MenteeBaseUser", fields: [userId], references: [id])
+  bio                     String?
+  learningGoals           String[]
+  areasOfInterest         String[]
+  preferredSessionType    MenteePreferredSessionType
+  availability            String[]
+  updatedById             String?
+  updatedBy               User?     @relation("MenteeUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt               DateTime  @updatedAt
+}
+
+model MentorProfile {
+  id                   String     @id @default(uuid())
+  userId               String     @unique
+  user                 User       @relation("MentorBaseUser", fields: [userId], references: [id])
+  yearsOfExperience    Int?
+  linkedInUrl          String?
+  bio                  String?
+  skills               String[]
+  sessionRate          Float?
+  availability         String[]
+  updatedById          String?
+  updatedBy            User?      @relation("MentorUpdatedBy", fields: [updatedById], references: [id])
+  updatedAt            DateTime   @updatedAt
+}
+
+model AvatarAttachments {
+  id                    String     @id @default(uuid())
+  userId                String
+  user                  User       @relation(fields: [userId], references: [id])
+  avatarStoragePath     String
+  avatarPublicUrl       String
+  avatarFileType        String
+  avatarFileSize        Int
+  avatarFileName        String
+}
+
+model DocumentAttachments {
+  id                   String   @id @default(uuid())
+  userId               String
+  user                 User     @relation(fields: [userId], references: [id])
+  documentStoragePath  String
+  documentPublicUrl    String
+  documentFileType     String
+  documentFileSize     Int
+  documentFileName     String
+}
+
+
+model Logs {
+  id           String          @id @default(uuid())
+  actionType   LogsActionType
+  targetId     String
+  details      String
+  metadata     Json?
+  ipAddress    String
+  userAgent    String
+  createdById  String?
+  createdBy    User?           @relation("LogsCreatedBy", fields: [createdById], references: [id])
+  updatedById  String?
+  updatedBy    User?           @relation("LogsUpdatedBy", fields: [updatedById], references: [id])
+  createdAt    DateTime        @default(now())
+  updatedAt    DateTime        @updatedAt
+}
