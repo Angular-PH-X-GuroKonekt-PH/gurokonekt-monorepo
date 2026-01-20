@@ -9,6 +9,8 @@ import {
   SignInWithOAuthDto
 } from '../dto/auth'
 import { AsyncReturnDto } from '../dto/models.dto';
+import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
+import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 
 @ApiTags('auth')
 @Controller('auth')
@@ -20,6 +22,20 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User signed up successfully', type: AsyncReturnDto })
   async signUp(@Body() input: SignUpDto) {
     return this.authService.signUpWithEmailPassword(input);
+  }
+
+  @Post('register-mentee')
+  @ApiOperation({ summary: 'Register a new mentee' })
+  @ApiResponse({ status: 200, description: 'Mentee created successfully', type: AsyncReturnDto })
+  async registerMentee(@Body() input: RegisterMenteeDto) {
+    return this.authService.registerMentee(input);
+  }
+
+  @Post('register-mentor')
+  @ApiOperation({ summary: 'Register a new mentor' })
+  @ApiResponse({ status: 200, description: 'Mentor created successfully', type: AsyncReturnDto })
+  async registerMentor(@Body() input: RegisterMentorDto) {
+    return this.authService.registerMentor(input);
   }
 
   @Post('signin')

@@ -85,8 +85,6 @@ export class MentorService {
         return prisma.mentorProfile.update({
           where: { userId: mentorUserId },
           data: {
-            country: dto.country,
-            language: dto.language,
             yearsOfExperience: dto.yearsOfExperience,
             linkedInUrl: dto.linkedInUrl,
             bio: dto.bio,

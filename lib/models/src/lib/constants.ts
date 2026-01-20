@@ -1,5 +1,7 @@
 export const RETURN_MESSAGES = {
   SUCCESS: {
+    REGISTER_MENTEE: 'Mentee registered successfully',
+    REGISTER_MENTOR: 'Mentor registered successfully',
     SIGN_UP_SUCCESS: 'Sign up success',
     SIGN_IN_SUCCESS: 'Sign in success',
     EMAIL_SENT: 'Email sent',
@@ -21,6 +23,8 @@ export const RETURN_MESSAGES = {
   FAILURE: {
     SUPABASE_CREDENTIALS_NOT_FOUND: 'Supabase credentials not found',
     INTERNAL_SERVER_ERROR: 'Internal Server Error',
+    REGISTER_MENTEE: 'Register mentee failed',
+    REGISTER_MENTOR: 'Register mentor failed',
     SIGN_UP_FAILED: 'Sign up failed',
     USER_NOT_FOUND: 'User not found',
     ACCOUNT_ALREADY_DELETED: 'Account already deleted',

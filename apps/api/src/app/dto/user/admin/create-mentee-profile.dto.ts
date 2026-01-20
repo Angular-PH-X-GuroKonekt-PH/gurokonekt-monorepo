@@ -3,24 +3,42 @@ import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
 import { MenteePreferredSessionType } from '@prisma/client';
 
 export class CreateMenteeProfileDto {
-  @ApiProperty()
+  @ApiProperty({
+    example: 'Philippines',
+    description: 'Country of residence',
+  })
   @IsString()
   country: string;
 
-  @ApiProperty({ required: false })
+  @ApiProperty({
+    example: 'English',
+    required: false,
+    description: 'Primary language spoken by the mentee',
+  })
   @IsOptional()
   @IsString()
   language?: string;
 
-  @ApiProperty()
+  @ApiProperty({
+    example: 'I want to improve my backend development skills.',
+    description: 'Short bio or personal description',
+  })
   @IsString()
   bio: string;
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({
+    example: ['Backend Development', 'System Design'],
+    description: 'List of learning goals',
+    type: [String],
+  })
   @IsArray()
   learningGoals: string[];
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({
+    example: ['NestJS', 'Databases', 'Cloud'],
+    description: 'Areas of interest',
+    type: [String],
+  })
   @IsArray()
   areasOfInterest: string[];
 
@@ -28,7 +46,11 @@ export class CreateMenteeProfileDto {
   @IsEnum(MenteePreferredSessionType)
   preferredSessionType: MenteePreferredSessionType;
 
-  @ApiProperty({ type: [String] })
+  @ApiProperty({
+    example: ['Weekends', 'Evenings'],
+    description: 'Available schedule for mentoring sessions',
+    type: [String],
+  })
   @IsArray()
   availability: string[];
 }

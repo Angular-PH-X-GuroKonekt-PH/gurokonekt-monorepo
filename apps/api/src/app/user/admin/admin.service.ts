@@ -81,8 +81,6 @@ export class AdminService {
 
       const menteeProfile = await this.prisma.db.menteeProfile.create({
         data: {
-          country: dto.country,
-          language: dto.language ?? null,
           bio: dto.bio,
           learningGoals: dto.learningGoals,
           areasOfInterest: dto.areasOfInterest,
@@ -143,8 +141,6 @@ export class AdminService {
 
       const mentorProfile = await this.prisma.db.mentorProfile.create({
         data: {
-          country: dto.country,
-          language: dto.language ?? null,
           yearsOfExperience: dto.yearsOfExperience ?? null,
           linkedInUrl: dto.linkedInUrl ?? null,
           bio: dto.bio ?? null,

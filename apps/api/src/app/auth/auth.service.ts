@@ -2,12 +2,16 @@ import { Injectable } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { RETURN_MESSAGES } from '@gurokonekt/models/constants';
 import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
+import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { UserRole, UserStatus } from '@prisma/client';
+import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 
 @Injectable()
 export class AuthService {
   private supabase: SupabaseClient;
 
-  constructor() {
+  constructor(private readonly prisma: PrismaService) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
@@ -52,6 +56,132 @@ export class AuthService {
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        data: error
+      }
+    }
+  }
+
+  // register mentee
+  async registerMentee(dto: RegisterMenteeDto): Promise<AsyncReturn> {
+    try {
+      const { data, error } = await this.supabase.auth.signUp({
+        email: dto.email,
+        password: dto.password
+      });   
+
+      if (error) {
+        console.error(error);
+        return {
+          status: AsyncStatus.Error,
+          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          data: error
+        }
+      }
+
+      const authId = data.user?.id!;
+      const mentee = await this.prisma.db.user.create({
+        data: {
+          id: authId,
+          firstName: dto.firstName,
+          middleName: dto.middleName ?? null,
+          lastName: dto.lastName,
+          suffix: dto.suffix ?? null,
+          email: dto.email,
+          country: dto.country,
+          language: dto.language ?? null,
+          role: UserRole.Mentee,
+          status: UserStatus.Active,
+
+          // createdBy: { connect: { id: authId } },
+          // updatedBy: { connect: { id: authId } },
+        },
+      });
+
+      return {
+        status: AsyncStatus.Success,
+        message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTEE,
+        data: {
+          auth: data,
+          user: mentee
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      return {
+        status: AsyncStatus.Error,
+        message: RETURN_MESSAGES.FAILURE.REGISTER_MENTEE,
+        data: error
+      }
+    }
+  }
+
+  // register mentor
+  async registerMentor(dto: RegisterMentorDto): Promise<AsyncReturn> {
+    try {
+      const { data, error } = await this.supabase.auth.signUp({
+        email: dto.email,
+        password: dto.password
+      });   
+
+      if (error) {
+        console.error(error);
+        return {
+          status: AsyncStatus.Error,
+          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          data: error
+        }
+      }
+
+      const authId = data.user?.id!;
+
+      const transaction = await this.prisma.db.$transaction(async (tx) => { 
+        const mentor = await tx.user.create({
+          data: {
+            id: authId,
+            firstName: dto.firstName,
+            middleName: dto.middleName ?? null,
+            lastName: dto.lastName,
+            suffix: dto.suffix ?? null,
+            email: dto.email,
+            country: dto.country,
+            language: dto.language ?? null,
+            role: UserRole.Mentor,
+            status: UserStatus.PendingApproval,
+            // createdBy: { connect: { id: authId } },
+            // updatedBy: { connect: { id: authId } },
+          },
+        });
+
+        const mentorProfile = await tx.mentorProfile.create({
+          data: {
+            yearsOfExperience: dto.yearsOfExperience ?? null,
+            linkedInUrl: dto.linkedInUrl ?? null,
+            skills: [],
+            availability: [],
+            user: { connect: { id: authId } },
+            updatedBy: { connect: { id: authId } },
+          },
+          include: { user: true, updatedBy: true },
+        });
+
+        return { user: mentor, profile: mentorProfile };
+      });
+      
+
+      return {
+        status: AsyncStatus.Success,
+        message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTOR,
+        data: {
+          auth: data,
+          user: transaction.user,
+          profile: transaction.profile
+        }
+      }
+    } catch (error) {
+      console.error(error);
+      return {
+        status: AsyncStatus.Error,
+        message: RETURN_MESSAGES.FAILURE.REGISTER_MENTOR,
         data: error
       }
     }

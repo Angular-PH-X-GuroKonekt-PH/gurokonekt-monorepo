@@ -77,8 +77,6 @@ export class MenteeService {
         return prisma.menteeProfile.update({
           where: { userId: menteeId },
           data: {
-            country: dto.country,
-            language: dto.language,
             bio: dto.bio,
             learningGoals: dto.learningGoals,
             areasOfInterest: dto.areasOfInterest,

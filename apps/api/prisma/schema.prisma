@@ -50,6 +50,8 @@ model User {
   lastName              String
   suffix                String?
   email                 String            @unique
+  country               String?
+  language              String?
   role                  UserRole
   status                UserStatus
   createdBy             User?             @relation("UserCreatedBy", fields: [createdById], references: [id])
@@ -76,8 +78,6 @@ model MenteeProfile {
   id                      String    @id @default(uuid())
   userId                  String    @unique
   user                    User      @relation("MenteeBaseUser", fields: [userId], references: [id])
-  country                 String?
-  language                String?
   bio                     String?
   learningGoals           String[]
   areasOfInterest         String[]
@@ -92,8 +92,6 @@ model MentorProfile {
   id                   String     @id @default(uuid())
   userId               String     @unique
   user                 User       @relation("MentorBaseUser", fields: [userId], references: [id])
-  country              String?
-  language             String?
   yearsOfExperience    Int?
   linkedInUrl          String?
   bio                  String?
