@@ -69,6 +69,8 @@ export class MenteeService {
               middleName: dto.middleName,
               lastName: dto.lastName,
               suffix: dto.suffix,
+              country: dto.country,
+              language: dto.language,
             },
           });
         }
