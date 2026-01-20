@@ -3,6 +3,7 @@ module.exports = {
   content: [
     "./apps/*/src/**/*.{html,ts,scss}",
     "./lib/*/src/**/*.{html,ts,scss}",
+    "./node_modules/flowbite/**/*.js"
   ],
   theme: {
     extend: {
@@ -54,5 +55,6 @@ module.exports = {
   plugins: [
     require('@tailwindcss/forms'),
     require('@tailwindcss/typography'),
+    require('flowbite/plugin')
   ],
 }
