@@ -35,6 +35,7 @@ export class AdminService {
           email: dto.email,
           role: dto.role,
           status: dto.status,
+          hashPassword: "",
 
           createdBy: { connect: { id: authId } },
           updatedBy: { connect: { id: authId } },
@@ -71,7 +72,7 @@ export class AdminService {
         where: { id: userId } 
       });
 
-      if (!user || user.role !== UserRole.Mentee) {
+      if (!user || user.role !== UserRole.mentee) {
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.UNAUTHORIZED,
@@ -131,7 +132,7 @@ export class AdminService {
         };
       }
 
-      if (user.role !== UserRole.Mentor) {
+      if (user.role !== UserRole.mentor) {
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.UNAUTHORIZED,

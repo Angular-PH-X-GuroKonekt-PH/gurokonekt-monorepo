@@ -145,7 +145,7 @@ export class MentorService {
         };
       }
 
-      if (user.status === UserStatus.Deleted) {
+      if (user.status === UserStatus.deleted) {
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.ACCOUNT_ALREADY_DELETED,
@@ -155,7 +155,7 @@ export class MentorService {
 
       const updatedUser = await this.prisma.db.user.update({
         where: { id: mentorId },
-        data: { status: UserStatus.Deleted },
+        data: { status: UserStatus.deleted },
       });
 
       return {
