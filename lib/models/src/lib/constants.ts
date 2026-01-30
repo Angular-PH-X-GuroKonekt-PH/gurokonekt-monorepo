@@ -34,10 +34,16 @@ export const RETURN_MESSAGES = {
     FILE_URL_NOT_FOUND: 'File URL not found',
     START_WITH_AVATAR: 'All storage paths must be avatar files (start with "avatars/")',
     START_WITH_DOCUMENTS: 'All storage paths must be document files (start with "documents/")',
+    USER_ALREADY_EXISTS: 'User already exists',
+    MISSING_REQUIRED_FIELDS: 'Missing required fields'
   },
   LINKS: {
     DEFAULT_REDIRECT_URL: 'https://google.com',
   }
+}
+
+export const RESPONSE_STATUS = {
+  201: ''
 }
 
 export const BUCKET_NAME = 'attachments';

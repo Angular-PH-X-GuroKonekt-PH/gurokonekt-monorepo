@@ -53,28 +53,39 @@ export class RegisterMentorDto {
     required: false,
     description: 'Primary language spoken',
   })
-  @IsOptional()
   @IsString()
-  language?: string;
+  language: string;
+
+  @ApiProperty({
+    example: 'Asia/Manila',
+    description: 'IANA timezone identifier (e.g., "Asia/Manila", "America/New_York"). Used for scheduling and time-based features.'
+  })
+  @IsString()
+  timezone: string;
+
+  @ApiProperty({
+    example: '+639123456789',
+    description: 'Mobile number in E.164 international format. Must start with "+" followed by country code and subscriber number (no spaces or dashes).'
+  })
+  @IsString()
+  phoneNumber: string;
 
   @ApiProperty({
     example: 5,
     required: false,
     description: 'Total years of professional experience',
   })
-  @IsOptional()
   @IsNumber()
   @Min(0)
-  yearsOfExperience?: number;
+  yearsOfExperience: number;
 
   @ApiProperty({
     example: 'https://linkedin.com/in/johnsmith',
     required: false,
     description: 'LinkedIn profile URL',
   })
-  @IsOptional()
   @IsString()
-  linkedInUrl?: string;
+  linkedInUrl: string;
 
   @ApiProperty({
     type: 'string',

@@ -1,3 +1,9 @@
+export type Creator = {
+  id: string;
+  name: string;
+  image: string;
+};
+
 export interface AsyncReturn<T = unknown> {
   status: AsyncStatus
   message: string | null

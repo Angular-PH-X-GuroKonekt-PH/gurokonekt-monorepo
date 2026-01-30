@@ -40,7 +40,20 @@ export class RegisterMenteeDto {
     required: false,
     description: 'Primary language spoken by the mentee',
   })
-  @IsOptional()
   @IsString()
-  language?: string;
+  language: string;
+  
+  @ApiProperty({
+    example: 'Asia/Manila',
+    description: 'IANA timezone identifier (e.g., "Asia/Manila", "America/New_York"). Used for scheduling and time-based features.'
+  })
+  @IsString()
+  timezone: string;
+
+  @ApiProperty({
+    example: '+639123456789',
+    description: 'Mobile number in E.164 international format. Must start with "+" followed by country code and subscriber number (no spaces or dashes).'
+  })
+  @IsString()
+  phoneNumber: string;
 } 

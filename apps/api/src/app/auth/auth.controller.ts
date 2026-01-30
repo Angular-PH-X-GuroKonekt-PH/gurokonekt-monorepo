@@ -1,4 +1,4 @@
-import { Controller, Post, Get, Body } from '@nestjs/common';
+import { Controller, Post, Get, Body, Ip, Headers } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
@@ -27,8 +27,12 @@ export class AuthController {
   @Post('register-mentee')
   @ApiOperation({ summary: 'Register a new mentee' })
   @ApiResponse({ status: 200, description: 'Mentee created successfully', type: AsyncReturnDto })
-  async registerMentee(@Body() input: RegisterMenteeDto) {
-    return this.authService.registerMentee(input);
+  async registerMentee(
+    @Body() input: RegisterMenteeDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.authService.registerMentee(input, ipAddress, userAgent);
   }
 
   @Post('register-mentor')
