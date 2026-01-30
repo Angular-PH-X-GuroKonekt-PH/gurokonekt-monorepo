@@ -6,138 +6,175 @@ datasource db {
   provider = "postgresql"
 }
 
+/* =======================
+  ENUMS
+======================= */
+
 enum UserRole {
-  Mentee
-  Mentor
-  Admin
+  mentee
+  mentor
+  admin
+
+  @@map("user_role")
 }
 
 enum UserStatus {
-  Active
-  Inactive
-  PendingApproval
-  PendingReview
-  Approved
-  Rejected
-  Banned
-  Suspended
-  Deleted
-  Unknown
-  NotApplicable
-  NotSpecified
+  active
+  inactive
+  pending_approval
+  pending_review
+  approved
+  rejected
+  banned
+  suspended
+  deleted
+
+  @@map("user_status")
 }
 
 enum MenteePreferredSessionType {
-  Online
-  InPerson
+  online
+  in_person
+
+  @@map("mentee_preferred_session_type")
 }
 
 enum LogsActionType {
-  Create
-  Read
-  Update
-  Delete
-  Signin
-  SignUp
-  Signout
+  create
+  read
+  update
+  delete
+  signin
+  signup
+  signout
+
+  @@map("logs_action_type")
 }
 
+/* =======================
+  MODELS
+======================= */
 
 model User {
-  id                    String            @id @default(uuid())
-  firstName             String
-  middleName            String?
-  lastName              String
-  suffix                String?
-  email                 String            @unique
-  country               String?
-  language              String?
-  role                  UserRole
-  status                UserStatus
-  createdBy             User?             @relation("UserCreatedBy", fields: [createdById], references: [id])
-  createdById           String?
-  updatedBy             User?             @relation("UserUpdatedBy", fields: [updatedById], references: [id])
-  updatedById           String?
-  createdAt             DateTime          @default(now())
-  updatedAt             DateTime          @updatedAt
+  id                  String     @id @default(uuid()) @map("id")
+  firstName           String     @map("first_name")
+  middleName          String?    @map("middle_name")
+  lastName            String     @map("last_name")
+  suffix              String?
+  email               String     @unique
+  country             String?
+  timezone            String?
+  language            String?
+  phoneNumber         String?    @unique         @map("phone_number")        
+  hashPassword        String                     @map("hash_password")
+  isProfileComplete   Boolean    @default(true)  @map("is_profile_complete")
+  isMentorApproved    Boolean    @default(false) @map("is_mentor_approved")
+  role                UserRole
+  status              UserStatus
+  createdById         String?                    @map("created_by_id")
+  updatedById         String?                    @map("updated_by_id")
+  createdAt           DateTime   @default(now()) @map("created_at")
+  updatedAt           DateTime   @updatedAt      @map("updated_at")
 
   // Relations
-  createdUsers          User[]            @relation("UserCreatedBy") 
-  updatedUsers          User[]            @relation("UserUpdatedBy")
-  menteeProfiles        MenteeProfile[]   @relation("MenteeBaseUser")
-  menteeUpdated         MenteeProfile[]   @relation("MenteeUpdatedBy")
-  mentorProfiles        MentorProfile[]   @relation("MentorBaseUser")
-  mentorUpdated         MentorProfile[]   @relation("MentorUpdatedBy")
-  avatarAttachments     AvatarAttachments[]
-  documentsAttachments  DocumentAttachments[]
-  logsCreated           Logs[]            @relation("LogsCreatedBy")
-  logsUpdated           Logs[]            @relation("LogsUpdatedBy")
+  createdBy               User?                 @relation("user_created_by", fields: [createdById], references: [id])
+  updatedBy               User?                 @relation("user_updated_by", fields: [updatedById], references: [id])
+  createdUsers            User[]                @relation("user_created_by")
+  updatedUsers            User[]                @relation("user_updated_by")
+  menteeProfiles          MenteeProfile[]       @relation("mentee_base_user")
+  mentorProfiles          MentorProfile[]       @relation("mentor_base_user")
+  menteeProfilesUpdated   MenteeProfile[]       @relation("mentee_updated_by")
+  mentorProfilesUpdated   MentorProfile[]       @relation("mentor_updated_by")
+  avatarAttachments       AvatarAttachment[]
+  documentAttachments     DocumentAttachment[]
+
+  logsCreated Logs[] @relation("logs_created_by")
+  logsUpdated Logs[] @relation("logs_updated_by")
+
+  @@map("users")
 }
 
 model MenteeProfile {
-  id                      String    @id @default(uuid())
-  userId                  String    @unique
-  user                    User      @relation("MenteeBaseUser", fields: [userId], references: [id])
-  bio                     String?
-  learningGoals           String[]
-  areasOfInterest         String[]
-  preferredSessionType    MenteePreferredSessionType
-  availability            String[]
-  updatedById             String?
-  updatedBy               User?     @relation("MenteeUpdatedBy", fields: [updatedById], references: [id])
-  updatedAt               DateTime  @updatedAt
+  id                   String                     @id @default(uuid())
+  userId               String                     @unique @map("user_id")
+  bio                  String?
+  learningGoals        String[]                   @map("learning_goals")
+  areasOfInterest      String[]                   @map("areas_of_interest")
+  preferredSessionType MenteePreferredSessionType @map("preferred_session_type")
+  availability         String[]
+  updatedById          String?                    @map("updated_by_id")
+  updatedAt            DateTime                   @updatedAt @map("updated_at")
+
+  user                 User     @relation("mentee_base_user", fields: [userId], references: [id])
+  updatedBy            User?    @relation("mentee_updated_by", fields: [updatedById], references: [id])
+
+  @@map("mentee_profiles")
 }
 
 model MentorProfile {
-  id                   String     @id @default(uuid())
-  userId               String     @unique
-  user                 User       @relation("MentorBaseUser", fields: [userId], references: [id])
-  yearsOfExperience    Int?
-  linkedInUrl          String?
-  bio                  String?
-  skills               String[]
-  sessionRate          Float?
-  availability         String[]
-  updatedById          String?
-  updatedBy            User?      @relation("MentorUpdatedBy", fields: [updatedById], references: [id])
-  updatedAt            DateTime   @updatedAt
+  id                String    @id @default(uuid())
+  userId            String    @unique @map("user_id")
+  areasOfExpertise  String[]  @map("areas_of_expertise")
+  yearsOfExperience Int?      @map("years_of_experience")
+  linkedInUrl       String?   @map("linkedin_url")
+  bio               String?
+  skills            String[]
+  sessionRate       Float?    @map("session_rate")
+  availability      String[]
+  updatedById       String?   @map("updated_by_id")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+
+  user              User      @relation("mentor_base_user", fields: [userId], references: [id])
+  updatedBy         User?     @relation("mentor_updated_by", fields: [updatedById], references: [id])
+
+  @@map("mentor_profiles")
 }
 
-model AvatarAttachments {
-  id                    String     @id @default(uuid())
-  userId                String
-  user                  User       @relation(fields: [userId], references: [id])
-  avatarStoragePath     String
-  avatarPublicUrl       String
-  avatarFileType        String
-  avatarFileSize        Int
-  avatarFileName        String
+model AvatarAttachment {
+  id                String  @id @default(uuid())
+  userId            String  @map("user_id")
+  bucketName        String  @map("bucket_name")
+  storagePath       String  @map("storage_path")
+  publicUrl         String  @map("public_url")
+  fileType          String  @map("file_type")
+  fileSize          Int     @map("file_size")
+  fileName          String  @map("file_name")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("avatar_attachments")
 }
 
-model DocumentAttachments {
-  id                   String   @id @default(uuid())
-  userId               String
-  user                 User     @relation(fields: [userId], references: [id])
-  documentStoragePath  String
-  documentPublicUrl    String
-  documentFileType     String
-  documentFileSize     Int
-  documentFileName     String
-}
+model DocumentAttachment {
+  id           String   @id @default(uuid())
+  userId       String   @map("user_id")
+  bucketName   String   @map("bucket_name")
+  storagePath  String   @map("storage_path")
+  publicUrl    String   @map("public_url")
+  fileType     String   @map("file_type")
+  fileSize     Int      @map("file_size")
+  fileName     String   @map("file_name")
 
+  user         User     @relation(fields: [userId], references: [id])
+
+  @@map("document_attachments")
+}
 
 model Logs {
-  id           String          @id @default(uuid())
-  actionType   LogsActionType
-  targetId     String
-  details      String
-  metadata     Json?
-  ipAddress    String
-  userAgent    String
-  createdById  String?
-  createdBy    User?           @relation("LogsCreatedBy", fields: [createdById], references: [id])
-  updatedById  String?
-  updatedBy    User?           @relation("LogsUpdatedBy", fields: [updatedById], references: [id])
-  createdAt    DateTime        @default(now())
-  updatedAt    DateTime        @updatedAt
+  id          String          @id @default(uuid())
+  actionType  LogsActionType  @map("action_type")
+  targetId    String          @map("target_id")
+  details     String
+  metadata    Json?
+  ipAddress   String          @map("ip_address")
+  userAgent   String          @map("user_agent")
+  createdById String?         @map("created_by_id")
+  updatedById String?         @map("updated_by_id")
+  createdAt   DateTime        @default(now()) @map("created_at")
+  updatedAt   DateTime        @updatedAt @map("updated_at")
+
+  createdBy   User?           @relation("logs_created_by", fields: [createdById], references: [id])
+  updatedBy   User?           @relation("logs_updated_by", fields: [updatedById], references: [id])
+
+  @@map("logs")
 }
