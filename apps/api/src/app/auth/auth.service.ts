@@ -388,6 +388,7 @@ export class AuthService {
       todayStart.setHours(0, 0, 0, 0);
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
+      const MAX_ATTEMPTS = 3;
 
       const failedMessages = [
         RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
@@ -397,22 +398,29 @@ export class AuthService {
       ]
 
       // Check failed attempts in logs
-      const failedAttempts = await this.prisma.db.logs.count({
+      const failedByEmail = await this.prisma.db.logs.count({
         where: {
           actionType: LogsActionType.signin,
           metadata: { path: ['email'], equals: input.email },
-          ipAddress: ipAddress,
           createdAt: { gte: todayStart, lte: todayEnd },
           OR: failedMessages.map(message => ({
-            details: {
-              contains: message,
-              mode: 'insensitive'
-            }
-          }))
-        }
+            details: { contains: message, mode: 'insensitive' },
+          })),
+        },
       });
 
-      if (failedAttempts >= 3) {
+      const failedByIp = await this.prisma.db.logs.count({
+        where: {
+          actionType: LogsActionType.signin,
+          ipAddress,
+          createdAt: { gte: todayStart, lte: todayEnd },
+          OR: failedMessages.map(message => ({
+            details: { contains: message, mode: 'insensitive' },
+          })),
+        },
+      });
+
+      if (failedByEmail >= MAX_ATTEMPTS || failedByIp >= MAX_ATTEMPTS) {
         await this.prisma.db.logs.create({
           data: {
             actionType: LogsActionType.signin,
