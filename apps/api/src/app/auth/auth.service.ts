@@ -513,10 +513,7 @@ export class AuthService {
           status: AsyncStatus.Error,
           statusCode: 401,
           message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
-          data: {
-            error: error,
-            data: data
-          }
+          data: null
         };
       }
 
