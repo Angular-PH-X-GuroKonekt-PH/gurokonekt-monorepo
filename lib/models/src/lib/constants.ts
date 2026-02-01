@@ -35,7 +35,10 @@ export const RETURN_MESSAGES = {
     START_WITH_AVATAR: 'All storage paths must be avatar files (start with "avatars/")',
     START_WITH_DOCUMENTS: 'All storage paths must be document files (start with "documents/")',
     USER_ALREADY_EXISTS: 'User already exists',
-    MISSING_REQUIRED_FIELDS: 'Missing required fields'
+    MISSING_REQUIRED_FIELDS: 'Missing required fields',
+    INVALID_CREDENTIALS: 'Invalid credentials',
+    EMAIL_NOT_VERIFIED: 'Email address is not verified',
+    TOO_MANY_ATTEMPTS: 'Too many failed login attempts. Try again later.'
   },
   LINKS: {
     DEFAULT_REDIRECT_URL: 'https://google.com',
