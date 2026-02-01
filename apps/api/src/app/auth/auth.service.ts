@@ -385,9 +385,9 @@ export class AuthService {
   async signInWithPassword(input: SignInDto, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
     try {
       const todayStart = new Date();
-      todayStart.setHours(0, 0, 0, 0);
+      todayStart.setUTCHours(0, 0, 0, 0);
       const todayEnd = new Date();
-      todayEnd.setHours(23, 59, 59, 999);
+      todayEnd.setUTCHours(23, 59, 59, 999);
       const MAX_ATTEMPTS = 3;
 
       const failedMessages = [
