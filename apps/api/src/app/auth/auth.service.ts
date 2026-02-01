@@ -376,7 +376,7 @@ export class AuthService {
 
   /**
    * Flow:
-   * 1. check if if failed attempts > 3 then return 429
+   * 1. check if failed attempts > 3 then return 429
    * 2. check user if exist in db if false return 401
    * 3. check if user credentials are valid if false return 401
    * 4. check if user email is verified if false then return 403
