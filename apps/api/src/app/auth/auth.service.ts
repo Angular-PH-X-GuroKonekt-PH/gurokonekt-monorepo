@@ -9,12 +9,16 @@ import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 import bcrypt from "bcrypt";
 import { AsyncReturnDto } from '../dto/models.dto';
 import { SignInDto } from '../dto/auth';
+import { UtilsService } from '../../utils/utils.service';
 
 @Injectable()
 export class AuthService {
   private supabase: SupabaseClient;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly utilsService: UtilsService
+  ) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
@@ -520,9 +524,9 @@ export class AuthService {
       });
 
       // After successful signin return the user data without sensitive info
-      const userData = await this.prisma.db.user.findUnique({
-        where: { id: data.user.id }, 
-        select: {
+      const userData = await this.utilsService.getUserById(
+        data.user.id,
+        {
           id: true,
           firstName: true,
           middleName: true,
@@ -542,7 +546,7 @@ export class AuthService {
           createdBy: { select: { id: true, firstName: true, lastName: true } },
           updatedBy: { select: { id: true, firstName: true, lastName: true } }
         }
-      });
+      );
 
       if (!userData) {
         // no user ID because user doesn't exist
