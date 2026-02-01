@@ -413,6 +413,18 @@ export class AuthService {
       });
 
       if (failedAttempts >= 3) {
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.signin,
+            targetId: null,
+            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
+            metadata: { email: input.email },
+            ipAddress,
+            userAgent,
+            createdById: null
+          }
+        });
+        
         return {
           status: AsyncStatus.Error,
           statusCode: 429,
