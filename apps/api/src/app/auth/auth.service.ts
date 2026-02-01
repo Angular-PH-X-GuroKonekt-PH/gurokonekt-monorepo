@@ -586,7 +586,10 @@ export class AuthService {
         status: AsyncStatus.Success,
         statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
-        data: userData
+        data: {
+          user: userData,
+          session: data.session
+        }
       };
     } catch (error) {
       console.error(error);
