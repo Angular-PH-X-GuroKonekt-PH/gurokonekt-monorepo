@@ -3,7 +3,8 @@
   "version": "0.0.0",
   "license": "MIT",
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "start:api": "node dist/apps/api/main.js",
   },
   "private": true,
   "devDependencies": {
