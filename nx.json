@@ -80,5 +80,6 @@
     "version": {
       "conventionalCommits": true
     }
-  }
+  },
+  "defaultProject": "api"
 }
