@@ -5,7 +5,6 @@
   "prefix": "app",
   "sourceRoot": "apps/web/src",
   "tags": [],
-  "implicitDependencies": ["api"],
   "targets": {
     "build": {
       "executor": "@angular/build:application",
@@ -51,7 +50,6 @@
     "serve": {
       "continuous": true,
       "executor": "@angular/build:dev-server",
-      "dependsOn": ["api:serve"],
       "configurations": {
         "production": {
           "buildTarget": "web:build:production"
