@@ -389,14 +389,26 @@ export class AuthService {
       const todayEnd = new Date();
       todayEnd.setHours(23, 59, 59, 999);
 
+      const failedMessages = [
+        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
+        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS
+      ]
+
       // Check failed attempts in logs
       const failedAttempts = await this.prisma.db.logs.count({
         where: {
           actionType: LogsActionType.signin,
-          details: { contains: 'Failed', mode: 'insensitive' },
           metadata: { path: ['email'], equals: input.email },
           ipAddress: ipAddress,
-          createdAt: { gte: todayStart, lte: todayEnd }
+          createdAt: { gte: todayStart, lte: todayEnd },
+          OR: failedMessages.map(message => ({
+            details: {
+              contains: message,
+              mode: 'insensitive'
+            }
+          }))
         }
       });
 
@@ -404,7 +416,7 @@ export class AuthService {
         return {
           status: AsyncStatus.Error,
           statusCode: 429,
-          message: RETURN_MESSAGES.FAILURE.TOO_MANY_ATTEMPTS,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
           data: null
         };
       }
@@ -420,7 +432,7 @@ export class AuthService {
           data: {
             actionType: LogsActionType.signin,
             targetId: '',
-            details: 'Failed signin attempt: user not found',
+            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
             metadata: { email: input.email },
             ipAddress,
             userAgent
@@ -430,7 +442,7 @@ export class AuthService {
         return {
           status: AsyncStatus.Error,
           statusCode: 401,
-          message: RETURN_MESSAGES.FAILURE.INVALID_CREDENTIALS,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
           data: null
         };
       }
@@ -448,7 +460,7 @@ export class AuthService {
             data: {
               actionType: LogsActionType.signin,
               targetId: user.id,
-              details: 'Failed signin attempt: email not verified',
+              details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
               metadata: { email: input.email },
               ipAddress,
               userAgent,
@@ -459,7 +471,7 @@ export class AuthService {
           return {
             status: AsyncStatus.Error,
             statusCode: 403,
-            message: RETURN_MESSAGES.FAILURE.EMAIL_NOT_VERIFIED,
+            message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
             data: null
           };
         }
@@ -469,7 +481,7 @@ export class AuthService {
           data: {
             actionType: LogsActionType.signin,
             targetId: user.id,
-            details: 'Failed signin attempt: invalid password',
+            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -480,7 +492,7 @@ export class AuthService {
         return {
           status: AsyncStatus.Error,
           statusCode: 401,
-          message: RETURN_MESSAGES.FAILURE.INVALID_CREDENTIALS,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
           data: {
             error: error,
             data: data
@@ -494,7 +506,7 @@ export class AuthService {
           data: {
             actionType: LogsActionType.signin,
             targetId: user.id,
-            details: 'Failed signin attempt: email not verified',
+            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -505,7 +517,7 @@ export class AuthService {
         return {
           status: AsyncStatus.Error,
           statusCode: 403,
-          message: RETURN_MESSAGES.FAILURE.EMAIL_NOT_VERIFIED,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
           data: null
         };
       }
@@ -515,7 +527,7 @@ export class AuthService {
         data: {
           actionType: LogsActionType.signin,
           targetId: user.id,
-          details: 'Successful signin',
+          details: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
           metadata: { email: input.email },
           ipAddress,
           userAgent,
@@ -565,7 +577,7 @@ export class AuthService {
         return {
           status: AsyncStatus.Error,
           statusCode: 401,
-          message: RETURN_MESSAGES.FAILURE.INVALID_CREDENTIALS,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
           data: null
         };
       }

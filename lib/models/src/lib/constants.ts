@@ -36,9 +36,10 @@ export const RETURN_MESSAGES = {
     START_WITH_DOCUMENTS: 'All storage paths must be document files (start with "documents/")',
     USER_ALREADY_EXISTS: 'User already exists',
     MISSING_REQUIRED_FIELDS: 'Missing required fields',
-    INVALID_CREDENTIALS: 'Invalid credentials',
-    EMAIL_NOT_VERIFIED: 'Email address is not verified',
-    TOO_MANY_ATTEMPTS: 'Too many failed login attempts. Try again later.'
+    SIGNIN_ATTEMPT_INVALID_CREDENTIALS: 'Invalid credentials',
+    SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED: 'Failed signin attempt: Email address is not verified',
+    SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS: 'Too many failed login attempts. Try again later.',
+    SIGNIN_ATTEMPT_USER_NOT_FOUND: 'Failed signin attempt: User not found',
   },
   LINKS: {
     DEFAULT_REDIRECT_URL: 'https://google.com',
