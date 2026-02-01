@@ -42,11 +42,15 @@ export class AuthController {
     return this.authService.registerMentor(input);
   }
 
-  @Post('signin')
+  @Post('login')
   @ApiOperation({ summary: 'Sign in with email/password' })
   @ApiResponse({ status: 200, description: 'User signed in successfully', type: AsyncReturnDto })
-  async signIn(@Body() input: SignInDto) {
-    return this.authService.signInWithPassword(input);
+  async signIn(
+    @Body() input: SignInDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.authService.signInWithPassword(input, ipAddress, userAgent);
   }
 
   @Post('signin/oauth')
