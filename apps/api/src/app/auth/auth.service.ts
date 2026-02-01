@@ -467,7 +467,7 @@ export class AuthService {
 
       if (error || !data.user) {
         // Check if email verified
-        if (error.code === 'email_not_confirmed') {
+        if (error && error.code === 'email_not_confirmed') {
           await this.prisma.db.logs.create({
             data: {
               actionType: LogsActionType.signin,
