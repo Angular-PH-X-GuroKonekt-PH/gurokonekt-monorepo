@@ -513,7 +513,7 @@ export class AuthService {
       }
 
       // Check if email verified
-      if (!data.user.user_metadata.email_verified) {
+      if (!data.user.email_confirmed_at) {
         await this.prisma.db.logs.create({
           data: {
             actionType: LogsActionType.signin,
@@ -600,7 +600,8 @@ export class AuthService {
         message: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
         data: {
           user: userData,
-          session: data.session
+          session: data.session,
+          data: data
         }
       };
     } catch (error) {
