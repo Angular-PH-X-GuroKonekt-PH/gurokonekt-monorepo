@@ -5,6 +5,7 @@
   "scripts": {
     "prepare": "husky",
     "start:api": "node dist/apps/api/main.js",
+    "build:api": "nx build api"
   },
   "private": true,
   "devDependencies": {
