@@ -61,7 +61,7 @@ export class UpdateMenteeProfileDto {
   @ApiPropertyOptional({
     description: 'Preferred session type for the mentee',
     enum: MenteePreferredSessionType,
-    example: MenteePreferredSessionType.Online
+    example: MenteePreferredSessionType.online
   })
   @IsOptional()
   @IsEnum(MenteePreferredSessionType)
