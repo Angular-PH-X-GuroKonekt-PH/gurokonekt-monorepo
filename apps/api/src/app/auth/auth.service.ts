@@ -553,29 +553,10 @@ export class AuthService {
       });
 
       // After successful signin return the user data without sensitive info
-      const userData = await this.utilsService.getUserById(
-        data.user.id,
-        {
-          id: true,
-          firstName: true,
-          middleName: true,
-          lastName: true,
-          suffix: true,
-          email: true,
-          phoneNumber: true,
-          country: true,
-          language: true,
-          timezone: true,
-          isProfileComplete: true,
-          isMentorApproved: true,
-          role: true,
-          status: true,
-          createdAt: true,
-          updatedAt: true,
-          createdBy: { select: { id: true, firstName: true, lastName: true } },
-          updatedBy: { select: { id: true, firstName: true, lastName: true } }
-        }
-      );
+      const userData = await this.prisma.db.user.findUnique({
+        where: { id: data.user.id },
+        select: this.utilsService.getUserCredentialsSelect()
+      });
 
       return {
         status: AsyncStatus.Success,
