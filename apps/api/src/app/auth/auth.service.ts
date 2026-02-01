@@ -580,28 +580,6 @@ export class AuthService {
         }
       );
 
-      if (!userData) {
-        // no user ID because user doesn't exist
-        await this.prisma.db.logs.create({
-          data: {
-            actionType: LogsActionType.signin, 
-            targetId: null,                      
-            details: 'Failed signin attempt: user not found',
-            metadata: { email: input.email },   
-            ipAddress: ipAddress,
-            userAgent: userAgent,
-            createdById: null              
-          }
-        });
-
-        return {
-          status: AsyncStatus.Error,
-          statusCode: 401,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
-          data: null
-        };
-      }
-
       return {
         status: AsyncStatus.Success,
         statusCode: 200,
