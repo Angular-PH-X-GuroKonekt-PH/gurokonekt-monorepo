@@ -451,7 +451,7 @@ export class AuthService {
         await this.prisma.db.logs.create({
           data: {
             actionType: LogsActionType.signin,
-            targetId: '',
+            targetId: null,
             details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
             metadata: { email: input.email },
             ipAddress,
