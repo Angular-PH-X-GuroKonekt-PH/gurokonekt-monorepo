@@ -5,8 +5,8 @@
   },
   "hosting": [
     {
-    "site": "gurokonekt-website",
-    "public": "dist/apps/landing-page/browser",
+    "site": "gurokonekt-platform",
+    "public": "dist/apps/web/browser",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**"],
     "rewrites": [
       {
