@@ -81,5 +81,5 @@
       "conventionalCommits": true
     }
   },
-  "defaultProject": "api"
+  "defaultProject": "landing-page"
 }
