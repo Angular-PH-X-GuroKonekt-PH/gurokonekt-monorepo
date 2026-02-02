@@ -8,12 +8,17 @@ import { LogsActionType, UserRole, UserStatus } from '@prisma/client';
 import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 import bcrypt from "bcrypt";
 import { AsyncReturnDto } from '../dto/models.dto';
+import { SignInDto } from '../dto/auth';
+import { UtilsService } from '../../utils/utils.service';
 
 @Injectable()
 export class AuthService {
   private supabase: SupabaseClient;
 
-  constructor(private readonly prisma: PrismaService) {
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly utilsService: UtilsService
+  ) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
 
@@ -369,34 +374,207 @@ export class AuthService {
     }
   }
 
-  async signInWithPassword(input: SignInInputInterface): Promise<AsyncReturn> {
+  /**
+   * Flow:
+   * 1. check if failed attempts > 3 then return 429
+   * 2. check user if exist in db if false return 401
+   * 3. check if user credentials are valid if false return 401
+   * 4. check if user email is verified if false then return 403
+   * 5. if all checks passed return success with status 200
+   * */ 
+  async signInWithPassword(input: SignInDto, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
     try {
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setUTCHours(23, 59, 59, 999);
+      const MAX_ATTEMPTS = 3;
+
+      const failedMessages = [
+        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
+        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS
+      ]
+
+      // Check failed attempts in logs
+      const failedByEmail = await this.prisma.db.logs.count({
+        where: {
+          actionType: LogsActionType.signin,
+          metadata: { path: ['email'], equals: input.email },
+          createdAt: { gte: todayStart, lte: todayEnd },
+          OR: failedMessages.map(message => ({
+            details: { contains: message, mode: 'insensitive' },
+          })),
+        },
+      });
+
+      const failedByIp = await this.prisma.db.logs.count({
+        where: {
+          actionType: LogsActionType.signin,
+          ipAddress,
+          createdAt: { gte: todayStart, lte: todayEnd },
+          OR: failedMessages.map(message => ({
+            details: { contains: message, mode: 'insensitive' },
+          })),
+        },
+      });
+
+      if (failedByEmail >= MAX_ATTEMPTS || failedByIp >= MAX_ATTEMPTS) {
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.signin,
+            targetId: "",
+            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
+            metadata: { email: input.email },
+            ipAddress,
+            userAgent,
+            createdById: null
+          }
+        });
+        
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 429,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
+          data: null
+        };
+      }
+
+      // Check if user exists
+      const user = await this.prisma.db.user.findUnique({
+        where: { email: input.email }
+      });
+
+      if (!user) {
+        // log failed attempt
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.signin,
+            targetId: "",
+            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
+            metadata: { email: input.email },
+            ipAddress,
+            userAgent
+          }
+        });
+
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 401,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+          data: null
+        };
+      }
+
+      // Attempt login via Supabase
       const { data, error } = await this.supabase.auth.signInWithPassword({
         email: input.email,
         password: input.password
       });
 
-      if (error) {
-        console.error(error);
+      if (error || !data.user) {
+        // Check if email verified
+        if (error && error.code === 'email_not_confirmed') {
+          await this.prisma.db.logs.create({
+            data: {
+              actionType: LogsActionType.signin,
+              targetId: user.id,
+              details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+              metadata: { email: input.email },
+              ipAddress,
+              userAgent,
+              createdById: user.id
+            }
+          });
+        
+          return {
+            status: AsyncStatus.Error,
+            statusCode: 403,
+            message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+            data: null
+          };
+        }
+
+        // log failed attempt
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.signin,
+            targetId: user.id,
+            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+            metadata: { email: input.email },
+            ipAddress,
+            userAgent,
+            createdById: user.id
+          }
+        });
+
         return {
           status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
+          statusCode: 401,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+          data: null
+        };
       }
+
+      // Check if email verified
+      if (!data.user.email_confirmed_at) {
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.signin,
+            targetId: user.id,
+            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+            metadata: { email: input.email },
+            ipAddress,
+            userAgent,
+            createdById: user.id
+          }
+        });
+
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 403,
+          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+          data: null
+        };
+      }
+
+      // Log successful login
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.signin,
+          targetId: user.id,
+          details: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
+          metadata: { email: input.email },
+          ipAddress,
+          userAgent,
+          createdById: user.id
+        }
+      });
+
+      // After successful signin return the user data without sensitive info
+      const userData = await this.prisma.db.user.findUnique({
+        where: { id: data.user.id },
+        select: this.utilsService.getUserCredentialsSelect()
+      });
 
       return {
         status: AsyncStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
-        data: data
-      }
+        data: {
+          user: userData,
+          session: data.session
+        }
+      };
     } catch (error) {
       console.error(error);
       return {
         status: AsyncStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error
-      }
+      };
     }
   }
 
