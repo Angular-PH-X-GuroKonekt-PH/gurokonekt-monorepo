@@ -40,6 +40,8 @@ export const RETURN_MESSAGES = {
     SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED: 'Failed signin attempt: Email address is not verified',
     SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS: 'Too many failed login attempts. Try again later.',
     SIGNIN_ATTEMPT_USER_NOT_FOUND: 'Failed signin attempt: User not found',
+    EMAIL_ALREADY_CONFIRMED: 'Email address is already confirmed',
+    TOO_MANY_REQUESTS: 'Too many requests',
   },
   LINKS: {
     DEFAULT_REDIRECT_URL: 'https://google.com',
