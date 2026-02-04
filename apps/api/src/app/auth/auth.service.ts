@@ -241,18 +241,6 @@ export class AuthService {
         };
       }
 
-      // Validate required fields
-      const { valid, message } = this.validateMentorFields(dto, files);
-
-      if (!valid) {
-        return {
-          status: AsyncStatus.Error,
-          statusCode: 400,
-          message: message,
-          data: null,
-        };
-      }
-
       const { data, error } = await this.supabase.auth.signUp({
         email: dto.email,
         password: dto.password
@@ -935,92 +923,5 @@ export class AuthService {
       delete sanitized[field];
     }
     return sanitized;
-  }
-
-  private validateMentorFields(dto: RegisterMentorDto, files: Express.Multer.File[]): {
-    valid: boolean; message?: string;
-  } {
-    // Required strings
-    if (!dto.firstName || !dto.lastName || !dto.email) {
-      return { valid: false, message: 'First name, last name, and email are required' };
-    }
-
-    if (!dto.password || !dto.confirmPassword) {
-      return { valid: false, message: 'Password and confirm password are required' };
-    }
-
-    // Email format
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(dto.email)) {
-      return { valid: false, message: 'Invalid email format' };
-    }
-
-    // Password rules
-    const passwordRegex =
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
-
-    if (!passwordRegex.test(dto.password)) {
-      return {
-        valid: false,
-        message:
-          'Password must be at least 8 characters and include uppercase, lowercase, number, and special character',
-      };
-    }
-
-    // Confirm password
-    if (dto.password !== dto.confirmPassword) {
-      return { valid: false, message: 'Passwords do not match' };
-    }
-
-    // Country & timezone
-    if (!dto.country || !dto.timezone) {
-      return { valid: false, message: 'Country and timezone are required' };
-    }
-
-    // Phone number (E.164)
-    const phoneRegex = /^\+\d{10,15}$/;
-    if (!phoneRegex.test(dto.phoneNumber)) {
-      return {
-        valid: false,
-        message: 'Phone number must be in E.164 format (e.g. +639123456789)',
-      };
-    }
-
-    // Areas of expertise
-    if (
-      !Array.isArray(dto.areasOfExpertise) ||
-      dto.areasOfExpertise.length === 0
-    ) {
-      return {
-        valid: false,
-        message: 'At least one area of expertise is required',
-      };
-    }
-
-    // Years of experience (0 is allowed)
-    if (dto.yearsOfExperience == null || dto.yearsOfExperience < 0) {
-      return {
-        valid: false,
-        message: 'Years of experience must be 0 or greater',
-      };
-    }
-
-    // LinkedIn URL (optional)
-    if (dto.linkedInUrl) {
-      try {
-        new URL(dto.linkedInUrl);
-      } catch {
-        return {
-          valid: false,
-          message: 'Invalid LinkedIn profile URL',
-        };
-      }
-    }
-
-    if (!files || files.length === 0) {
-      return { valid: false, message: 'At least one document file is required' };
-    }
-
-    return { valid: true };
   }
 }
