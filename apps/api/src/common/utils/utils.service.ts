@@ -20,8 +20,33 @@ export class UtilsService {
       status: true,
       createdAt: true,
       updatedAt: true,
+      avatarAttachments: {
+        select: {
+          id: true,
+          publicUrl: true,
+          fileName: true,
+          bucketName: true,
+          storagePath: true,
+        },
+      },
       createdBy: { select: { id: true, firstName: true, lastName: true } },
       updatedBy: { select: { id: true, firstName: true, lastName: true } }
     };
+  }
+
+  getMentorProfileSelect() {
+    return {
+      id: true,
+      areasOfExpertise: true,
+      yearsOfExperience: true,
+      linkedInUrl: true,
+      bio: true,
+      skills: true,
+      sessionRate: true,
+      availability: true,
+      updatedAt: true,
+      user: { select: this.getUserCredentialsSelect() },
+      updatedBy: { select: { id: true, firstName: true, lastName: true } }
+    }
   }
 }

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { BUCKET_NAME, DOCUMENTS_ALLOWED_TYPES, AVATAR_ALLOWED_TYPES, RETURN_MESSAGES } from '@gurokonekt/models/constants';
+import { BUCKET_NAMES, DOCUMENTS_ALLOWED_TYPES, IMAGES_ALLOWED_TYPES, RETURN_MESSAGES } from '@gurokonekt/models/constants';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { AsyncReturn, AsyncStatus } from '@gurokonekt/models';
 
@@ -29,7 +29,7 @@ export class UploadService {
     userId: string
   ): Promise<AsyncReturn> {
     try {
-      if (!AVATAR_ALLOWED_TYPES.includes(file.type)) {
+      if (!IMAGES_ALLOWED_TYPES.includes(file.type)) {
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.UNSUPPORTED_FILE_TYPE,
@@ -40,7 +40,7 @@ export class UploadService {
       const path = `avatars/${userId}/${file.name}`;
 
       const { error } = await this.supabase.storage
-        .from(BUCKET_NAME)
+        .from(BUCKET_NAMES.AVATARS)
         .upload(path, file);
 
       if (error) {
@@ -52,7 +52,7 @@ export class UploadService {
       }
 
       const { data } = this.supabase.storage
-        .from(BUCKET_NAME)
+        .from(BUCKET_NAMES.AVATARS)
         .getPublicUrl(path);
       
       const publicUrl = data?.publicUrl || null;
@@ -107,7 +107,7 @@ export class UploadService {
       const path = `documents/${userId}/${file.name}`;
 
       const { error } = await this.supabase.storage
-        .from(BUCKET_NAME)
+        .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
         .upload(path, file);
 
       if (error) {
@@ -119,7 +119,7 @@ export class UploadService {
       }
 
       const { data } = this.supabase.storage
-        .from(BUCKET_NAME)
+        .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
         .getPublicUrl(path);
       
       const publicUrl = data?.publicUrl || null;
@@ -160,7 +160,7 @@ export class UploadService {
   async deleteFile(storagePath: string[]): Promise<AsyncReturn> {
     try {
       const { error } = await this.supabase.storage
-        .from(BUCKET_NAME)
+        .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
         .remove(storagePath);
 
       if (error) {

@@ -42,33 +42,35 @@ export const RETURN_MESSAGES = {
     SIGNIN_ATTEMPT_USER_NOT_FOUND: 'Failed signin attempt: User not found',
     EMAIL_ALREADY_CONFIRMED: 'Email address is already confirmed',
     TOO_MANY_REQUESTS: 'Too many requests',
+    INVALID_EMAIL_FORMAT: 'Invalid email address',
+    INVALID_PASSWORD_FORMAT: 'Invalid password',
+    PASSWORD_MISMATCH: 'Password and confirm password do not match',
+    PASSWORD_REGEX_MISMATCH: 'Password must be at least 8 characters and include uppercase, lowercase, number, and special character',
+    INVALID_PHONE_FORMAT: 'Phone number format is invalid',
+    INVALID_URL: 'URL format is invalid',
   },
   LINKS: {
     DEFAULT_REDIRECT_URL: 'https://google.com',
   }
 }
 
-export const RESPONSE_STATUS = {
-  201: ''
+export const BUCKET_NAMES = {
+  AVATARS: 'avatars',
+  MENTOR_DOCUMENTS: 'mentor_documents'
 }
-
-export const BUCKET_NAME = 'attachments';
 
 export const DOCUMENTS_ALLOWED_TYPES = [
   'application/pdf',
-  'application/msword',
-  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-  'application/vnd.ms-excel',
-  'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
 ]
 
-export const AVATAR_ALLOWED_TYPES = [
+export const IMAGES_ALLOWED_TYPES = [
   'image/jpeg',
   'image/jpg',
-  'image/png',
-  'image/gif',
-  'image/webp',
-  'image/svg+xml',
-  'image/bmp',
-  'image/tiff'
+  'image/png'
 ]
+
+export const REGEX = {
+  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/,
+  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  PHONE: /^\+\d{10,15}$/,
+}

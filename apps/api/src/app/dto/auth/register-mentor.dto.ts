@@ -5,8 +5,13 @@ import {
   IsNumber,
   IsOptional,
   IsString,
+  IsUrl,
+  Matches,
   Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
+import { REGEX, RETURN_MESSAGES } from '@gurokonekt/models/constants';
+import { CustomMatch } from 'apps/api/src/common/decorators/custom-matches.decorator';
 
 export class RegisterMentorDto {
   @ApiProperty({ example: 'John' })
@@ -39,7 +44,16 @@ export class RegisterMentorDto {
     description: 'Minimum 8 characters, must include uppercase, lowercase, number, and symbol',
   })
   @IsString()
+  @Matches(REGEX.PASSWORD, { message: RETURN_MESSAGES.FAILURE.PASSWORD_REGEX_MISMATCH })
   password: string;
+
+  @ApiProperty({
+    example: 'Password123!',
+    description: 'Must match the password field',
+  })
+  @IsString()
+  @CustomMatch('password', { message: RETURN_MESSAGES.FAILURE.PASSWORD_MISMATCH })
+  confirmPassword: string;
 
   @ApiProperty({
     example: 'Philippines',
@@ -50,7 +64,6 @@ export class RegisterMentorDto {
 
   @ApiProperty({
     example: 'English',
-    required: false,
     description: 'Primary language spoken',
   })
   @IsString()
@@ -68,13 +81,14 @@ export class RegisterMentorDto {
     description: 'Mobile number in E.164 international format. Must start with "+" followed by country code and subscriber number (no spaces or dashes).'
   })
   @IsString()
+  @Matches(REGEX.PHONE, { message: RETURN_MESSAGES.FAILURE.INVALID_PHONE_FORMAT })
   phoneNumber: string;
 
   @ApiProperty({
     example: 5,
-    required: false,
     description: 'Total years of professional experience',
   })
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @Min(0)
   yearsOfExperience: number;
@@ -85,14 +99,30 @@ export class RegisterMentorDto {
     description: 'LinkedIn profile URL',
   })
   @IsString()
-  linkedInUrl: string;
+  @IsOptional()
+  @IsUrl({}, { message: RETURN_MESSAGES.FAILURE.INVALID_URL })
+  linkedInUrl?: string;
+
+  @ApiProperty({
+    example: '["Web Development", "Project Management"]',
+    description: 'Areas of expertise as a JSON array of strings',
+  })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
+  })
+  @IsArray()
+  areasOfExpertise: string[];
 
   @ApiProperty({
     type: 'string',
     format: 'binary',
     isArray: true,
-    required: false,
     description: 'Supporting documents (PDF, images, etc.)',
   })
-  files?: any[];
+  files: any[];
 }

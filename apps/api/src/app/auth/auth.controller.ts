@@ -1,6 +1,8 @@
-import { Controller, Post, Get, Body, Ip, Headers } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { AsyncReturnDto } from '../dto/models.dto';
+import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
+import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 import {
   SignUpDto,
   SignInDto,
@@ -8,9 +10,18 @@ import {
   ResendChangeEmailDto,
   SignInWithOAuthDto
 } from '../dto/auth'
-import { AsyncReturnDto } from '../dto/models.dto';
-import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
-import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Ip,
+  Headers,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+import { MentorDocumentsInterceptor } from '../../common/interceptors/mentor-documents.interceptor';
+
 
 @ApiTags('auth')
 @Controller('auth')
@@ -36,10 +47,17 @@ export class AuthController {
   }
 
   @Post('register-mentor')
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Register a new mentor' })
   @ApiResponse({ status: 200, description: 'Mentor created successfully', type: AsyncReturnDto })
-  async registerMentor(@Body() input: RegisterMentorDto) {
-    return this.authService.registerMentor(input);
+  @UseInterceptors(MentorDocumentsInterceptor)
+  async registerMentor(
+    @Body() input: RegisterMentorDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.authService.registerMentor(input, files, ipAddress, userAgent);
   }
 
   @Post('login')
