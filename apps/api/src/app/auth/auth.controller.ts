@@ -60,11 +60,15 @@ export class AuthController {
     return this.authService.signInWithOAuth(input);
   }
 
-  @Post('resend-signup')
+  @Post('resend-otp')
   @ApiOperation({ summary: 'Resend sign-up confirmation email' })
   @ApiResponse({ status: 200, type: AsyncReturnDto })
-  async resendSignUp(@Body() input: ResendSignUpDto) {
-    return this.authService.resendEmailSignUpConfirmation(input);
+  async resendSignUp(
+    @Body() input: ResendSignUpDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.authService.resendEmailSignUpConfirmation(input, ipAddress, userAgent);
   }
 
   @Post('resend-change-email')

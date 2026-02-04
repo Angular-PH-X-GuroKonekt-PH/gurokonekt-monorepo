@@ -14,6 +14,7 @@ import { UtilsService } from '../../utils/utils.service';
 @Injectable()
 export class AuthService {
   private supabase: SupabaseClient;
+  private supabaseAdmin: SupabaseClient;
 
   constructor(
     private readonly prisma: PrismaService,
@@ -21,12 +22,19 @@ export class AuthService {
   ) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (supabaseUrl && supabaseKey) {
-      this.supabase = createClient(supabaseUrl, supabaseKey);
-    } else {
+    if (!supabaseUrl || !supabaseKey || !serviceRoleKey) {
       throw new Error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
     }
+
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
   }
 
   async signUpWithEmailPassword(input: SignUpInputInterface): Promise<AsyncReturn> {
@@ -264,43 +272,173 @@ export class AuthService {
     }
   }
 
-  async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation): Promise<AsyncReturn> {
+  /**
+   * Flow:
+   * 1. check if request > 3 times in a day from the same ip or email
+   * 2. if true return 429 else continue
+   * 3. check if request duration < 60s from the last request
+   * 4. if true return 429 else continue
+   * 5. check if user exist in users db
+   * 6. if not exist return error else continue
+   * 7. check if user is already confirmed
+   * 8. if confirmed return error else send confirmation email
+   * 9. save the activity to logs
+   * */ 
+  async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
     try {
+      const MAX_ATTEMPTS_PER_DAY = 3;
+      const MIN_INTERVAL_SECONDS = 60;
+
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setUTCHours(23, 59, 59, 999);
+
+      // Count resend attempts today by email and IP
+      const attemptsTodayByEmail = await this.prisma.db.logs.count({
+        where: {
+          actionType: LogsActionType.resend_email_confirmation,
+          metadata: { path: ['email'], equals: input.email },
+          createdAt: { gte: todayStart, lte: todayEnd },
+        },
+      });
+
+      const attemptsTodayByIp = await this.prisma.db.logs.count({
+        where: {
+          actionType: LogsActionType.resend_email_confirmation,
+          ipAddress,
+          createdAt: { gte: todayStart, lte: todayEnd },
+        },
+      });
+
+      if (attemptsTodayByEmail >= MAX_ATTEMPTS_PER_DAY || attemptsTodayByIp >= MAX_ATTEMPTS_PER_DAY) {
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.resend_email_confirmation,
+            targetId: "",
+            details: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
+            metadata: { email: input.email },
+            ipAddress,
+            userAgent,
+            createdById: null
+          }
+        });
+
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 429,
+          message: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
+          data: null,
+        };
+      }
+
+      // Check last attempt time
+      const lastAttempt = await this.prisma.db.logs.findFirst({
+        where: {
+          actionType: LogsActionType.resend_email_confirmation,
+          metadata: { path: ['email'], equals: input.email },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (lastAttempt) {
+        const secondsSinceLast = (Date.now() - lastAttempt.createdAt.getTime()) / 1000;
+        if (secondsSinceLast < MIN_INTERVAL_SECONDS) {
+          return {
+            status: AsyncStatus.Error,
+            statusCode: 429,
+            message: `Please wait ${Math.ceil(MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
+            data: null,
+          };
+        }
+      }
+
+      // Check user in DB
+      const user = await this.prisma.db.user.findUnique({
+        where: { email: input.email },
+      });
+
+      if (!user) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 404,
+          message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
+          data: input,
+        };
+      }
+
+      const { data: userData, error: fetchError } = await this.supabaseAdmin.auth.admin.getUserById(user.id);
+      
+      if (fetchError || !userData) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 404,
+          message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
+          data: fetchError,
+        };
+      }
+
+      // Check if email is already confirmed
+      if (userData.user.email_confirmed_at) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 400,
+          message: RETURN_MESSAGES.FAILURE.EMAIL_ALREADY_CONFIRMED,
+          data: null,
+        };
+      }
+
+      // Resend email via Supabase
       const { data, error } = await this.supabase.auth.resend({
         type: 'signup',
         email: input.email,
         ...(input.options
-          ? { 
-              options: { 
-                emailRedirectTo: 
-                  input.options.emailRedirectTo || 
-                  RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL
-              } 
+          ? {
+              options: {
+                emailRedirectTo: input.options.emailRedirectTo || RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL,
+              },
             }
           : {}),
-      });  
+      });
+
+      // Log the attempt
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.resend_email_confirmation,
+          targetId: user.id,
+          details: error
+            ? RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR
+            : RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
+          metadata: { email: input.email },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
+        },
+      });
 
       if (error) {
-        console.error(error);
         return {
           status: AsyncStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
+          data: error,
+        };
       }
 
       return {
         status: AsyncStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
-        data: data || true
-      }
+        data: data || true,
+      };
     } catch (error) {
       console.error(error);
       return {
         status: AsyncStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
+        data: error,
+      };
     }
   }
 
