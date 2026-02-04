@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { BUCKET_NAMES, RETURN_MESSAGES } from '@gurokonekt/models/constants';
 import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
@@ -15,6 +15,7 @@ import { UtilsService } from '../../common/utils/utils.service';
 export class AuthService {
   private supabase: SupabaseClient;
   private supabaseAdmin: SupabaseClient;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -25,6 +26,7 @@ export class AuthService {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey || !serviceRoleKey) {
+      this.logger.error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
       throw new Error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
     }
 
@@ -54,7 +56,7 @@ export class AuthService {
       });   
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -67,7 +69,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -133,7 +135,7 @@ export class AuthService {
       });   
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           statusCode: 500,
@@ -187,7 +189,7 @@ export class AuthService {
         }
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         statusCode: 500,
@@ -257,7 +259,7 @@ export class AuthService {
       });   
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           statusCode: 500,
@@ -363,7 +365,7 @@ export class AuthService {
         }
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         statusCode: 500,
@@ -533,7 +535,7 @@ export class AuthService {
         data: data || true,
       };
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         statusCode: 500,
@@ -551,7 +553,7 @@ export class AuthService {
       });  
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -565,7 +567,7 @@ export class AuthService {
         data: data || true
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -590,7 +592,7 @@ export class AuthService {
       });   
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -604,7 +606,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -807,7 +809,7 @@ export class AuthService {
         }
       };
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         statusCode: 500,
@@ -824,7 +826,7 @@ export class AuthService {
       });
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -838,7 +840,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -853,7 +855,7 @@ export class AuthService {
         password: input.password
       });
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -866,7 +868,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -879,7 +881,7 @@ export class AuthService {
     try {
       const { data, error } = await this.supabase.auth.getUser();
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -892,7 +894,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -905,7 +907,7 @@ export class AuthService {
     try {
       const { error } = await this.supabase.auth.signOut();
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -918,7 +920,7 @@ export class AuthService {
         data: true
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
