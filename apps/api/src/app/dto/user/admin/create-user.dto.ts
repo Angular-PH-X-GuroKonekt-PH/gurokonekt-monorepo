@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { UserRole as PrismaUserRole, UserStatus as PrismaUserStatus } from '@prisma/client';
+import { UserRole, UserStatus } from '@gurokonekt/models';
 import { IsEmail, IsEnum, IsOptional, IsString } from 'class-validator';
 
 export class CreateUserDto {
@@ -25,11 +25,11 @@ export class CreateUserDto {
   @IsEmail()
   email: string;
 
-  @ApiProperty({ enum: PrismaUserRole })
-  @IsEnum(PrismaUserRole)
-  role: PrismaUserRole;
+  @ApiProperty({ enum: UserRole })
+  @IsEnum(UserRole)
+  role: UserRole;
 
-  @ApiProperty({ enum: PrismaUserStatus })
-  @IsEnum(PrismaUserStatus)
-  status: PrismaUserStatus;
+  @ApiProperty({ enum: UserStatus })
+  @IsEnum(UserStatus)
+  status: UserStatus;
 }

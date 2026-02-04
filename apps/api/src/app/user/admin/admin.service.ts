@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AsyncReturn, AsyncStatus, RETURN_MESSAGES } from '@gurokonekt/models';
-import { UserRole } from '@prisma/client';
+import { AsyncReturn, AsyncStatus, RETURN_MESSAGES, UserRole } from '@gurokonekt/models';
+import { UserRole as PrismaUserRole, UserStatus as PrismaUserStatus } from '@prisma/client';
 import { 
   CreateUserDto,
   CreateMenteeProfileDto,
@@ -33,8 +33,8 @@ export class AdminService {
           lastName: dto.lastName,
           suffix: dto.suffix ?? null,
           email: dto.email,
-          role: dto.role,
-          status: dto.status,
+          role: dto.role as PrismaUserRole,
+          status: dto.status as PrismaUserStatus,
           hashPassword: "",
 
           createdBy: { connect: { id: authId } },
@@ -72,7 +72,7 @@ export class AdminService {
         where: { id: userId } 
       });
 
-      if (!user || user.role !== UserRole.mentee) {
+      if (!user || user.role !== UserRole.Mentee) {
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.UNAUTHORIZED,
@@ -132,7 +132,7 @@ export class AdminService {
         };
       }
 
-      if (user.role !== UserRole.mentor) {
+      if (user.role !== UserRole.Mentor) {
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.UNAUTHORIZED,
@@ -186,7 +186,7 @@ export class AdminService {
       const user = await this.prisma.db.user.update({
         where: { id: userId },
         data: {
-          status: dto.status,
+          status: dto.status as PrismaUserStatus,
           updatedBy: {
             connect: { id: adminId },
           },

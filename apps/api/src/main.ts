@@ -14,6 +14,24 @@ async function bootstrap() {
   const globalPrefix = 'api';
   const swaggerPrefix = 'api-docs';
   
+  // Enable CORS for cross-origin requests
+  app.enableCors({
+    origin: [
+      'http://localhost:4200',  // Angular dev server
+      'http://localhost:3000',  // Allow same origin
+    ],
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+    allowedHeaders: [
+      'Origin',
+      'X-Requested-With',
+      'Content-Type',
+      'Accept',
+      'Authorization',
+      'Cache-Control',
+    ],
+    credentials: true,
+  });
+  
   // Set the global prefix first
   app.setGlobalPrefix(globalPrefix);
   

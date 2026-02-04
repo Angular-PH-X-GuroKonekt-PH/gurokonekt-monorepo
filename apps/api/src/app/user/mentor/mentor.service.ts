@@ -1,8 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { AsyncReturn, AsyncStatus, RETURN_MESSAGES } from '@gurokonekt/models';
+import { AsyncReturn, AsyncStatus, RETURN_MESSAGES, UserStatus } from '@gurokonekt/models';
 import { UpdateMentorProfileDto } from '../../dto/user/mentor';
-import { UserStatus } from '@prisma/client';
 
 
 @Injectable()
@@ -145,7 +144,7 @@ export class MentorService {
         };
       }
 
-      if (user.status === UserStatus.deleted) {
+      if (user.status === UserStatus.Deleted) {
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.ACCOUNT_ALREADY_DELETED,
@@ -155,7 +154,7 @@ export class MentorService {
 
       const updatedUser = await this.prisma.db.user.update({
         where: { id: mentorId },
-        data: { status: UserStatus.deleted },
+        data: { status: UserStatus.Deleted },
       });
 
       return {

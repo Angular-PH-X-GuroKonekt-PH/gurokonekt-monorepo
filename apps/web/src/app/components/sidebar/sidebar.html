@@ -1,0 +1,120 @@
+<aside
+  class="fixed left-0 top-0 z-40 h-screen transition-all duration-300 bg-white border-r border-gray-200 shadow-sm"
+  [class.w-64]="!isCollapsed()"
+  [class.w-20]="isCollapsed()"
+>
+  <!-- Sidebar Container -->
+  <div class="h-full px-3 py-4 overflow-y-auto">
+    <!-- Logo & Toggle -->
+    <div class="flex items-center justify-between mb-8 px-2 pt-2">
+      @if (!isCollapsed()) {
+      <div class="flex items-center gap-2">
+        <svg
+          class="h-8 w-8"
+          xmlns="http://www.w3.org/2000/svg"
+          viewBox="0 0 375 375"
+          fill="none"
+        >
+          <circle cx="104" cy="86" r="48" fill="#ff751f" fill-opacity="0.8" />
+          <circle cx="277" cy="252" r="42" fill="#ff751f" fill-opacity="0.5" />
+          <circle cx="230" cy="84" r="22" fill="#1800ad" />
+          <circle cx="92" cy="202" r="22" fill="#1800ad" />
+          <circle cx="104" cy="310" r="22" fill="#1800ad" />
+        </svg>
+        <div class="flex items-baseline">
+          <span class="text-lg font-bold text-blue-900">Guro</span>
+          <span class="text-lg font-bold text-orange-500">Konekt</span>
+        </div>
+      </div>
+      } @else {
+      <svg
+        class="h-8 w-8 mx-auto"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 375 375"
+        fill="none"
+      >
+        <circle cx="104" cy="86" r="48" fill="#ff751f" fill-opacity="0.8" />
+        <circle cx="277" cy="252" r="42" fill="#ff751f" fill-opacity="0.5" />
+        <circle cx="230" cy="84" r="22" fill="#1800ad" />
+        <circle cx="92" cy="202" r="22" fill="#1800ad" />
+        <circle cx="104" cy="310" r="22" fill="#1800ad" />
+      </svg>
+      }
+      <button
+        (click)="toggleSidebar()"
+        class="p-2 text-gray-400 rounded-lg hover:bg-gray-100 hover:text-gray-600 transition-colors"
+        type="button"
+        [attr.aria-label]="isCollapsed() ? 'Expand sidebar' : 'Collapse sidebar'"
+      >
+        <svg
+          class="w-5 h-5"
+          fill="none"
+          stroke="currentColor"
+          viewBox="0 0 24 24"
+        >
+          @if (!isCollapsed()) {
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M15 19l-7-7 7-7"
+          />
+          } @else {
+          <path
+            stroke-linecap="round"
+            stroke-linejoin="round"
+            stroke-width="2"
+            d="M9 5l7 7-7 7"
+          />
+          }
+        </svg>
+      </button>
+    </div>
+
+    <!-- Main Navigation -->
+    <nav class="space-y-1 flex flex-col h-[calc(100vh-200px)]">
+      <ul class="space-y-0.5 flex-1">
+        @for (item of mainNavItems; track item.route) {
+        <li>
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+            [routerLinkActiveOptions]="{exact: item.route === '/dashboard'}"
+            class="flex items-center gap-3 px-4 py-3 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative"
+          >
+            <span class="text-lg transition-transform group-hover:scale-110"
+              >{{ item.icon }}</span
+            >
+            @if (!isCollapsed()) {
+            <span class="truncate">{{ item.label }}</span>
+            }
+          </a>
+        </li>
+        }
+      </ul>
+
+      <!-- Divider -->
+      <div class="my-4 border-t border-gray-200"></div>
+
+      <!-- Bottom Navigation -->
+      <ul class="space-y-0.5">
+        @for (item of bottomNavItems; track item.route) {
+        <li>
+          <a
+            [routerLink]="item.route"
+            routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+            class="flex items-center gap-3 px-4 py-3 text-gray-600 text-sm font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative"
+          >
+            <span class="text-lg transition-transform group-hover:scale-110"
+              >{{ item.icon }}</span
+            >
+            @if (!isCollapsed()) {
+            <span class="truncate">{{ item.label }}</span>
+            }
+          </a>
+        </li>
+        }
+      </ul>
+    </nav>
+  </div>
+</aside>

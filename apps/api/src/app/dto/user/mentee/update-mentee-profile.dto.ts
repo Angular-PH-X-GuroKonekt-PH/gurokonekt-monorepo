@@ -1,6 +1,6 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { IsOptional, IsString, IsEnum, IsArray } from 'class-validator';
-import { MenteePreferredSessionType } from '@prisma/client';
+import { MenteePreferredSessionType } from '@gurokonekt/models';
 
 export class UpdateMenteeProfileDto {
   @ApiPropertyOptional({ description: 'First name of the mentee' })
@@ -61,7 +61,7 @@ export class UpdateMenteeProfileDto {
   @ApiPropertyOptional({
     description: 'Preferred session type for the mentee',
     enum: MenteePreferredSessionType,
-    example: MenteePreferredSessionType.online
+    example: MenteePreferredSessionType.Online
   })
   @IsOptional()
   @IsEnum(MenteePreferredSessionType)

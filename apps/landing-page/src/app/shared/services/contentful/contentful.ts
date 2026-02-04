@@ -23,7 +23,7 @@ export class Contentful {
           query
         )
       )
-      .then((res) => {
+      .then((res: EntryCollection<EntrySkeletonType, undefined, string>) => {
         return this.formatLeads(res);
       });
   }
@@ -32,9 +32,9 @@ export class Contentful {
     event: EntryCollection<EntrySkeletonType, undefined, string>
   ) {
     const items: Creator[] = [];
-    event.items.map((entry, index) => {
+    event.items.map((entry: any, index: number) => {
       const asset = event?.includes?.Asset?.find(
-        (asset) =>
+        (asset: any) =>
           asset.sys.id ===
           (entry?.fields?.['headshotImage'] as { sys: { id: string } })?.sys?.id
       );

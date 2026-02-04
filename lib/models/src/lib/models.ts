@@ -29,21 +29,21 @@ export enum SignInWithOAthProviders {
 export enum UserStatus {
   Active = "active",
   Inactive = "inactive",
-  PendingApproval = "pending approval",
-  PendingReview = "pending review",
+  PendingApproval = "pending_approval",
+  PendingReview = "pending_review",
   Approved = "approved",
   Rejected = "rejected",
   Banned = "banned",
   Suspended = "suspended",
   Deleted = "deleted",
   Unknown = "unknown",
-  NotApplicable = "not applicable",
-  NotSpecified = "not specified",
+  NotApplicable = "not_applicable",
+  NotSpecified = "not_specified",
 }
 
 export enum MenteePreferredSessionType {
   Online = "online",
-  InPerson = "in-person",
+  InPerson = "in_person",
 }
 
 export enum LogsActionType {

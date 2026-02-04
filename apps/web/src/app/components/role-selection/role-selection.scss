@@ -1,0 +1,23 @@
+/* Role Selection Component Styles */
+
+:host {
+  display: block;
+  width: 100%;
+}
+
+/* Smooth transitions */
+button {
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+  &:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+  }
+}
+
+/* Responsive adjustments */
+@media (max-width: 640px) {
+  section {
+    padding-top: 2rem;
+  }
+}

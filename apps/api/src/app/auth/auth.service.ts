@@ -1,11 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { RETURN_MESSAGES } from '@gurokonekt/models/constants';
-import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
+import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser, LogsActionType, UserRole, UserStatus } from '@gurokonekt/models';
 import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
-import { PrismaService } from '../prisma/prisma.service';
-import { LogsActionType, UserRole, UserStatus } from '@prisma/client';
 import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
+import { PrismaService } from '../prisma/prisma.service';
 import bcrypt from "bcrypt";
 import { AsyncReturnDto } from '../dto/models.dto';
 import { SignInDto } from '../dto/auth';
@@ -134,7 +133,16 @@ export class AuthService {
         }
       }
 
-      const authId = data.user?.id!;
+      if (!data.user?.id) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 500,
+          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          data: 'User ID not found in authentication response'
+        };
+      }
+
+      const authId = data.user.id;
       const hashPassword = await bcrypt.hash(dto.password, 10);
       const mentee = await this.prisma.db.user.create({
         data: {
@@ -149,8 +157,8 @@ export class AuthService {
           timezone: dto.timezone ?? null,
           phoneNumber: dto.phoneNumber ?? null,
           hashPassword: hashPassword,
-          role: UserRole.mentee,
-          status: UserStatus.active,
+          role: UserRole.Mentee,
+          status: UserStatus.Active,
           createdById: authId,
           updatedById: authId
         },
@@ -159,7 +167,7 @@ export class AuthService {
       // save activity to logs
       await this.prisma.db.logs.create({
         data: {
-          actionType: LogsActionType.signup,
+          actionType: LogsActionType.SignUp,
           targetId: mentee.id, 
           details: `Mentee account registered with email: ${mentee.email}`,
           metadata: { role: mentee.role },
@@ -206,7 +214,15 @@ export class AuthService {
         }
       }
 
-      const authId = data.user?.id!;
+      if (!data.user?.id) {
+        return {
+          status: AsyncStatus.Error,
+          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          data: 'User ID not found in authentication response'
+        };
+      }
+
+      const authId = data.user.id;
       const hashPassword = await bcrypt.hash(dto.password, 10);
       const transaction = await this.prisma.db.$transaction(async (tx) => { 
         const mentor = await tx.user.create({
@@ -222,8 +238,8 @@ export class AuthService {
             timezone: dto.timezone ?? null,
             phoneNumber: dto.phoneNumber ?? null,
             hashPassword: hashPassword,
-            role: UserRole.mentor,
-            status: UserStatus.pending_approval,
+            role: UserRole.Mentor,
+            status: UserStatus.PendingApproval,
             createdById: authId,
             updatedById: authId
           },
@@ -400,7 +416,7 @@ export class AuthService {
       // Check failed attempts in logs
       const failedByEmail = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.Signin,
           metadata: { path: ['email'], equals: input.email },
           createdAt: { gte: todayStart, lte: todayEnd },
           OR: failedMessages.map(message => ({
@@ -411,7 +427,7 @@ export class AuthService {
 
       const failedByIp = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.Signin,
           ipAddress,
           createdAt: { gte: todayStart, lte: todayEnd },
           OR: failedMessages.map(message => ({
@@ -423,7 +439,7 @@ export class AuthService {
       if (failedByEmail >= MAX_ATTEMPTS || failedByIp >= MAX_ATTEMPTS) {
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.Signin,
             targetId: "",
             details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
             metadata: { email: input.email },
@@ -450,7 +466,7 @@ export class AuthService {
         // log failed attempt
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.Signin,
             targetId: "",
             details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
             metadata: { email: input.email },
@@ -478,7 +494,7 @@ export class AuthService {
         if (error && error.code === 'email_not_confirmed') {
           await this.prisma.db.logs.create({
             data: {
-              actionType: LogsActionType.signin,
+              actionType: LogsActionType.Signin,
               targetId: user.id,
               details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
               metadata: { email: input.email },
@@ -499,7 +515,7 @@ export class AuthService {
         // log failed attempt
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.Signin,
             targetId: user.id,
             details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
             metadata: { email: input.email },
@@ -521,7 +537,7 @@ export class AuthService {
       if (!data.user.email_confirmed_at) {
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.Signin,
             targetId: user.id,
             details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
             metadata: { email: input.email },
@@ -542,7 +558,7 @@ export class AuthService {
       // Log successful login
       await this.prisma.db.logs.create({
         data: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.Signin,
           targetId: user.id,
           details: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
           metadata: { email: input.email },

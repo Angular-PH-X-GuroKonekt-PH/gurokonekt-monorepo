@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsArray, IsEnum, IsOptional, IsString } from 'class-validator';
-import { MenteePreferredSessionType } from '@prisma/client';
+import { MenteePreferredSessionType } from '@gurokonekt/models';
 
 export class CreateMenteeProfileDto {
   @ApiProperty({
