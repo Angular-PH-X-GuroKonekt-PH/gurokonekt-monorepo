@@ -9,7 +9,7 @@ import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 import bcrypt from "bcrypt";
 import { AsyncReturnDto } from '../dto/models.dto';
 import { SignInDto } from '../dto/auth';
-import { UtilsService } from '../../utils/utils.service';
+import { UtilsService } from '../../common/utils/utils.service';
 
 @Injectable()
 export class AuthService {
