@@ -7,6 +7,7 @@ import {
   IsString,
   Min,
 } from 'class-validator';
+import { Transform } from 'class-transformer';
 
 export class RegisterMentorDto {
   @ApiProperty({ example: 'John' })
@@ -42,6 +43,13 @@ export class RegisterMentorDto {
   password: string;
 
   @ApiProperty({
+    example: 'Password123!',
+    description: 'Must match the password field',
+  })
+  @IsString()
+  confirmPassword: string;
+
+  @ApiProperty({
     example: 'Philippines',
     description: 'Country of residence',
   })
@@ -75,6 +83,7 @@ export class RegisterMentorDto {
     required: false,
     description: 'Total years of professional experience',
   })
+  @Transform(({ value }) => Number(value))
   @IsNumber()
   @Min(0)
   yearsOfExperience: number;
@@ -85,7 +94,24 @@ export class RegisterMentorDto {
     description: 'LinkedIn profile URL',
   })
   @IsString()
-  linkedInUrl: string;
+  @IsOptional()
+  linkedInUrl?: string;
+
+  @ApiProperty({
+    example: '["Web Development", "Project Management"]',
+    required: false,
+    description: 'Areas of expertise as a JSON array of strings',
+  })
+  @Transform(({ value }) => {
+    if (Array.isArray(value)) return value;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return [];
+    }
+  })
+  @IsArray()
+  areasOfExpertise: string[];
 
   @ApiProperty({
     type: 'string',
@@ -94,5 +120,5 @@ export class RegisterMentorDto {
     required: false,
     description: 'Supporting documents (PDF, images, etc.)',
   })
-  files?: any[];
+  files: any[];
 }

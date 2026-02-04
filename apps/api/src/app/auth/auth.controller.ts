@@ -1,6 +1,9 @@
-import { Controller, Post, Get, Body, Ip, Headers } from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
+import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
+import { AsyncReturnDto } from '../dto/models.dto';
+import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
+import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
+import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   SignUpDto,
   SignInDto,
@@ -8,9 +11,17 @@ import {
   ResendChangeEmailDto,
   SignInWithOAuthDto
 } from '../dto/auth'
-import { AsyncReturnDto } from '../dto/models.dto';
-import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
-import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
+import {
+  Controller,
+  Post,
+  Get,
+  Body,
+  Ip,
+  Headers,
+  UploadedFiles,
+  UseInterceptors,
+} from '@nestjs/common';
+
 
 @ApiTags('auth')
 @Controller('auth')
@@ -36,10 +47,35 @@ export class AuthController {
   }
 
   @Post('register-mentor')
+  @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Register a new mentor' })
   @ApiResponse({ status: 200, description: 'Mentor created successfully', type: AsyncReturnDto })
-  async registerMentor(@Body() input: RegisterMentorDto) {
-    return this.authService.registerMentor(input);
+  @UseInterceptors(
+    FilesInterceptor('files', 5, {
+      limits: { fileSize: 10 * 1024 * 1024 },
+      fileFilter: (req, file, cb) => {
+        const allowedTypes = [
+          'application/pdf',
+          'image/png',
+          'image/jpeg',
+        ];
+        if (!allowedTypes.includes(file.mimetype)) {
+          return cb(
+            new Error('Only PDF, PNG, and JPEG files are allowed'),
+            false,
+          );
+        }
+        cb(null, true);
+      },
+    }),
+  )
+  async registerMentor(
+    @Body() input: RegisterMentorDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.authService.registerMentor(input, files, ipAddress, userAgent);
   }
 
   @Post('login')

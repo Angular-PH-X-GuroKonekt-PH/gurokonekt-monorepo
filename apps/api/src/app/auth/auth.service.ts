@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { RETURN_MESSAGES } from '@gurokonekt/models/constants';
+import { BUCKET_NAMES, RETURN_MESSAGES } from '@gurokonekt/models/constants';
 import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
 import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -198,8 +198,59 @@ export class AuthService {
   }
 
   // register mentor
-  async registerMentor(dto: RegisterMentorDto): Promise<AsyncReturn> {
+  /**
+   * Flow: 
+   * 1. check if user exist in user table
+   * 2. if exist return error else continue
+   * 3. check if required fields are present
+   * 4. if missing return error else continue
+   * 5. check fields are valid:
+   *  - email format
+   *  - valid phone number and unique with pattern +[country code][number]
+   *  - enters a valid Password (min 8 chars, must include uppercase + number + special character)
+   *  - enters a valid Confirm Password (must match)
+   *  - selects a valid Country
+   *  - selects a valid Timezone
+   *  - can optionally select Preferred Language (with default English)
+   *  - can select multiple Areas of expertise (must select at least one)
+   *  - enters Years of Expertise
+   *  - enters LinkedIn Profile URL (optional)
+   *  - Uploads verification documents (accepts pdf & image format only, max. 10MB)
+   *  - checks the Accept Terms & Conditions (checkbox)
+   * 6. if invalid return error else continue
+   * 7. register mentor in auth and user and MentorProfile table with user status pending_approval
+   * 8. uploaded file to 'mentor_documents' bucket in supabase storage
+   * 9. save the data to the DocumentAttachment table 
+   * 10. if error occured, return error else return success with status 200
+   * */ 
+  async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
     try {
+      // Check if user already exists
+      const existingUser = await this.prisma.db.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (existingUser) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 409,
+          message: RETURN_MESSAGES.FAILURE.USER_ALREADY_EXISTS,
+          data: null,
+        };
+      }
+
+      // Validate required fields
+      const { valid, message } = this.validateMentorFields(dto, files);
+
+      if (!valid) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 400,
+          message: message,
+          data: null,
+        };
+      }
+
       const { data, error } = await this.supabase.auth.signUp({
         email: dto.email,
         password: dto.password
@@ -209,6 +260,7 @@ export class AuthService {
         console.error(error);
         return {
           status: AsyncStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
         }
@@ -226,46 +278,95 @@ export class AuthService {
             suffix: dto.suffix ?? null,
             email: dto.email,
             country: dto.country,
-            language: dto.language ?? null,
-            timezone: dto.timezone ?? null,
-            phoneNumber: dto.phoneNumber ?? null,
+            language: dto.language ?? 'en',
+            timezone: dto.timezone,
+            phoneNumber: dto.phoneNumber,
             hashPassword: hashPassword,
             role: UserRole.mentor,
             status: UserStatus.pending_approval,
             createdById: authId,
             updatedById: authId
           },
+          select: this.utilsService.getUserCredentialsSelect()
         });
 
         const mentorProfile = await tx.mentorProfile.create({
           data: {
+            userId: authId,
+            areasOfExpertise: dto.areasOfExpertise,
             yearsOfExperience: dto.yearsOfExperience ?? null,
             linkedInUrl: dto.linkedInUrl ?? null,
             skills: [],
             availability: [],
-            user: { connect: { id: authId } },
-            updatedBy: { connect: { id: authId } },
+            updatedById: authId
           },
-          include: { user: true, updatedBy: true },
+          select: this.utilsService.getMentorProfileSelect()
+        });
+
+        for (const file of files) {
+          const fileExt = file.originalname.split('.').pop();
+          const filePath = `mentors/${authId}/${crypto.randomUUID()}.${fileExt}`;
+
+          const { error: uploadError } = await this.supabaseAdmin.storage
+            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
+            .upload(filePath, file.buffer, {
+              contentType: file.mimetype,
+              upsert: false,
+            });
+
+          if (uploadError) {
+            throw uploadError;
+          }
+
+          const { data: publicUrl } = this.supabase.storage
+            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
+            .getPublicUrl(filePath);
+
+          await tx.documentAttachment.create({
+            data: {
+              userId: authId,
+              bucketName: BUCKET_NAMES.MENTOR_DOCUMENTS,
+              storagePath: filePath,
+              publicUrl: publicUrl.publicUrl,
+              fileType: file.mimetype,
+              fileSize: file.size,
+              fileName: file.originalname,
+            },
+          });
+        }
+
+        await tx.logs.create({
+          data: {
+            actionType: LogsActionType.signup,
+            targetId: mentor.id,
+            details: `Mentor registration submitted for approval`,
+            metadata: {
+              role: UserRole.mentor,
+              areasOfExpertise: dto.areasOfExpertise,
+            },
+            ipAddress: ipAddress ?? '',
+            userAgent: userAgent ?? '',
+            createdById: mentor.id,
+          },
         });
 
         return { user: mentor, profile: mentorProfile };
       });
       
-
       return {
         status: AsyncStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTOR,
         data: {
-          auth: data,
-          user: transaction.user,
-          profile: transaction.profile
+          session: data.session,
+          user: transaction.profile
         }
       }
     } catch (error) {
       console.error(error);
       return {
         status: AsyncStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.REGISTER_MENTOR,
         data: error
       }
@@ -832,5 +933,92 @@ export class AuthService {
       delete sanitized[field];
     }
     return sanitized;
+  }
+
+  private validateMentorFields(dto: RegisterMentorDto, files: Express.Multer.File[]): {
+    valid: boolean; message?: string;
+  } {
+    // Required strings
+    if (!dto.firstName || !dto.lastName || !dto.email) {
+      return { valid: false, message: 'First name, last name, and email are required' };
+    }
+
+    if (!dto.password || !dto.confirmPassword) {
+      return { valid: false, message: 'Password and confirm password are required' };
+    }
+
+    // Email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(dto.email)) {
+      return { valid: false, message: 'Invalid email format' };
+    }
+
+    // Password rules
+    const passwordRegex =
+      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/;
+
+    if (!passwordRegex.test(dto.password)) {
+      return {
+        valid: false,
+        message:
+          'Password must be at least 8 characters and include uppercase, lowercase, number, and special character',
+      };
+    }
+
+    // Confirm password
+    if (dto.password !== dto.confirmPassword) {
+      return { valid: false, message: 'Passwords do not match' };
+    }
+
+    // Country & timezone
+    if (!dto.country || !dto.timezone) {
+      return { valid: false, message: 'Country and timezone are required' };
+    }
+
+    // Phone number (E.164)
+    const phoneRegex = /^\+\d{10,15}$/;
+    if (!phoneRegex.test(dto.phoneNumber)) {
+      return {
+        valid: false,
+        message: 'Phone number must be in E.164 format (e.g. +639123456789)',
+      };
+    }
+
+    // Areas of expertise
+    if (
+      !Array.isArray(dto.areasOfExpertise) ||
+      dto.areasOfExpertise.length === 0
+    ) {
+      return {
+        valid: false,
+        message: 'At least one area of expertise is required',
+      };
+    }
+
+    // Years of experience (0 is allowed)
+    if (dto.yearsOfExperience == null || dto.yearsOfExperience < 0) {
+      return {
+        valid: false,
+        message: 'Years of experience must be 0 or greater',
+      };
+    }
+
+    // LinkedIn URL (optional)
+    if (dto.linkedInUrl) {
+      try {
+        new URL(dto.linkedInUrl);
+      } catch {
+        return {
+          valid: false,
+          message: 'Invalid LinkedIn profile URL',
+        };
+      }
+    }
+
+    if (!files || files.length === 0) {
+      return { valid: false, message: 'At least one document file is required' };
+    }
+
+    return { valid: true };
   }
 }

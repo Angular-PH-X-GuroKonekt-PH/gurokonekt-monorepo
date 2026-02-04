@@ -42,6 +42,9 @@ export const RETURN_MESSAGES = {
     SIGNIN_ATTEMPT_USER_NOT_FOUND: 'Failed signin attempt: User not found',
     EMAIL_ALREADY_CONFIRMED: 'Email address is already confirmed',
     TOO_MANY_REQUESTS: 'Too many requests',
+    INVALID_EMAIL_FORMAT: 'Invalid email address',
+    INVALID_PASSWORD_FORMAT: 'Invalid password',
+    PASSWORD_MISMATCH: 'Password and confirm password do not match',
   },
   LINKS: {
     DEFAULT_REDIRECT_URL: 'https://google.com',
@@ -53,6 +56,11 @@ export const RESPONSE_STATUS = {
 }
 
 export const BUCKET_NAME = 'attachments';
+
+export const BUCKET_NAMES = {
+  AVATARS: 'avatars',
+  MENTOR_DOCUMENTS: 'mentor_documents'
+}
 
 export const DOCUMENTS_ALLOWED_TYPES = [
   'application/pdf',
