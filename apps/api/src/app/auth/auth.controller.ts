@@ -3,7 +3,6 @@ import { AuthService } from './auth.service';
 import { AsyncReturnDto } from '../dto/models.dto';
 import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
 import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
-import { FilesInterceptor } from '@nestjs/platform-express';
 import {
   SignUpDto,
   SignInDto,
@@ -21,6 +20,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
+import { MentorDocumentsInterceptor } from '../../common/interceptors/mentor-documents.interceptor';
 
 
 @ApiTags('auth')
@@ -50,30 +50,12 @@ export class AuthController {
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Register a new mentor' })
   @ApiResponse({ status: 200, description: 'Mentor created successfully', type: AsyncReturnDto })
-  @UseInterceptors(
-    FilesInterceptor('files', 5, {
-      limits: { fileSize: 10 * 1024 * 1024 },
-      fileFilter: (req, file, cb) => {
-        const allowedTypes = [
-          'application/pdf',
-          'image/png',
-          'image/jpeg',
-        ];
-        if (!allowedTypes.includes(file.mimetype)) {
-          return cb(
-            new Error('Only PDF, PNG, and JPEG files are allowed'),
-            false,
-          );
-        }
-        cb(null, true);
-      },
-    }),
-  )
+  @UseInterceptors(MentorDocumentsInterceptor)
   async registerMentor(
     @Body() input: RegisterMentorDto,
     @UploadedFiles() files: Express.Multer.File[],
     @Ip() ipAddress: string,
-    @Headers('user-agent') userAgent: string
+    @Headers('user-agent') userAgent: string,
   ) {
     return this.authService.registerMentor(input, files, ipAddress, userAgent);
   }
