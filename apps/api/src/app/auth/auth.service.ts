@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { BUCKET_NAMES, RETURN_MESSAGES } from '@gurokonekt/models/constants';
+import { BUCKET_NAMES } from '@gurokonekt/models/constants';
 import { ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
 import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
 import { PrismaService } from '../prisma/prisma.service';
@@ -11,7 +11,7 @@ import { SignInDto } from '../dto/auth';
 import { UtilsService } from '../../common/utils/utils.service';
 
 import { ResponseDto } from '@gurokonekt/be-models';
-import { ResponseStatus } from '@gurokonekt/models';
+import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, REDIRECT_LINKS, SIGN_IN_WITH_PASSWORD } from '@gurokonekt/models';
 
 @Injectable()
 export class AuthService {
@@ -28,8 +28,8 @@ export class AuthService {
     const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey || !serviceRoleKey) {
-      this.logger.error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
-      throw new Error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
+      this.logger.error(API_RESPONSE.ERROR.SUPABASE_CREDENTIALS_NOT_FOUND);
+      throw new Error(API_RESPONSE.ERROR.SUPABASE_CREDENTIALS_NOT_FOUND.message);
     }
 
     this.supabase = createClient(supabaseUrl, supabaseKey);
@@ -64,8 +64,8 @@ export class AuthService {
       if (existingUser) {
         return {
           status: ResponseStatus.Error,
-          statusCode: 409,
-          message: RETURN_MESSAGES.FAILURE.USER_ALREADY_EXISTS,
+          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
+          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
           data: null
         };
       }
@@ -85,8 +85,8 @@ export class AuthService {
       if (requiredFields.some(field => !field)) {
         return {
           status: ResponseStatus.Error,
-          statusCode: 400,
-          message: RETURN_MESSAGES.FAILURE.MISSING_REQUIRED_FIELDS,
+          statusCode: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.code,
+          message: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.message,
           data: null
         };
       }
@@ -101,8 +101,8 @@ export class AuthService {
         this.logger.error(error.message, error.stack);
         return {
           status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error
         }
       }
@@ -144,8 +144,8 @@ export class AuthService {
 
       return {
         status: ResponseStatus.Success,
-        statusCode: 201,
-        message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTEE,
+        statusCode: API_RESPONSE.SUCCESS.REGISTER_MENTEE.code,
+        message: API_RESPONSE.SUCCESS.REGISTER_MENTEE.message,
         data: {
           auth: data,
           user: this.sanitize(mentee, ['hashPassword'])
@@ -155,8 +155,8 @@ export class AuthService {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.REGISTER_MENTEE,
+        statusCode: API_RESPONSE.ERROR.REGISTER_MENTEE.code,
+        message: API_RESPONSE.ERROR.REGISTER_MENTEE.message,
         data: error
       }
     }
@@ -198,8 +198,8 @@ export class AuthService {
       if (existingUser) {
         return {
           status: ResponseStatus.Error,
-          statusCode: 409,
-          message: RETURN_MESSAGES.FAILURE.USER_ALREADY_EXISTS,
+          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
+          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
           data: null,
         };
       }
@@ -213,8 +213,8 @@ export class AuthService {
         this.logger.error(error.message, error.stack);
         return {
           status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error
         }
       }
@@ -308,8 +308,8 @@ export class AuthService {
       
       return {
         status: ResponseStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTOR,
+        statusCode: API_RESPONSE.SUCCESS.REGISTER_MENTOR.code,
+        message: API_RESPONSE.SUCCESS.REGISTER_MENTOR.message,
         data: {
           session: data.session,
           user: transaction.profile
@@ -319,8 +319,8 @@ export class AuthService {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.REGISTER_MENTOR,
+        statusCode: API_RESPONSE.ERROR.REGISTER_MENTOR.code,
+        message: API_RESPONSE.ERROR.REGISTER_MENTOR.message,
         data: error
       }
     }
@@ -340,12 +340,9 @@ export class AuthService {
    * */ 
   async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
-      const MAX_ATTEMPTS_PER_DAY = 3;
-      const MIN_INTERVAL_SECONDS = 60;
-
       const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
       const todayEnd = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
       todayEnd.setUTCHours(23, 59, 59, 999);
 
       // Count resend attempts today by email and IP
@@ -365,12 +362,13 @@ export class AuthService {
         },
       });
 
-      if (attemptsTodayByEmail >= MAX_ATTEMPTS_PER_DAY || attemptsTodayByIp >= MAX_ATTEMPTS_PER_DAY) {
+      if (attemptsTodayByEmail >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY || 
+          attemptsTodayByIp >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY) {
         await this.prisma.db.logs.create({
           data: {
             actionType: LogsActionType.resend_email_confirmation,
             targetId: "",
-            details: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
+            details: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -380,8 +378,8 @@ export class AuthService {
 
         return {
           status: ResponseStatus.Error,
-          statusCode: 429,
-          message: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
+          statusCode: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.code,
+          message: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
           data: null,
         };
       }
@@ -397,11 +395,11 @@ export class AuthService {
 
       if (lastAttempt) {
         const secondsSinceLast = (Date.now() - lastAttempt.createdAt.getTime()) / 1000;
-        if (secondsSinceLast < MIN_INTERVAL_SECONDS) {
+        if (secondsSinceLast < RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS) {
           return {
             status: ResponseStatus.Error,
             statusCode: 429,
-            message: `Please wait ${Math.ceil(MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
+            message: `Please wait ${Math.ceil(RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
             data: null,
           };
         }
@@ -415,8 +413,8 @@ export class AuthService {
       if (!user) {
         return {
           status: ResponseStatus.Error,
-          statusCode: 404,
-          message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
           data: input,
         };
       }
@@ -426,8 +424,8 @@ export class AuthService {
       if (fetchError || !userData) {
         return {
           status: ResponseStatus.Error,
-          statusCode: 404,
-          message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
           data: fetchError,
         };
       }
@@ -436,8 +434,8 @@ export class AuthService {
       if (userData.user.email_confirmed_at) {
         return {
           status: ResponseStatus.Error,
-          statusCode: 400,
-          message: RETURN_MESSAGES.FAILURE.EMAIL_ALREADY_CONFIRMED,
+          statusCode: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.code,
+          message: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.message,
           data: null,
         };
       }
@@ -449,7 +447,7 @@ export class AuthService {
         ...(input.options
           ? {
               options: {
-                emailRedirectTo: input.options.emailRedirectTo || RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL,
+                emailRedirectTo: input.options.emailRedirectTo || REDIRECT_LINKS.DEFAULT,
               },
             }
           : {}),
@@ -461,8 +459,8 @@ export class AuthService {
           actionType: LogsActionType.resend_email_confirmation,
           targetId: user.id,
           details: error
-            ? RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR
-            : RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
+            ? API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message
+            : API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.message,
           metadata: { email: input.email },
           ipAddress,
           userAgent,
@@ -473,60 +471,26 @@ export class AuthService {
       if (error) {
         return {
           status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error,
         };
       }
 
       return {
         status: ResponseStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
+        statusCode: API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.code,
+        message: API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.message,
         data: data || true,
       };
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error,
       };
-    }
-  }
-
-  async resendEmailChangeEmail(input: ResendEmailChangeEmail): Promise<ResponseDto> {
-    try {
-      const { data, error } = await this.supabase.auth.resend({
-        type: 'email_change',
-        email: input.email
-      });  
-
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-
-      return {
-        status: ResponseStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
-        data: data || true
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
     }
   }
 
@@ -539,7 +503,7 @@ export class AuthService {
               options: { 
                 redirectTo: 
                   input.options.emailRedirectTo || 
-                  RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL
+                  REDIRECT_LINKS.DEFAULT
               } 
             }
           : {})
@@ -549,24 +513,24 @@ export class AuthService {
         this.logger.error(error.message, error.stack);
         return {
           status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error
         }
       }
 
       return {
         status: ResponseStatus.Success,
-        statusCode: 201,
-        message: RETURN_MESSAGES.SUCCESS.SIGN_UP_SUCCESS,
+        statusCode: API_RESPONSE.SUCCESS.SIGN_WITH_OATH.code,
+        message: API_RESPONSE.SUCCESS.SIGN_WITH_OATH.message,
         data: data
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error
       }
     }
@@ -583,16 +547,15 @@ export class AuthService {
   async signInWithPassword(input: SignInDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
       const todayEnd = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
       todayEnd.setUTCHours(23, 59, 59, 999);
-      const MAX_ATTEMPTS = 3;
 
       const failedMessages = [
-        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
-        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
-        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
-        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS
+        API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
+        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
+        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
       ]
 
       // Check failed attempts in logs
@@ -618,12 +581,14 @@ export class AuthService {
         },
       });
 
-      if (failedByEmail >= MAX_ATTEMPTS || failedByIp >= MAX_ATTEMPTS) {
+      if (failedByEmail >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY || 
+        failedByIp >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY) {
+        
         await this.prisma.db.logs.create({
           data: {
             actionType: LogsActionType.signin,
             targetId: "",
-            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
+            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -633,8 +598,8 @@ export class AuthService {
         
         return {
           status: ResponseStatus.Error,
-          statusCode: 429,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
+          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.code,
+          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
           data: null
         };
       }
@@ -650,7 +615,7 @@ export class AuthService {
           data: {
             actionType: LogsActionType.signin,
             targetId: "",
-            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
+            details: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent
@@ -659,8 +624,8 @@ export class AuthService {
 
         return {
           status: ResponseStatus.Error,
-          statusCode: 401,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.code,
+          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
           data: null
         };
       }
@@ -678,7 +643,7 @@ export class AuthService {
             data: {
               actionType: LogsActionType.signin,
               targetId: user.id,
-              details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+              details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
               metadata: { email: input.email },
               ipAddress,
               userAgent,
@@ -688,8 +653,8 @@ export class AuthService {
         
           return {
             status: ResponseStatus.Error,
-            statusCode: 403,
-            message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+            statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.code,
+            message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
             data: null
           };
         }
@@ -699,7 +664,7 @@ export class AuthService {
           data: {
             actionType: LogsActionType.signin,
             targetId: user.id,
-            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -709,8 +674,8 @@ export class AuthService {
 
         return {
           status: ResponseStatus.Error,
-          statusCode: 401,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.code,
+          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
           data: null
         };
       }
@@ -721,7 +686,7 @@ export class AuthService {
           data: {
             actionType: LogsActionType.signin,
             targetId: user.id,
-            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -731,8 +696,8 @@ export class AuthService {
 
         return {
           status: ResponseStatus.Error,
-          statusCode: 403,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.code,
+          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
           data: null
         };
       }
@@ -742,7 +707,7 @@ export class AuthService {
         data: {
           actionType: LogsActionType.signin,
           targetId: user.id,
-          details: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
+          details: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
           metadata: { email: input.email },
           ipAddress,
           userAgent,
@@ -758,8 +723,8 @@ export class AuthService {
 
       return {
         status: ResponseStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
+        statusCode: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.code,
+        message: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
         data: {
           user: userData,
           session: data.session
@@ -769,103 +734,10 @@ export class AuthService {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error
       };
-    }
-  }
-
-  async updateEmailForAnAuthenticatedUser(input: UpdateEmailForAnAuthenticatedUser): Promise<ResponseDto> {
-    try {
-      const { data, error } = await this.supabase.auth.updateUser({
-        email: input.email
-      });
-
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-
-      return {
-        status: ResponseStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.EMAIL_UPDATED,
-        data: data
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
-    }
-  }
-
-  async updatePasswordForAnAuthenticatedUser(input: UpdatePasswordForAnAuthenticatedUser): Promise<ResponseDto> {
-    try {
-      const { data, error } = await this.supabase.auth.updateUser({
-        password: input.password
-      });
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-      return {
-        status: ResponseStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.PASSWORD_UPDATED,
-        data: data
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
-    }
-  }
-
-  async getUserAuth(): Promise<ResponseDto> {
-    try {
-      const { data, error } = await this.supabase.auth.getUser();
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-      return {
-        status: ResponseStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.USER_AUTH_RETRIEVED,
-        data: data
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
     }
   }
 
@@ -876,23 +748,23 @@ export class AuthService {
         this.logger.error(error.message, error.stack);
         return {
           status: ResponseStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error
         }
       }
       return {
         status: ResponseStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.SIGN_OUT_SUCCESS,
+        statusCode: API_RESPONSE.SUCCESS.SIGN_OUT.code,
+        message: API_RESPONSE.SUCCESS.SIGN_OUT.message,
         data: true
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error
       }
     }

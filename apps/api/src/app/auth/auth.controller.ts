@@ -28,13 +28,6 @@ import { MentorDocumentsInterceptor } from '../../common/interceptors/mentor-doc
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('signup')
-  @ApiOperation({ summary: 'Sign up a new user' })
-  @ApiResponse({ status: 200, description: 'User signed up successfully', type: AsyncReturnDto })
-  async signUp(@Body() input: SignUpDto) {
-    return this.authService.signUpWithEmailPassword(input);
-  }
-
   @Post('register-mentee')
   @ApiOperation({ summary: 'Register a new mentee' })
   @ApiResponse({ status: 200, description: 'Mentee created successfully', type: AsyncReturnDto })
@@ -87,19 +80,5 @@ export class AuthController {
     @Headers('user-agent') userAgent: string
   ) {
     return this.authService.resendEmailSignUpConfirmation(input, ipAddress, userAgent);
-  }
-
-  @Post('resend-change-email')
-  @ApiOperation({ summary: 'Resend email change confirmation' })
-  @ApiResponse({ status: 200, type: AsyncReturnDto })
-  async resendChangeEmail(@Body() input: ResendChangeEmailDto) {
-    return this.authService.resendEmailChangeEmail(input);
-  }
-
-  @Get('me')
-  @ApiOperation({ summary: 'Get currently authenticated user' })
-  @ApiResponse({ status: 200, type: AsyncReturnDto })
-  async me() {
-    return this.authService.getUserAuth();
   }
 }

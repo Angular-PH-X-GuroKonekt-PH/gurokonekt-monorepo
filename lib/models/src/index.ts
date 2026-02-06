@@ -10,3 +10,4 @@ export * from './lib/api/attachments/avatars';
 export * from './lib/api/attachments/documents';
 
 export * from './lib/api/response/response.interface'
+export * from './lib/api/contants/contants.const'
