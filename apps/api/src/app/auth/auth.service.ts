@@ -1,15 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import { BUCKET_NAMES, RETURN_MESSAGES } from '@gurokonekt/models/constants';
-import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
+import { ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
 import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import { LogsActionType, UserRole, UserStatus } from '@prisma/client';
 import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 import bcrypt from "bcrypt";
-import { AsyncReturnDto } from '../dto/models.dto';
 import { SignInDto } from '../dto/auth';
 import { UtilsService } from '../../common/utils/utils.service';
+
+import { ResponseDto } from '@gurokonekt/be-models';
+import { ResponseStatus } from '@gurokonekt/models';
 
 @Injectable()
 export class AuthService {
@@ -39,45 +41,6 @@ export class AuthService {
     });
   }
 
-  async signUpWithEmailPassword(input: SignUpInputInterface): Promise<AsyncReturn> {
-    try {
-      const { data, error } = await this.supabase.auth.signUp({
-        email: input.email,
-        password: input.password,
-        ...(input.options
-          ? { 
-              options: { 
-                emailRedirectTo: 
-                  input.options.emailRedirectTo || 
-                  RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL
-              } 
-            }
-          : {}),
-      });   
-
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-      return {
-        status: AsyncStatus.Success,
-        message: RETURN_MESSAGES.SUCCESS.SIGN_UP_SUCCESS,
-        data: data
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: AsyncStatus.Error,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
-    }
-  }
-
   // register mentee
   /**
    * Flow:
@@ -91,7 +54,7 @@ export class AuthService {
    * 8. confirmation email will be sent automatically after signup as per the 
    *    configuration in the supabase authentication
    * */ 
-  async registerMentee(dto: RegisterMenteeDto, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
+  async registerMentee(dto: RegisterMenteeDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       // Check if user already exists in DB
       const existingUser = await this.prisma.db.user.findUnique({
@@ -100,7 +63,7 @@ export class AuthService {
 
       if (existingUser) {
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 409,
           message: RETURN_MESSAGES.FAILURE.USER_ALREADY_EXISTS,
           data: null
@@ -121,7 +84,7 @@ export class AuthService {
 
       if (requiredFields.some(field => !field)) {
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 400,
           message: RETURN_MESSAGES.FAILURE.MISSING_REQUIRED_FIELDS,
           data: null
@@ -137,7 +100,7 @@ export class AuthService {
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
@@ -180,7 +143,7 @@ export class AuthService {
       });
 
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
         statusCode: 201,
         message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTEE,
         data: {
@@ -191,7 +154,7 @@ export class AuthService {
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
         statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.REGISTER_MENTEE,
         data: error
@@ -225,7 +188,7 @@ export class AuthService {
    * 9. save the data to the DocumentAttachment table 
    * 10. if error occured, return error else return success with status 200
    * */ 
-  async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
+  async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       // Check if user already exists
       const existingUser = await this.prisma.db.user.findUnique({
@@ -234,7 +197,7 @@ export class AuthService {
 
       if (existingUser) {
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 409,
           message: RETURN_MESSAGES.FAILURE.USER_ALREADY_EXISTS,
           data: null,
@@ -249,7 +212,7 @@ export class AuthService {
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
@@ -344,7 +307,7 @@ export class AuthService {
       });
       
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
         statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTOR,
         data: {
@@ -355,7 +318,7 @@ export class AuthService {
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
         statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.REGISTER_MENTOR,
         data: error
@@ -375,7 +338,7 @@ export class AuthService {
    * 8. if confirmed return error else send confirmation email
    * 9. save the activity to logs
    * */ 
-  async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
+  async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       const MAX_ATTEMPTS_PER_DAY = 3;
       const MIN_INTERVAL_SECONDS = 60;
@@ -416,7 +379,7 @@ export class AuthService {
         });
 
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 429,
           message: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
           data: null,
@@ -436,7 +399,7 @@ export class AuthService {
         const secondsSinceLast = (Date.now() - lastAttempt.createdAt.getTime()) / 1000;
         if (secondsSinceLast < MIN_INTERVAL_SECONDS) {
           return {
-            status: AsyncStatus.Error,
+            status: ResponseStatus.Error,
             statusCode: 429,
             message: `Please wait ${Math.ceil(MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
             data: null,
@@ -451,7 +414,7 @@ export class AuthService {
 
       if (!user) {
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 404,
           message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
           data: input,
@@ -462,7 +425,7 @@ export class AuthService {
       
       if (fetchError || !userData) {
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 404,
           message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
           data: fetchError,
@@ -472,7 +435,7 @@ export class AuthService {
       // Check if email is already confirmed
       if (userData.user.email_confirmed_at) {
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 400,
           message: RETURN_MESSAGES.FAILURE.EMAIL_ALREADY_CONFIRMED,
           data: null,
@@ -509,7 +472,7 @@ export class AuthService {
 
       if (error) {
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error,
@@ -517,7 +480,7 @@ export class AuthService {
       }
 
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
         statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
         data: data || true,
@@ -525,7 +488,7 @@ export class AuthService {
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
         statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error,
@@ -533,7 +496,7 @@ export class AuthService {
     }
   }
 
-  async resendEmailChangeEmail(input: ResendEmailChangeEmail): Promise<AsyncReturn> {
+  async resendEmailChangeEmail(input: ResendEmailChangeEmail): Promise<ResponseDto> {
     try {
       const { data, error } = await this.supabase.auth.resend({
         type: 'email_change',
@@ -543,28 +506,31 @@ export class AuthService {
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
         }
       }
 
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
         data: data || true
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error
       }
     }
   }
 
-  async signInWithOAuth(input: SignInWithOAth): Promise<AsyncReturn> {
+  async signInWithOAuth(input: SignInWithOAth): Promise<ResponseDto> {
     try {
       const { data, error } = await this.supabase.auth.signInWithOAuth({
         provider: input.provider,
@@ -582,21 +548,24 @@ export class AuthService {
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
         }
       }
 
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
+        statusCode: 201,
         message: RETURN_MESSAGES.SUCCESS.SIGN_UP_SUCCESS,
         data: data
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error
       }
@@ -611,7 +580,7 @@ export class AuthService {
    * 4. check if user email is verified if false then return 403
    * 5. if all checks passed return success with status 200
    * */ 
-  async signInWithPassword(input: SignInDto, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
+  async signInWithPassword(input: SignInDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       const todayStart = new Date();
       todayStart.setUTCHours(0, 0, 0, 0);
@@ -663,7 +632,7 @@ export class AuthService {
         });
         
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 429,
           message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
           data: null
@@ -689,7 +658,7 @@ export class AuthService {
         });
 
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 401,
           message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
           data: null
@@ -718,7 +687,7 @@ export class AuthService {
           });
         
           return {
-            status: AsyncStatus.Error,
+            status: ResponseStatus.Error,
             statusCode: 403,
             message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
             data: null
@@ -739,7 +708,7 @@ export class AuthService {
         });
 
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 401,
           message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
           data: null
@@ -761,7 +730,7 @@ export class AuthService {
         });
 
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
           statusCode: 403,
           message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
           data: null
@@ -788,7 +757,7 @@ export class AuthService {
       });
 
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
         statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
         data: {
@@ -799,7 +768,7 @@ export class AuthService {
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
         statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error
@@ -807,7 +776,7 @@ export class AuthService {
     }
   }
 
-  async updateEmailForAnAuthenticatedUser(input: UpdateEmailForAnAuthenticatedUser): Promise<AsyncReturn> {
+  async updateEmailForAnAuthenticatedUser(input: UpdateEmailForAnAuthenticatedUser): Promise<ResponseDto> {
     try {
       const { data, error } = await this.supabase.auth.updateUser({
         email: input.email
@@ -816,28 +785,31 @@ export class AuthService {
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
         }
       }
 
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.EMAIL_UPDATED,
         data: data
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error
       }
     }
   }
 
-  async updatePasswordForAnAuthenticatedUser(input: UpdatePasswordForAnAuthenticatedUser): Promise<AsyncReturn> {
+  async updatePasswordForAnAuthenticatedUser(input: UpdatePasswordForAnAuthenticatedUser): Promise<ResponseDto> {
     try {
       const { data, error } = await this.supabase.auth.updateUser({
         password: input.password
@@ -845,72 +817,81 @@ export class AuthService {
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
         }
       }
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.PASSWORD_UPDATED,
         data: data
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error
       }
     }
   }
 
-  async getUserAuth(): Promise<AsyncReturn> {
+  async getUserAuth(): Promise<ResponseDto> {
     try {
       const { data, error } = await this.supabase.auth.getUser();
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
         }
       }
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.USER_AUTH_RETRIEVED,
         data: data
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error
       }
     }
   }
 
-  async signOut(): Promise<AsyncReturn> {
+  async signOut(): Promise<ResponseDto> {
     try {
       const { error } = await this.supabase.auth.signOut();
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
+          status: ResponseStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
         }
       }
       return {
-        status: AsyncStatus.Success,
+        status: ResponseStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.SIGN_OUT_SUCCESS,
         data: true
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
+        status: ResponseStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
         data: error
       }
