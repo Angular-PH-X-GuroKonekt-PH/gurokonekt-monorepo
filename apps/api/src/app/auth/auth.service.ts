@@ -1,18 +1,20 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { RETURN_MESSAGES } from '@gurokonekt/models/constants';
-import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser, LogsActionType, UserRole, UserStatus } from '@gurokonekt/models';
+import { BUCKET_NAMES, RETURN_MESSAGES } from '@gurokonekt/models/constants';
+import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser, LogsActionType, UserRole, UserStatus } from '@gurokonekt/models';
 import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
 import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 import { PrismaService } from '../prisma/prisma.service';
 import bcrypt from "bcrypt";
 import { AsyncReturnDto } from '../dto/models.dto';
 import { SignInDto } from '../dto/auth';
-import { UtilsService } from '../../utils/utils.service';
+import { UtilsService } from '../../common/utils/utils.service';
 
 @Injectable()
 export class AuthService {
   private supabase: SupabaseClient;
+  private supabaseAdmin: SupabaseClient;
+  private readonly logger = new Logger(AuthService.name);
 
   constructor(
     private readonly prisma: PrismaService,
@@ -20,12 +22,20 @@ export class AuthService {
   ) {
     const supabaseUrl = process.env.SUPABASE_URL;
     const supabaseKey = process.env.SUPABASE_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-    if (supabaseUrl && supabaseKey) {
-      this.supabase = createClient(supabaseUrl, supabaseKey);
-    } else {
+    if (!supabaseUrl || !supabaseKey || !serviceRoleKey) {
+      this.logger.error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
       throw new Error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
     }
+
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
+      auth: {
+        autoRefreshToken: false,
+        persistSession: false,
+      },
+    });
   }
 
   async signUpWithEmailPassword(input: SignUpInputInterface): Promise<AsyncReturn> {
@@ -45,7 +55,7 @@ export class AuthService {
       });   
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -58,7 +68,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -124,7 +134,7 @@ export class AuthService {
       });   
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           statusCode: 500,
@@ -187,7 +197,7 @@ export class AuthService {
         }
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         statusCode: 500,
@@ -198,17 +208,57 @@ export class AuthService {
   }
 
   // register mentor
-  async registerMentor(dto: RegisterMentorDto): Promise<AsyncReturn> {
+  /**
+   * Flow: 
+   * 1. check if user exist in user table
+   * 2. if exist return error else continue
+   * 3. check if required fields are present
+   * 4. if missing return error else continue
+   * 5. check fields are valid:
+   *  - email format
+   *  - valid phone number and unique with pattern +[country code][number]
+   *  - enters a valid Password (min 8 chars, must include uppercase + number + special character)
+   *  - enters a valid Confirm Password (must match)
+   *  - selects a valid Country
+   *  - selects a valid Timezone
+   *  - can optionally select Preferred Language (with default English)
+   *  - can select multiple Areas of expertise (must select at least one)
+   *  - enters Years of Expertise
+   *  - enters LinkedIn Profile URL (optional)
+   *  - Uploads verification documents (accepts pdf & image format only, max. 10MB)
+   *  - checks the Accept Terms & Conditions (checkbox)
+   * 6. if invalid return error else continue
+   * 7. register mentor in auth and user and MentorProfile table with user status pending_approval
+   * 8. uploaded file to 'mentor_documents' bucket in supabase storage
+   * 9. save the data to the DocumentAttachment table 
+   * 10. if error occured, return error else return success with status 200
+   * */ 
+  async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
     try {
+      // Check if user already exists
+      const existingUser = await this.prisma.db.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (existingUser) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 409,
+          message: RETURN_MESSAGES.FAILURE.USER_ALREADY_EXISTS,
+          data: null,
+        };
+      }
+
       const { data, error } = await this.supabase.auth.signUp({
         email: dto.email,
         password: dto.password
       });   
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
           data: error
         }
@@ -218,6 +268,7 @@ export class AuthService {
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          statusCode: 500,
           data: 'User ID not found in authentication response'
         };
       }
@@ -234,89 +285,268 @@ export class AuthService {
             suffix: dto.suffix ?? null,
             email: dto.email,
             country: dto.country,
-            language: dto.language ?? null,
-            timezone: dto.timezone ?? null,
-            phoneNumber: dto.phoneNumber ?? null,
+            language: dto.language ?? 'en',
+            timezone: dto.timezone,
+            phoneNumber: dto.phoneNumber,
             hashPassword: hashPassword,
             role: UserRole.Mentor,
             status: UserStatus.PendingApproval,
             createdById: authId,
             updatedById: authId
           },
+          select: this.utilsService.getUserCredentialsSelect()
         });
 
         const mentorProfile = await tx.mentorProfile.create({
           data: {
+            userId: authId,
+            areasOfExpertise: dto.areasOfExpertise,
             yearsOfExperience: dto.yearsOfExperience ?? null,
             linkedInUrl: dto.linkedInUrl ?? null,
             skills: [],
             availability: [],
-            user: { connect: { id: authId } },
-            updatedBy: { connect: { id: authId } },
+            updatedById: authId
           },
-          include: { user: true, updatedBy: true },
+          select: this.utilsService.getMentorProfileSelect()
+        });
+
+        for (const file of files) {
+          const fileExt = file.originalname.split('.').pop();
+          const filePath = `mentors/${authId}/${crypto.randomUUID()}.${fileExt}`;
+
+          const { error: uploadError } = await this.supabaseAdmin.storage
+            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
+            .upload(filePath, file.buffer, {
+              contentType: file.mimetype,
+              upsert: false,
+            });
+
+          if (uploadError) {
+            throw uploadError;
+          }
+
+          const { data: publicUrl } = this.supabase.storage
+            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
+            .getPublicUrl(filePath);
+
+          await tx.documentAttachment.create({
+            data: {
+              userId: authId,
+              bucketName: BUCKET_NAMES.MENTOR_DOCUMENTS,
+              storagePath: filePath,
+              publicUrl: publicUrl.publicUrl,
+              fileType: file.mimetype,
+              fileSize: file.size,
+              fileName: file.originalname,
+            },
+          });
+        }
+
+        await tx.logs.create({
+          data: {
+            actionType: LogsActionType.SignUp,
+            targetId: mentor.id,
+            details: `Mentor registration submitted for approval`,
+            metadata: {
+              role: UserRole.Mentor,
+              areasOfExpertise: dto.areasOfExpertise,
+            },
+            ipAddress: ipAddress ?? '',
+            userAgent: userAgent ?? '',
+            createdById: mentor.id,
+          },
         });
 
         return { user: mentor, profile: mentorProfile };
       });
       
-
       return {
         status: AsyncStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTOR,
         data: {
-          auth: data,
-          user: transaction.user,
-          profile: transaction.profile
+          session: data.session,
+          user: transaction.profile
         }
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.REGISTER_MENTOR,
         data: error
       }
     }
   }
 
-  async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation): Promise<AsyncReturn> {
+  /**
+   * Flow:
+   * 1. check if request > 3 times in a day from the same ip or email
+   * 2. if true return 429 else continue
+   * 3. check if request duration < 60s from the last request
+   * 4. if true return 429 else continue
+   * 5. check if user exist in users db
+   * 6. if not exist return error else continue
+   * 7. check if user is already confirmed
+   * 8. if confirmed return error else send confirmation email
+   * 9. save the activity to logs
+   * */ 
+  async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
     try {
+      const MAX_ATTEMPTS_PER_DAY = 3;
+      const MIN_INTERVAL_SECONDS = 60;
+
+      const todayStart = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      const todayEnd = new Date();
+      todayEnd.setUTCHours(23, 59, 59, 999);
+
+      // Count resend attempts today by email and IP
+      const attemptsTodayByEmail = await this.prisma.db.logs.count({
+        where: {
+          actionType: LogsActionType.ResendEmail,
+          metadata: { path: ['email'], equals: input.email },
+          createdAt: { gte: todayStart, lte: todayEnd },
+        },
+      });
+
+      const attemptsTodayByIp = await this.prisma.db.logs.count({
+        where: {
+          actionType: LogsActionType.ResendEmail,
+          ipAddress,
+          createdAt: { gte: todayStart, lte: todayEnd },
+        },
+      });
+
+      if (attemptsTodayByEmail >= MAX_ATTEMPTS_PER_DAY || attemptsTodayByIp >= MAX_ATTEMPTS_PER_DAY) {
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.ResendEmail,
+            targetId: "",
+            details: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
+            metadata: { email: input.email },
+            ipAddress,
+            userAgent,
+            createdById: null
+          }
+        });
+
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 429,
+          message: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
+          data: null,
+        };
+      }
+
+      // Check last attempt time
+      const lastAttempt = await this.prisma.db.logs.findFirst({
+        where: {
+          actionType: LogsActionType.ResendEmail,
+          metadata: { path: ['email'], equals: input.email },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (lastAttempt) {
+        const secondsSinceLast = (Date.now() - lastAttempt.createdAt.getTime()) / 1000;
+        if (secondsSinceLast < MIN_INTERVAL_SECONDS) {
+          return {
+            status: AsyncStatus.Error,
+            statusCode: 429,
+            message: `Please wait ${Math.ceil(MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
+            data: null,
+          };
+        }
+      }
+
+      // Check user in DB
+      const user = await this.prisma.db.user.findUnique({
+        where: { email: input.email },
+      });
+
+      if (!user) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 404,
+          message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
+          data: input,
+        };
+      }
+
+      const { data: userData, error: fetchError } = await this.supabaseAdmin.auth.admin.getUserById(user.id);
+      
+      if (fetchError || !userData) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 404,
+          message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
+          data: fetchError,
+        };
+      }
+
+      // Check if email is already confirmed
+      if (userData.user.email_confirmed_at) {
+        return {
+          status: AsyncStatus.Error,
+          statusCode: 400,
+          message: RETURN_MESSAGES.FAILURE.EMAIL_ALREADY_CONFIRMED,
+          data: null,
+        };
+      }
+
+      // Resend email via Supabase
       const { data, error } = await this.supabase.auth.resend({
         type: 'signup',
         email: input.email,
         ...(input.options
-          ? { 
-              options: { 
-                emailRedirectTo: 
-                  input.options.emailRedirectTo || 
-                  RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL
-              } 
+          ? {
+              options: {
+                emailRedirectTo: input.options.emailRedirectTo || RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL,
+              },
             }
           : {}),
-      });  
+      });
+
+      // Log the attempt
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.ResendEmail,
+          targetId: user.id,
+          details: error
+            ? RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR
+            : RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
+          metadata: { email: input.email },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
+        },
+      });
 
       if (error) {
-        console.error(error);
         return {
           status: AsyncStatus.Error,
+          statusCode: 500,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
+          data: error,
+        };
       }
 
       return {
         status: AsyncStatus.Success,
+        statusCode: 200,
         message: RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
-        data: data || true
-      }
+        data: data || true,
+      };
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
+        statusCode: 500,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
+        data: error,
+      };
     }
   }
 
@@ -328,7 +558,7 @@ export class AuthService {
       });  
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -342,7 +572,7 @@ export class AuthService {
         data: data || true
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -367,7 +597,7 @@ export class AuthService {
       });   
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -381,7 +611,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -584,7 +814,7 @@ export class AuthService {
         }
       };
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         statusCode: 500,
@@ -601,7 +831,7 @@ export class AuthService {
       });
 
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -615,7 +845,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -630,7 +860,7 @@ export class AuthService {
         password: input.password
       });
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -643,7 +873,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -656,7 +886,7 @@ export class AuthService {
     try {
       const { data, error } = await this.supabase.auth.getUser();
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -669,7 +899,7 @@ export class AuthService {
         data: data
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -682,7 +912,7 @@ export class AuthService {
     try {
       const { error } = await this.supabase.auth.signOut();
       if (error) {
-        console.error(error);
+        this.logger.error(error.message, error.stack);
         return {
           status: AsyncStatus.Error,
           message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
@@ -695,7 +925,7 @@ export class AuthService {
         data: true
       }
     } catch (error) {
-      console.error(error);
+      this.logger.error(error.message, error.stack);
       return {
         status: AsyncStatus.Error,
         message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,

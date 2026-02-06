@@ -47,6 +47,7 @@ enum LogsActionType {
   signin
   signup
   signout
+  resend_email_confirmation
 
   @@map("logs_action_type")
 }

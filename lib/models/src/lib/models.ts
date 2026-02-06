@@ -54,4 +54,5 @@ export enum LogsActionType {
   Signin = "signin",
   SignUp = "signup",
   Signout = "signout",
+  ResendEmail = "resend_email_confirmation",
 }
