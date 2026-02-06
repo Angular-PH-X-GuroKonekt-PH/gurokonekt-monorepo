@@ -9,17 +9,17 @@ export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
 
   constructor() {
-    const cloudSupabaseUrl = process.env.CLOUD_SUPABASE_URL;
-    const cloudSupabaseKey = process.env.CLOUD_SUPABASE_ANON_KEY;
-    const cloudServiceRoleKey = process.env.CLOUD_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.TEST_SUPABASE_URL;
+    const supabaseKey = process.env.TEST_SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY;
 
-    if (!cloudSupabaseUrl || !cloudSupabaseKey || !cloudServiceRoleKey) {
+    if (!supabaseUrl || !supabaseKey || !serviceRoleKey) {
       this.logger.error(API_RESPONSE.ERROR.SUPABASE_CREDENTIALS_NOT_FOUND);
       throw new Error(API_RESPONSE.ERROR.SUPABASE_CREDENTIALS_NOT_FOUND.message);
     }
 
-    this.supabase = createClient(cloudSupabaseUrl, cloudSupabaseKey);
-    this.supabaseAdmin = createClient(cloudSupabaseUrl, cloudServiceRoleKey, {
+    this.supabase = createClient(supabaseUrl, supabaseKey);
+    this.supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
       auth: {
         autoRefreshToken: false,
         persistSession: false,
