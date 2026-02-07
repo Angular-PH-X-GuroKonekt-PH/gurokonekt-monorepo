@@ -1,26 +1,15 @@
 import { ApiTags, ApiOperation, ApiResponse, ApiConsumes } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
-import { AsyncReturnDto } from '../dto/models.dto';
-import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
-import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
-import {
-  SignUpDto,
-  SignInDto,
-  ResendSignUpDto,
-  ResendChangeEmailDto,
-  SignInWithOAuthDto
-} from '../dto/auth'
 import {
   Controller,
   Post,
-  Get,
   Body,
   Ip,
   Headers,
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { MentorDocumentsInterceptor } from '../../common/interceptors/mentor-documents.interceptor';
+import { MentorDocumentsInterceptor, RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/be-models';
 
 
 @ApiTags('auth')
@@ -30,7 +19,7 @@ export class AuthController {
 
   @Post('register-mentee')
   @ApiOperation({ summary: 'Register a new mentee' })
-  @ApiResponse({ status: 200, description: 'Mentee created successfully', type: AsyncReturnDto })
+  @ApiResponse({ status: 200, description: 'Mentee created successfully', type: ResponseDto })
   async registerMentee(
     @Body() input: RegisterMenteeDto,
     @Ip() ipAddress: string,
@@ -42,7 +31,7 @@ export class AuthController {
   @Post('register-mentor')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Register a new mentor' })
-  @ApiResponse({ status: 200, description: 'Mentor created successfully', type: AsyncReturnDto })
+  @ApiResponse({ status: 200, description: 'Mentor created successfully', type: ResponseDto })
   @UseInterceptors(MentorDocumentsInterceptor)
   async registerMentor(
     @Body() input: RegisterMentorDto,
@@ -55,9 +44,9 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Sign in with email/password' })
-  @ApiResponse({ status: 200, description: 'User signed in successfully', type: AsyncReturnDto })
+  @ApiResponse({ status: 200, description: 'User signed in successfully', type: ResponseDto })
   async signIn(
-    @Body() input: SignInDto,
+    @Body() input: SignInWithPasswordDto,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string
   ) {
@@ -66,16 +55,16 @@ export class AuthController {
 
   @Post('signin/oauth')
   @ApiOperation({ summary: 'Sign in with OAuth provider' })
-  @ApiResponse({ status: 200, type: AsyncReturnDto })
-  async signInWithOAuth(@Body() input: SignInWithOAuthDto) {
+  @ApiResponse({ status: 200, type: ResponseDto })
+  async signInWithOAuth(@Body() input: SignInWithOAthDto) {
     return this.authService.signInWithOAuth(input);
   }
 
-  @Post('resend-otp')
+  @Post('resend-confirmation-link')
   @ApiOperation({ summary: 'Resend sign-up confirmation email' })
-  @ApiResponse({ status: 200, type: AsyncReturnDto })
+  @ApiResponse({ status: 200, type: ResponseDto })
   async resendSignUp(
-    @Body() input: ResendSignUpDto,
+    @Body() input: ResendConfirmationEmailDto,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string
   ) {

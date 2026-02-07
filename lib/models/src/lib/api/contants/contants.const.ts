@@ -97,6 +97,22 @@ export const API_RESPONSE = {
       code:  429,
       message: 'Too many failed login attempts. Try again later.',
     },
+    PASSWORD_REGEX_MISMATCH: {
+      code:  400,
+      message: 'Minimum 8 characters, must include uppercase, lowercase, number, and symbol',
+    },
+    PASSWORD_MISMATCH: {
+      code:  400,
+      message: 'Must match the password field',
+    },
+    INVALID_PHONE_FORMAT: {
+      code:  400,
+      message: 'Invalid phone format',
+    },
+    INVALID_URL: {
+      code:  400,
+      message: 'Invalid URL',
+    },
 
     /**
      * STORAGE

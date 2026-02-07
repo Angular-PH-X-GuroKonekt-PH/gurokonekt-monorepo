@@ -1,22 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
-import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
-
-import { LogsActionType, UserRole, UserStatus } from '@prisma/client';
-import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
-import bcrypt from "bcrypt";
-import { SignInDto } from '../dto/auth';
-
-import { ResponseDto, SelectFields } from '@gurokonekt/be-models';
-import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, REDIRECT_LINKS, SIGN_IN_WITH_PASSWORD, BUCKET_NAMES } from '@gurokonekt/models';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/be-models';
+import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, 
+  SIGN_IN_WITH_PASSWORD, UserRole, UserStatus, LogsActionType, 
+  ResendOTPTypes
+} from '@gurokonekt/models';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import bcrypt from "bcrypt";
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
-  private selectFields = new SelectFields();
   constructor(
     private readonly prisma: PrismaService,
     private readonly supabase: SupabaseService,
@@ -58,6 +53,7 @@ export class AuthService {
         dto.lastName,
         dto.email,
         dto.password,
+        dto.confirmPassword,
         dto.country,
         dto.language,
         dto.timezone,
@@ -104,18 +100,18 @@ export class AuthService {
           timezone: dto.timezone ?? null,
           phoneNumber: dto.phoneNumber ?? null,
           hashPassword: hashPassword,
-          role: UserRole.mentee,
-          status: UserStatus.active,
+          role: UserRole.Mentee,
+          status: UserStatus.Active,
           createdById: authId,
           updatedById: authId
         },
-        select: this.selectFields.getUserCredentialsSelect()
+        select: SelectFields.getUserCredentialsSelect()
       });
 
       // save activity to logs
       await this.prisma.db.logs.create({
         data: {
-          actionType: LogsActionType.signup,
+          actionType: LogsActionType.SignUp,
           targetId: mentee.id, 
           details: `Mentee account registered with email: ${mentee.email}`,
           metadata: { role: mentee.role },
@@ -218,12 +214,12 @@ export class AuthService {
             timezone: dto.timezone,
             phoneNumber: dto.phoneNumber,
             hashPassword: hashPassword,
-            role: UserRole.mentor,
-            status: UserStatus.pending_approval,
+            role: UserRole.Mentor,
+            status: UserStatus.PendingApproval,
             createdById: authId,
             updatedById: authId
           },
-          select: this.selectFields.getUserCredentialsSelect()
+          select: SelectFields.getUserCredentialsSelect()
         });
 
         const mentorProfile = await tx.mentorProfile.create({
@@ -236,16 +232,16 @@ export class AuthService {
             availability: [],
             updatedById: authId
           },
-          select: this.selectFields.getMentorProfileSelect()
+          select: SelectFields.getMentorProfileSelect()
         });
 
         await tx.logs.create({
           data: {
-            actionType: LogsActionType.signup,
+            actionType: LogsActionType.SignUp,
             targetId: mentor.id,
             details: `Mentor registration submitted for approval`,
             metadata: {
-              role: UserRole.mentor,
+              role: UserRole.Mentor,
               areasOfExpertise: dto.areasOfExpertise,
             },
             ipAddress: ipAddress ?? '',
@@ -262,7 +258,7 @@ export class AuthService {
         uploadResult = await this.storage.uploadDocument(
           files,
           authId,
-          UserRole.mentor,
+          UserRole.Mentor,
         );
       }
       
@@ -299,7 +295,7 @@ export class AuthService {
    * 8. if confirmed return error else send confirmation email
    * 9. save the activity to logs
    * */ 
-  async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+  async resendEmailSignUpConfirmation(input: ResendConfirmationEmailDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       const todayStart = new Date();
       const todayEnd = new Date();
@@ -309,7 +305,7 @@ export class AuthService {
       // Count resend attempts today by email and IP
       const attemptsTodayByEmail = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.resend_email_confirmation,
+          actionType: LogsActionType.ResendEmailConfirmation,
           metadata: { path: ['email'], equals: input.email },
           createdAt: { gte: todayStart, lte: todayEnd },
         },
@@ -317,7 +313,7 @@ export class AuthService {
 
       const attemptsTodayByIp = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.resend_email_confirmation,
+          actionType: LogsActionType.ResendEmailConfirmation,
           ipAddress,
           createdAt: { gte: todayStart, lte: todayEnd },
         },
@@ -327,7 +323,7 @@ export class AuthService {
           attemptsTodayByIp >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY) {
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.resend_email_confirmation,
+            actionType: LogsActionType.ResendEmailConfirmation,
             targetId: "",
             details: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
             metadata: { email: input.email },
@@ -348,7 +344,7 @@ export class AuthService {
       // Check last attempt time
       const lastAttempt = await this.prisma.db.logs.findFirst({
         where: {
-          actionType: LogsActionType.resend_email_confirmation,
+          actionType: LogsActionType.ResendEmailConfirmation,
           metadata: { path: ['email'], equals: input.email },
         },
         orderBy: { createdAt: 'desc' },
@@ -403,21 +399,14 @@ export class AuthService {
 
       // Resend email via Supabase
       const { data, error } = await this.supabase.client.auth.resend({
-        type: 'signup',
-        email: input.email,
-        ...(input.options
-          ? {
-              options: {
-                emailRedirectTo: input.options.emailRedirectTo || REDIRECT_LINKS.DEFAULT,
-              },
-            }
-          : {}),
+        type: ResendOTPTypes.SignUp,
+        email: input.email
       });
 
       // Log the attempt
       await this.prisma.db.logs.create({
         data: {
-          actionType: LogsActionType.resend_email_confirmation,
+          actionType: LogsActionType.ResendEmailConfirmation,
           targetId: user.id,
           details: error
             ? API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message
@@ -455,19 +444,10 @@ export class AuthService {
     }
   }
 
-  async signInWithOAuth(input: SignInWithOAth): Promise<ResponseDto> {
+  async signInWithOAuth(input: SignInWithOAthDto): Promise<ResponseDto> {
     try {
       const { data, error } = await this.supabase.client.auth.signInWithOAuth({
-        provider: input.provider,
-        ...(input.options
-          ? { 
-              options: { 
-                redirectTo: 
-                  input.options.emailRedirectTo || 
-                  REDIRECT_LINKS.DEFAULT
-              } 
-            }
-          : {})
+        provider: input.provider
       });   
 
       if (error) {
@@ -505,7 +485,7 @@ export class AuthService {
    * 4. check if user email is verified if false then return 403
    * 5. if all checks passed return success with status 200
    * */ 
-  async signInWithPassword(input: SignInDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+  async signInWithPassword(input: SignInWithPasswordDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       const todayStart = new Date();
       const todayEnd = new Date();
@@ -522,7 +502,7 @@ export class AuthService {
       // Check failed attempts in logs
       const failedByEmail = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.SignIn,
           metadata: { path: ['email'], equals: input.email },
           createdAt: { gte: todayStart, lte: todayEnd },
           OR: failedMessages.map(message => ({
@@ -533,7 +513,7 @@ export class AuthService {
 
       const failedByIp = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.SignIn,
           ipAddress,
           createdAt: { gte: todayStart, lte: todayEnd },
           OR: failedMessages.map(message => ({
@@ -547,7 +527,7 @@ export class AuthService {
         
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.SignIn,
             targetId: "",
             details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
             metadata: { email: input.email },
@@ -574,7 +554,7 @@ export class AuthService {
         // log failed attempt
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.SignIn,
             targetId: "",
             details: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
             metadata: { email: input.email },
@@ -602,7 +582,7 @@ export class AuthService {
         if (error && error.code === 'email_not_confirmed') {
           await this.prisma.db.logs.create({
             data: {
-              actionType: LogsActionType.signin,
+              actionType: LogsActionType.SignIn,
               targetId: user.id,
               details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
               metadata: { email: input.email },
@@ -623,7 +603,7 @@ export class AuthService {
         // log failed attempt
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.SignIn,
             targetId: user.id,
             details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
             metadata: { email: input.email },
@@ -645,7 +625,7 @@ export class AuthService {
       if (!data.user.email_confirmed_at) {
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.SignIn,
             targetId: user.id,
             details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
             metadata: { email: input.email },
@@ -666,7 +646,7 @@ export class AuthService {
       // Log successful login
       await this.prisma.db.logs.create({
         data: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.SignIn,
           targetId: user.id,
           details: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
           metadata: { email: input.email },
@@ -679,7 +659,7 @@ export class AuthService {
       // After successful signin return the user data without sensitive info
       const userData = await this.prisma.db.user.findUnique({
         where: { id: data.user.id },
-        select: this.selectFields.getUserCredentialsSelect()
+        select: SelectFields.getUserCredentialsSelect()
       });
 
       return {

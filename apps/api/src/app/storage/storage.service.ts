@@ -7,7 +7,6 @@ import { API_RESPONSE, BUCKET_NAMES, DOCUMENTS_ALLOWED_TYPES, IMAGES_ALLOWED_TYP
 @Injectable()
 export class StorageService {
   private readonly logger = new Logger(StorageService.name);
-  private selectFields = new SelectFields();
   constructor(
     private readonly prisma: PrismaService,
     private readonly supabase: SupabaseService,
@@ -65,7 +64,7 @@ export class StorageService {
             fileSize: file.size,
             fileName: file.originalname,
           },
-          select: this.selectFields.getAvatarAttachmentSelect()
+          select: SelectFields.getAvatarAttachmentSelect()
         });
 
         response.push({
@@ -145,7 +144,7 @@ export class StorageService {
             fileSize: file.size,
             fileName: file.originalname,
           },
-          select: this.selectFields.getDocumentAttachmentSelect()
+          select: SelectFields.getDocumentAttachmentSelect()
         });
 
         response.push({

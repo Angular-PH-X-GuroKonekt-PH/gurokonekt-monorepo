@@ -1,5 +1,5 @@
 export class SelectFields {
-  getUserCredentialsSelect() {
+  static getUserCredentialsSelect() {
     return {
       id: true,
       firstName: true,
@@ -17,21 +17,13 @@ export class SelectFields {
       status: true,
       createdAt: true,
       updatedAt: true,
-      avatarAttachments: {
-        select: {
-          id: true,
-          publicUrl: true,
-          fileName: true,
-          bucketName: true,
-          storagePath: true,
-        },
-      },
+      avatarAttachments: { select: this.getAvatarAttachmentSelect() },
       createdBy: { select: { id: true, firstName: true, lastName: true } },
       updatedBy: { select: { id: true, firstName: true, lastName: true } }
     };
   }
 
-  getMentorProfileSelect() {
+  static getMentorProfileSelect() {
     return {
       id: true,
       areasOfExpertise: true,
@@ -47,7 +39,7 @@ export class SelectFields {
     }
   }
 
-  getMenteeProfileSelect() {
+  static getMenteeProfileSelect() {
     return {
       id: true,
       bio: true,
@@ -61,29 +53,29 @@ export class SelectFields {
     }
   }
 
-  getAvatarAttachmentSelect() {
+  static getAvatarAttachmentSelect() {
     return {
       id: true,
+      userId: true,
       bucketName: true,
       storagePath: true,
       publicUrl: true,
       fileType: true,
       fileSize: true,
-      fileName: true,
-      user: { select: this.getUserCredentialsSelect() }
+      fileName: true
     }
   }
 
-  getDocumentAttachmentSelect() {
+  static getDocumentAttachmentSelect() {
     return {
       id: true,
+      userId: true,
       bucketName: true,
       storagePath: true,
       publicUrl: true,
       fileType: true,
       fileSize: true,
-      fileName: true,
-      user: { select: this.getUserCredentialsSelect() }
+      fileName: true
     }
   }
 }
