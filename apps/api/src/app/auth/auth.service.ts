@@ -23,7 +23,7 @@ export class AuthService {
    * Flow:
    * 1. check if user exist in db
    * 2. if exist return error else continue
-   * 3. check if required fields are present
+   * 3. check if required fields are present (check in dto)
    * 4. if missing return error else continue
    * 5. create user in users table
    * 6. if error occured, return error else return success with status 201
@@ -39,32 +39,11 @@ export class AuthService {
       });
 
       if (existingUser) {
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email})`);
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
           message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
-          data: null
-        };
-      }
-
-      // Check required fields
-      const requiredFields = [
-        dto.firstName,
-        dto.lastName,
-        dto.email,
-        dto.password,
-        dto.confirmPassword,
-        dto.country,
-        dto.language,
-        dto.timezone,
-        dto.phoneNumber,
-      ];
-
-      if (requiredFields.some(field => !field)) {
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.code,
-          message: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.message,
           data: null
         };
       }
@@ -96,8 +75,8 @@ export class AuthService {
           suffix: dto.suffix ?? null,
           email: dto.email,
           country: dto.country,
-          language: dto.language ?? null,
-          timezone: dto.timezone ?? null,
+          language: dto.language,
+          timezone: dto.timezone,
           phoneNumber: dto.phoneNumber ?? null,
           hashPassword: hashPassword,
           role: UserRole.Mentee,

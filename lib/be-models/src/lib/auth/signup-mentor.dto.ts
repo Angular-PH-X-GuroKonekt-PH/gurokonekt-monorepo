@@ -10,8 +10,8 @@ import {
   Min,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { CustomMatch } from '@gurokonekt/be-models';
 import { API_RESPONSE, REGEX, RegisterMentorInterface } from '@gurokonekt/models';
+import { CustomMatch } from '../decorators/custom-matches.decorator';
 
 export class RegisterMentorDto implements RegisterMentorInterface {
   @ApiProperty({ 
