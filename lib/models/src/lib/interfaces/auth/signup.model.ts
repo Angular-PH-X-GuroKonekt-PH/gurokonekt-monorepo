@@ -2,6 +2,7 @@ export interface RegisterMenteeInterface {
   firstName: string;
   middleName?: string;
   lastName: string;
+  suffix?: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -15,6 +16,7 @@ export interface RegisterMentorInterface {
   firstName: string;
   middleName?: string;
   lastName: string;
+  suffix?: string;
   email: string;
   password: string;
   confirmPassword: string;
