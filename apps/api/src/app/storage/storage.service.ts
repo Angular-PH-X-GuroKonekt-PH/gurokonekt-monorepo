@@ -95,6 +95,7 @@ export class StorageService {
   async uploadDocument(files: Express.Multer.File[], userId: string, role: string): Promise<ResponseDto> {
     try {
       const response: ResponseDto[] = [];
+      const bucket = role === UserRole.Mentee ? BUCKET_NAMES.MENTEE_DOCUMENTS : BUCKET_NAMES.MENTOR_DOCUMENTS;
       for (const file of files) {
         if (!DOCUMENTS_ALLOWED_TYPES.includes(file.mimetype)) {
           this.logger.error(
@@ -113,7 +114,7 @@ export class StorageService {
         const filePath = `${role}/${userId}/${crypto.randomUUID()}.${fileExt}`;
 
         const { error: uploadError } = await this.supabase.clientAdmin.storage
-          .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
+          .from(bucket)
           .upload(filePath, file.buffer, {
             contentType: file.mimetype,
             upsert: false,
@@ -131,13 +132,13 @@ export class StorageService {
         }
         
         const { data: publicUrl } = this.supabase.client.storage
-            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
+            .from(bucket)
             .getPublicUrl(filePath);
 
         const document = await this.prisma.db.documentAttachment.create({
           data: {
             userId: userId,
-            bucketName: BUCKET_NAMES.MENTOR_DOCUMENTS,
+            bucketName: bucket,
             storagePath: filePath,
             publicUrl: publicUrl.publicUrl,
             fileType: file.mimetype,

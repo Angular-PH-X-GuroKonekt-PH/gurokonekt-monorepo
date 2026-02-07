@@ -39,6 +39,11 @@ export const API_RESPONSE = {
       code:  200,
       message: 'Confirmation email sent',
     },
+
+    UPLOAD_FILES: {
+      code: 200,
+      message: '',
+    }
   },
   ERROR: {
     /**
@@ -93,6 +98,18 @@ export const API_RESPONSE = {
       message: 'Too many failed login attempts. Try again later.',
     },
 
+    /**
+     * STORAGE
+     * */ 
+    UNSUPPORTED_FILE_TYPE: {
+      code:  400,
+      message: 'Missing required fields',
+    },
+    INVALID_BUCKET_NAME: {
+      code:  400,
+      message: 'Missing required fields',
+    },
+
     MISSING_REQUIRED_FIELDS: {
       code:  400,
       message: 'Missing required fields',
@@ -119,4 +136,26 @@ export const RESEND_EMAIL_CONFIRMATION = {
 
 export const SIGN_IN_WITH_PASSWORD = {
   MAX_ATTEMPTS_PER_DAY: 3
+}
+
+export const BUCKET_NAMES = {
+  AVATARS: 'avatars',
+  MENTOR_DOCUMENTS: 'mentor_documents',
+  MENTEE_DOCUMENTS: 'mentee_documents',
+}
+
+export const DOCUMENTS_ALLOWED_TYPES = [
+  'application/pdf',
+]
+
+export const IMAGES_ALLOWED_TYPES = [
+  'image/jpeg',
+  'image/jpg',
+  'image/png'
+]
+
+export const REGEX = {
+  PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/,
+  EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
+  PHONE: /^\+\d{10,15}$/,
 }

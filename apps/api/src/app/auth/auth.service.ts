@@ -1,45 +1,27 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { BUCKET_NAMES } from '@gurokonekt/models/constants';
 import { ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
 import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
-import { PrismaService } from '../prisma/prisma.service';
+
 import { LogsActionType, UserRole, UserStatus } from '@prisma/client';
 import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
 import bcrypt from "bcrypt";
 import { SignInDto } from '../dto/auth';
-import { UtilsService } from '../../common/utils/utils.service';
 
-import { ResponseDto } from '@gurokonekt/be-models';
-import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, REDIRECT_LINKS, SIGN_IN_WITH_PASSWORD } from '@gurokonekt/models';
+import { ResponseDto, SelectFields } from '@gurokonekt/be-models';
+import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, REDIRECT_LINKS, SIGN_IN_WITH_PASSWORD, BUCKET_NAMES } from '@gurokonekt/models';
+import { SupabaseService } from '../supabase/supabase.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { StorageService } from '../storage/storage.service';
 
 @Injectable()
 export class AuthService {
-  private supabase: SupabaseClient;
-  private supabaseAdmin: SupabaseClient;
   private readonly logger = new Logger(AuthService.name);
-
+  private selectFields = new SelectFields();
   constructor(
     private readonly prisma: PrismaService,
-    private readonly utilsService: UtilsService
-  ) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_KEY;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey || !serviceRoleKey) {
-      this.logger.error(API_RESPONSE.ERROR.SUPABASE_CREDENTIALS_NOT_FOUND);
-      throw new Error(API_RESPONSE.ERROR.SUPABASE_CREDENTIALS_NOT_FOUND.message);
-    }
-
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-  }
+    private readonly supabase: SupabaseService,
+    private readonly storage: StorageService,
+  ) {}
 
   // register mentee
   /**
@@ -92,7 +74,7 @@ export class AuthService {
       }
 
       // Create user in Supabase Auth
-      const { data, error } = await this.supabase.auth.signUp({
+      const { data, error } = await this.supabase.client.auth.signUp({
         email: dto.email,
         password: dto.password
       });   
@@ -127,6 +109,7 @@ export class AuthService {
           createdById: authId,
           updatedById: authId
         },
+        select: this.selectFields.getUserCredentialsSelect()
       });
 
       // save activity to logs
@@ -148,7 +131,7 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.REGISTER_MENTEE.message,
         data: {
           auth: data,
-          user: this.sanitize(mentee, ['hashPassword'])
+          user: mentee
         }
       }
     } catch (error) {
@@ -204,7 +187,7 @@ export class AuthService {
         };
       }
 
-      const { data, error } = await this.supabase.auth.signUp({
+      const { data, error } = await this.supabase.client.auth.signUp({
         email: dto.email,
         password: dto.password
       });   
@@ -240,7 +223,7 @@ export class AuthService {
             createdById: authId,
             updatedById: authId
           },
-          select: this.utilsService.getUserCredentialsSelect()
+          select: this.selectFields.getUserCredentialsSelect()
         });
 
         const mentorProfile = await tx.mentorProfile.create({
@@ -253,40 +236,8 @@ export class AuthService {
             availability: [],
             updatedById: authId
           },
-          select: this.utilsService.getMentorProfileSelect()
+          select: this.selectFields.getMentorProfileSelect()
         });
-
-        for (const file of files) {
-          const fileExt = file.originalname.split('.').pop();
-          const filePath = `mentors/${authId}/${crypto.randomUUID()}.${fileExt}`;
-
-          const { error: uploadError } = await this.supabaseAdmin.storage
-            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
-            .upload(filePath, file.buffer, {
-              contentType: file.mimetype,
-              upsert: false,
-            });
-
-          if (uploadError) {
-            throw uploadError;
-          }
-
-          const { data: publicUrl } = this.supabase.storage
-            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
-            .getPublicUrl(filePath);
-
-          await tx.documentAttachment.create({
-            data: {
-              userId: authId,
-              bucketName: BUCKET_NAMES.MENTOR_DOCUMENTS,
-              storagePath: filePath,
-              publicUrl: publicUrl.publicUrl,
-              fileType: file.mimetype,
-              fileSize: file.size,
-              fileName: file.originalname,
-            },
-          });
-        }
 
         await tx.logs.create({
           data: {
@@ -305,6 +256,15 @@ export class AuthService {
 
         return { user: mentor, profile: mentorProfile };
       });
+
+      let uploadResult = null;
+      if (files?.length) {
+        uploadResult = await this.storage.uploadDocument(
+          files,
+          authId,
+          UserRole.mentor,
+        );
+      }
       
       return {
         status: ResponseStatus.Success,
@@ -312,7 +272,8 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.REGISTER_MENTOR.message,
         data: {
           session: data.session,
-          user: transaction.profile
+          user: transaction.profile,
+          documents: uploadResult?.data ?? []
         }
       }
     } catch (error) {
@@ -419,7 +380,7 @@ export class AuthService {
         };
       }
 
-      const { data: userData, error: fetchError } = await this.supabaseAdmin.auth.admin.getUserById(user.id);
+      const { data: userData, error: fetchError } = await this.supabase.clientAdmin.auth.admin.getUserById(user.id);
       
       if (fetchError || !userData) {
         return {
@@ -441,7 +402,7 @@ export class AuthService {
       }
 
       // Resend email via Supabase
-      const { data, error } = await this.supabase.auth.resend({
+      const { data, error } = await this.supabase.client.auth.resend({
         type: 'signup',
         email: input.email,
         ...(input.options
@@ -496,7 +457,7 @@ export class AuthService {
 
   async signInWithOAuth(input: SignInWithOAth): Promise<ResponseDto> {
     try {
-      const { data, error } = await this.supabase.auth.signInWithOAuth({
+      const { data, error } = await this.supabase.client.auth.signInWithOAuth({
         provider: input.provider,
         ...(input.options
           ? { 
@@ -631,7 +592,7 @@ export class AuthService {
       }
 
       // Attempt login via Supabase
-      const { data, error } = await this.supabase.auth.signInWithPassword({
+      const { data, error } = await this.supabase.client.auth.signInWithPassword({
         email: input.email,
         password: input.password
       });
@@ -718,7 +679,7 @@ export class AuthService {
       // After successful signin return the user data without sensitive info
       const userData = await this.prisma.db.user.findUnique({
         where: { id: data.user.id },
-        select: this.utilsService.getUserCredentialsSelect()
+        select: this.selectFields.getUserCredentialsSelect()
       });
 
       return {
@@ -743,7 +704,7 @@ export class AuthService {
 
   async signOut(): Promise<ResponseDto> {
     try {
-      const { error } = await this.supabase.auth.signOut();
+      const { error } = await this.supabase.client.auth.signOut();
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
@@ -768,13 +729,5 @@ export class AuthService {
         data: error
       }
     }
-  }
-
-  private sanitize<T extends object>(obj: T, fieldsToRemove: (keyof T)[]): Partial<T> {
-    const sanitized = { ...obj };
-    for (const field of fieldsToRemove) {
-      delete sanitized[field];
-    }
-    return sanitized;
   }
 }
