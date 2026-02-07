@@ -18,8 +18,6 @@
       "@gurokonekt/models": ["lib/models/src/index.ts"],
       "@gurokonekt/models/*": ["lib/models/src/lib/*"],
       "@gurokonekt/ui": ["lib/ui/src/index.ts"],
-      "@gurokonekt/be-models": ["lib/be-models/src/index.ts"],
-      "@gurokonekt/be-models/*": ["lib/be-models/src/lib/*"]
     }
   },
   "exclude": ["node_modules", "tmp"]
