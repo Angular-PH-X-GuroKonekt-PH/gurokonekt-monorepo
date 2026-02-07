@@ -9,7 +9,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { MentorDocumentsInterceptor, RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/be-models';
+import { MentorDocumentsInterceptor, RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/models';
 
 
 @ApiTags('auth')

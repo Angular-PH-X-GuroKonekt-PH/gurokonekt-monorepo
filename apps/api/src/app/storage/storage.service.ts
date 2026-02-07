@@ -1,8 +1,9 @@
-import { ResponseDto, SelectFields } from '@gurokonekt/be-models';
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
-import { API_RESPONSE, BUCKET_NAMES, DOCUMENTS_ALLOWED_TYPES, IMAGES_ALLOWED_TYPES, ResponseStatus, UserRole } from '@gurokonekt/models';
+import { API_RESPONSE, BUCKET_NAMES, DOCUMENTS_ALLOWED_TYPES, IMAGES_ALLOWED_TYPES, 
+  ResponseStatus, UserRole, ResponseDto, SelectFields 
+} from '@gurokonekt/models';
 
 @Injectable()
 export class StorageService {

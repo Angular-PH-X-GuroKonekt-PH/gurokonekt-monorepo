@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ResponseDto, SelectFields, UpdateUserRoleDto, UpdateUserStatusDto } from '@gurokonekt/be-models';
-import { API_RESPONSE, ResponseStatus } from '@gurokonekt/models';
+import { API_RESPONSE, ResponseStatus, ResponseDto, SelectFields, 
+  UpdateUserRoleDto, UpdateUserStatusDto 
+} from '@gurokonekt/models';
 
 @Injectable()
 export class AdminService {

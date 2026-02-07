@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/be-models';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/models';
 import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, 
   SIGN_IN_WITH_PASSWORD, UserRole, UserStatus, LogsActionType, 
   ResendOTPTypes

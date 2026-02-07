@@ -1,7 +1,7 @@
 import { Body, Controller, Param, Patch } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
-import { UpdateUserRoleDto, UpdateUserStatusDto } from '@gurokonekt/be-models';
+import { UpdateUserRoleDto, UpdateUserStatusDto } from '@gurokonekt/models';
 
 @ApiTags('Admin')
 @Controller('admin')
