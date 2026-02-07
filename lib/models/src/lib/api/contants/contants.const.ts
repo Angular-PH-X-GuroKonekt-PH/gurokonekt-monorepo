@@ -43,7 +43,16 @@ export const API_RESPONSE = {
     UPLOAD_FILES: {
       code: 200,
       message: '',
-    }
+    },
+
+    UPDATE_USER_STATUS: {
+      code: 200,
+      message: '',
+    },
+    UPDATE_USER_ROLE: {
+      code: 200,
+      message: '',
+    },
   },
   ERROR: {
     /**
@@ -137,7 +146,16 @@ export const API_RESPONSE = {
     TOO_MANY_REQUESTS: {
       code:  429,
       message: 'Too many requests',
-    }
+    },
+
+    UPDATE_USER_STATUS: {
+      code: 400,
+      message: '',
+    },
+    UPDATE_USER_ROLE: {
+      code: 400,
+      message: '',
+    },
   }
 }
 

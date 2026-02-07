@@ -7,3 +7,4 @@ export * from './lib/auth/signup-mentor.dto';
 export * from './lib/auth/signin.dto';
 export * from './lib/decorators/custom-matches.decorator';
 export * from './lib/interceptors/mentor-documents.interceptor';
+export * from './lib/users/admin.dto';

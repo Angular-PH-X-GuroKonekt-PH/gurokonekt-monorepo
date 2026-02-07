@@ -2,8 +2,9 @@ export * from './lib/models';
 export * from './lib/api/auth/signup.model';
 export * from './lib/api/auth/signin.model';
 export * from './lib/api/logs/logs.model';
-export * from './lib/api/response/response.model'
-export * from './lib/api/contants/contants.const'
-export * from './lib/api/storage/storage.model'
-export * from './lib/api/attachments/attachments.model'
-export * from './lib/api/user/user.model'
+export * from './lib/api/response/response.model';
+export * from './lib/api/contants/contants.const';
+export * from './lib/api/storage/storage.model';
+export * from './lib/api/attachments/attachments.model';
+export * from './lib/api/user/user.model';
+export * from './lib/api/user/admin.model';
