@@ -1,128 +1,14 @@
 <section class="min-h-screen bg-gray-50">
-  <!-- Welcome & Progress Snapshot -->
-  <div
-    class="border-b border-gray-200 bg-gradient-to-br from-blue-600 to-blue-700 text-white"
-  >
-    <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8">
-      <div
-        class="flex flex-col gap-6 lg:flex-row lg:items-center lg:justify-between"
-      >
-        <div class="flex-1">
-          <h1 class="text-3xl font-bold">Hi {{ menteeName }} 👋</h1>
-          <p class="mt-2 text-lg text-blue-100">
-            You're
-            <span class="font-semibold text-white"
-              >{{ programProgress.percentage }}%</span
-            >
-            through your mentorship journey
-          </p>
-          <div class="mt-4 flex items-center gap-3 text-sm text-blue-100">
-            <span
-              class="rounded-full bg-blue-500/30 px-3 py-1 font-medium text-white"
-              >{{ programProgress.phase }}</span
-            >
-            <span
-              >{{ programProgress.startDate }} – {{ programProgress.endDate
-              }}</span
-            >
-            <span>•</span>
-            <span
-              >{{ programProgress.milestonesCompleted }} of {{
-              programProgress.totalMilestones }} milestones</span
-            >
-          </div>
-          <!-- Progress bar -->
-          <div class="mt-4 h-3 rounded-full bg-blue-500/30">
-            <div
-              class="h-3 rounded-full bg-white shadow-sm"
-              [style.width.%]="programProgress.percentage"
-            ></div>
-          </div>
-        </div>
-
-        <!-- Mentor card -->
-        <div
-          class="flex items-center gap-4 rounded-xl bg-white/10 p-4 backdrop-blur-sm lg:min-w-[280px]"
-        >
-          <img
-            [ngSrc]="assignedMentor.avatar?.avatarPublicUrl || 'https://i.pravatar.cc/120?img=47'"
-            width="60"
-            height="60"
-            class="h-15 w-15 rounded-full border-2 border-white object-cover"
-            alt="{{ assignedMentor.baseInfo.firstName }} {{ assignedMentor.baseInfo.lastName }} avatar"
-          />
-          <div>
-            <p class="text-sm text-blue-100">Your mentor</p>
-            <p class="font-semibold">{{ assignedMentor.baseInfo.firstName }} {{ assignedMentor.baseInfo.lastName }}</p>
-            <p class="text-sm text-blue-100">{{ assignedMentor.bio }}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-8 space-y-8">
-    <!-- Mentor Details -->
-    <section class="rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div class="border-b border-gray-200 bg-gray-50 px-6 py-4">
-        <h2 class="text-lg font-semibold text-gray-900">👨‍💼 Your Mentor</h2>
-        <p class="text-sm text-gray-600">Get to know your assigned mentor</p>
-      </div>
-      <div class="p-6">
-        <div class="flex items-start gap-6">
-          <img
-            [ngSrc]="assignedMentor.avatar?.avatarPublicUrl || 'https://i.pravatar.cc/120?img=47'"
-            width="80"
-            height="80"
-            class="h-20 w-20 rounded-full border-2 border-gray-200 object-cover"
-            alt="{{ assignedMentor.baseInfo.firstName }} {{ assignedMentor.baseInfo.lastName }} avatar"
-          />
-          <div class="flex-1">
-            <h3 class="text-xl font-semibold text-gray-900">
-              {{ assignedMentor.baseInfo.firstName }} {{ assignedMentor.baseInfo.lastName }}
-            </h3>
-            <p class="mt-1 text-gray-600">{{ assignedMentor.bio }}</p>
-            <div class="mt-4">
-              <h4 class="font-medium text-gray-900">Skills</h4>
-              <div class="mt-2 flex flex-wrap gap-2">
-                @for (skill of assignedMentor.skills; track skill) {
-                  <span class="inline-flex items-center rounded-full bg-blue-100 px-3 py-1 text-xs font-medium text-blue-800">
-                    {{ skill }}
-                  </span>
-                }
-              </div>
-            </div>
-            <div class="mt-4 grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <span class="font-medium text-gray-900">Experience:</span>
-                <span class="text-gray-600">{{ assignedMentor.yearsOfExperience }} years</span>
-              </div>
-              <div>
-                <span class="font-medium text-gray-900">Country:</span>
-                <span class="text-gray-600">{{ assignedMentor.country }}</span>
-              </div>
-              <div>
-                <span class="font-medium text-gray-900">Language:</span>
-                <span class="text-gray-600">{{ assignedMentor.language }}</span>
-              </div>
-              <div>
-                <span class="font-medium text-gray-900">Rate:</span>
-                <span class="text-gray-600">${{ assignedMentor.sessionRate }}/session</span>
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </section>
-
+  <div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 py-16">
     <!-- Coming Soon -->
-    <section class="rounded-xl border border-gray-200 bg-white shadow-sm">
-      <div class="p-6 text-center">
-        <h2 class="text-lg font-semibold text-gray-900">🚧 Dashboard Under Development</h2>
-        <p class="mt-2 text-gray-600">
-          More features like sessions, goals, messages, and progress tracking will be available soon!
+    <div class="text-center">
+      <div class="mx-auto max-w-md">
+        <app-icon name="wrench-screwdriver" class="mx-auto h-16 w-16 text-orange-500"></app-icon>
+        <h2 class="mt-6 text-3xl font-bold text-gray-900">Dashboard Coming Soon</h2>
+        <p class="mt-4 text-lg text-gray-600">
+          We're building an amazing dashboard experience for you. Features like mentor details, progress tracking, sessions, and more will be available soon!
         </p>
       </div>
-    </section>
+    </div>
   </div>
 </section>
