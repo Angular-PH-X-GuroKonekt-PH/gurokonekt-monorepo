@@ -1,52 +1,12 @@
-import {
-  Body,
-  Controller,
-  Param,
-  Patch,
-  Post,
-} from '@nestjs/common';
-import { ApiTags, ApiOperation, ApiParam } from '@nestjs/swagger';
+import { Body, Controller, Param, Patch } from '@nestjs/common';
+import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
 import { AdminService } from './admin.service';
-import {
-  CreateUserDto,
-  CreateMenteeProfileDto,
-  CreateMentorProfileDto,
-  UpdateUserRoleDto,
-  UpdateUserStatusDto,
-} from '../../dto/user/admin';
+import { UpdateUserRoleDto, UpdateUserStatusDto } from '@gurokonekt/models';
 
 @ApiTags('Admin')
 @Controller('admin')
 export class AdminController {
   constructor(private readonly adminService: AdminService) {}
-
-  @Post('users')
-  @ApiOperation({ summary: 'Create a new user' })
-  createUser(@Body() dto: CreateUserDto) {
-    // TODO: replace with actual admin ID from AuthGuard
-    const adminId = 'ADMIN_ID_FROM_GUARD';
-    return this.adminService.createUser(adminId, dto);
-  }
-
-  @Post('users/:userId/mentee-profile')
-  @ApiOperation({ summary: 'Create mentee profile for a user' })
-  @ApiParam({ name: 'userId', type: String })
-  createMenteeProfile(
-    @Param('userId') userId: string,
-    @Body() dto: CreateMenteeProfileDto,
-  ) {
-    return this.adminService.createMenteeProfile(userId, dto);
-  }
-
-  @Post('users/:userId/mentor-profile')
-  @ApiOperation({ summary: 'Create mentor profile for a user' })
-  @ApiParam({ name: 'userId', type: String })
-  createMentorProfile(
-    @Param('userId') userId: string,
-    @Body() dto: CreateMentorProfileDto,
-  ) {
-    return this.adminService.createMentorProfile(userId, dto);
-  }
 
   @Patch('users/:userId/status')
   @ApiOperation({ summary: 'Update user status' })
@@ -55,8 +15,7 @@ export class AdminController {
     @Param('userId') userId: string,
     @Body() dto: UpdateUserStatusDto,
   ) {
-    const adminId = 'ADMIN_ID_FROM_GUARD';
-    return this.adminService.updateUserStatus(adminId, userId, { status: dto.status });
+    return this.adminService.updateUserStatus(dto, userId);
   }
 
   @Patch('users/:userId/role')
@@ -66,7 +25,6 @@ export class AdminController {
     @Param('userId') userId: string,
     @Body() dto: UpdateUserRoleDto,
   ) {
-    const adminId = 'ADMIN_ID_FROM_GUARD';
-    return this.adminService.updateUserRole(adminId, userId, { role: dto.role });
+    return this.adminService.updateUserRole(dto, userId);
   }
 }

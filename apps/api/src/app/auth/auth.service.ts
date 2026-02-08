@@ -1,89 +1,29 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
-import { BUCKET_NAMES, RETURN_MESSAGES } from '@gurokonekt/models/constants';
-import { AsyncReturn, AsyncStatus, ResendEmailChangeEmail, ResendEmailSignUpConfirmation, SignInInputInterface, SignInWithOAth, SignUpInputInterface, UpdateEmailForAnAuthenticatedUser, UpdatePasswordForAnAuthenticatedUser } from '@gurokonekt/models';
-import { RegisterMenteeDto } from '../dto/auth/register-mentee.dto';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/models';
+import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, 
+  SIGN_IN_WITH_PASSWORD, UserRole, UserStatus, LogsActionType, 
+  ResendOTPTypes
+} from '@gurokonekt/models';
+import { SupabaseService } from '../supabase/supabase.service';
 import { PrismaService } from '../prisma/prisma.service';
-import { LogsActionType, UserRole, UserStatus } from '@prisma/client';
-import { RegisterMentorDto } from '../dto/auth/register-mentor.dto';
+import { StorageService } from '../storage/storage.service';
 import bcrypt from "bcrypt";
-import { AsyncReturnDto } from '../dto/models.dto';
-import { SignInDto } from '../dto/auth';
-import { UtilsService } from '../../common/utils/utils.service';
 
 @Injectable()
 export class AuthService {
-  private supabase: SupabaseClient;
-  private supabaseAdmin: SupabaseClient;
   private readonly logger = new Logger(AuthService.name);
-
   constructor(
     private readonly prisma: PrismaService,
-    private readonly utilsService: UtilsService
-  ) {
-    const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseKey = process.env.SUPABASE_KEY;
-    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!supabaseUrl || !supabaseKey || !serviceRoleKey) {
-      this.logger.error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
-      throw new Error(RETURN_MESSAGES.FAILURE.SUPABASE_CREDENTIALS_NOT_FOUND);
-    }
-
-    this.supabase = createClient(supabaseUrl, supabaseKey);
-    this.supabaseAdmin = createClient(supabaseUrl, serviceRoleKey, {
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
-    });
-  }
-
-  async signUpWithEmailPassword(input: SignUpInputInterface): Promise<AsyncReturn> {
-    try {
-      const { data, error } = await this.supabase.auth.signUp({
-        email: input.email,
-        password: input.password,
-        ...(input.options
-          ? { 
-              options: { 
-                emailRedirectTo: 
-                  input.options.emailRedirectTo || 
-                  RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL
-              } 
-            }
-          : {}),
-      });   
-
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-      return {
-        status: AsyncStatus.Success,
-        message: RETURN_MESSAGES.SUCCESS.SIGN_UP_SUCCESS,
-        data: data
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: AsyncStatus.Error,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
-    }
-  }
+    private readonly supabase: SupabaseService,
+    private readonly storage: StorageService,
+  ) {}
 
   // register mentee
   /**
    * Flow:
    * 1. check if user exist in db
    * 2. if exist return error else continue
-   * 3. check if required fields are present
+   * 3. check if required fields are present (check in dto)
    * 4. if missing return error else continue
    * 5. create user in users table
    * 6. if error occured, return error else return success with status 201
@@ -91,7 +31,7 @@ export class AuthService {
    * 8. confirmation email will be sent automatically after signup as per the 
    *    configuration in the supabase authentication
    * */ 
-  async registerMentee(dto: RegisterMenteeDto, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
+  async registerMentee(dto: RegisterMenteeDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       // Check if user already exists in DB
       const existingUser = await this.prisma.db.user.findUnique({
@@ -99,37 +39,17 @@ export class AuthService {
       });
 
       if (existingUser) {
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email})`);
         return {
-          status: AsyncStatus.Error,
-          statusCode: 409,
-          message: RETURN_MESSAGES.FAILURE.USER_ALREADY_EXISTS,
-          data: null
-        };
-      }
-
-      // Check required fields
-      const requiredFields = [
-        dto.firstName,
-        dto.lastName,
-        dto.email,
-        dto.password,
-        dto.country,
-        dto.language,
-        dto.timezone,
-        dto.phoneNumber,
-      ];
-
-      if (requiredFields.some(field => !field)) {
-        return {
-          status: AsyncStatus.Error,
-          statusCode: 400,
-          message: RETURN_MESSAGES.FAILURE.MISSING_REQUIRED_FIELDS,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
+          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
           data: null
         };
       }
 
       // Create user in Supabase Auth
-      const { data, error } = await this.supabase.auth.signUp({
+      const { data, error } = await this.supabase.client.auth.signUp({
         email: dto.email,
         password: dto.password
       });   
@@ -137,9 +57,9 @@ export class AuthService {
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error
         }
       }
@@ -155,21 +75,22 @@ export class AuthService {
           suffix: dto.suffix ?? null,
           email: dto.email,
           country: dto.country,
-          language: dto.language ?? null,
-          timezone: dto.timezone ?? null,
+          language: dto.language,
+          timezone: dto.timezone,
           phoneNumber: dto.phoneNumber ?? null,
           hashPassword: hashPassword,
-          role: UserRole.mentee,
-          status: UserStatus.active,
+          role: UserRole.Mentee,
+          status: UserStatus.Active,
           createdById: authId,
           updatedById: authId
         },
+        select: SelectFields.getUserCredentialsSelect()
       });
 
       // save activity to logs
       await this.prisma.db.logs.create({
         data: {
-          actionType: LogsActionType.signup,
+          actionType: LogsActionType.SignUp,
           targetId: mentee.id, 
           details: `Mentee account registered with email: ${mentee.email}`,
           metadata: { role: mentee.role },
@@ -180,20 +101,20 @@ export class AuthService {
       });
 
       return {
-        status: AsyncStatus.Success,
-        statusCode: 201,
-        message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTEE,
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.REGISTER_MENTEE.code,
+        message: API_RESPONSE.SUCCESS.REGISTER_MENTEE.message,
         data: {
           auth: data,
-          user: this.sanitize(mentee, ['hashPassword'])
+          user: mentee
         }
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.REGISTER_MENTEE,
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.REGISTER_MENTEE.code,
+        message: API_RESPONSE.ERROR.REGISTER_MENTEE.message,
         data: error
       }
     }
@@ -225,7 +146,7 @@ export class AuthService {
    * 9. save the data to the DocumentAttachment table 
    * 10. if error occured, return error else return success with status 200
    * */ 
-  async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
+  async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       // Check if user already exists
       const existingUser = await this.prisma.db.user.findUnique({
@@ -234,14 +155,14 @@ export class AuthService {
 
       if (existingUser) {
         return {
-          status: AsyncStatus.Error,
-          statusCode: 409,
-          message: RETURN_MESSAGES.FAILURE.USER_ALREADY_EXISTS,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
+          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
           data: null,
         };
       }
 
-      const { data, error } = await this.supabase.auth.signUp({
+      const { data, error } = await this.supabase.client.auth.signUp({
         email: dto.email,
         password: dto.password
       });   
@@ -249,9 +170,9 @@ export class AuthService {
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error
         }
       }
@@ -272,12 +193,12 @@ export class AuthService {
             timezone: dto.timezone,
             phoneNumber: dto.phoneNumber,
             hashPassword: hashPassword,
-            role: UserRole.mentor,
-            status: UserStatus.pending_approval,
+            role: UserRole.Mentor,
+            status: UserStatus.PendingApproval,
             createdById: authId,
             updatedById: authId
           },
-          select: this.utilsService.getUserCredentialsSelect()
+          select: SelectFields.getUserCredentialsSelect()
         });
 
         const mentorProfile = await tx.mentorProfile.create({
@@ -290,48 +211,16 @@ export class AuthService {
             availability: [],
             updatedById: authId
           },
-          select: this.utilsService.getMentorProfileSelect()
+          select: SelectFields.getMentorProfileSelect()
         });
-
-        for (const file of files) {
-          const fileExt = file.originalname.split('.').pop();
-          const filePath = `mentors/${authId}/${crypto.randomUUID()}.${fileExt}`;
-
-          const { error: uploadError } = await this.supabaseAdmin.storage
-            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
-            .upload(filePath, file.buffer, {
-              contentType: file.mimetype,
-              upsert: false,
-            });
-
-          if (uploadError) {
-            throw uploadError;
-          }
-
-          const { data: publicUrl } = this.supabase.storage
-            .from(BUCKET_NAMES.MENTOR_DOCUMENTS)
-            .getPublicUrl(filePath);
-
-          await tx.documentAttachment.create({
-            data: {
-              userId: authId,
-              bucketName: BUCKET_NAMES.MENTOR_DOCUMENTS,
-              storagePath: filePath,
-              publicUrl: publicUrl.publicUrl,
-              fileType: file.mimetype,
-              fileSize: file.size,
-              fileName: file.originalname,
-            },
-          });
-        }
 
         await tx.logs.create({
           data: {
-            actionType: LogsActionType.signup,
+            actionType: LogsActionType.SignUp,
             targetId: mentor.id,
             details: `Mentor registration submitted for approval`,
             metadata: {
-              role: UserRole.mentor,
+              role: UserRole.Mentor,
               areasOfExpertise: dto.areasOfExpertise,
             },
             ipAddress: ipAddress ?? '',
@@ -342,22 +231,32 @@ export class AuthService {
 
         return { user: mentor, profile: mentorProfile };
       });
+
+      let uploadResult = null;
+      if (files?.length) {
+        uploadResult = await this.storage.uploadDocument(
+          files,
+          authId,
+          UserRole.Mentor,
+        );
+      }
       
       return {
-        status: AsyncStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.REGISTER_MENTOR,
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.REGISTER_MENTOR.code,
+        message: API_RESPONSE.SUCCESS.REGISTER_MENTOR.message,
         data: {
           session: data.session,
-          user: transaction.profile
+          user: transaction.profile,
+          documents: uploadResult?.data ?? []
         }
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.REGISTER_MENTOR,
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.REGISTER_MENTOR.code,
+        message: API_RESPONSE.ERROR.REGISTER_MENTOR.message,
         data: error
       }
     }
@@ -375,20 +274,17 @@ export class AuthService {
    * 8. if confirmed return error else send confirmation email
    * 9. save the activity to logs
    * */ 
-  async resendEmailSignUpConfirmation(input: ResendEmailSignUpConfirmation, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
+  async resendEmailSignUpConfirmation(input: ResendConfirmationEmailDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
-      const MAX_ATTEMPTS_PER_DAY = 3;
-      const MIN_INTERVAL_SECONDS = 60;
-
       const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
       const todayEnd = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
       todayEnd.setUTCHours(23, 59, 59, 999);
 
       // Count resend attempts today by email and IP
       const attemptsTodayByEmail = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.resend_email_confirmation,
+          actionType: LogsActionType.ResendEmailConfirmation,
           metadata: { path: ['email'], equals: input.email },
           createdAt: { gte: todayStart, lte: todayEnd },
         },
@@ -396,18 +292,19 @@ export class AuthService {
 
       const attemptsTodayByIp = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.resend_email_confirmation,
+          actionType: LogsActionType.ResendEmailConfirmation,
           ipAddress,
           createdAt: { gte: todayStart, lte: todayEnd },
         },
       });
 
-      if (attemptsTodayByEmail >= MAX_ATTEMPTS_PER_DAY || attemptsTodayByIp >= MAX_ATTEMPTS_PER_DAY) {
+      if (attemptsTodayByEmail >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY || 
+          attemptsTodayByIp >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY) {
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.resend_email_confirmation,
+            actionType: LogsActionType.ResendEmailConfirmation,
             targetId: "",
-            details: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
+            details: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -416,9 +313,9 @@ export class AuthService {
         });
 
         return {
-          status: AsyncStatus.Error,
-          statusCode: 429,
-          message: RETURN_MESSAGES.FAILURE.TOO_MANY_REQUESTS,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.code,
+          message: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
           data: null,
         };
       }
@@ -426,7 +323,7 @@ export class AuthService {
       // Check last attempt time
       const lastAttempt = await this.prisma.db.logs.findFirst({
         where: {
-          actionType: LogsActionType.resend_email_confirmation,
+          actionType: LogsActionType.ResendEmailConfirmation,
           metadata: { path: ['email'], equals: input.email },
         },
         orderBy: { createdAt: 'desc' },
@@ -434,11 +331,11 @@ export class AuthService {
 
       if (lastAttempt) {
         const secondsSinceLast = (Date.now() - lastAttempt.createdAt.getTime()) / 1000;
-        if (secondsSinceLast < MIN_INTERVAL_SECONDS) {
+        if (secondsSinceLast < RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS) {
           return {
-            status: AsyncStatus.Error,
+            status: ResponseStatus.Error,
             statusCode: 429,
-            message: `Please wait ${Math.ceil(MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
+            message: `Please wait ${Math.ceil(RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
             data: null,
           };
         }
@@ -451,20 +348,20 @@ export class AuthService {
 
       if (!user) {
         return {
-          status: AsyncStatus.Error,
-          statusCode: 404,
-          message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
           data: input,
         };
       }
 
-      const { data: userData, error: fetchError } = await this.supabaseAdmin.auth.admin.getUserById(user.id);
+      const { data: userData, error: fetchError } = await this.supabase.clientAdmin.auth.admin.getUserById(user.id);
       
       if (fetchError || !userData) {
         return {
-          status: AsyncStatus.Error,
-          statusCode: 404,
-          message: RETURN_MESSAGES.FAILURE.USER_NOT_FOUND,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
           data: fetchError,
         };
       }
@@ -472,34 +369,27 @@ export class AuthService {
       // Check if email is already confirmed
       if (userData.user.email_confirmed_at) {
         return {
-          status: AsyncStatus.Error,
-          statusCode: 400,
-          message: RETURN_MESSAGES.FAILURE.EMAIL_ALREADY_CONFIRMED,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.code,
+          message: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.message,
           data: null,
         };
       }
 
       // Resend email via Supabase
-      const { data, error } = await this.supabase.auth.resend({
-        type: 'signup',
-        email: input.email,
-        ...(input.options
-          ? {
-              options: {
-                emailRedirectTo: input.options.emailRedirectTo || RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL,
-              },
-            }
-          : {}),
+      const { data, error } = await this.supabase.client.auth.resend({
+        type: ResendOTPTypes.SignUp,
+        email: input.email
       });
 
       // Log the attempt
       await this.prisma.db.logs.create({
         data: {
-          actionType: LogsActionType.resend_email_confirmation,
+          actionType: LogsActionType.ResendEmailConfirmation,
           targetId: user.id,
           details: error
-            ? RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR
-            : RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
+            ? API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message
+            : API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.message,
           metadata: { email: input.email },
           ipAddress,
           userAgent,
@@ -509,95 +399,58 @@ export class AuthService {
 
       if (error) {
         return {
-          status: AsyncStatus.Error,
-          statusCode: 500,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error,
         };
       }
 
       return {
-        status: AsyncStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.code,
+        message: API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.message,
         data: data || true,
       };
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error,
       };
     }
   }
 
-  async resendEmailChangeEmail(input: ResendEmailChangeEmail): Promise<AsyncReturn> {
+  async signInWithOAuth(input: SignInWithOAthDto): Promise<ResponseDto> {
     try {
-      const { data, error } = await this.supabase.auth.resend({
-        type: 'email_change',
-        email: input.email
-      });  
-
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-
-      return {
-        status: AsyncStatus.Success,
-        message: RETURN_MESSAGES.SUCCESS.EMAIL_SENT,
-        data: data || true
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: AsyncStatus.Error,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
-    }
-  }
-
-  async signInWithOAuth(input: SignInWithOAth): Promise<AsyncReturn> {
-    try {
-      const { data, error } = await this.supabase.auth.signInWithOAuth({
-        provider: input.provider,
-        ...(input.options
-          ? { 
-              options: { 
-                redirectTo: 
-                  input.options.emailRedirectTo || 
-                  RETURN_MESSAGES.LINKS.DEFAULT_REDIRECT_URL
-              } 
-            }
-          : {})
+      const { data, error } = await this.supabase.client.auth.signInWithOAuth({
+        provider: input.provider
       });   
 
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error
         }
       }
 
       return {
-        status: AsyncStatus.Success,
-        message: RETURN_MESSAGES.SUCCESS.SIGN_UP_SUCCESS,
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.SIGN_WITH_OATH.code,
+        message: API_RESPONSE.SUCCESS.SIGN_WITH_OATH.message,
         data: data
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error
       }
     }
@@ -611,25 +464,24 @@ export class AuthService {
    * 4. check if user email is verified if false then return 403
    * 5. if all checks passed return success with status 200
    * */ 
-  async signInWithPassword(input: SignInDto, ipAddress: string, userAgent: string): Promise<AsyncReturnDto> {
+  async signInWithPassword(input: SignInWithPasswordDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
       const todayStart = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
       const todayEnd = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
       todayEnd.setUTCHours(23, 59, 59, 999);
-      const MAX_ATTEMPTS = 3;
 
       const failedMessages = [
-        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
-        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
-        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
-        RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS
+        API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
+        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
+        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
       ]
 
       // Check failed attempts in logs
       const failedByEmail = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.SignIn,
           metadata: { path: ['email'], equals: input.email },
           createdAt: { gte: todayStart, lte: todayEnd },
           OR: failedMessages.map(message => ({
@@ -640,7 +492,7 @@ export class AuthService {
 
       const failedByIp = await this.prisma.db.logs.count({
         where: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.SignIn,
           ipAddress,
           createdAt: { gte: todayStart, lte: todayEnd },
           OR: failedMessages.map(message => ({
@@ -649,12 +501,14 @@ export class AuthService {
         },
       });
 
-      if (failedByEmail >= MAX_ATTEMPTS || failedByIp >= MAX_ATTEMPTS) {
+      if (failedByEmail >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY || 
+        failedByIp >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY) {
+        
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.SignIn,
             targetId: "",
-            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
+            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -663,9 +517,9 @@ export class AuthService {
         });
         
         return {
-          status: AsyncStatus.Error,
-          statusCode: 429,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.code,
+          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
           data: null
         };
       }
@@ -679,9 +533,9 @@ export class AuthService {
         // log failed attempt
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.SignIn,
             targetId: "",
-            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_USER_NOT_FOUND,
+            details: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent
@@ -689,15 +543,15 @@ export class AuthService {
         });
 
         return {
-          status: AsyncStatus.Error,
-          statusCode: 401,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.code,
+          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
           data: null
         };
       }
 
       // Attempt login via Supabase
-      const { data, error } = await this.supabase.auth.signInWithPassword({
+      const { data, error } = await this.supabase.client.auth.signInWithPassword({
         email: input.email,
         password: input.password
       });
@@ -707,9 +561,9 @@ export class AuthService {
         if (error && error.code === 'email_not_confirmed') {
           await this.prisma.db.logs.create({
             data: {
-              actionType: LogsActionType.signin,
+              actionType: LogsActionType.SignIn,
               targetId: user.id,
-              details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+              details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
               metadata: { email: input.email },
               ipAddress,
               userAgent,
@@ -718,9 +572,9 @@ export class AuthService {
           });
         
           return {
-            status: AsyncStatus.Error,
-            statusCode: 403,
-            message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.code,
+            message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
             data: null
           };
         }
@@ -728,9 +582,9 @@ export class AuthService {
         // log failed attempt
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.SignIn,
             targetId: user.id,
-            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -739,9 +593,9 @@ export class AuthService {
         });
 
         return {
-          status: AsyncStatus.Error,
-          statusCode: 401,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_INVALID_CREDENTIALS,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.code,
+          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
           data: null
         };
       }
@@ -750,9 +604,9 @@ export class AuthService {
       if (!data.user.email_confirmed_at) {
         await this.prisma.db.logs.create({
           data: {
-            actionType: LogsActionType.signin,
+            actionType: LogsActionType.SignIn,
             targetId: user.id,
-            details: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
             metadata: { email: input.email },
             ipAddress,
             userAgent,
@@ -761,9 +615,9 @@ export class AuthService {
         });
 
         return {
-          status: AsyncStatus.Error,
-          statusCode: 403,
-          message: RETURN_MESSAGES.FAILURE.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.code,
+          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
           data: null
         };
       }
@@ -771,9 +625,9 @@ export class AuthService {
       // Log successful login
       await this.prisma.db.logs.create({
         data: {
-          actionType: LogsActionType.signin,
+          actionType: LogsActionType.SignIn,
           targetId: user.id,
-          details: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
+          details: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
           metadata: { email: input.email },
           ipAddress,
           userAgent,
@@ -784,13 +638,13 @@ export class AuthService {
       // After successful signin return the user data without sensitive info
       const userData = await this.prisma.db.user.findUnique({
         where: { id: data.user.id },
-        select: this.utilsService.getUserCredentialsSelect()
+        select: SelectFields.getUserCredentialsSelect()
       });
 
       return {
-        status: AsyncStatus.Success,
-        statusCode: 200,
-        message: RETURN_MESSAGES.SUCCESS.SIGN_IN_SUCCESS,
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.code,
+        message: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
         data: {
           user: userData,
           session: data.session
@@ -799,129 +653,40 @@ export class AuthService {
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
-        statusCode: 500,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error
       };
     }
   }
 
-  async updateEmailForAnAuthenticatedUser(input: UpdateEmailForAnAuthenticatedUser): Promise<AsyncReturn> {
+  async signOut(): Promise<ResponseDto> {
     try {
-      const { data, error } = await this.supabase.auth.updateUser({
-        email: input.email
-      });
-
+      const { error } = await this.supabase.client.auth.signOut();
       if (error) {
         this.logger.error(error.message, error.stack);
         return {
-          status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-
-      return {
-        status: AsyncStatus.Success,
-        message: RETURN_MESSAGES.SUCCESS.EMAIL_UPDATED,
-        data: data
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: AsyncStatus.Error,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
-    }
-  }
-
-  async updatePasswordForAnAuthenticatedUser(input: UpdatePasswordForAnAuthenticatedUser): Promise<AsyncReturn> {
-    try {
-      const { data, error } = await this.supabase.auth.updateUser({
-        password: input.password
-      });
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
           data: error
         }
       }
       return {
-        status: AsyncStatus.Success,
-        message: RETURN_MESSAGES.SUCCESS.PASSWORD_UPDATED,
-        data: data
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: AsyncStatus.Error,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
-    }
-  }
-
-  async getUserAuth(): Promise<AsyncReturn> {
-    try {
-      const { data, error } = await this.supabase.auth.getUser();
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-      return {
-        status: AsyncStatus.Success,
-        message: RETURN_MESSAGES.SUCCESS.USER_AUTH_RETRIEVED,
-        data: data
-      }
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: AsyncStatus.Error,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-        data: error
-      }
-    }
-  }
-
-  async signOut(): Promise<AsyncReturn> {
-    try {
-      const { error } = await this.supabase.auth.signOut();
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: AsyncStatus.Error,
-          message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
-          data: error
-        }
-      }
-      return {
-        status: AsyncStatus.Success,
-        message: RETURN_MESSAGES.SUCCESS.SIGN_OUT_SUCCESS,
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.SIGN_OUT.code,
+        message: API_RESPONSE.SUCCESS.SIGN_OUT.message,
         data: true
       }
     } catch (error) {
       this.logger.error(error.message, error.stack);
       return {
-        status: AsyncStatus.Error,
-        message: RETURN_MESSAGES.FAILURE.INTERNAL_SERVER_ERROR,
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error
       }
     }
-  }
-
-  private sanitize<T extends object>(obj: T, fieldsToRemove: (keyof T)[]): Partial<T> {
-    const sanitized = { ...obj };
-    for (const field of fieldsToRemove) {
-      delete sanitized[field];
-    }
-    return sanitized;
   }
 }

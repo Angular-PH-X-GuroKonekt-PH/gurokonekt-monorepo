@@ -6,7 +6,8 @@ import { AuthModule } from './auth/auth.module';
 import { MenteeModule } from './user/mentee/mentee.module';
 import { MentorModule } from './user/mentor/mentor.module';
 import { AdminModule } from './user/admin/admin.module';
-import { UploadModule } from './storage/upload/upload.module';
+import { StorageModule } from './storage/storage.module';
+import { SupabaseModule } from './supabase/supabase.module';
 
 @Module({
   imports: [
@@ -14,7 +15,8 @@ import { UploadModule } from './storage/upload/upload.module';
     MenteeModule,
     MentorModule,
     AdminModule,
-    UploadModule,
+    StorageModule,
+    SupabaseModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService],
