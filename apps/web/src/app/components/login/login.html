@@ -1,0 +1,149 @@
+<section
+  class="min-h-screen bg-gradient-to-br from-blue-50 via-orange-50 to-blue-50 py-16"
+>
+  <div class="mx-auto max-w-md px-4 sm:px-6 lg:px-8">
+    <!-- Logo Section -->
+    <div class="mb-12 text-center">
+      <img src="assets/logos/logo-light.svg" alt="GuroKonekt Logo" class="h-16 w-16 mx-auto" />
+      <div class="mt-4 flex items-center justify-center gap-1">
+        <span class="text-3xl font-bold text-blue-900">Guro</span>
+        <span class="text-3xl font-bold text-orange-500">Konekt</span>
+      </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="text-center mb-10">
+      <h1
+        class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent"
+      >
+        Welcome Back
+      </h1>
+      <p class="mt-3 text-base text-gray-700">
+        Sign in to continue your journey
+      </p>
+    </div>
+
+    <!-- Login Form Card -->
+    <div
+      class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-8 sm:p-10"
+    >
+      <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
+        <!-- Error Message -->
+        @if (submissionState.error()) {
+        <div
+          class="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 text-sm"
+        >
+          {{ submissionState.error() }}
+        </div>
+        }
+
+        <!-- Email -->
+        <div class="mb-6">
+          <label
+            for="email"
+            class="block text-sm font-semibold text-gray-700 mb-2"
+          >
+            Email Address
+          </label>
+          <input
+            type="email"
+            id="email"
+            formControlName="email"
+            aria-label="Email Address"
+            [attr.aria-invalid]="hasError('email')"
+            [attr.aria-describedby]="hasError('email') ? 'email-error' : null"
+            class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors"
+            [class.border-red-500]="hasError('email')"
+            placeholder="your.email@example.com"
+          />
+          @if (hasError('email')) {
+          <p id="email-error" class="mt-1 text-sm text-red-600">
+            {{ getErrorMessage('email') }}
+          </p>
+          }
+        </div>
+
+        <!-- Password -->
+        <div class="mb-4">
+          <label
+            for="password"
+            class="block text-sm font-semibold text-gray-700 mb-2"
+          >
+            Password
+          </label>
+          <div class="relative">
+            <input
+              [type]="showPassword() ? 'text' : 'password'"
+              id="password"
+              formControlName="password"
+              aria-label="Password"
+              [attr.aria-invalid]="hasError('password')"
+              [attr.aria-describedby]="hasError('password') ? 'password-error' : null"
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors pr-12"
+              [class.border-red-500]="hasError('password')"
+              placeholder="••••••••"
+            />
+            <button
+              type="button"
+              (click)="togglePasswordVisibility()"
+              [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+              class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+            >
+              <app-icon 
+                [name]="showPassword() ? 'eye-off' : 'eye'" 
+                class="h-5 w-5" 
+                aria-hidden="true">
+              </app-icon>
+            </button>
+          </div>
+          @if (hasError('password')) {
+          <p id="password-error" class="mt-1 text-sm text-red-600">
+            {{ getErrorMessage('password') }}
+          </p>
+          }
+        </div>
+
+        <!-- Forgot Password Link -->
+        <div class="mb-8 text-right">
+          <button
+            type="button"
+            (click)="navigateToForgotPassword()"
+            class="text-sm text-orange-600 hover:text-orange-700 font-semibold"
+          >
+            Forgot password?
+          </button>
+        </div>
+
+        <!-- Submit Button -->
+        <button
+          type="submit"
+          class="w-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-4 text-base font-bold text-white shadow-lg transition duration-200 hover:shadow-xl hover:-translate-y-1 disabled:cursor-not-allowed disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none disabled:transform-none"
+          [disabled]="submissionState.isLoading()"
+        >
+          @if (submissionState.isLoading()) {
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Signing in...
+          </span>
+          } @else {
+          <span>Sign In</span>
+          }
+        </button>
+      </form>
+
+      <!-- Register Link -->
+      <div class="mt-8 text-center">
+        <p class="text-sm text-gray-600">
+          Don't have an account?
+          <button
+            type="button"
+            (click)="navigateToRegister()"
+            class="text-orange-600 hover:text-orange-700 font-semibold ml-1"
+          >
+            Create one
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>

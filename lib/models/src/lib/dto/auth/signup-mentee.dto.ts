@@ -1,9 +1,9 @@
-import { API_RESPONSE, REGEX, RegisterMenteeInterface } from '@gurokonekt/models';
+import { API_RESPONSE, REGEX, RegisterMenteeRequest } from '@gurokonekt/models';
 import { ApiProperty } from '@nestjs/swagger';
 import { IsEmail, IsOptional, IsString, Matches } from 'class-validator';
 import { CustomMatch } from '../decorators/custom-matches.decorator';
 
-export class RegisterMenteeDto implements RegisterMenteeInterface {
+export class RegisterMenteeDto implements RegisterMenteeRequest {
   @ApiProperty({ 
     required: true,
     example: 'John',
