@@ -1,13 +1,12 @@
 import { Body, Controller, Param, Patch } from '@nestjs/common';
 import { ApiOperation, ApiParam, ApiTags } from '@nestjs/swagger';
-import { AdminService } from './admin.service';
 import { UpdateUserRoleDto, UpdateUserStatusDto } from '@gurokonekt/models';
+import { UserService } from './user.service';
 
-@ApiTags('Admin')
-@Controller('admin')
-export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
-
+@ApiTags('User')
+@Controller('user')
+export class UserController {
+  constructor(private readonly userService: UserService) {}
   @Patch('users/:userId/status')
   @ApiOperation({ summary: 'Update user status' })
   @ApiParam({ name: 'userId', type: String })
@@ -15,7 +14,7 @@ export class AdminController {
     @Param('userId') userId: string,
     @Body() dto: UpdateUserStatusDto,
   ) {
-    return this.adminService.updateUserStatus(dto, userId);
+    return this.userService.updateUserStatus(dto, userId);
   }
 
   @Patch('users/:userId/role')
@@ -25,6 +24,6 @@ export class AdminController {
     @Param('userId') userId: string,
     @Body() dto: UpdateUserRoleDto,
   ) {
-    return this.adminService.updateUserRole(dto, userId);
+    return this.userService.updateUserRole(dto, userId);
   }
 }

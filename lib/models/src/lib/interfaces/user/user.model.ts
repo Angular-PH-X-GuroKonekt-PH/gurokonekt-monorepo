@@ -63,6 +63,15 @@ export interface MenteeProfileInterface {
   updatedBy: UserFlatInterface;
 }
 
+export interface MenteeProfileUpdateInterface {
+  bio: string;
+  learningGoals: string[];
+  areasOfInterest: string[];
+  preferredSessionType: MenteePreferredSessionType;
+  availability: UserAvailabilityInterface[];
+  updatedById: string;
+}
+
 export interface MentorProfileInterface {
   id: string;
   bio: string;
@@ -75,4 +84,9 @@ export interface MentorProfileInterface {
   user: UserInterface;
   updatedAt: string;
   updatedBy: UserFlatInterface;
+}
+
+export interface UserAvailabilityInterface {
+  day: string;
+  time: string;
 }
