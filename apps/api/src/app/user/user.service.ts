@@ -127,6 +127,17 @@ export class UserService {
 
       if (!user) {
         this.logger.error(`User with ID ${userId} not found`);
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.Read,
+            targetId: userId,
+            details: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+            metadata: { userId: userId },
+            ipAddress,
+            userAgent,
+            createdById: userId,
+          },
+        });
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
@@ -142,6 +153,17 @@ export class UserService {
         try {
           UserProfileValidator.throwIfMissingFields(dto, user.role as UserRole);
         } catch (err) {
+          await this.prisma.db.logs.create({
+            data: {
+              actionType: LogsActionType.Update,
+              targetId: userId,
+              details: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.message,
+              metadata: { dto: instanceToPlain(dto) },
+              ipAddress,
+              userAgent,
+              createdById: userId,
+            },
+          });
           return {
             status: ResponseStatus.Error,
             statusCode: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.code,
