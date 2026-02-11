@@ -53,6 +53,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'User role updated successfully',
     },
+    UPDATE_USER_PROFILE: {
+      code: 200,
+      message: 'User profile updated successfully',
+    },
   },
   ERROR: {
     /**
@@ -134,6 +138,10 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Invalid or missing bucket name',
     },
+    UPLOAD_FILES:{
+      code: 400,
+      message: 'Error uploading file, please try again',
+    },
 
     MISSING_REQUIRED_FIELDS: {
       code: 400,
@@ -155,6 +163,10 @@ export const API_RESPONSE = {
     UPDATE_USER_ROLE: {
       code: 400,
       message: 'Failed to update user role',
+    },
+    UPDATE_USER_PROFILE: {
+      code: 400,
+      message: 'Failed to update user profile',
     },
   }
 }

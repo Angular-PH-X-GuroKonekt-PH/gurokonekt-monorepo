@@ -23,6 +23,16 @@ export enum MenteePreferredSessionType {
   Online = "online",
 }
 
+export enum DaysInWeek {
+  Monday = "monday",
+  Tuesday = "tuesday",
+  Wednesday = "wednesday",
+  Thursday = "thursday",
+  Friday = "friday",
+  Saturday = "saturday",
+  Sunday = "sunday",
+}
+
 export interface UserInterface {
   id: string;
   firstName: string;
@@ -35,6 +45,7 @@ export interface UserInterface {
   language: string;
   timezone: string;
   isProfileComplete: boolean;
+  isMentorProfileComplete: boolean;
   isMentorApproved: boolean;
   role: UserRole;
   status: UserStatus;
@@ -57,13 +68,13 @@ export interface MenteeProfileInterface {
   learningGoals: string[];
   areasOfInterest: string[];
   preferredSessionType: MenteePreferredSessionType;
-  availability: string[];
+  availability: UserAvailabilityInterface[];
   user: UserInterface;
   updatedAt: string;
   updatedBy: UserFlatInterface;
 }
 
-export interface MenteeProfileUpdateInterface {
+export interface UpdateMenteeProfileInterface {
   bio: string;
   learningGoals: string[];
   areasOfInterest: string[];
@@ -80,13 +91,26 @@ export interface MentorProfileInterface {
   linkedInUrl: string;
   skills: string[];
   sessionRate: number;
-  availability: string[];
+  availability: UserAvailabilityInterface[];
   user: UserInterface;
   updatedAt: string;
   updatedBy: UserFlatInterface;
 }
 
+export interface UpdateMentorProfileInterface {
+  bio: string;
+  skills: string[];
+  sessionRate?: number;
+  availability: UserAvailabilityInterface[];
+  updatedById: string;
+}
+
 export interface UserAvailabilityInterface {
-  day: string;
-  time: string;
+  day: DaysInWeek;
+  timeFrames: TimeFrameInterface[]; 
+}
+
+export interface TimeFrameInterface {
+  from: string; 
+  to: string;  
 }
