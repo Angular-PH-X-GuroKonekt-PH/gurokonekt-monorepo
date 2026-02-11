@@ -76,6 +76,10 @@ export interface MenteeProfileInterface {
 
 export interface UpdateMenteeProfileInterface {
   bio: string;
+  phoneNumber: string;
+  country: string;
+  language: string;
+  timezone: string;
   learningGoals: string[];
   areasOfInterest: string[];
   preferredSessionType: MenteePreferredSessionType;
@@ -99,6 +103,12 @@ export interface MentorProfileInterface {
 
 export interface UpdateMentorProfileInterface {
   bio: string;
+  phoneNumber: string;
+  country: string;
+  language: string;
+  timezone: string;
+  areasOfExpertise: string[];
+  yearsOfExperience: number;
   skills: string[];
   sessionRate?: number;
   availability: UserAvailabilityInterface[];

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_RESPONSE, LogsActionType, ResponseDto, ResponseStatus, SelectFields, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserRole } from '@gurokonekt/models';
+import { API_RESPONSE, LogsActionType, ResponseDto, ResponseStatus, SelectFields, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole } from '@gurokonekt/models';
 import { StorageService } from '../storage/storage.service';
 import { instanceToPlain } from 'class-transformer';
 
@@ -43,12 +43,14 @@ export class UserService {
     userId: string,
     dto: UpdateMenteeProfileDto | UpdateMentorProfileDto, 
     avatar: Express.Multer.File[],
+    files: Express.Multer.File[],
     ipAddress: string, 
     userAgent: string
   ): Promise<ResponseDto> {
     try {
       const user = await this.prisma.db.user.findUnique({
         where: { id: userId },
+        select: SelectFields.getUserCredentialsSelect(),
       });
 
       if (!user) {
@@ -61,70 +63,70 @@ export class UserService {
         };
       }
 
+      const isProfileComplete = user.isProfileComplete;
+      const role = user.role as UserRole;
+
+      if (!isProfileComplete) {
+        try {
+          UserProfileValidator.throwIfMissingFields(dto, user.role as UserRole);
+        } catch (err) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.code,
+            message: `${API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.message}: ${err.message}`,
+            data: null,
+          };
+        }
+      }
+
+      
+      const userUpdateData = UserProfileValidator.buildUserUpdateData(dto, isProfileComplete);
+
       let profileResponse: any = null;
 
-      if (user.role === UserRole.Mentor) {
-        const currentDto = dto as UpdateMentorProfileDto;
+      if (role === UserRole.Mentor) {
+        const payload = UserProfileValidator.buildProfilePayload(dto, role, isProfileComplete);
         await this.prisma.db.$transaction(async (tx) => {
           profileResponse = await tx.mentorProfile.upsert({
             where: { userId },
-            update: {
-              bio: currentDto.bio,
-              skills: currentDto.skills,
-              sessionRate: currentDto.sessionRate,
-              availability: instanceToPlain(currentDto.availability),
-              updatedById: currentDto.updatedById,
-            },
+            update: payload,
             create: {
               userId,
-              bio: currentDto.bio,
-              skills: currentDto.skills,
-              sessionRate: currentDto.sessionRate,
-              availability: instanceToPlain(currentDto.availability),
-              updatedById: currentDto.updatedById,
+              ...payload
             },
             select: SelectFields.getMentorProfileSelect(),
           });
 
           await tx.user.update({
             where: { id: userId },
-            data: {
-              isProfileComplete: true,
-              updatedById: currentDto.updatedById,
-            },
+            data: userUpdateData,
           });
         });
-      } else if (user.role === UserRole.Mentee) {
+      } else if (role === UserRole.Mentee) {
+        const userUpdateData = UserProfileValidator.buildUserUpdateData(dto, isProfileComplete);
         const currentDto = dto as UpdateMenteeProfileDto;
+        const payload = {
+          bio: currentDto.bio,
+          learningGoals: currentDto.learningGoals,
+          areasOfInterest: currentDto.areasOfInterest,
+          preferredSessionType: currentDto.preferredSessionType,
+          availability: instanceToPlain(currentDto.availability),
+          updatedById: currentDto.updatedById,
+        };
         await this.prisma.db.$transaction(async (tx) => {
           profileResponse = await tx.menteeProfile.upsert({
             where: { userId },
-            update: {
-              bio: currentDto.bio,
-              learningGoals: currentDto.learningGoals,
-              areasOfInterest: currentDto.areasOfInterest,
-              preferredSessionType: currentDto.preferredSessionType,
-              availability: instanceToPlain(currentDto.availability),
-              updatedById: currentDto.updatedById,
-            },
+            update: payload,
             create: {
               userId,
-              bio: currentDto.bio,
-              learningGoals: currentDto.learningGoals,
-              areasOfInterest: currentDto.areasOfInterest,
-              preferredSessionType: currentDto.preferredSessionType,
-              availability: instanceToPlain(currentDto.availability),
-              updatedById: currentDto.updatedById,
+              ...payload
             },
             select: SelectFields.getMenteeProfileSelect(),
           });
 
           await tx.user.update({
             where: { id: userId },
-            data: {
-              isProfileComplete: true,
-              updatedById: currentDto.updatedById,
-            },
+            data: userUpdateData,
           });
         });
       }
@@ -140,36 +142,21 @@ export class UserService {
         },
       });
 
-      let avatarResponse: ResponseDto = null;
-      if (avatar && avatar.length > 0) {
-        avatarResponse = await this.storageService.uploadAvatar(
-          avatar, 
-          userId, 
-          user.role
-        );
-
-        if (user.role === UserRole.Mentor) {
-          profileResponse = await this.prisma.db.mentorProfile.findUnique({
-            where: { userId },
-            select: SelectFields.getMentorProfileSelect(),
-          });
-        } else {
-          profileResponse = await this.prisma.db.menteeProfile.findUnique({
-            where: { userId },
-            select: SelectFields.getMenteeProfileSelect(),
-          });
-        }
-      }
-
-      const message = avatarResponse?.status === ResponseStatus.Error
-      ? `${API_RESPONSE.SUCCESS.UPDATE_USER_PROFILE.message}. ${API_RESPONSE.ERROR.UPLOAD_FILES.message}.`
-      : API_RESPONSE.SUCCESS.UPDATE_USER_PROFILE.message;
+      const { 
+        avatarResponse, 
+        documentResponse,
+        profileResponse: updatedProfile 
+      } = await this.uploadFilesAndFetchProfile(userId, avatar, files, role);
+    
+      let message = API_RESPONSE.SUCCESS.UPDATE_USER_PROFILE.message;
+      if (avatarResponse?.status === ResponseStatus.Error) message += `\n${API_RESPONSE.ERROR.UPLOAD_AVATAR.message}.`;
+      if (documentResponse?.status === ResponseStatus.Error) message += `\n${API_RESPONSE.ERROR.UPLOAD_FILES.message}.`;
 
       return {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.UPDATE_USER_PROFILE.code,
         message: message,
-        data: profileResponse,
+        data: updatedProfile || profileResponse
       };
     } catch (error) {
       this.logger.error(error.message, error.stack);
@@ -180,6 +167,26 @@ export class UserService {
         data: null,
       };
     }
+  }
+
+  async uploadFilesAndFetchProfile(userId: string, avatar: Express.Multer.File[], files: Express.Multer.File[], role: UserRole) {
+    let avatarResponse: ResponseDto = null;
+    let documentResponse: ResponseDto = null;
+    let profileResponse: any = null;
+
+    if (avatar?.length) {
+      avatarResponse = await this.storageService.uploadAvatar(avatar, userId, role);
+      profileResponse = await (role === UserRole.Mentor
+        ? this.prisma.db.mentorProfile.findUnique({ where: { userId }, select: SelectFields.getMentorProfileSelect() })
+        : this.prisma.db.menteeProfile.findUnique({ where: { userId }, select: SelectFields.getMenteeProfileSelect() })
+      );
+    }
+
+    if (files?.length) {
+      documentResponse = await this.storageService.uploadDocument(files, userId, role);
+    }
+
+    return { avatarResponse, documentResponse, profileResponse };
   }
 
   async updateUserStatus(dto: UpdateUserStatusDto, userId: string): Promise<ResponseDto> {

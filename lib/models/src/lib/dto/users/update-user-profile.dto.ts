@@ -1,6 +1,7 @@
+import { API_RESPONSE, REGEX, SWAGGER_DOCUMENTATION } from "@gurokonekt/models/interfaces/contants/contants.const";
 import { DaysInWeek, MenteePreferredSessionType, UpdateMenteeProfileInterface, TimeFrameInterface, UserAvailabilityInterface, UpdateMentorProfileInterface } from "@gurokonekt/models/interfaces/user/user.model";
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
-import { Type } from "class-transformer";
+import { Transform, Type } from "class-transformer";
 import { 
   IsString, 
   IsArray, 
@@ -10,7 +11,8 @@ import {
   ValidateNested,
   IsNumber,
   Min,
-  IsOptional
+  IsOptional,
+  Matches
 } from 'class-validator';
 
 export class TimeFrameDto implements TimeFrameInterface {
@@ -48,99 +50,136 @@ export class UserAvailabilityDto implements UserAvailabilityInterface{
   timeFrames: TimeFrameDto[];
 }
 
-export class UpdateMenteeProfileDto implements UpdateMenteeProfileInterface { 
-  @ApiProperty({
-    description: 'Short biography of the mentee',
-    example: 'Aspiring frontend developer passionate about Angular and UX.'
+export class UpdateMenteeProfileDto implements Partial<UpdateMenteeProfileInterface> { 
+  @ApiPropertyOptional({
+    example: SWAGGER_DOCUMENTATION.MENTEE_BIO.example,
+    description: SWAGGER_DOCUMENTATION.MENTEE_BIO.description
   })
   @IsString()
-  bio: string;
-
-  @ApiProperty({
-    description: 'List of learning goals the mentee wants to achieve',
-    example: ['System Design', 'Clean Architecture', 'Angular Best Practices'],
-    type: [String]
-  })
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  learningGoals: string[];
-
-  @ApiProperty({
-    description: 'Areas of interest of the mentee',
-    example: ['Web Development', 'Cloud Computing'],
-    type: [String]
-  })
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  areasOfInterest: string[];
-
-  @ApiProperty({
-    description: 'Preferred type of session',
-    enum: MenteePreferredSessionType,
-    example: MenteePreferredSessionType.Online
-  })
-  @IsEnum(MenteePreferredSessionType)
-  preferredSessionType: MenteePreferredSessionType;
-
-  @ApiProperty({
-    description: 'User availability schedule grouped by day with multiple time frames',
-    type: [UserAvailabilityDto]
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UserAvailabilityDto)
-  availability: UserAvailabilityDto[];
-
-  @ApiProperty({
-    description: 'UUID of the user performing the update',
-    example: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21'
-  })
-  @IsUUID()
-  updatedById: string;
-}
-
-export class UpdateMentorProfileDto implements UpdateMentorProfileInterface {
-  @ApiProperty({
-    description: 'Short biography of the mentor',
-    example: 'Senior backend engineer with 10 years experience in NodeJS.'
-  })
-  @IsString()
-  bio: string;
-
-  @ApiProperty({
-    description: 'List of mentor skills',
-    example: ['NodeJS', 'Prisma', 'System Design'],
-    type: [String]
-  })
-  @IsArray()
-  @ArrayNotEmpty()
-  @IsString({ each: true })
-  skills: string[];
+  @IsOptional()
+  bio?: string;
 
   @ApiPropertyOptional({
-    description: 'Session rate per hour',
-    example: 1500
+    example: SWAGGER_DOCUMENTATION.PHONE_NUMBER.example,
+    description: SWAGGER_DOCUMENTATION.PHONE_NUMBER.description
   })
-  @IsNumber()
+  @IsString()
+  @Matches(REGEX.PHONE, { message: API_RESPONSE.ERROR.INVALID_PHONE_FORMAT.message })
   @IsOptional()
-  @Min(0)
-  sessionRate?: number;
+  phoneNumber?: string;
 
-  @ApiProperty({
-    description: 'User availability schedule grouped by day with multiple time frames',
-    type: [UserAvailabilityDto]
+  @ApiPropertyOptional({
+    example: SWAGGER_DOCUMENTATION.COUNTRY.example,
+    description: SWAGGER_DOCUMENTATION.COUNTRY.description
   })
+  @IsString()
+  @IsOptional()
+  country?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  language?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  timezone?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  learningGoals?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  areasOfInterest?: string[];
+
+  @ApiPropertyOptional({ enum: MenteePreferredSessionType })
+  @IsEnum(MenteePreferredSessionType)
+  @IsOptional()
+  preferredSessionType?: MenteePreferredSessionType;
+
+  @ApiPropertyOptional({ type: [UserAvailabilityDto] })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UserAvailabilityDto)
-  availability: UserAvailabilityDto[];
+  @IsOptional()
+  availability?: UserAvailabilityDto[];
 
-  @ApiProperty({
-    description: 'UUID of the user performing the update',
-    example: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21'
-  })
+  @ApiPropertyOptional()
   @IsUUID()
-  updatedById: string;
+  @IsOptional()
+  updatedById?: string;
 }
+
+
+export class UpdateMentorProfileDto implements Partial<UpdateMentorProfileInterface> {
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  bio?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @Matches(REGEX.PHONE)
+  @IsOptional()
+  phoneNumber?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  country?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  language?: string;
+
+  @ApiPropertyOptional()
+  @IsString()
+  @IsOptional()
+  timezone?: string;
+
+  @ApiPropertyOptional()
+  @Transform(({ value }) => Number(value))
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  yearsOfExperience?: number;
+
+  @ApiPropertyOptional()
+  @Transform(({ value }) => Array.isArray(value) ? value : JSON.parse(value || '[]'))
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  areasOfExpertise?: string[];
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  skills?: string[];
+
+  @ApiPropertyOptional()
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  sessionRate?: number;
+
+  @ApiPropertyOptional({ type: [UserAvailabilityDto] })
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UserAvailabilityDto)
+  @IsOptional()
+  availability?: UserAvailabilityDto[];
+
+  @ApiPropertyOptional()
+  @IsUUID()
+  @IsOptional()
+  updatedById?: string;
+}
+

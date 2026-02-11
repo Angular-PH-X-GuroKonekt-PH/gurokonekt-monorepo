@@ -18,6 +18,7 @@ import {
 } from '@nestjs/swagger';
 import {
   AvatarInterceptor,
+  MentorDocumentsInterceptor,
   ResponseDto,
   SWAGGER_DOCUMENTATION,
   UpdateMenteeProfileDto,
@@ -33,7 +34,7 @@ export class UserController {
   constructor(private readonly userService: UserService) {}
 
   // ====================================================
-  // PATCH - Create or Update User Profile
+  // PATCH - Update User Profile
   // ====================================================
 
   @Patch(':userId/profile')
@@ -65,11 +66,12 @@ export class UserController {
     status: 404,
     description: 'User not found',
   })
-  @UseInterceptors(AvatarInterceptor)
+  @UseInterceptors(AvatarInterceptor, MentorDocumentsInterceptor)
   async updateUserProfile(
     @Param('userId') userId: string,
     @Body() dto: UpdateMenteeProfileDto | UpdateMentorProfileDto,
     @UploadedFiles() avatar: Express.Multer.File[],
+    @UploadedFiles() files: Express.Multer.File[],
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
@@ -77,6 +79,7 @@ export class UserController {
       userId,
       dto,
       avatar,
+      files,
       ipAddress,
       userAgent,
     );

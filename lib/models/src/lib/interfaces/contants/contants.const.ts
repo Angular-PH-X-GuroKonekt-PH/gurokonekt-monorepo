@@ -44,6 +44,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Files uploaded successfully',
     },
+    UPLOAD_AVATAR: {
+      code: 200,
+      message: 'Avatar uploaded successfully',
+    },
 
     UPDATE_USER_STATUS: {
       code: 200,
@@ -146,6 +150,10 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Error uploading file, please try again',
     },
+    UPLOAD_AVATAR:{
+      code: 400,
+      message: 'Error uploading avatar, please try again',
+    },
 
     MISSING_REQUIRED_FIELDS: {
       code: 400,
@@ -177,7 +185,7 @@ export const API_RESPONSE = {
 
 export const SWAGGER_DOCUMENTATION = {
   UPDATE_USER_PROFILE: {
-    summary: 'Create or Update User Profile (Mentor or Mentee)',
+    summary: 'Update User Profile (Mentor or Mentee)',
     description: `
 This endpoint creates or updates the profile of a user.
 
@@ -191,6 +199,7 @@ Behavior:
 Frontend Notes:
 - Must send multipart/form-data.
 - "avatar" is optional.
+- "files" is optional.
 - DTO fields depend on user role.
 `,
 
@@ -222,6 +231,30 @@ Possible roles:
 ⚠️ Changing role does NOT automatically create profile records.
 Frontend should call profile endpoint after role change if needed.
 `,
+  },
+  PHONE_NUMBER: {
+    example: '+639123456789',
+    description: 'Mobile number in E.164 international format. Must start with "+" followed by country code and subscriber number (no spaces or dashes).'
+  },
+  MENTEE_BIO: {
+    example: 'I am a software engineer with 5 years of experience. I am passionate about building software that makes people life easier.',
+    description: 'Bio of the mentee. Must be at least 10 characters long.'
+  },
+  COUNTRY: {
+    example: 'US',
+    description: 'Country of the mentee. Must be a valid ISO 3166-1 alpha-2 country code.'
+  },
+  LANGUAGE: {
+    example: 'en',
+    description: 'Language of the mentee. Must be a valid ISO 639-1 language code.'
+  },
+  TIMEZONE: {
+    example: 'Asia/Manila',
+    description: 'IANA timezone identifier (e.g., "Asia/Manila", "America/New_York"). Used for scheduling and time-based features.'
+  },
+  UPDATED_BY_ID: {
+    description: 'UUID of the user performing the update',
+    example: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21'
   }
 }
 
