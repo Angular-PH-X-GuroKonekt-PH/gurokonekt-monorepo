@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Get,
   Headers,
   Ip,
   Param,
@@ -32,6 +33,41 @@ import { UserService } from './user.service';
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+  // ====================================================
+  // GET
+  // ====================================================
+
+  @Get(':userId/profile')
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'Unique ID of the user',
+    example: 'uuid-user-id',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User get successfully',
+    type: ResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'User not found',
+  })
+  async getUserProfileById(
+    @Param('userId') userId: string,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.userService.getUserProfileById(
+      userId,
+      ipAddress,
+      userAgent,
+    );
+  }
 
   // ====================================================
   // PATCH - Update User Profile

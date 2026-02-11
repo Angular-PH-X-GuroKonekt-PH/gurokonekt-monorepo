@@ -16,6 +16,78 @@ export class UserService {
   // GET
   // ====================================================
 
+  async getUserProfileById(
+    userId: string, 
+    ipAddress: string, 
+    userAgent: string
+  ): Promise<ResponseDto> { 
+    try {
+      const user = await this.prisma.db.user.findUnique({
+        where: { id: userId },
+        select: SelectFields.getUserCredentialsSelect(),
+      });
+
+      if (!user) {
+        this.logger.error(`User with ID ${userId} not found`);
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.Read,
+            targetId: userId,
+            details: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+            metadata: { userId: userId },
+            ipAddress,
+            userAgent,
+            createdById: userId,
+          },
+        });
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.Read,
+          targetId: userId,
+          details: API_RESPONSE.SUCCESS.GET_USER_PROFILE.message,
+          metadata: { user: { ...user } },
+          ipAddress,
+          userAgent,
+          createdById: userId,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_USER_PROFILE.code,
+        message: API_RESPONSE.SUCCESS.GET_USER_PROFILE.message,
+        data: null,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.Read,
+          targetId: userId,
+          details: API_RESPONSE.ERROR.GET_USER_PROFILE.message,
+          metadata: { error: { ...error } },
+          ipAddress,
+          userAgent,
+          createdById: userId,
+        },
+      });
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.GET_USER_PROFILE.code,
+        message: API_RESPONSE.ERROR.GET_USER_PROFILE.message,
+        data: null,
+      };
+    }
+  }
+
   // ====================================================
   // POST
   // ====================================================

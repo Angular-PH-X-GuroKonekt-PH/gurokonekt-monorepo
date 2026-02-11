@@ -61,6 +61,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'User profile updated successfully',
     },
+    GET_USER_PROFILE: {
+      code: 200,
+      message: 'User profile get successfully',
+    },
   },
   ERROR: {
     /**
@@ -179,6 +183,10 @@ export const API_RESPONSE = {
     UPDATE_USER_PROFILE: {
       code: 400,
       message: 'Failed to update user profile',
+    },
+    GET_USER_PROFILE: {
+      code: 400,
+      message: 'Failed to get user profile',
     },
   }
 }
