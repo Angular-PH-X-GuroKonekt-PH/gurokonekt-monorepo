@@ -126,6 +126,10 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Invalid URL',
     },
+    NO_DATA_RETURNED_ON_AUTH: {
+      code: 400,
+      message: 'Authentication service did not return user ID',
+    },
 
     /**
      * STORAGE
