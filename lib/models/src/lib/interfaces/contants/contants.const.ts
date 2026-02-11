@@ -175,6 +175,56 @@ export const API_RESPONSE = {
   }
 }
 
+export const SWAGGER_DOCUMENTATION = {
+  UPDATE_USER_PROFILE: {
+    summary: 'Create or Update User Profile (Mentor or Mentee)',
+    description: `
+This endpoint creates or updates the profile of a user.
+
+Behavior:
+- If user role is **Mentor**, it updates/creates a MentorProfile.
+- If user role is **Mentee**, it updates/creates a MenteeProfile.
+- Automatically sets \`isProfileComplete = true\` after successful update.
+- Supports optional avatar upload via multipart/form-data.
+- Logs the activity in system logs.
+
+Frontend Notes:
+- Must send multipart/form-data.
+- "avatar" is optional.
+- DTO fields depend on user role.
+`,
+
+  },
+  UPDATE_USER_STATUS: {
+    summary: 'Update User Account Status',
+    description: `
+Updates the status of a user account.
+
+Possible statuses:
+- Active
+- Inactive
+- Suspended
+- Pending
+
+Used by admin panel.
+`,
+  },
+  UPDATE_USER_ROLE: {
+    summary: 'Update User Role',
+    description: `
+Updates the role of a user.
+
+Possible roles:
+- Mentee
+- Mentor
+- Admin
+
+⚠️ Changing role does NOT automatically create profile records.
+Frontend should call profile endpoint after role change if needed.
+`,
+  }
+}
+
 export const REDIRECT_LINKS  = {
   DEFAULT: 'localhost:4200',
 }
