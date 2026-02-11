@@ -1,4 +1,5 @@
-import { FormArray, FormControl, FormGroup } from '@angular/forms';
+import { FormGroup } from '@angular/forms';
+import { EXPERTISE_OPTIONS } from '../constants/expertise.constants';
 
 /**
  * Helper for managing expertise selection in forms
@@ -8,24 +9,7 @@ export class ExpertiseSelectionHelper {
   /**
    * Standard expertise options for mentor registration
    */
-  static readonly EXPERTISE_OPTIONS = [
-    'Software Engineering',
-    'Frontend Development',
-    'Backend Development', 
-    'Full-Stack Development',
-    'DevOps & Infrastructure',
-    'Cloud Architecture',
-    'Data Science & Analytics',
-    'Machine Learning & AI',
-    'Product Management',
-    'UI/UX Design',
-    'Cybersecurity',
-    'Mobile Development',
-    'Database Design',
-    'System Architecture',
-    'Quality Assurance',
-    'Project Management'
-  ];
+  static readonly EXPERTISE_OPTIONS = EXPERTISE_OPTIONS;
 
   /**
    * Handle expertise checkbox change
@@ -34,7 +18,7 @@ export class ExpertiseSelectionHelper {
     event: Event, 
     expertise: string, 
     form: FormGroup,
-    fieldName = 'expertiseAreas'
+    fieldName = 'areasOfExpertise'
   ): void {
     const checkbox = event.target as HTMLInputElement;
     const currentAreas = form.get(fieldName)?.value || [];
@@ -59,7 +43,7 @@ export class ExpertiseSelectionHelper {
   static isExpertiseSelected(
     expertise: string, 
     form: FormGroup,
-    fieldName = 'expertiseAreas'
+    fieldName = 'areasOfExpertise'
   ): boolean {
     const currentAreas = form.get(fieldName)?.value || [];
     return currentAreas.includes(expertise);
@@ -70,7 +54,7 @@ export class ExpertiseSelectionHelper {
    */
   static getSelectedExpertiseCount(
     form: FormGroup,
-    fieldName = 'expertiseAreas'
+    fieldName = 'areasOfExpertise'
   ): number {
     const currentAreas = form.get(fieldName)?.value || [];
     return currentAreas.length;
@@ -82,7 +66,7 @@ export class ExpertiseSelectionHelper {
   static validateMinimumExpertise(
     form: FormGroup,
     minCount = 1,
-    fieldName = 'expertiseAreas'
+    fieldName = 'areasOfExpertise'
   ): boolean {
     return ExpertiseSelectionHelper.getSelectedExpertiseCount(form, fieldName) >= minCount;
   }

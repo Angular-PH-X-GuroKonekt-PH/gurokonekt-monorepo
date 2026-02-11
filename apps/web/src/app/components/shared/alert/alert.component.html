@@ -1,8 +1,8 @@
-@if (message) {
+@if (message()) {
   <div 
     [class]="getAlertClasses()"
     role="alert"
-    [attr.aria-live]="type === 'error' ? 'assertive' : 'polite'"
+    [attr.aria-live]="type() === 'error' ? 'assertive' : 'polite'"
   >
     <div class="flex items-start gap-3">
       <div class="flex-shrink-0 mt-0.5">
@@ -13,10 +13,10 @@
           <span [class]="getTitleClasses()">{{ getTitle() }}</span>
         </div>
         <p [class]="getMessageClasses()">
-          {{ message }}
+          {{ message() }}
         </p>
       </div>
-      @if (dismissible) {
+      @if (dismissible()) {
         <button 
           type="button" 
           class="ml-auto -mx-1.5 -my-1.5 rounded-lg focus:ring-2 p-1.5 inline-flex h-8 w-8 items-center justify-center"

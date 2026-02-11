@@ -1,25 +1,12 @@
-/**
- * Country data with timezone mapping
- */
-export interface Country {
-  value: string;
-  label: string;
-  phoneCode: string;
-  flag: string;
-  phoneFormat: string;
-  phoneRegex: RegExp;
-}
+import { COUNTRIES } from '../constants/countries.constants';
+import { TIMEZONES, COUNTRY_TIMEZONE_MAP } from '../constants/timezones.constants';
+import { LANGUAGES } from '../constants/languages.constants';
+import { Country } from '../interfaces/country.interface';
+import { Timezone } from '../interfaces/timezone.interface';
+import { Language } from '../interfaces/language.interface';
 
-export interface Timezone {
-  value: string;
-  label: string;
-  countries: string[];
-}
-
-export interface Language {
-  value: string;
-  label: string;
-}
+// Re-export interfaces for convenience
+export type { Country, Timezone, Language };
 
 /**
  * Helper service for managing location and language data
@@ -29,101 +16,22 @@ export class LocationDataHelper {
   /**
    * Standard list of countries
    */
-  static readonly COUNTRIES: Country[] = [
-    { value: 'PH', label: 'Philippines', phoneCode: '+63', flag: '🇵🇭', phoneFormat: '999 123 4567', phoneRegex: /^[2-9]\d{2}\s?\d{3}\s?\d{4}$/ },
-    { value: 'US', label: 'United States', phoneCode: '+1', flag: '🇺🇸', phoneFormat: '(555) 123-4567', phoneRegex: /^\(\d{3}\)\s?\d{3}-?\d{4}$/ },
-    { value: 'CA', label: 'Canada', phoneCode: '+1', flag: '🇨🇦', phoneFormat: '(555) 123-4567', phoneRegex: /^\(\d{3}\)\s?\d{3}-?\d{4}$/ },
-    { value: 'GB', label: 'United Kingdom', phoneCode: '+44', flag: '🇬🇧', phoneFormat: '07911 123456', phoneRegex: /^0[7]\d{3}\s?\d{6}$/ },
-    { value: 'AU', label: 'Australia', phoneCode: '+61', flag: '🇦🇺', phoneFormat: '0412 345 678', phoneRegex: /^04\d{2}\s?\d{3}\s?\d{3}$/ },
-    { value: 'DE', label: 'Germany', phoneCode: '+49', flag: '🇩🇪', phoneFormat: '0151 12345678', phoneRegex: /^015[0-9]\s?\d{8}$/ },
-    { value: 'FR', label: 'France', phoneCode: '+33', flag: '🇫🇷', phoneFormat: '06 12 34 56 78', phoneRegex: /^0[67]\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{2}$/ },
-    { value: 'ES', label: 'Spain', phoneCode: '+34', flag: '🇪🇸', phoneFormat: '612 34 56 78', phoneRegex: /^[67]\d{2}\s?\d{2}\s?\d{2}\s?\d{2}$/ },
-    { value: 'IT', label: 'Italy', phoneCode: '+39', flag: '🇮🇹', phoneFormat: '312 345 6789', phoneRegex: /^3\d{2}\s?\d{3}\s?\d{4}$/ },
-    { value: 'JP', label: 'Japan', phoneCode: '+81', flag: '🇯🇵', phoneFormat: '90-1234-5678', phoneRegex: /^\d{2}-?\d{4}-?\d{4}$/ },
-    { value: 'CN', label: 'China', phoneCode: '+86', flag: '🇨🇳', phoneFormat: '139 0013 8000', phoneRegex: /^1[3-9]\d\s?\d{4}\s?\d{4}$/ },
-    { value: 'IN', label: 'India', phoneCode: '+91', flag: '🇮🇳', phoneFormat: '98765 43210', phoneRegex: /^[6-9]\d{4}\s?\d{5}$/ },
-    { value: 'BR', label: 'Brazil', phoneCode: '+55', flag: '🇧🇷', phoneFormat: '(11) 99999-9999', phoneRegex: /^\(\d{2}\)\s?9?\d{4}-?\d{4}$/ },
-    { value: 'MX', label: 'Mexico', phoneCode: '+52', flag: '🇲🇽', phoneFormat: '(55) 1234-5678', phoneRegex: /^\(\d{2}\)\s?\d{4}-?\d{4}$/ },
-    { value: 'NL', label: 'Netherlands', phoneCode: '+31', flag: '🇳🇱', phoneFormat: '06 12345678', phoneRegex: /^06\s?\d{8}$/ },
-    { value: 'SE', label: 'Sweden', phoneCode: '+46', flag: '🇸🇪', phoneFormat: '070-123 45 67', phoneRegex: /^07[0-9]-?\d{3}\s?\d{2}\s?\d{2}$/ },
-    { value: 'NO', label: 'Norway', phoneCode: '+47', flag: '🇳🇴', phoneFormat: '406 12 345', phoneRegex: /^[49]\d{2}\s?\d{2}\s?\d{3}$/ },
-    { value: 'DK', label: 'Denmark', phoneCode: '+45', flag: '🇩🇰', phoneFormat: '50 12 34 56', phoneRegex: /^[2-9]\d\s?\d{2}\s?\d{2}\s?\d{2}$/ },
-    { value: 'FI', label: 'Finland', phoneCode: '+358', flag: '🇫🇮', phoneFormat: '050 123 4567', phoneRegex: /^0[45]\d\s?\d{3}\s?\d{4}$/ },
-    { value: 'SG', label: 'Singapore', phoneCode: '+65', flag: '🇸🇬', phoneFormat: '9123 4567', phoneRegex: /^[89]\d{3}\s?\d{4}$/ },
-    { value: 'KR', label: 'South Korea', phoneCode: '+82', flag: '🇰🇷', phoneFormat: '010-1234-5678', phoneRegex: /^010-?\d{4}-?\d{4}$/ },
-  ];
+  static readonly COUNTRIES = COUNTRIES;
 
   /**
    * Comprehensive timezone list with country associations
    */
-  static readonly TIMEZONES: Timezone[] = [
-    // North America
-    { value: 'America/New_York', label: 'Eastern Time (ET)', countries: ['US', 'CA'] },
-    { value: 'America/Chicago', label: 'Central Time (CT)', countries: ['US', 'CA', 'MX'] },
-    { value: 'America/Denver', label: 'Mountain Time (MT)', countries: ['US', 'CA', 'MX'] },
-    { value: 'America/Los_Angeles', label: 'Pacific Time (PT)', countries: ['US', 'CA'] },
-    { value: 'America/Sao_Paulo', label: 'Brazil Time (BRT)', countries: ['BR'] },
-    { value: 'America/Mexico_City', label: 'Central Standard Time (CST)', countries: ['MX'] },
-    // Europe
-    { value: 'Europe/London', label: 'Greenwich Mean Time (GMT)', countries: ['GB'] },
-    { value: 'Europe/Paris', label: 'Central European Time (CET)', countries: ['FR', 'DE', 'ES', 'IT', 'NL'] },
-    { value: 'Europe/Stockholm', label: 'Central European Time (CET)', countries: ['SE', 'NO', 'DK', 'FI'] },
-    // Asia Pacific
-    { value: 'Asia/Manila', label: 'Philippine Standard Time (PST)', countries: ['PH'] },
-    { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)', countries: ['JP'] },
-    { value: 'Asia/Shanghai', label: 'China Standard Time (CST)', countries: ['CN'] },
-    { value: 'Asia/Seoul', label: 'Korea Standard Time (KST)', countries: ['KR'] },
-    { value: 'Asia/Kolkata', label: 'India Standard Time (IST)', countries: ['IN'] },
-    { value: 'Asia/Singapore', label: 'Singapore Standard Time (SGT)', countries: ['SG'] },
-    { value: 'Australia/Sydney', label: 'Australian Eastern Time (AET)', countries: ['AU'] },
-  ];
+  static readonly TIMEZONES = TIMEZONES;
 
   /**
    * Common languages supported
    */
-  static readonly LANGUAGES: Language[] = [
-    { value: 'en', label: 'English' },
-    { value: 'es', label: 'Spanish' },
-    { value: 'fr', label: 'French' },
-    { value: 'de', label: 'German' },
-    { value: 'zh', label: 'Chinese' },
-    { value: 'ja', label: 'Japanese' },
-    { value: 'ko', label: 'Korean' },
-    { value: 'pt', label: 'Portuguese' },
-    { value: 'it', label: 'Italian' },
-    { value: 'nl', label: 'Dutch' },
-    { value: 'sv', label: 'Swedish' },
-    { value: 'no', label: 'Norwegian' },
-    { value: 'da', label: 'Danish' },
-    { value: 'fi', label: 'Finnish' },
-  ];
+  static readonly LANGUAGES = LANGUAGES;
 
   /**
    * Default timezone mapping for countries
    */
-  private static readonly COUNTRY_TIMEZONE_MAP: { [key: string]: string } = {
-    'PH': 'Asia/Manila',
-    'US': 'America/New_York',
-    'CA': 'America/New_York', 
-    'GB': 'Europe/London',
-    'AU': 'Australia/Sydney',
-    'DE': 'Europe/Paris',
-    'FR': 'Europe/Paris',
-    'ES': 'Europe/Paris',
-    'IT': 'Europe/Paris',
-    'JP': 'Asia/Tokyo',
-    'CN': 'Asia/Shanghai',
-    'IN': 'Asia/Kolkata',
-    'BR': 'America/Sao_Paulo',
-    'MX': 'America/Mexico_City',
-    'NL': 'Europe/Paris',
-    'SE': 'Europe/Stockholm',
-    'NO': 'Europe/Stockholm',
-    'DK': 'Europe/Stockholm',
-    'FI': 'Europe/Stockholm',
-    'SG': 'Asia/Singapore',
-    'KR': 'Asia/Seoul',
-  };
+  private static readonly COUNTRY_TIMEZONE_MAP = COUNTRY_TIMEZONE_MAP;
 
   /**
    * Get default timezone for a country

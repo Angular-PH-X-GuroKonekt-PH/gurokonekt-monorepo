@@ -1,11 +1,6 @@
 import { signal, computed } from '@angular/core';
 import { FormGroup } from '@angular/forms';
-
-export interface Step {
-  title: string;
-  description: string;
-  fields: string[];
-}
+import { Step } from '../interfaces/step.interface';
 
 /**
  * Reusable step management helper for multi-step forms

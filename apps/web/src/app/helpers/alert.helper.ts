@@ -1,11 +1,4 @@
-export type AlertType = 'success' | 'error' | 'warning' | 'info';
-
-export interface AlertConfig {
-  type: AlertType;
-  title: string;
-  message: string;
-  dismissible?: boolean;
-}
+import { AlertType } from '../types/alert.types';
 
 export class AlertHelper {
   static getAlertClasses(type: AlertType): string {

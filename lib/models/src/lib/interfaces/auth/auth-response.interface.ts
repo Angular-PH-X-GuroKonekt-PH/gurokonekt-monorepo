@@ -7,6 +7,7 @@ export interface AuthResponse {
     fullName: string;
     role: Role;
   };
-  token?: string;
+  accessToken: string;
+  token?: string; 
   message: string;
 }

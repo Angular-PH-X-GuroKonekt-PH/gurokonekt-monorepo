@@ -3,12 +3,11 @@ import { State, Action, StateContext, Selector } from '@ngxs/store';
 import { Router } from '@angular/router';
 import { catchError, tap } from 'rxjs/operators';
 import { throwError } from 'rxjs';
-import { ApiResponse } from '@gurokonekt/models';
+import { AuthResponse } from '@gurokonekt/models';
 
 import { AuthService } from '../../services/auth.service';
 import { NavigationHelper } from '../../helpers';
 import { AuthStateModel, initialAuthState } from './auth.state.model';
-import { AuthResponse } from '../../types/auth-api-response.types';
 import * as AuthActions from './auth.actions';
 
 @State<AuthStateModel>({
@@ -19,7 +18,7 @@ import * as AuthActions from './auth.actions';
 export class AuthState {
   private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
-  private readonly navigationHelper = new NavigationHelper(this.router);
+  private readonly navigationHelper = new NavigationHelper();
 
   @Selector()
   static user(state: AuthStateModel) {

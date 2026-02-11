@@ -1,5 +1,6 @@
-import { Component, Input, Output, EventEmitter, computed } from '@angular/core';
-import { AlertHelper, AlertType } from '../../../helpers/alert.helper';
+import { Component, input, output } from '@angular/core';
+import { AlertHelper } from '../../../helpers/alert.helper';
+import { AlertType } from '../../../types/alert.types';
 import { IconHelper } from '../../../helpers/icon.helper';
 import { IconComponent, IconName } from '../icon/icon.component';
 
@@ -10,33 +11,33 @@ import { IconComponent, IconName } from '../icon/icon.component';
   templateUrl: './alert.component.html'
 })
 export class AlertComponent {
-  @Input() type: AlertType = 'info';
-  @Input() title?: string;
-  @Input() message?: string;
-  @Input() dismissible = false;
+  type = input<AlertType>('info');
+  title = input<string>();
+  message = input<string>();
+  dismissible = input<boolean>(false);
 
-  @Output() dismissed = new EventEmitter<void>();
+  dismissed = output<void>();
 
   private readonly alertHelper = AlertHelper;
 
   getAlertClasses(): string {
-    return this.alertHelper.getAlertClasses(this.type);
+    return this.alertHelper.getAlertClasses(this.type());
   }
 
   getIconClasses(): string {
-    return this.alertHelper.getIconClasses(this.type);
+    return this.alertHelper.getIconClasses(this.type());
   }
 
   getTitleClasses(): string {
-    return this.alertHelper.getTitleClasses(this.type);
+    return this.alertHelper.getTitleClasses(this.type());
   }
 
   getMessageClasses(): string {
-    return this.alertHelper.getMessageClasses(this.type);
+    return this.alertHelper.getMessageClasses(this.type());
   }
 
   getDismissButtonClasses(): string {
-    switch (this.type) {
+    switch (this.type()) {
       case 'success':
         return 'text-green-400 bg-green-50 hover:bg-green-100 focus:ring-green-400';
       case 'error':
@@ -51,17 +52,18 @@ export class AlertComponent {
   }
 
   getIconPath(): string {
-    return this.alertHelper.getIcon(this.type);
+    return this.alertHelper.getIcon(this.type());
   }
 
   getAlertIconName(): IconName {
-    return IconHelper.getContextIcon(this.type);
+    return IconHelper.getContextIcon(this.type());
   }
 
   getTitle(): string {
-    if (this.title) return this.title;
+    const titleValue = this.title();
+    if (titleValue) return titleValue;
     
-    switch (this.type) {
+    switch (this.type()) {
       case 'success':
         return 'Success!';
       case 'error':

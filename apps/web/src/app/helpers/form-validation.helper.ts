@@ -34,93 +34,89 @@ export class FormValidationHelper {
    */
   static mapErrorToMessage(fieldName: string, errors: ValidationErrors): string {
     const fieldDisplayName = FormValidationHelper.getFieldDisplayName(fieldName);
+    const errorKey = Object.keys(errors)[0];
 
-    if (errors['required']) {
-      return `${fieldDisplayName} is required`;
-    }
-    
-    if (errors['email']) {
-      return VALIDATION_MESSAGES.EMAIL;
-    }
-    
-    if (errors['minlength']) {
-      const minLength = errors['minlength']['requiredLength'] as number;
-      return `${fieldDisplayName} must be at least ${minLength} characters`;
-    }
-    
-    if (errors['maxlength']) {
-      const maxLength = errors['maxlength']['requiredLength'] as number;
-      return `${fieldDisplayName} cannot exceed ${maxLength} characters`;
-    }
-    
-    if (errors['pattern']) {
-      return FormValidationHelper.getPatternErrorMessage(fieldName);
-    }
-    
-    if (errors['min']) {
-      const min = errors['min']['min'] as number;
-      return `${fieldDisplayName} must be at least ${min}`;
-    }
-    
-    if (errors['max']) {
-      const max = errors['max']['max'] as number;
-      return `${fieldDisplayName} cannot exceed ${max}`;
-    }
+    switch (errorKey) {
+      case 'required':
+        return `${fieldDisplayName} is required`;
 
-    if (errors['requiredTrue']) {
-      return 'You must accept the terms and conditions';
-    }
+      case 'email':
+        return VALIDATION_MESSAGES.EMAIL;
 
-    // Custom validator errors
-    if (errors['passwordMismatch']) {
-      return 'Passwords do not match';
-    }
+      case 'minlength': {
+        const minLength = errors['minlength']['requiredLength'] as number;
+        return `${fieldDisplayName} must be at least ${minLength} characters`;
+      }
 
-    if (errors['minItemsRequired']) {
-      const { requiredItems } = errors['minItemsRequired'];
-      return `Please select at least ${requiredItems} ${requiredItems === 1 ? 'item' : 'items'}`;
-    }
+      case 'maxlength': {
+        const maxLength = errors['maxlength']['requiredLength'] as number;
+        return `${fieldDisplayName} cannot exceed ${maxLength} characters`;
+      }
 
-    if (errors['maxItemsAllowed']) {
-      const { allowedItems } = errors['maxItemsAllowed'];
-      return `Maximum ${allowedItems} ${allowedItems === 1 ? 'item' : 'items'} allowed`;
-    }
+      case 'pattern':
+        return FormValidationHelper.getPatternErrorMessage(fieldName);
 
-    if (errors['maxFileSize']) {
-      const { maxSize, fileName } = errors['maxFileSize'];
-      const maxSizeMB = Math.round(maxSize / (1024 * 1024));
-      return `File "${fileName}" exceeds maximum size of ${maxSizeMB}MB`;
-    }
+      case 'min': {
+        const min = errors['min']['min'] as number;
+        return `${fieldDisplayName} must be at least ${min}`;
+      }
 
-    if (errors['allowedFileTypes']) {
-      const { allowedTypes, invalidFileName } = errors['allowedFileTypes'];
-      return `File "${invalidFileName}" has invalid type. Allowed: ${allowedTypes.join(', ')}`;
-    }
+      case 'max': {
+        const max = errors['max']['max'] as number;
+        return `${fieldDisplayName} cannot exceed ${max}`;
+      }
 
-    if (errors['urlWithProtocol']) {
-      return 'URL must start with http:// or https://';
-    }
+      case 'requiredTrue':
+        return 'You must accept the terms and conditions';
 
-    if (errors['linkedInUrl']) {
-      return VALIDATION_MESSAGES.LINKEDIN_URL;
-    }
+      case 'passwordMismatch':
+        return 'Passwords do not match';
 
-    if (errors['ageRange']) {
-      const { minAge, maxAge } = errors['ageRange'];
-      return `Age must be between ${minAge} and ${maxAge}`;
-    }
+      case 'minItemsRequired': {
+        const { requiredItems } = errors['minItemsRequired'];
+        return `Please select at least ${requiredItems} ${requiredItems === 1 ? 'item' : 'items'}`;
+      }
 
-    if (errors['strongPassword']) {
-      const passwordErrors = errors['strongPassword'];
-      const messages = [];
-      if (passwordErrors.noUpperCase) messages.push('one uppercase letter');
-      if (passwordErrors.noLowerCase) messages.push('one lowercase letter');
-      if (passwordErrors.noNumber) messages.push('one number');
-      if (passwordErrors.noSpecialChar) messages.push('one special character');
-      return `Password must contain ${messages.join(', ')}`;
-    }
+      case 'maxItemsAllowed': {
+        const { allowedItems } = errors['maxItemsAllowed'];
+        return `Maximum ${allowedItems} ${allowedItems === 1 ? 'item' : 'items'} allowed`;
+      }
 
-    return `${fieldDisplayName} is invalid`;
+      case 'maxFileSize': {
+        const { maxSize, fileName } = errors['maxFileSize'];
+        const maxSizeMB = Math.round(maxSize / (1024 * 1024));
+        return `File "${fileName}" exceeds maximum size of ${maxSizeMB}MB`;
+      }
+
+      case 'allowedFileTypes': {
+        const { allowedTypes, invalidFileName } = errors['allowedFileTypes'];
+        return `File "${invalidFileName}" has invalid type. Allowed: ${allowedTypes.join(', ')}`;
+      }
+
+      case 'urlWithProtocol':
+        return 'URL must start with http:// or https://';
+
+      case 'linkedInUrl':
+        return VALIDATION_MESSAGES.LINKEDIN_URL;
+
+      case 'ageRange': {
+        const { minAge, maxAge } = errors['ageRange'];
+        return `Age must be between ${minAge} and ${maxAge}`;
+      }
+
+      case 'strongPassword': {
+        const passwordErrors = errors['strongPassword'];
+        const messages = [];
+        if (passwordErrors.noUpperCase) messages.push('one uppercase letter');
+        if (passwordErrors.noLowerCase) messages.push('one lowercase letter');
+        if (passwordErrors.noNumber) messages.push('one number');
+        if (passwordErrors.noSpecialChar) messages.push('one special character');
+        return `Password must contain ${messages.join(', ')}`;
+      }
+
+      default:
+        return `${fieldDisplayName} is invalid`;
+    }
   }
 
   /**
@@ -139,7 +135,7 @@ export class FormValidationHelper {
       language: 'Language',
       yearsOfExperience: 'Years of experience',
       linkedInUrl: 'LinkedIn URL',
-      expertiseAreas: 'Areas of expertise',
+      areasOfExpertise: 'Areas of expertise',
       verificationFiles: 'Verification files',
       acceptTerms: 'Terms and conditions'
     };

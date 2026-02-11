@@ -1,20 +1,25 @@
+import { Injectable } from '@angular/core';
+
 /**
- * Utility functions for common form operations and data transformations
+ * Utility service for common form operations and data transformations
  */
+@Injectable({
+  providedIn: 'root'
+})
 export class FormUtilityService {
   
   /**
    * Clean phone number for submission (remove formatting)
    */
-  static cleanPhoneNumber(phoneNumber: string): string {
+  cleanPhoneNumber(phoneNumber: string): string {
     return phoneNumber.replace(/[\s\-()]/g, '');
   }
 
   /**
    * Format phone number for display
    */
-  static formatPhoneNumber(phoneNumber: string, countryCode = 'PH'): string {
-    const cleanNumber = FormUtilityService.cleanPhoneNumber(phoneNumber);
+  formatPhoneNumber(phoneNumber: string, countryCode = 'PH'): string {
+    const cleanNumber = this.cleanPhoneNumber(phoneNumber);
     
     // Add basic formatting based on country - can be expanded
     if (countryCode === 'PH' && cleanNumber.length === 11) {
@@ -27,14 +32,14 @@ export class FormUtilityService {
   /**
    * Validate and normalize email address
    */
-  static normalizeEmail(email: string): string {
+  normalizeEmail(email: string): string {
     return email.toLowerCase().trim();
   }
 
   /**
    * Clean and validate LinkedIn URL
    */
-  static normalizeLinkedInUrl(url: string): string {
+  normalizeLinkedInUrl(url: string): string {
     const cleanUrl = url.trim();
     
     // If URL doesn't start with http, add https
@@ -48,7 +53,7 @@ export class FormUtilityService {
   /**
    * Generate password strength score (0-4)
    */
-  static getPasswordStrength(password: string): number {
+  getPasswordStrength(password: string): number {
     let score = 0;
     
     if (password.length >= 8) score++;
@@ -63,7 +68,7 @@ export class FormUtilityService {
   /**
    * Get password strength label
    */
-  static getPasswordStrengthLabel(strength: number): string {
+  getPasswordStrengthLabel(strength: number): string {
     const labels = ['Very Weak', 'Weak', 'Fair', 'Good', 'Strong'];
     return labels[strength] || 'Very Weak';
   }
@@ -71,7 +76,7 @@ export class FormUtilityService {
   /**
    * Sanitize text input (remove potentially harmful characters)
    */
-  static sanitizeTextInput(input: string): string {
+  sanitizeTextInput(input: string): string {
     return input
       .trim()
       .replace(/[<>"'&]/g, '') // Remove basic XSS characters
@@ -81,7 +86,7 @@ export class FormUtilityService {
   /**
    * Extract form data with type safety
    */
-  static extractFormData<T>(form: any, fieldMap?: Record<string, string>): T {
+  extractFormData<T>(form: any, fieldMap?: Record<string, string>): T {
     const formValue = form.getRawValue ? form.getRawValue() : form.value;
     
     if (!fieldMap) {
@@ -101,14 +106,14 @@ export class FormUtilityService {
   /**
    * Check if two form values are equal (for detecting changes)
    */
-  static areFormValuesEqual(value1: any, value2: any): boolean {
+  areFormValuesEqual(value1: any, value2: any): boolean {
     return JSON.stringify(value1) === JSON.stringify(value2);
   }
 
   /**
    * Get changed fields between two form values
    */
-  static getChangedFields(oldValue: any, newValue: any): string[] {
+  getChangedFields(oldValue: any, newValue: any): string[] {
     const changed: string[] = [];
     
     Object.keys({ ...oldValue, ...newValue }).forEach(key => {
@@ -123,7 +128,7 @@ export class FormUtilityService {
   /**
    * Auto-focus first invalid field in form
    */
-  static focusFirstInvalidField(formElement: HTMLElement): void {
+  focusFirstInvalidField(formElement: HTMLElement): void {
     const firstInvalidField = formElement.querySelector('.ng-invalid:not(form)') as HTMLElement;
     if (firstInvalidField) {
       firstInvalidField.focus();
@@ -134,7 +139,7 @@ export class FormUtilityService {
   /**
    * Debounce function for form input validation
    */
-  static debounce<T extends (...args: any[]) => any>(
+  debounce<T extends (...args: any[]) => any>(
     func: T, 
     wait: number
   ): (...args: Parameters<T>) => void {

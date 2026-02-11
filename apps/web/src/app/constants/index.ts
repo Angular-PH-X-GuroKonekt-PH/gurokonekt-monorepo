@@ -3,6 +3,20 @@ export * from './validation-patterns.constants';
 export * from './form-validation-configs.constants';
 export * from './form-template-patterns.constants';
 
+// Location and language data
+export * from './countries.constants';
+export * from './timezones.constants';
+export * from './languages.constants';
+
+// Expertise options
+export * from './expertise.constants';
+
+// Phone country codes
+export * from './phone-country-codes.constants';
+
+// Timezone mapping
+export * from './timezone-mapping.constants';
+
 // Re-export commonly used patterns for convenience
 export { 
   VALIDATION_PATTERNS,

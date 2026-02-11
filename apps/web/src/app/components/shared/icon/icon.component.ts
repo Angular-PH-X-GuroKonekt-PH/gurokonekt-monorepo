@@ -1,4 +1,4 @@
-import { Component, Input } from '@angular/core';
+import { Component, input } from '@angular/core';
 
 export type IconName = 
   | 'hand-raised' 
@@ -38,10 +38,10 @@ export type IconName =
   imports: [],
   template: `
     @if (isAssetIcon()) {
-      <img [src]="getAssetPath()" [alt]="name" [class]="class" />
+      <img [src]="getAssetPath()" [alt]="name()" [class]="class()" />
     } @else {
       <svg 
-        [class]="class" 
+        [class]="class()" 
         fill="none" 
         viewBox="0 0 24 24" 
         stroke-width="1.5" 
@@ -57,8 +57,8 @@ export type IconName =
   `,
 })
 export class IconComponent {
-  @Input() name!: IconName;
-  @Input() class = 'h-6 w-6';
+  name = input.required<IconName>();
+  class = input<string>('h-6 w-6');
 
   private assetIcons: IconName[] = [
     'eye', 'eye-off', 'chevron-down',
@@ -66,11 +66,11 @@ export class IconComponent {
   ];
 
   isAssetIcon(): boolean {
-    return this.assetIcons.includes(this.name);
+    return this.assetIcons.includes(this.name());
   }
 
   getAssetPath(): string {
-    return `assets/icons/${this.name}.svg`;
+    return `assets/icons/${this.name()}.svg`;
   }
 
   getIconPath(): string {
@@ -108,6 +108,6 @@ export class IconComponent {
       'alert-info': ''
     };
 
-    return icons[this.name] || icons['user'];
+    return icons[this.name()] || icons['user'];
   }
 }

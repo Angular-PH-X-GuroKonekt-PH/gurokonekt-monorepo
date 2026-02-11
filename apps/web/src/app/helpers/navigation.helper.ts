@@ -1,3 +1,4 @@
+import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Role } from '@gurokonekt/models';
 
@@ -6,7 +7,7 @@ import { Role } from '@gurokonekt/models';
  */
 export class NavigationHelper {
   
-  constructor(private router: Router) {}
+  private router = inject(Router);
 
   /**
    * Navigate to login page

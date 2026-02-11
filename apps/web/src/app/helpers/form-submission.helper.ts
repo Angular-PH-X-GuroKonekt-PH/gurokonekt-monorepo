@@ -47,9 +47,6 @@ export class FormSubmissionHelper {
       return;
     }
     
-    // Handle original signature
-    console.error('Form submission failed:', errorOrState);
-    
     const message = customMessage || 
                    errorOrState?.message || 
                    'An unexpected error occurred. Please try again.';

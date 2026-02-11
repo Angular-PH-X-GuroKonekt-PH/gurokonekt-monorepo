@@ -13,7 +13,7 @@ export { ExpertiseSelectionHelper } from '../../helpers/expertise-selection.help
 
 // Form Services
 export { FormValidationService } from '../../services/form-validation.service';
-export { FormUtilityService } from '../../utils/form-utility.service';
+export { FormUtilityService } from '../../services/form-utility.service';
 
 // Form Constants
 export { VALIDATION_PATTERNS, VALIDATION_MESSAGES } from '../../constants/validation-patterns.constants';
