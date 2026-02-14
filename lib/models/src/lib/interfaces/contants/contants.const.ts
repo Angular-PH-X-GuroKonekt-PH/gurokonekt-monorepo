@@ -44,6 +44,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Files uploaded successfully',
     },
+    UPLOAD_AVATAR: {
+      code: 200,
+      message: 'Avatar uploaded successfully',
+    },
 
     UPDATE_USER_STATUS: {
       code: 200,
@@ -52,6 +56,14 @@ export const API_RESPONSE = {
     UPDATE_USER_ROLE: {
       code: 200,
       message: 'User role updated successfully',
+    },
+    UPDATE_USER_PROFILE: {
+      code: 200,
+      message: 'User profile updated successfully',
+    },
+    GET_USER_PROFILE: {
+      code: 200,
+      message: 'User profile get successfully',
     },
   },
   ERROR: {
@@ -122,6 +134,10 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Invalid URL',
     },
+    NO_DATA_RETURNED_ON_AUTH: {
+      code: 400,
+      message: 'Authentication service did not return user ID',
+    },
 
     /**
      * STORAGE
@@ -133,6 +149,14 @@ export const API_RESPONSE = {
     INVALID_BUCKET_NAME: {
       code: 400,
       message: 'Invalid or missing bucket name',
+    },
+    UPLOAD_FILES:{
+      code: 400,
+      message: 'Error uploading file, please try again',
+    },
+    UPLOAD_AVATAR:{
+      code: 400,
+      message: 'Error uploading avatar, please try again',
     },
 
     MISSING_REQUIRED_FIELDS: {
@@ -156,6 +180,89 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Failed to update user role',
     },
+    UPDATE_USER_PROFILE: {
+      code: 400,
+      message: 'Failed to update user profile',
+    },
+    GET_USER_PROFILE: {
+      code: 400,
+      message: 'Failed to get user profile',
+    },
+  }
+}
+
+export const SWAGGER_DOCUMENTATION = {
+  UPDATE_USER_PROFILE: {
+    summary: 'Update User Profile (Mentor or Mentee)',
+    description: `
+This endpoint creates or updates the profile of a user.
+
+Behavior:
+- If user role is **Mentor**, it updates/creates a MentorProfile.
+- If user role is **Mentee**, it updates/creates a MenteeProfile.
+- Automatically sets \`isProfileComplete = true\` after successful update.
+- Supports optional avatar upload via multipart/form-data.
+- Logs the activity in system logs.
+
+Frontend Notes:
+- Must send multipart/form-data.
+- "avatar" is optional.
+- "files" is optional.
+- DTO fields depend on user role.
+`,
+
+  },
+  UPDATE_USER_STATUS: {
+    summary: 'Update User Account Status',
+    description: `
+Updates the status of a user account.
+
+Possible statuses:
+- Active
+- Inactive
+- Suspended
+- Pending
+
+Used by admin panel.
+`,
+  },
+  UPDATE_USER_ROLE: {
+    summary: 'Update User Role',
+    description: `
+Updates the role of a user.
+
+Possible roles:
+- Mentee
+- Mentor
+- Admin
+
+⚠️ Changing role does NOT automatically create profile records.
+Frontend should call profile endpoint after role change if needed.
+`,
+  },
+  PHONE_NUMBER: {
+    example: '+639123456789',
+    description: 'Mobile number in E.164 international format. Must start with "+" followed by country code and subscriber number (no spaces or dashes).'
+  },
+  MENTEE_BIO: {
+    example: 'I am a software engineer with 5 years of experience. I am passionate about building software that makes people life easier.',
+    description: 'Bio of the mentee. Must be at least 10 characters long.'
+  },
+  COUNTRY: {
+    example: 'US',
+    description: 'Country of the mentee. Must be a valid ISO 3166-1 alpha-2 country code.'
+  },
+  LANGUAGE: {
+    example: 'en',
+    description: 'Language of the mentee. Must be a valid ISO 639-1 language code.'
+  },
+  TIMEZONE: {
+    example: 'Asia/Manila',
+    description: 'IANA timezone identifier (e.g., "Asia/Manila", "America/New_York"). Used for scheduling and time-based features.'
+  },
+  UPDATED_BY_ID: {
+    description: 'UUID of the user performing the update',
+    example: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21'
   }
 }
 

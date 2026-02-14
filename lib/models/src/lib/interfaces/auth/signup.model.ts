@@ -27,5 +27,4 @@ export interface RegisterMentorInterface {
   yearsOfExperience: number;
   linkedInUrl?: string;
   areasOfExpertise: string[];
-  files: File[];
 }

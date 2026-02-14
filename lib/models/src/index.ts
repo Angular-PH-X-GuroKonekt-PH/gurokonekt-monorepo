@@ -16,4 +16,7 @@ export * from './lib/dto/auth/signup-mentor.dto';
 export * from './lib/dto/auth/signin.dto';
 export * from './lib/dto/decorators/custom-matches.decorator';
 export * from './lib/dto/interceptors/mentor-documents.interceptor';
+export * from './lib/dto/interceptors/avatar.interceptor';
 export * from './lib/dto/users/admin.dto';
+export * from './lib/dto/users/update-user-profile.dto';
+export * from './lib/dto/constants/user-profile-validator.const';
