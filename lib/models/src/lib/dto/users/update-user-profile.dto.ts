@@ -1,11 +1,10 @@
-import { API_RESPONSE, REGEX, SWAGGER_DOCUMENTATION } from "@gurokonekt/models/interfaces/contants/contants.const";
-import { DaysInWeek, MenteePreferredSessionType, UpdateMenteeProfileInterface, TimeFrameInterface, UserAvailabilityInterface, UpdateMentorProfileInterface } from "@gurokonekt/models/interfaces/user/user.model";
+import { API_RESPONSE, REGEX, SWAGGER_DOCUMENTATION } from '../../interfaces/contants/contants.const';
+import { DaysInWeek, MenteePreferredSessionType, UpdateMenteeProfileInterface, TimeFrameInterface, UserAvailabilityInterface, UpdateMentorProfileInterface } from '../../interfaces/user/user.model';
 import { ApiProperty, ApiPropertyOptional } from "@nestjs/swagger";
 import { Transform, Type } from "class-transformer";
 import { 
   IsString, 
   IsArray, 
-  ArrayNotEmpty, 
   IsEnum, 
   IsUUID, 
   ValidateNested,
@@ -21,14 +20,14 @@ export class TimeFrameDto implements TimeFrameInterface {
     example: '07:00'
   })
   @IsString()
-  from: string;
+  from!: string;
 
   @ApiProperty({
     description: 'End time (24h format)',
     example: '09:00'
   })
   @IsString()
-  to: string;
+  to!: string;
 }
 
 export class UserAvailabilityDto implements UserAvailabilityInterface{
@@ -38,7 +37,7 @@ export class UserAvailabilityDto implements UserAvailabilityInterface{
     example: DaysInWeek.Monday
   })
   @IsEnum(DaysInWeek)
-  day: DaysInWeek;
+  day!: DaysInWeek;
 
   @ApiProperty({
     description: 'List of available time frames for the day',
@@ -47,7 +46,7 @@ export class UserAvailabilityDto implements UserAvailabilityInterface{
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => TimeFrameDto)
-  timeFrames: TimeFrameDto[];
+  timeFrames!: TimeFrameDto[];
 }
 
 export class UpdateMenteeProfileDto implements Partial<UpdateMenteeProfileInterface> { 
