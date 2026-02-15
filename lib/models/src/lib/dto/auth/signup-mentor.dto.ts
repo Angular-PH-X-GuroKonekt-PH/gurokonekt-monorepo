@@ -129,12 +129,4 @@ export class RegisterMentorDto implements RegisterMentorRequest {
   })
   @IsArray()
   areasOfExpertise!: string[];
-
-  @ApiProperty({
-    type: 'string',
-    format: 'binary',
-    isArray: true,
-    description: 'Supporting documents (PDF, images, etc.)',
-  })
-  files!: File[];
 }
