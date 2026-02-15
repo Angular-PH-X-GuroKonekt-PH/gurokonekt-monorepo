@@ -10,10 +10,10 @@ import {
   Min,
 } from 'class-validator';
 import { Transform } from 'class-transformer';
-import { API_RESPONSE, REGEX, RegisterMentorInterface } from '@gurokonekt/models';
+import { API_RESPONSE, REGEX, RegisterMentorRequest } from '@gurokonekt/models';
 import { CustomMatch } from '../decorators/custom-matches.decorator';
 
-export class RegisterMentorDto implements RegisterMentorInterface {
+export class RegisterMentorDto implements RegisterMentorRequest {
   @ApiProperty({ 
     required: true,
     example: 'John',
@@ -129,4 +129,10 @@ export class RegisterMentorDto implements RegisterMentorInterface {
   })
   @IsArray()
   areasOfExpertise!: string[];
+  
+  @ApiProperty({
+    example: 'Resume and portfolio files',
+    description: 'Array of files uploaded by the mentor (e.g., resume, portfolio). Each file should include necessary metadata such as filename, file type, and file size.',
+  })
+    files!: any[];
 }

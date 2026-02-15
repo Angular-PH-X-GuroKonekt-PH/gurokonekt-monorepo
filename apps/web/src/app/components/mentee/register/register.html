@@ -1,0 +1,631 @@
+<section
+  class="min-h-screen bg-gradient-to-br from-blue-50 via-orange-50 to-blue-50 py-8 sm:py-12"
+>
+  <div class="mx-auto max-w-6xl px-2 sm:px-4 lg:px-6">
+    <!-- Logo Section -->
+    <div class="mb-8 text-center">
+      <img
+        src="assets/logos/logo-light.svg"
+        alt="GuroKonekt Logo"
+        class="h-16 w-16 mx-auto"
+      />
+      <div class="mt-4 flex items-center justify-center gap-1">
+        <span class="text-3xl font-bold text-blue-900">Guro</span>
+        <span class="text-3xl font-bold text-orange-500">Konekt</span>
+      </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="text-center mb-8">
+      <h1
+        class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent"
+      >
+        Create Your Account
+      </h1>
+      <p class="mt-3 text-base text-gray-700">
+        Join our community of mentors and mentees
+      </p>
+    </div>
+
+    <!-- Stepper -->
+    <div class="mb-10">
+      <div class="flex items-center justify-center max-w-4xl mx-auto">
+        @for (stepTitle of stepTitles; track $index) {
+        <div class="flex flex-col items-center relative" [style.flex]="1">
+          <!-- Step Circle -->
+          <div
+            class="relative flex items-center justify-center w-12 h-12 rounded-full border-2 transition-all duration-300 z-10 bg-white"
+            [class]="currentStep() > $index + 1 ? 'border-green-500 text-green-600' : 
+                     currentStep() === $index + 1 ? 'border-orange-500 bg-orange-500 text-white shadow-lg' : 
+                     'border-gray-300 text-gray-400'"
+            (click)="goToStep($index + 1)"
+            (keyup.enter)="goToStep($index + 1)"
+            (keyup.space)="goToStep($index + 1)"
+            [attr.tabindex]="canNavigateToStep($index + 1) ? '0' : '-1'"
+            [attr.role]="'button'"
+            [attr.aria-label]="'Go to step ' + ($index + 1) + ': ' + stepTitle"
+            [class.cursor-pointer]="canNavigateToStep($index + 1)"
+          >
+            @if (currentStep() > $index + 1) {
+            <!-- Completed step icon -->
+            <app-icon name="check-mark" class="w-6 h-6"></app-icon>
+            } @else {
+            <span class="text-sm font-bold">{{ $index + 1 }}</span>
+            }
+          </div>
+          
+          <!-- Connecting Line -->
+          @if ($index < stepTitles.length - 1) {
+          <div 
+            class="absolute top-6 left-1/2 w-full h-0.5 -z-10"
+            [class]="currentStep() > $index + 1 ? 'bg-green-500' : 'bg-gray-200'"
+            style="transform: translateX(50%);">
+          </div>
+          }
+
+          <!-- Step Info -->
+          <div class="mt-4 text-center max-w-32">
+            <h3 
+              class="text-sm font-semibold leading-tight mb-1"
+              [class]="currentStep() === $index + 1 ? 'text-orange-600' : 
+                       currentStep() > $index + 1 ? 'text-green-600' : 
+                       'text-gray-500'">
+              {{ stepTitle }}
+            </h3>
+            <p class="text-xs text-gray-500 leading-relaxed">
+              @switch ($index + 1) {
+                @case (1) { Tell us about yourself }
+                @case (2) { Create a secure password }
+                @case (3) { Location & preferences }
+                @case (4) { Review and accept terms }
+              }
+            </p>
+          </div>
+        </div>
+        }
+      </div>
+    </div>
+
+    <!-- Registration Form Card -->
+    <div
+      class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-10 sm:p-12 lg:p-16"
+    >
+      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" (keydown.escape)="closePhoneCountryDropdown()">
+        <!-- Step 1: Personal Information -->
+        @if (currentStep() === 1) {
+        <div class="space-y-6">
+          <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-gray-900">
+              Personal Information
+            </h2>
+            <p class="text-gray-600 mt-2">Tell us about yourself</p>
+          </div>
+
+          <!-- First Name -->
+          <div>
+            <label
+              for="firstName"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              First Name <span class="text-orange-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="firstName"
+              formControlName="firstName"
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors"
+              [class.border-red-500]="hasError('firstName')"
+              placeholder="Enter your first name"
+            />
+            @if (hasError('firstName')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('firstName') }}
+            </p>
+            }
+          </div>
+
+          <!-- Last Name -->
+          <div>
+            <label
+              for="lastName"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Last Name <span class="text-orange-500">*</span>
+            </label>
+            <input
+              type="text"
+              id="lastName"
+              formControlName="lastName"
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors"
+              [class.border-red-500]="hasError('lastName')"
+              placeholder="Enter your last name"
+            />
+            @if (hasError('lastName')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('lastName') }}
+            </p>
+            }
+          </div>
+
+          <!-- Email -->
+          <div>
+            <label
+              for="email"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Email Address <span class="text-orange-500">*</span>
+            </label>
+            <input
+              type="email"
+              id="email"
+              formControlName="email"
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors"
+              [class.border-red-500]="hasError('email')"
+              placeholder="your.email@example.com"
+            />
+            @if (hasError('email')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('email') }}
+            </p>
+            }
+          </div>
+
+          <!-- Phone Number -->
+          <div>
+            <label
+              for="phoneNumber"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Phone Number <span class="text-orange-500">*</span>
+            </label>
+            <div class="relative">
+              <!-- Country Code Selector -->
+              <div class="absolute left-0 top-0 h-full z-10">
+                <button
+                  type="button"
+                  (click)="togglePhoneCountryDropdown()"
+                  (keyup.enter)="togglePhoneCountryDropdown()"
+                  (keyup.space)="togglePhoneCountryDropdown()"
+                  class="flex items-center gap-2 h-full px-4 border-r-2 border-gray-200 bg-gray-50 rounded-l-xl hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-28"
+                  [attr.aria-label]="'Select country code, currently ' + getSelectedPhoneCountry().label"
+                >
+                  <span class="text-xl">{{ getSelectedPhoneCountry().flag }}</span>
+                  <span class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ getSelectedPhoneCountry().phoneCode }}</span>
+                  <app-icon name="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0"></app-icon>
+                </button>
+
+                <!-- Country Dropdown -->
+                @if (showPhoneCountryDropdown()) {
+                <div class="absolute top-full left-0 z-50 w-80 max-h-60 overflow-y-auto bg-white border-2 border-gray-200 rounded-xl shadow-lg mt-1">
+                  @for (country of countries; track country.value) {
+                  <button
+                    type="button"
+                    (click)="selectPhoneCountry(country.value)"
+                    (keyup.enter)="selectPhoneCountry(country.value)"
+                    (keyup.space)="selectPhoneCountry(country.value)"
+                    class="w-full flex items-center gap-3 px-4 py-3 hover:bg-gray-50 transition-colors text-left focus:outline-none focus:bg-orange-50"
+                    [class.bg-orange-50]="selectedPhoneCountry() === country.value"
+                    [class.border-l-4]="selectedPhoneCountry() === country.value"
+                    [class.border-l-orange-500]="selectedPhoneCountry() === country.value"
+                  >
+                    <span class="text-xl">{{ country.flag }}</span>
+                    <div class="flex-1 min-w-0">
+                      <div class="text-sm font-medium text-gray-900 truncate">{{ country.label }}</div>
+                      <div class="text-xs text-gray-500">{{ country.phoneCode }}</div>
+                    </div>
+                  </button>
+                  }
+                </div>
+                }
+              </div>
+
+              <!-- Phone Input -->
+              <input
+                type="tel"
+                id="phoneNumber"
+                formControlName="phoneNumber"
+                class="w-full pl-32 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors"
+                [class.border-red-500]="hasError('phoneNumber')"
+                [placeholder]="getPhoneFormatPlaceholder()"
+                (focus)="closePhoneCountryDropdown()"
+              />
+            </div>
+            @if (hasError('phoneNumber')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getPhoneErrorMessage() }}
+            </p>
+            } @else {
+            <p class="mt-1 text-xs text-gray-600">
+              Enter your phone number in {{ getSelectedPhoneCountry().label }} format
+            </p>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Step 2: Account Security -->
+        @if (currentStep() === 2) {
+        <div class="space-y-6">
+          <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-gray-900">Account Security</h2>
+            <p class="text-gray-600 mt-2">
+              Create a secure password for your account
+            </p>
+          </div>
+
+          <!-- Password -->
+          <div>
+            <label
+              for="password"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Password <span class="text-orange-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                [type]="showPassword() ? 'text' : 'password'"
+                id="password"
+                formControlName="password"
+                class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors pr-12"
+                [class.border-red-500]="hasError('password')"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                (click)="togglePasswordVisibility()"
+                (keyup.enter)="togglePasswordVisibility()"
+                (keyup.space)="togglePasswordVisibility()"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                [attr.aria-label]="showPassword() ? 'Hide password' : 'Show password'"
+              >
+                @if (showPassword()) {
+                <img
+                  src="assets/icons/eye-off.svg"
+                  alt="Hide password"
+                  class="h-5 w-5"
+                />
+                } @else {
+                <img
+                  src="assets/icons/eye.svg"
+                  alt="Show password"
+                  class="h-5 w-5"
+                />
+                }
+              </button>
+            </div>
+            @if (hasError('password')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('password') }}
+            </p>
+            } @else {
+            <p class="mt-1 text-xs text-gray-600">
+              Min 8 characters with uppercase, number & special character
+            </p>
+            }
+          </div>
+
+          <!-- Confirm Password -->
+          <div>
+            <label
+              for="confirmPassword"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Confirm Password <span class="text-orange-500">*</span>
+            </label>
+            <div class="relative">
+              <input
+                [type]="showConfirmPassword() ? 'text' : 'password'"
+                id="confirmPassword"
+                formControlName="confirmPassword"
+                class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors pr-12"
+                [class.border-red-500]="hasError('confirmPassword') || registerForm.hasError('passwordMismatch')"
+                placeholder="••••••••"
+              />
+              <button
+                type="button"
+                (click)="toggleConfirmPasswordVisibility()"
+                (keyup.enter)="toggleConfirmPasswordVisibility()"
+                (keyup.space)="toggleConfirmPasswordVisibility()"
+                class="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700"
+                [attr.aria-label]="showConfirmPassword() ? 'Hide confirm password' : 'Show confirm password'"
+              >
+                @if (showConfirmPassword()) {
+                <img
+                  src="assets/icons/eye-off.svg"
+                  alt="Hide password"
+                  class="h-5 w-5"
+                />
+                } @else {
+                <img
+                  src="assets/icons/eye.svg"
+                  alt="Show password"
+                  class="h-5 w-5"
+                />
+                }
+              </button>
+            </div>
+            @if (registerForm.hasError('passwordMismatch') &&
+            registerForm.get('confirmPassword')?.touched) {
+            <p class="mt-1 text-sm text-red-600">Passwords do not match</p>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Step 3: Location & Preferences -->
+        @if (currentStep() === 3) {
+        <div class="space-y-6">
+          <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-gray-900">
+              Location & Preferences
+            </h2>
+            <p class="text-gray-600 mt-2">
+              Help us personalize your experience
+            </p>
+          </div>
+
+          <!-- Country -->
+          <div>
+            <label
+              for="country"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Country <span class="text-orange-500">*</span>
+            </label>
+            <select
+              id="country"
+              formControlName="country"
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors"
+              [class.border-red-500]="hasError('country')"
+            >
+              <option value="">Select your country</option>
+              @for (country of countries; track country.value) {
+              <option [value]="country.value">{{ country.label }}</option>
+              }
+            </select>
+            @if (hasError('country')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('country') }}
+            </p>
+            } @else {
+            <p class="mt-1 text-xs text-gray-600">
+              This will help us auto-select your timezone and match you with
+              local mentors
+            </p>
+            }
+          </div>
+
+          <!-- Timezone -->
+          <div>
+            <label
+              for="timezone"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Timezone <span class="text-orange-500">*</span>
+            </label>
+            <select
+              id="timezone"
+              formControlName="timezone"
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors"
+              [class.border-red-500]="hasError('timezone')"
+            >
+              <option value="">Select your timezone</option>
+              @for (tz of timezones(); track tz.value) {
+              <option [value]="tz.value">{{ tz.label }}</option>
+              }
+            </select>
+            @if (hasError('timezone')) {
+            <p class="mt-1 text-sm text-red-600">
+              {{ getErrorMessage('timezone') }}
+            </p>
+            } @else {
+            <p class="mt-1 text-xs text-gray-600">
+              @if (registerForm.get('country')?.value) { Timezone auto-selected
+              based on your country, but you can choose any timezone you prefer
+              } @else { Select your country to auto-fill your timezone, or
+              choose any timezone manually }
+            </p>
+            }
+          </div>
+
+          <!-- Preferred Language -->
+          <div>
+            <label
+              for="language"
+              class="block text-sm font-semibold text-gray-700 mb-2"
+            >
+              Preferred Language
+            </label>
+            <select
+              id="language"
+              formControlName="language"
+              class="w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors"
+            >
+              @for (lang of languages; track lang.value) {
+              <option [value]="lang.value">{{ lang.label }}</option>
+              }
+            </select>
+          </div>
+        </div>
+        }
+
+        <!-- Step 4: Terms & Review -->
+        @if (currentStep() === 4) {
+        <div class="space-y-6">
+          <div class="text-center mb-8">
+            <h2 class="text-2xl font-bold text-gray-900">Almost Done!</h2>
+            <p class="text-gray-600 mt-2">
+              Review your information and accept our terms
+            </p>
+          </div>
+
+          <!-- Account Summary -->
+          <div class="bg-gray-50 rounded-xl p-6 space-y-4">
+            <h3 class="text-lg font-semibold text-gray-900 mb-4">
+              Account Summary
+            </h3>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
+              <div>
+                <span class="text-gray-600">Name:</span>
+                <span class="ml-2 font-medium"
+                  >{{ registerForm.get('firstName')?.value }} {{
+                  registerForm.get('lastName')?.value }}</span
+                >
+              </div>
+              <div>
+                <span class="text-gray-600">Email:</span>
+                <span class="ml-2 font-medium"
+                  >{{ registerForm.get('email')?.value }}</span
+                >
+              </div>
+              <div>
+                <span class="text-gray-600">Phone:</span>
+                <span class="ml-2 font-medium"
+                  >{{ registerForm.get('phoneNumber')?.value }}</span
+                >
+              </div>
+              <div>
+                <span class="text-gray-600">Country:</span>
+                <span class="ml-2 font-medium"
+                  >{{ getCountryDisplayName(registerForm.get('country')?.value) }}</span
+                >
+              </div>
+              <div>
+                <span class="text-gray-600">Timezone:</span>
+                <span class="ml-2 font-medium"
+                  >{{ getTimezoneDisplayName(registerForm.get('timezone')?.value) }}</span
+                >
+              </div>
+              <div>
+                <span class="text-gray-600">Language:</span>
+                <span class="ml-2 font-medium"
+                  >{{ getLanguageDisplayName(registerForm.get('language')?.value) }}</span
+                >
+              </div>
+            </div>
+          </div>
+
+          <!-- Terms & Conditions -->
+          <div>
+            <label class="flex items-start gap-3 cursor-pointer">
+              <input
+                type="checkbox"
+                formControlName="acceptTerms"
+                class="mt-1 w-5 h-5 rounded border-2 border-gray-300 text-orange-500 focus:ring-2 focus:ring-orange-500"
+              />
+              <span class="text-sm text-gray-700">
+                I accept the
+                <a
+                  href="#"
+                  class="text-orange-600 hover:text-orange-700 font-semibold"
+                >
+                  Terms & Conditions
+                </a>
+                and
+                <a
+                  href="#"
+                  class="text-orange-600 hover:text-orange-700 font-semibold"
+                >
+                  Privacy Policy
+                </a>
+                <span class="text-orange-500">*</span>
+              </span>
+            </label>
+            @if (registerForm.get('acceptTerms')?.touched &&
+            registerForm.get('acceptTerms')?.invalid) {
+            <p class="mt-1 text-sm text-red-600">
+              You must accept the terms and conditions
+            </p>
+            }
+          </div>
+        </div>
+        }
+
+        <!-- Error Message -->
+        @if (submissionState.error()) {
+        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
+          <div class="flex items-center gap-2">
+            <img
+              src="assets/icons/alert-triangle.svg"
+              alt="Error"
+              class="w-5 h-5"
+            />
+            <p class="text-sm text-red-700 font-medium">{{ submissionState.error() }}</p>
+          </div>
+        </div>
+        }
+
+        <!-- Step Navigation -->
+        <div
+          class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200"
+        >
+          <!-- Previous Button -->
+          <button
+            type="button"
+            (click)="previousStep()"
+            (keyup.enter)="previousStep()"
+            (keyup.space)="previousStep()"
+            [disabled]="currentStep() === 1"
+            class="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          >
+            <app-icon name="chevron-left" class="w-5 h-5"></app-icon>
+            Previous
+          </button>
+
+          <!-- Progress indicator -->
+          <div class="text-sm text-gray-500">
+            Step {{ currentStep() }} of {{ totalSteps }}
+          </div>
+
+          <!-- Next/Submit Button -->
+          @if (currentStep() < totalSteps) {
+          <!-- Next Button -->
+          <button
+            type="button"
+            (click)="nextStep()"
+            (keyup.enter)="nextStep()"
+            (keyup.space)="nextStep()"
+            [disabled]="!isCurrentStepValid()"
+            class="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-semibold hover:shadow-lg transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed"
+          >
+            Next
+            <app-icon name="chevron-right" class="w-5 h-5"></app-icon>
+          </button>
+          } @else {
+          <!-- Submit Button -->
+          <button
+            type="submit"
+            class="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-400 text-white font-bold hover:shadow-lg transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed"
+            [disabled]="submissionState.isLoading() || registerForm.invalid"
+          >
+            @if (submissionState.isLoading()) {
+            <span
+              class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+            ></span>
+            Creating Account... } @else {
+            <app-icon name="check-mark" class="w-5 h-5"></app-icon>
+            Create Account }
+          </button>
+          }
+        </div>
+      </form>
+
+      <!-- Login Link -->
+      <div class="mt-8 text-center pt-6 border-t border-gray-200">
+        <p class="text-sm text-gray-600">
+          Already have an account?
+          <button
+            type="button"
+            (click)="navigateToLogin()"
+            (keyup.enter)="navigateToLogin()"
+            (keyup.space)="navigateToLogin()"
+            class="text-orange-600 hover:text-orange-700 font-semibold ml-1"
+          >
+            Log in
+          </button>
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
