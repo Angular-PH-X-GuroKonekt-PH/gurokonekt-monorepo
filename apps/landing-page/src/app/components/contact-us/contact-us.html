@@ -1,0 +1,197 @@
+<section class="bg-gray-900 pt-24 pb-72 px-4 sm:px-6 lg:px-8">
+    <div class="max-w-6xl mx-auto">
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+
+            <!-- Left Column - Contact Form -->
+            <div class="w-full">
+                <div class="mb-5 px-4">
+                    <h1 class="text-3xl font-bold text-white mb-6">Questions about GuroKonekt?</h1>
+                    <p class="text-gray-300 text-lg">
+                        feel free to contact us and we will get to you<br>
+                        as soon as possible
+                    </p>
+                </div>
+
+                <form [formGroup]="contactForm" (ngSubmit)="onSubmit()"
+                    class="bg-slate-800/50 border-2 border-blue-700/50 rounded-2xl py-14 px-10 backdrop-blur-sm">
+
+                    <div class="mb-6">
+                        <label for="email" class="block mb-2 text-sm font-medium"
+                            [class.text-red-700]="email?.invalid && (email?.touched || formSubmitted())"
+                            [class.text-white]="email?.valid || (!email?.touched && !formSubmitted())">
+                            Email
+                        </label>
+
+                        <input type="email" id="email" formControlName="email" autocomplete="email"
+                            class="text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 block w-full p-3 px-5"
+                            [class.bg-red-50]="email?.invalid && (email?.touched || formSubmitted())"
+                            [class.border-red-500]="email?.invalid && (email?.touched || formSubmitted())"
+                            [class.text-red-900]="email?.invalid && (email?.touched || formSubmitted())"
+                            [class.placeholder-red-700]="email?.invalid && (email?.touched || formSubmitted())"
+                            [class.bg-white]="email?.valid || (!email?.touched && !formSubmitted())"
+                            [class.border]="email?.valid || (!email?.touched && !formSubmitted())"
+                            [class.border-gray-300]="email?.valid || (!email?.touched && !formSubmitted())"
+                            [class.text-gray-900]="email?.valid || (!email?.touched && !formSubmitted())">
+
+                        @if (email?.invalid && (email?.dirty || email?.touched || formSubmitted())) {
+                        <p id="email-error" class="mt-2 text-sm text-red-600">
+                            @if (email?.hasError('required')) {
+                            Email is required
+                            }
+                            @if (email?.hasError('email')) {
+                            Please enter a valid email
+                            }
+                        </p>
+                        }
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="fullName" class="block mb-2 text-sm font-medium"
+                            [class.text-red-700]="fullName?.invalid && (fullName?.touched || formSubmitted())"
+                            [class.text-white]="fullName?.valid || (!fullName?.touched && !formSubmitted())">
+                            Full Name
+                        </label>
+
+                        <input type="text" id="fullName" formControlName="fullName" autocomplete="name"
+                            class="text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 block w-full p-3 px-5"
+                            [class.bg-red-50]="fullName?.invalid && (fullName?.touched || formSubmitted())"
+                            [class.border-red-500]="fullName?.invalid && (fullName?.touched || formSubmitted())"
+                            [class.text-red-900]="fullName?.invalid && (fullName?.touched || formSubmitted())"
+                            [class.placeholder-red-700]="fullName?.invalid && (fullName?.touched || formSubmitted())"
+                            [class.bg-white]="fullName?.valid || (!fullName?.touched && !formSubmitted())"
+                            [class.border]="fullName?.valid || (!fullName?.touched && !formSubmitted())"
+                            [class.border-gray-300]="fullName?.valid || (!fullName?.touched && !formSubmitted())"
+                            [class.text-gray-900]="fullName?.valid || (!fullName?.touched && !formSubmitted())">
+
+                        @if (fullName?.invalid && (fullName?.dirty || fullName?.touched || formSubmitted())) {
+                        <p id="fullName-error" class="mt-2 text-sm text-red-600">
+                            @if (fullName?.hasError('required')) {
+                            Full name is required
+                            }
+                            @if (fullName?.hasError('minlength')) {
+                            Name must be at least 2 characters
+                            }
+                        </p>
+                        }
+                    </div>
+
+                    <div class="mb-6">
+                        <label for="topic" class="block mb-2 text-sm font-medium"
+                            [class.text-red-700]="topic?.invalid && (topic?.touched || formSubmitted())"
+                            [class.text-white]="topic?.valid || (!topic?.touched && !formSubmitted())">
+                            Topic
+                        </label>
+
+                        <input type="text" id="topic" formControlName="topic"
+                            class="text-sm rounded-full focus:ring-blue-500 focus:border-blue-500 block w-full p-3 px-5"
+                            [class.bg-red-50]="topic?.invalid && (topic?.touched || formSubmitted())"
+                            [class.border-red-500]="topic?.invalid && (topic?.touched || formSubmitted())"
+                            [class.text-red-900]="topic?.invalid && (topic?.touched || formSubmitted())"
+                            [class.placeholder-red-700]="topic?.invalid && (topic?.touched || formSubmitted())"
+                            [class.bg-white]="topic?.valid || (!topic?.touched && !formSubmitted())"
+                            [class.border]="topic?.valid || (!topic?.touched && !formSubmitted())"
+                            [class.border-gray-300]="topic?.valid || (!topic?.touched && !formSubmitted())"
+                            [class.text-gray-900]="topic?.valid || (!topic?.touched && !formSubmitted())">
+
+                        @if (topic?.invalid && (topic?.dirty || topic?.touched || formSubmitted())) {
+                        <p id="topic-error" class="mt-2 text-sm text-red-600">
+                            @if (topic?.hasError('required')) {
+                            Topic is required
+                            }
+                        </p>
+                        }
+                    </div>
+
+                    <div class="mb-10">
+                        <label for="message" class="block mb-2 text-sm font-medium"
+                            [class.text-red-700]="message?.invalid && (message?.touched || formSubmitted())"
+                            [class.text-white]="message?.valid || (!message?.touched && !formSubmitted())">
+                            Message
+                        </label>
+
+                        <textarea id="message" formControlName="message" rows="5"
+                            class="text-sm rounded-3xl focus:ring-blue-500 focus:border-blue-500 block w-full p-4 px-5 resize-none"
+                            [class.bg-red-50]="message?.invalid && (message?.touched || formSubmitted())"
+                            [class.border-red-500]="message?.invalid && (message?.touched || formSubmitted())"
+                            [class.text-red-900]="message?.invalid && (message?.touched || formSubmitted())"
+                            [class.placeholder-red-700]="message?.invalid && (message?.touched || formSubmitted())"
+                            [class.bg-white]="message?.valid || (!message?.touched && !formSubmitted())"
+                            [class.border]="message?.valid || (!message?.touched && !formSubmitted())"
+                            [class.border-gray-300]="message?.valid || (!message?.touched && !formSubmitted())"
+                            [class.text-gray-900]="message?.valid || (!message?.touched && !formSubmitted())"></textarea>
+
+                        @if (message?.invalid && (message?.dirty || message?.touched || formSubmitted())) {
+                        <p id="message-error" class="mt-2 text-sm text-red-600">
+                            @if (message?.hasError('required')) {
+                            Message is required
+                            }
+                            @if (message?.hasError('minlength')) {
+                            Message must be at least 10 characters
+                            }
+                        </p>
+                        }
+                    </div>
+
+                    <div class="flex gap-4 justify-end">
+                        <button type="button" (click)="onClear()" [disabled]="isSubmissionInProgress()"
+                            class="text-white bg-transparent border-2 border-blue-600 hover:bg-blue-600/20 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-8 py-2.5 text-center transition-colors">
+                            Clear
+                        </button>
+                        <button type="submit" [disabled]="isSubmissionInProgress()"
+                            class="text-white bg-blue-500 hover:bg-blue-600 focus:ring-4 focus:outline-none focus:ring-blue-300 font-medium rounded-full text-sm px-8 py-2.5 text-center transition-colors">
+                            @if (isSubmissionInProgress()) {
+                            <span>Submitting...</span>
+                            } @else {
+                            <span>Submit</span>
+                            }
+                        </button>
+                    </div>
+                </form>
+
+            </div>
+
+            <!-- Right Column - Logo and Stats -->
+            <div class="w-full flex flex-col justify-center items-center lg:items-end min-h-full mt-4">
+
+                <div class="flex items-center justify-center space-x-4 lg:px-5 mt-16">
+                    <img src="logo.svg" alt="GuroKonekt" class="w-40 h-40" />
+                    <h2 class="text-5xl font-bold text-white">GuroKonekt</h2>
+                </div>
+
+                <div class="w-full flex items-center gap-6 max-w-md bg-orange-600 rounded-3xl p-12 shadow-2xl mt-16">
+                    <div>
+                        <span class="text-white text-5xl font-bold">{{courses()}}+</span>
+                    </div>
+
+                    <div>
+                        <h3 class="text-white text-3xl font-bold mb-5">Courses</h3>
+                        <p class="text-white text-lg">
+                            Different Courses that<br>
+                            you can have for free
+                        </p>
+                    </div>
+                </div>
+
+                <div
+                    class="w-full flex items-center gap-6 max-w-md bg-orange-600 rounded-3xl p-12 shadow-2xl mt-12 relative">
+                    <div>
+                        <span class="text-white text-5xl font-bold">{{mentors()}}+</span>
+                    </div>
+
+                    <div>
+                        <h3 class="text-white text-3xl font-bold mb-5">Mentors</h3>
+                        <p class="text-white text-lg">
+                            A lot of mentors<br>
+                            available worldwide
+                        </p>
+                    </div>
+
+                    <img src="pencil-naut.svg" alt="pencil-naut logo"
+                        class="w-52 h-52 absolute -bottom-24 -left-[85px] hidden md:block" />
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+</section>

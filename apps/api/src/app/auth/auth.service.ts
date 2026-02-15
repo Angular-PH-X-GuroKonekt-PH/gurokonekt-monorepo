@@ -64,7 +64,17 @@ export class AuthService {
         }
       }
 
-      const authId = data.user?.id!;
+      if (!data?.user?.id) {
+        this.logger.error(API_RESPONSE.ERROR.NO_DATA_RETURNED_ON_AUTH.message);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.NO_DATA_RETURNED_ON_AUTH.message,
+          data: null,
+        };
+      }
+
+      const authId = data.user.id;
       const hashPassword = await bcrypt.hash(dto.password, 10);
       const mentee = await this.prisma.db.user.create({
         data: {
@@ -177,7 +187,17 @@ export class AuthService {
         }
       }
 
-      const authId = data.user?.id!;
+      if (!data?.user?.id) {
+        this.logger.error(API_RESPONSE.ERROR.NO_DATA_RETURNED_ON_AUTH.message);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.NO_DATA_RETURNED_ON_AUTH.message,
+          data: null,
+        };
+      }
+
+      const authId = data.user.id;
       const hashPassword = await bcrypt.hash(dto.password, 10);
       const transaction = await this.prisma.db.$transaction(async (tx) => { 
         const mentor = await tx.user.create({

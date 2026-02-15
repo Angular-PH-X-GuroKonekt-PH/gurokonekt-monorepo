@@ -12,6 +12,7 @@ export class SelectFields {
       language: true,
       timezone: true,
       isProfileComplete: true,
+      isMentorProfileComplete: true,
       isMentorApproved: true,
       role: true,
       status: true,

@@ -129,12 +129,10 @@ export class RegisterMentorDto implements RegisterMentorRequest {
   })
   @IsArray()
   areasOfExpertise!: string[];
-
+  
   @ApiProperty({
-    type: 'string',
-    format: 'binary',
-    isArray: true,
-    description: 'Supporting documents (PDF, images, etc.)',
+    example: 'Resume and portfolio files',
+    description: 'Array of files uploaded by the mentor (e.g., resume, portfolio). Each file should include necessary metadata such as filename, file type, and file size.',
   })
-  files!: File[];
+    files!: any[];
 }
