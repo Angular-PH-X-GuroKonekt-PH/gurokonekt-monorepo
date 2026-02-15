@@ -1,5 +1,5 @@
 import { Route } from '@angular/router';
-import { Dashboard } from './components/mentee/dashboard/dashboard';
+import { Dashboard } from './components/dashboard/dashboard';
 import { RoleSelection } from './components/role-selection/role-selection';
 import { Register } from './components/mentee/register/register';
 import { Login } from './components/login/login';

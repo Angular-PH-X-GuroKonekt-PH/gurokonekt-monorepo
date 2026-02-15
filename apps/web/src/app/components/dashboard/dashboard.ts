@@ -1,5 +1,5 @@
 import { Component } from '@angular/core';
-import { IconComponent } from '../../shared/icon/icon.component';
+import { IconComponent } from '../shared/icon/icon.component';
 
 /**
  * Dashboard component placeholder for the mentorship platform.
