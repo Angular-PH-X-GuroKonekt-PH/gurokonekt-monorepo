@@ -6,7 +6,6 @@
     "prepare": "husky",
     "start:api": "node dist/apps/api/main.js",
     "build:api": "npx nx run api:build",
-    "build:ssr": "nx build landing-page --configuration=production",
     "start:landing-page": "node dist/apps/landing-page/server/server.mjs"
   },
   "private": true,

@@ -3,9 +3,7 @@
 runConfig:
   minInstances: 0
   runtime: nodejs22
-script:
-  buildCommand: npm run build:ssr
-  runCommand: npm run start:landing-page
+  entrypoint: npm run start:landing-page
   # maxInstances: 100
   # concurrency: 80
   # cpu: 1
