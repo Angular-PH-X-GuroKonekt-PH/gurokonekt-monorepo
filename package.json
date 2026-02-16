@@ -5,7 +5,8 @@
   "scripts": {
     "prepare": "husky",
     "start:api": "node dist/apps/api/main.js",
-    "build:api": "npx nx run api:build"
+    "build:api": "npx nx run api:build",
+    "start:landing-page": "node dist/apps/landing-page/server/server.mjs"
   },
   "private": true,
   "devDependencies": {
