@@ -20,7 +20,7 @@ export class NavigationHelper {
    * Navigate to role selection
    */
   async navigateToRoleSelection(): Promise<boolean> {
-    return this.router.navigate(['/choose-role']);
+    return this.router.navigate(['/register/choose-role']);
   }
 
   /**
@@ -28,9 +28,9 @@ export class NavigationHelper {
    */
   async navigateToRegister(role: Role = 'mentee'): Promise<boolean> {
     if (role === 'mentor') {
-      return this.router.navigate(['/mentor/register']);
+      return this.router.navigate(['/register/mentor']);
     } else {
-      return this.router.navigate(['/register']);
+      return this.router.navigate(['/register/mentee']);
     }
   }
 

@@ -38,7 +38,8 @@ export abstract class BaseStepperRegistrationComponent extends BaseRegistrationC
   }
   
   protected canNavigateToStep(step: number): boolean {
-    return step >= 1 && step <= this.totalSteps;
+    // Only allow navigation to current or previous steps, not future steps
+    return step >= 1 && step <= this.currentStep() && step <= this.totalSteps;
   }
   
   protected canProceedToNextStep(): boolean {

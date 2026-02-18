@@ -1,13 +1,5 @@
-import {
-  Component,
-  inject,
-  OnInit,
-} from '@angular/core';
-import {
-  FormGroup,
-  ReactiveFormsModule,
-  Validators,
-} from '@angular/forms';
+import { Component, inject, OnInit } from '@angular/core';
+import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMentorRequest } from '@gurokonekt/models';
 import { AuthState } from '../../../store/auth';
@@ -28,12 +20,21 @@ import { formatPhoneToE164 } from '../../../helpers/phone.formatter';
   templateUrl: './register.html',
   styleUrls: ['./register.scss'],
 })
-export class MentorRegister extends BaseStepperRegistrationComponent implements OnInit {
+export class MentorRegister
+  extends BaseStepperRegistrationComponent
+  implements OnInit
+{
   private readonly store = inject(Store);
 
-  protected readonly isMentorRegisterLoading = this.store.selectSignal(AuthState.isMentorRegisterLoading);
-  protected readonly errorMessage = this.store.selectSignal(AuthState.errorMessage);
-  protected readonly successMessage = this.store.selectSignal(AuthState.successMessage);
+  protected readonly isMentorRegisterLoading = this.store.selectSignal(
+    AuthState.isMentorRegisterLoading
+  );
+  protected readonly errorMessage = this.store.selectSignal(
+    AuthState.errorMessage
+  );
+  protected readonly successMessage = this.store.selectSignal(
+    AuthState.successMessage
+  );
 
   protected readonly totalSteps = 5;
   protected readonly stepTitles = [
@@ -41,16 +42,17 @@ export class MentorRegister extends BaseStepperRegistrationComponent implements 
     'Security',
     'Location',
     'Professional Details',
-    'Review & Confirm'
+    'Review & Confirm',
   ];
 
   protected readonly registerForm: FormGroup;
-  protected readonly expertiseOptions = ExpertiseSelectionHelper.EXPERTISE_OPTIONS;
+  protected readonly expertiseOptions =
+    ExpertiseSelectionHelper.EXPERTISE_OPTIONS;
   protected selectedFiles: File[] = [];
 
   constructor() {
     super();
-    
+
     this.registerForm = this.fb.group(
       {
         firstName: ['', FORM_FIELD_VALIDATORS.FIRST_NAME],
@@ -65,14 +67,17 @@ export class MentorRegister extends BaseStepperRegistrationComponent implements 
         timezone: ['Asia/Manila', FORM_FIELD_VALIDATORS.TIMEZONE],
         language: ['en'],
         areasOfExpertise: [[], [Validators.required, Validators.minLength(1)]],
-        yearsOfExperience: [null, [Validators.required, Validators.min(1), Validators.max(60)]],
+        yearsOfExperience: [
+          null,
+          [Validators.required, Validators.min(1), Validators.max(60)],
+        ],
         linkedInUrl: ['', FORM_FIELD_VALIDATORS.LINKEDIN_URL],
         files: [[]],
         acceptTerms: [false, FORM_FIELD_VALIDATORS.ACCEPT_TERMS],
       },
       { validators: CustomValidators.passwordMatchValidator }
     );
-    
+
     // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
   }
@@ -87,19 +92,28 @@ export class MentorRegister extends BaseStepperRegistrationComponent implements 
 
     switch (currentStep) {
       case 1:
-        return !!form.get('firstName')?.valid && !!form.get('lastName')?.valid &&
-               !!form.get('email')?.valid && !!form.get('phoneNumber')?.valid;
+        return (
+          !!form.get('firstName')?.valid &&
+          !!form.get('lastName')?.valid &&
+          !!form.get('email')?.valid &&
+          !!form.get('phoneNumber')?.valid
+        );
       case 2:
-        return !!form.get('password')?.valid && !!form.get('confirmPassword')?.valid;
+        return (
+          !!form.get('password')?.valid && !!form.get('confirmPassword')?.valid
+        );
       case 3:
         return !!form.get('country')?.valid && !!form.get('timezone')?.valid;
       case 4: {
         const linkedInControl = form.get('linkedInUrl');
-        const isLinkedInValid = !linkedInControl?.value || linkedInControl?.valid;
-        return !!form.get('areasOfExpertise')?.valid && 
-               !!form.get('yearsOfExperience')?.valid && 
-               isLinkedInValid &&
-               this.selectedFiles.length > 0;
+        const isLinkedInValid =
+          !linkedInControl?.value || linkedInControl?.valid;
+        return (
+          !!form.get('areasOfExpertise')?.valid &&
+          !!form.get('yearsOfExperience')?.valid &&
+          isLinkedInValid &&
+          this.selectedFiles.length > 0
+        );
       }
       case 5:
         return !!form.get('acceptTerms')?.valid;
@@ -109,11 +123,18 @@ export class MentorRegister extends BaseStepperRegistrationComponent implements 
   }
 
   protected onExpertiseChange(event: Event, expertise: string): void {
-    ExpertiseSelectionHelper.handleExpertiseChange(event, expertise, this.registerForm);
+    ExpertiseSelectionHelper.handleExpertiseChange(
+      event,
+      expertise,
+      this.registerForm
+    );
   }
 
   protected isExpertiseSelected(expertise: string): boolean {
-    return ExpertiseSelectionHelper.isExpertiseSelected(expertise, this.registerForm);
+    return ExpertiseSelectionHelper.isExpertiseSelected(
+      expertise,
+      this.registerForm
+    );
   }
 
   protected onFilesSelected(event: Event): void {
@@ -121,16 +142,18 @@ export class MentorRegister extends BaseStepperRegistrationComponent implements 
     if (input.files && input.files.length > 0) {
       // Only take the first file (single upload)
       const file = input.files[0];
-      
+
       // Validate file size (max 10MB)
       const maxSize = 10 * 1024 * 1024; // 10MB in bytes
       if (file.size > maxSize) {
-        this.handleSubmissionError('File size exceeds 10MB limit. Please choose a smaller file.');
+        this.handleSubmissionError(
+          'File size exceeds 10MB limit. Please choose a smaller file.'
+        );
         input.value = ''; // Clear the input
         this.selectedFiles = [];
         return;
       }
-      
+
       this.selectedFiles = [file];
       this.registerForm.patchValue({ files: this.selectedFiles });
     }
@@ -145,14 +168,17 @@ export class MentorRegister extends BaseStepperRegistrationComponent implements 
 
     try {
       const formData = this.registerForm.value;
-      
+
       const registrationData: RegisterMentorRequest = {
         firstName: formData.firstName,
         middleName: formData.middleName || undefined,
         lastName: formData.lastName,
         suffix: formData.suffix || undefined,
         email: formData.email,
-        phoneNumber: formatPhoneToE164(formData.phoneNumber, formData.country || 'PH'),
+        phoneNumber: formatPhoneToE164(
+          formData.phoneNumber,
+          formData.country || 'PH'
+        ),
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         country: formData.country,
@@ -165,10 +191,11 @@ export class MentorRegister extends BaseStepperRegistrationComponent implements 
       };
 
       this.store.dispatch(new RegisterMentor(registrationData));
-      
     } catch (error) {
       console.error('Registration error:', error);
-      this.handleSubmissionError('An unexpected error occurred. Please try again.');
+      this.handleSubmissionError(
+        'An unexpected error occurred. Please try again.'
+      );
     }
   }
 

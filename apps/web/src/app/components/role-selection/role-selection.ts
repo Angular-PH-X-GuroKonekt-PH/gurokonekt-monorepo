@@ -25,9 +25,9 @@ export class RoleSelection {
     }
 
     if (role === 'mentor') {
-      void this.router.navigate(['/mentor/register']);
+      void this.router.navigate(['/register/mentor']);
     } else {
-      void this.router.navigate(['/register']);
+      void this.router.navigate(['/register/mentee']);
     }
   }
 }

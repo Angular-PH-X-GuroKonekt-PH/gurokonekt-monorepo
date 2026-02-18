@@ -1,8 +1,4 @@
-import {
-  Component,
-  inject,
-  OnInit,
-} from '@angular/core';
+import { Component, inject, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormGroup } from '@angular/forms';
 import { Store } from '@ngxs/store';
@@ -22,26 +18,35 @@ import { formatPhoneToE164 } from '../../../helpers/phone.formatter';
   templateUrl: './register.html',
   styleUrl: './register.scss',
 })
-export class Register extends BaseStepperRegistrationComponent implements OnInit {
+export class Register
+  extends BaseStepperRegistrationComponent
+  implements OnInit
+{
   private readonly store = inject(Store);
 
-  protected readonly isMenteeRegisterLoading = this.store.selectSignal(AuthState.isMenteeRegisterLoading);
-  protected readonly errorMessage = this.store.selectSignal(AuthState.errorMessage);
-  protected readonly successMessage = this.store.selectSignal(AuthState.successMessage);
+  protected readonly isMenteeRegisterLoading = this.store.selectSignal(
+    AuthState.isMenteeRegisterLoading
+  );
+  protected readonly errorMessage = this.store.selectSignal(
+    AuthState.errorMessage
+  );
+  protected readonly successMessage = this.store.selectSignal(
+    AuthState.successMessage
+  );
 
   protected readonly totalSteps = 4;
   protected readonly stepTitles = [
     'Personal Information',
-    'Contact Details', 
+    'Contact Details',
     'Location & Language',
-    'Confirmation'
+    'Confirmation',
   ];
 
   protected readonly registerForm: FormGroup;
 
   constructor() {
     super();
-    
+
     this.registerForm = this.fb.group(
       {
         firstName: ['', FORM_FIELD_VALIDATORS.FIRST_NAME],
@@ -57,7 +62,7 @@ export class Register extends BaseStepperRegistrationComponent implements OnInit
       },
       { validators: CustomValidators.passwordMatchValidator }
     );
-    
+
     // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
   }
@@ -74,8 +79,12 @@ export class Register extends BaseStepperRegistrationComponent implements OnInit
       case 1:
         return !!form.get('firstName')?.valid && !!form.get('lastName')?.valid;
       case 2:
-        return !!form.get('email')?.valid && !!form.get('phoneNumber')?.valid &&
-               !!form.get('password')?.valid && !!form.get('confirmPassword')?.valid;
+        return (
+          !!form.get('email')?.valid &&
+          !!form.get('phoneNumber')?.valid &&
+          !!form.get('password')?.valid &&
+          !!form.get('confirmPassword')?.valid
+        );
       case 3:
         return !!form.get('country')?.valid && !!form.get('timezone')?.valid;
       case 4:
@@ -94,12 +103,15 @@ export class Register extends BaseStepperRegistrationComponent implements OnInit
 
     try {
       const formData = this.registerForm.value;
-      
+
       const registrationData: RegisterMenteeRequest = {
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: formData.email,
-        phoneNumber: formatPhoneToE164(formData.phoneNumber, formData.country || 'PH'),
+        phoneNumber: formatPhoneToE164(
+          formData.phoneNumber,
+          formData.country || 'PH'
+        ),
         password: formData.password,
         confirmPassword: formData.confirmPassword,
         country: formData.country,
@@ -108,9 +120,10 @@ export class Register extends BaseStepperRegistrationComponent implements OnInit
       };
 
       this.store.dispatch(new RegisterMentee(registrationData));
-      
     } catch (error) {
-      this.handleSubmissionError('An unexpected error occurred. Please try again.');
+      this.handleSubmissionError(
+        'An unexpected error occurred. Please try again.'
+      );
     }
   }
 }
