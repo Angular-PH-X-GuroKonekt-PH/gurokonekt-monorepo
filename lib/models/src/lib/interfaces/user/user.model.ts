@@ -124,3 +124,13 @@ export interface TimeFrameInterface {
   from: string; 
   to: string;  
 }
+
+export interface MentorCardInterface {
+  id: string;
+  firstName: string;
+  lastName: string;    
+  areasOfExpertise: string[];
+  rating: number;
+  bio: string;             
+  avatarUrl: string;
+}

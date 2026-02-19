@@ -1,13 +1,5 @@
 import { Component, signal, computed, DestroyRef, inject, NgZone } from '@angular/core';
-
-interface Mentor {
-  id: number;
-  name: string;
-  role: string;
-  rating: number;
-  description: string;
-  image: string;
-}
+import { MentorCardInterface } from '@gurokonekt/models';
 
 @Component({
   selector: 'app-mentors',
@@ -18,70 +10,81 @@ interface Mentor {
 export class Mentors {
   private destroyRef = inject(DestroyRef);
   private ngZone = inject(NgZone);
-  
+
   currentIndex = signal(0);
   navigationCount = signal(0);
   isTransitioning = signal(false);
   readonly VISIBLE_DOTS = 3;
 
-  mentors = signal<Mentor[]>([
+  mentors = signal<MentorCardInterface[]>([
     {
-      id: 1,
-      name: 'John Doe',
-      role: 'Software Engineer',
+      id: '1',
+      firstName: 'John',
+      lastName: 'Doe',
+      areasOfExpertise: ['Software Engineering', 'DevOps'],
       rating: 4.9,
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
-      image: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=800&fit=crop'
+      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=800&fit=crop'
     },
     {
-      id: 2,
-      name: 'Jane Smith',
-      role: 'UX Designer',
+      id: '2',
+      firstName: 'Jane',
+      lastName: 'Smith',
+      areasOfExpertise: ['UX Design'],
       rating: 4.8,
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
-      image: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=800&fit=crop'
+      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=800&fit=crop'
     },
     {
-      id: 3,
-      name: 'Mike Johnson',
-      role: 'Data Scientist',
+      id: '3',
+      firstName: 'Mike',
+      lastName: 'Johnson',
+      areasOfExpertise: ['Data Science'],
       rating: 4.95,
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
-      image: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=800&fit=crop'
+      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=800&fit=crop'
     },
     {
-      id: 4,
-      name: 'Sarah Williams',
-      role: 'Product Manager',
+      id: '4',
+      firstName: 'Sarah',
+      lastName: 'Williams',
+      areasOfExpertise: ['Product Management'],
       rating: 4.85,
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
-      image: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=800&fit=crop'
+      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=800&fit=crop'
     },
     {
-      id: 5,
-      name: 'David Brown',
-      role: 'DevOps Engineer',
+      id: '5',
+      firstName: 'David',
+      lastName: 'Brown',
+      areasOfExpertise: ['DevOps'],
       rating: 4.92,
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
-      image: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=800&fit=crop'
+      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=800&fit=crop'
     },
     {
-      id: 6,
-      name: 'Emily Chen',
-      role: 'Mobile Developer',
+      id: '6',
+      firstName: 'Emily',
+      lastName: 'Chen',
+      areasOfExpertise: ['Mobile Development'],
       rating: 4.88,
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
-      image: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&h=800&fit=crop'
+      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      avatarUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&h=800&fit=crop'
     },
     {
-      id: 7,
-      name: 'Alice Monroe',
-      role: 'AI/ML Engineer',
+      id: '7',
+      firstName: 'Alice',
+      lastName: 'Monroe',
+      areasOfExpertise: ['AI/ML Engineering'],
       rating: 4.91,
-      description: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
-      image: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop'
+      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop'
     }
   ]);
+
+  currentMentor = computed(() => this.mentors()[this.currentIndex()]);
+
+  fullName = computed(() => `${this.currentMentor().firstName} ${this.currentMentor().lastName}`);
 
   activeDotPosition = computed(() => {
     return this.navigationCount() % this.VISIBLE_DOTS;
@@ -94,7 +97,7 @@ export class Mentors {
       const interval = setInterval(() => {
         this.ngZone.run(() => this.nextSlide());
       }, 5000);
-      
+
       this.destroyRef.onDestroy(() => clearInterval(interval));
     });
   }

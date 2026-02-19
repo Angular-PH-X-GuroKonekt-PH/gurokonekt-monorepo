@@ -1,66 +1,66 @@
-    <section class="flex items-center justify-center pt-12 pr-8 pb-24 pl-8" style="background-color: #0f1c35;">
-        <div class="w-full max-w-6xl">
-            <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-10 lg:mb-20">The Mentors</h1>
+<section class="flex items-center justify-center pt-12 pr-8 pb-24 pl-8" style="background-color: #0f1c35;">
+    <div class="w-full max-w-6xl">
+        <h1 class="text-3xl sm:text-4xl lg:text-5xl font-bold text-white text-center mb-10 lg:mb-20">The Mentors</h1>
 
-            <div class="relative flex flex-col md:flex-row items-center gap-6 md:gap-8 group">
+        <div class="relative flex flex-col md:flex-row items-center gap-6 md:gap-8 group">
 
-                <img src="pencilnaut-front.png" alt="pencilnaut-front" class="object-contain hidden md:block mr-4">
+            <img src="pencilnaut-front.png" alt="pencilnaut-front" class="object-contain hidden md:block mr-4">
 
-                <!-- Carousel Content -->
-                <div class="flex-1 w-full">
-                    <div class="transition-opacity duration-500" [class.opacity-0]="isTransitioning()" [class.opacity-100]="!isTransitioning()">
-                        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+            <!-- Carousel Content -->
+            <div class="flex-1 w-full">
+                <div class="transition-opacity duration-500" [class.opacity-0]="isTransitioning()"
+                    [class.opacity-100]="!isTransitioning()">
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
 
-                            <!-- Left Side - Text -->
-                            <div class="flex-1">
-                                <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{{mentors()[currentIndex()].name }}</h2>
-                                <p class="text-lg sm:text-xl text-blue-300 mb-4 lg:mb-6">{{ mentors()[currentIndex()].role}}</p>
-                                <p class="text-gray-300 leading-relaxed text-sm sm:text-base">{{mentors()[currentIndex()].description }}</p>
-                            </div>
-
-                            <!-- Right Side - Photo and Rating -->
-                            <div class="relative mt-4 lg:mt-0">
-                                <div class="absolute top-3 left-3 lg:-left-24 text-black px-4 lg:px-6 py-2 lg:py-3 rounded-2xl shadow-lg z-10 min-w-28 lg:min-w-36"
-                                    style="background-color: #ff8e1c;">
-                                    <div class="text-xs sm:text-sm font-semibold">{{ mentors()[currentIndex()].name }}</div>
-                                    <div class="text-xs sm:text-sm">Rating {{ mentors()[currentIndex()].rating }}</div>
-                                </div>
-
-                                <div class="mt-8 rounded-3xl overflow-hidden shadow-2xl">
-                                    <img [src]="mentors()[currentIndex()].image" alt="{{ mentors()[currentIndex()].name }}"
-                                        class="w-full h-56 sm:h-72 lg:h-[400px] object-cover">                                 
-                                </div>
-                            </div>
-
+                        <!-- Left Side - Text -->
+                        <div class="flex-1">
+                            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{{ fullName() }}</h2>
+                            <p class="text-lg sm:text-xl text-blue-300 mb-4 lg:mb-6">{{ currentMentor().areasOfExpertise.join(', ') }}</p>
+                            <p class="text-gray-300 leading-relaxed text-sm sm:text-base">{{ currentMentor().bio }}</p>
                         </div>
+
+                        <!-- Right Side - Photo and Rating -->
+                        <div class="relative mt-4 lg:mt-0">
+                            <div class="absolute top-3 left-3 lg:-left-24 text-black px-4 lg:px-6 py-2 lg:py-3 rounded-2xl shadow-lg z-10 min-w-28 lg:min-w-36"
+                                style="background-color: #ff8e1c;">
+                                <div class="text-xs sm:text-sm font-semibold">{{ fullName() }}</div>
+                                <div class="text-xs sm:text-sm">Rating {{ currentMentor().rating }}</div>
+                            </div>
+
+                            <div class="mt-8 rounded-3xl overflow-hidden shadow-2xl">
+                                <img [src]="currentMentor().avatarUrl" [alt]="fullName()" class="w-full h-56 sm:h-72 lg:h-[400px] object-cover">
+                            </div>
+                        </div>
+
                     </div>
-
-                    <!-- Navigation Dots -->
-                    <div class="flex justify-center gap-3 mt-9 lg:ml-64">
-                        @for (dotPosition of dots; track dotPosition) {
-                        <button (click)="onDotClick(dotPosition)"
-                            [class.bg-orange-500]="dotPosition === activeDotPosition()"
-                            [class.bg-blue-500]="dotPosition !== activeDotPosition()"
-                            class="w-5 h-5 rounded-full transition-all duration-300 hover:scale-125">
-                        </button>
-                        }
-                    </div>
-
-                    <!-- Arrow Navigation -->
-                    <button (click)="previousSlide()"
-                        class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-8 xl:-translate-x-16 bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-full transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
-                        </svg>
-                    </button>
-
-                    <button (click)="nextSlide()"
-                        class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-8 xl:translate-x-16 bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-full transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100">
-                        <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
-                        </svg>
-                    </button>
                 </div>
+
+                <!-- Navigation Dots -->
+                <div class="flex justify-center gap-3 mt-9 lg:ml-64">
+                    @for (dotPosition of dots; track dotPosition) {
+                    <button (click)="onDotClick(dotPosition)"
+                        [class.bg-orange-500]="dotPosition === activeDotPosition()"
+                        [class.bg-blue-500]="dotPosition !== activeDotPosition()"
+                        class="w-5 h-5 rounded-full transition-all duration-300 hover:scale-125">
+                    </button>
+                    }
+                </div>
+
+                <!-- Arrow Navigation -->
+                <button (click)="previousSlide()"
+                    class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-8 xl:-translate-x-16 bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-full transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
+                    </svg>
+                </button>
+
+                <button (click)="nextSlide()"
+                    class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-8 xl:translate-x-16 bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-full transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100">
+                    <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                    </svg>
+                </button>
             </div>
         </div>
-    </section>
+    </div>
+</section>
