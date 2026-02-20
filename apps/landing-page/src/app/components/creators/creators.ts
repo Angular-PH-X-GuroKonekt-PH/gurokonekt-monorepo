@@ -10,7 +10,8 @@ import { Contentful } from '../../shared/services/contentful/contentful';
 export class Creators implements OnInit{
   dataService = inject(Contentful);
   creatorItems = signal<Array<Creator>>([]);
-
+  mentors = signal(200);
+  courses = signal(400);
 
   ngOnInit(): void {
     this.dataService.getLeads().then((res) => {
