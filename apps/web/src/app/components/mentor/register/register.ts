@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMentorRequest } from '@gurokonekt/models';
@@ -12,6 +12,7 @@ import { CustomValidators } from '../../../validators/custom-validators';
 import { ExpertiseSelectionHelper } from '../../../helpers/expertise-selection.helper';
 import { LocationDataHelper } from '../../../helpers/location-data.helper';
 import { formatPhoneToE164 } from '../../../helpers/phone.formatter';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-mentor-register',
@@ -25,6 +26,7 @@ export class MentorRegister
   implements OnInit
 {
   private readonly store = inject(Store);
+  private readonly toastService = inject(ToastService);
 
   protected readonly isMentorRegisterLoading = this.store.selectSignal(
     AuthState.isMentorRegisterLoading
@@ -80,6 +82,20 @@ export class MentorRegister
 
     // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
+    
+    // Watch for success and error messages from auth state
+    effect(() => {
+      const successMsg = this.successMessage();
+      const errorMsg = this.errorMessage();
+      
+      if (successMsg) {
+        this.toastService.success(successMsg, 'Registration Successful!');
+      }
+      
+      if (errorMsg) {
+        this.toastService.error(errorMsg, 'Registration Failed');
+      }
+    });
   }
 
   ngOnInit(): void {

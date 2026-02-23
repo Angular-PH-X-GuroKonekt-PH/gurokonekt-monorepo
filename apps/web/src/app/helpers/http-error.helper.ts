@@ -39,7 +39,7 @@ export class HttpErrorHelper {
       case 422:
         return 'Validation failed. Please check your inputs and try again.';
       case 429:
-        return 'Too many requests. Please wait a moment before trying again.';
+        return serverMessage || 'Too many requests. Please wait a moment before trying again.';
       case 500:
         return 'Server error. Please try again in a few moments.';
       case 503:

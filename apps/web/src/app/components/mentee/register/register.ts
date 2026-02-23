@@ -1,4 +1,4 @@
-import { Component, inject, OnInit } from '@angular/core';
+import { Component, inject, OnInit, effect } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormGroup } from '@angular/forms';
 import { Store } from '@ngxs/store';
@@ -10,6 +10,7 @@ import { BaseStepperRegistrationComponent } from '../../shared/base-stepper-regi
 import { FORM_FIELD_VALIDATORS } from '../../../constants/form-validation-configs.constants';
 import { CustomValidators } from '../../../validators/custom-validators';
 import { formatPhoneToE164 } from '../../../helpers/phone.formatter';
+import { ToastService } from '../../../services/toast.service';
 
 @Component({
   selector: 'app-register',
@@ -23,6 +24,7 @@ export class Register
   implements OnInit
 {
   private readonly store = inject(Store);
+  private readonly toastService = inject(ToastService);
 
   protected readonly isMenteeRegisterLoading = this.store.selectSignal(
     AuthState.isMenteeRegisterLoading
@@ -65,6 +67,20 @@ export class Register
 
     // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
+    
+    // Watch for success and error messages from auth state
+    effect(() => {
+      const successMsg = this.successMessage();
+      const errorMsg = this.errorMessage();
+      
+      if (successMsg) {
+        this.toastService.success(successMsg, 'Registration Successful!');
+      }
+      
+      if (errorMsg) {
+        this.toastService.error(errorMsg, 'Registration Failed');
+      }
+    });
   }
 
   ngOnInit(): void {

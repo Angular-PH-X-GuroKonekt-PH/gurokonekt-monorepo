@@ -23,9 +23,9 @@ export class RouterNavigationHelper {
   static async navigateToAuth(router: Router, authType: 'login' | 'register' | 'forgot-password' | 'choose-role'): Promise<boolean> {
     const routes = {
       'login': ['/login'],
-      'register': ['/register/choose-role'],
+      'register': ['/register'],
       'forgot-password': ['/forgot-password'],
-      'choose-role': ['/register/choose-role']
+      'choose-role': ['/register']
     };
 
     return RouterNavigationHelper.navigateTo(router, routes[authType]);
@@ -97,7 +97,7 @@ export class RouterNavigationHelper {
    * Navigate to registration page  
    */
   static navigateToRegistration(router: Router): Promise<boolean> {
-    return RouterNavigationHelper.navigateTo(router, ['/register/choose-role']);
+    return RouterNavigationHelper.navigateTo(router, ['/register']);
   }
 
   /**

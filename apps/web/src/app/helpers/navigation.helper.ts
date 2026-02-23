@@ -20,18 +20,16 @@ export class NavigationHelper {
    * Navigate to role selection
    */
   async navigateToRoleSelection(): Promise<boolean> {
-    return this.router.navigate(['/register/choose-role']);
+    return this.router.navigate(['/register']);
   }
 
   /**
    * Navigate to register based on role
    */
   async navigateToRegister(role: Role = 'mentee'): Promise<boolean> {
-    if (role === 'mentor') {
-      return this.router.navigate(['/register/mentor']);
-    } else {
-      return this.router.navigate(['/register/mentee']);
-    }
+    return this.router.navigate(['/register'], {
+      queryParams: { step: role }
+    });
   }
 
   /**
