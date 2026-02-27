@@ -24,3 +24,5 @@ export * from './lib/dto/constants/user-profile-validator.const';
 export * from './lib/interfaces/contants/allowed-cors-origins.conts';
 export * from './lib/interfaces/notification/notification.model';
 export * from './lib/dto/notification/notification.dto';
+export * from './lib/interfaces/booking/booking.model';
+export * from './lib/dto/booking/booking.dto';

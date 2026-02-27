@@ -52,6 +52,17 @@ enum LogsActionType {
   @@map("logs_action_type")
 }
 
+enum BookingStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  COMPLETED
+  CANCELLED
+  DELETED
+
+  @@map("booking_status")
+}
+
 enum NotificationType {
   BOOKING
   SESSION
@@ -107,9 +118,11 @@ model User {
   avatarAttachments       AvatarAttachment[]
   documentAttachments     DocumentAttachment[]
 
-  logsCreated   Logs[]         @relation("logs_created_by")
-  logsUpdated   Logs[]         @relation("logs_updated_by")
-  notifications Notification[]
+  logsCreated      Logs[]         @relation("logs_created_by")
+  logsUpdated      Logs[]         @relation("logs_updated_by")
+  notifications    Notification[]
+  bookingsAsMentee Booking[]      @relation("MenteeBookings")
+  bookingsAsMentor Booking[]      @relation("MentorBookings")
 
   @@map("users")
 }
@@ -214,4 +227,22 @@ model Notification {
   user        User               @relation(fields: [userId], references: [id])
 
   @@map("notifications")
+}
+
+model Booking {
+  id              String        @id @default(uuid())
+  menteeId        String        @map("mentee_id")
+  mentorId        String        @map("mentor_id")
+  sessionDateTime DateTime      @map("session_date_time")
+  status          BookingStatus @default(PENDING)
+  sessionLink     String?       @map("session_link")
+  notes           String?
+  isDeleted       Boolean       @default(false) @map("is_deleted")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
+
+  mentee          User          @relation("MenteeBookings", fields: [menteeId], references: [id])
+  mentor          User          @relation("MentorBookings", fields: [mentorId], references: [id])
+
+  @@map("bookings")
 }
