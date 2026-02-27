@@ -12,6 +12,8 @@ import { withNgxsReduxDevtoolsPlugin } from '@ngxs/devtools-plugin';
 
 import { appRoutes } from './app.routes';
 import { AuthState } from './store/auth';
+import { VerifyEmailState } from './store/verify-email';
+import { RegistrationState } from './store/registration';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -20,7 +22,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(appRoutes),
     provideHttpClient(),
     provideStore(
-      [AuthState],
+      [AuthState, VerifyEmailState, RegistrationState],
       withNgxsLoggerPlugin({ disabled: !isDevMode() }),
       withNgxsReduxDevtoolsPlugin({ disabled: !isDevMode() })
     ),

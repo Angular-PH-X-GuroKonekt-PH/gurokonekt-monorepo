@@ -1,5 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
-import { Router } from '@angular/router';
+import { Component, signal, output } from '@angular/core';
 import { Role } from '@gurokonekt/models';
 import { IconComponent } from '../shared/icon/icon.component';
 
@@ -11,8 +10,8 @@ import { IconComponent } from '../shared/icon/icon.component';
   styleUrl: './role-selection.scss',
 })
 export class RoleSelection {
-  private readonly router = inject(Router);
   protected readonly selectedRole = signal<Role | null>(null);
+  readonly roleSelected = output<'mentee' | 'mentor'>();
 
   protected selectRole(role: Role): void {
     this.selectedRole.set(role);
@@ -24,10 +23,6 @@ export class RoleSelection {
       return;
     }
 
-    if (role === 'mentor') {
-      void this.router.navigate(['/mentor/register']);
-    } else {
-      void this.router.navigate(['/register']);
-    }
+    this.roleSelected.emit(role);
   }
 }

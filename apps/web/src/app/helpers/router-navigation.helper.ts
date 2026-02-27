@@ -23,9 +23,9 @@ export class RouterNavigationHelper {
   static async navigateToAuth(router: Router, authType: 'login' | 'register' | 'forgot-password' | 'choose-role'): Promise<boolean> {
     const routes = {
       'login': ['/login'],
-      'register': ['/choose-role'],
+      'register': ['/register'],
       'forgot-password': ['/forgot-password'],
-      'choose-role': ['/choose-role']
+      'choose-role': ['/register']
     };
 
     return RouterNavigationHelper.navigateTo(router, routes[authType]);
@@ -78,7 +78,7 @@ export class RouterNavigationHelper {
     isDashboardRoute: boolean;
   } {
     const url = router.url;
-    const isAuthRoute = ['/login', '/register', '/choose-role', '/forgot-password', '/verify-email'].some(route => 
+    const isAuthRoute = ['/login', '/register', '/forgot-password', '/verify-email'].some(route => 
       url.startsWith(route)
     );
     const isDashboardRoute = url.startsWith('/dashboard');
@@ -97,7 +97,7 @@ export class RouterNavigationHelper {
    * Navigate to registration page  
    */
   static navigateToRegistration(router: Router): Promise<boolean> {
-    return RouterNavigationHelper.navigateTo(router, ['/choose-role']);
+    return RouterNavigationHelper.navigateTo(router, ['/register']);
   }
 
   /**
