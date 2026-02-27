@@ -12,13 +12,23 @@ export class JwtGuardStrategy extends PassportStrategy(Strategy) {
         cache: true,
         rateLimit: true,
         jwksRequestsPerMinute: 5,
-        jwksUri: 'https://ofbjjpxbrtslusnjujre.supabase.co/auth/v1/.well-known/jwks.json',
+        jwksUri: 'https://utsktclxlwtjedrhqtuh.supabase.co/auth/v1/.well-known/jwks.json',
       }),
       algorithms: ['ES256'], 
     });
   }
 
-  async validate(payload: any) {
-    return { id: payload.sub, email: payload.email, role: payload.role };
+  async validate(payload: unknown) {
+    const user = payload as {
+      sub?: string;
+      email?: string;
+      role?: string;
+    };
+
+    return {
+      id: user.sub,
+      email: user.email,
+      role: user.role,
+    };
   }
 }
