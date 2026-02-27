@@ -52,6 +52,23 @@ enum LogsActionType {
   @@map("logs_action_type")
 }
 
+enum NotificationType {
+  BOOKING
+  SESSION
+  MESSAGE
+  ANNOUNCEMENT
+
+  @@map("notification_type")
+}
+
+enum NotificationStatus {
+  UNREAD
+  READ
+  DELETED
+
+  @@map("notification_status")
+}
+
 /* =======================
   MODELS
 ======================= */
@@ -90,8 +107,9 @@ model User {
   avatarAttachments       AvatarAttachment[]
   documentAttachments     DocumentAttachment[]
 
-  logsCreated Logs[] @relation("logs_created_by")
-  logsUpdated Logs[] @relation("logs_updated_by")
+  logsCreated   Logs[]         @relation("logs_created_by")
+  logsUpdated   Logs[]         @relation("logs_updated_by")
+  notifications Notification[]
 
   @@map("users")
 }
@@ -179,4 +197,21 @@ model Logs {
   updatedBy   User?           @relation("logs_updated_by", fields: [updatedById], references: [id])
 
   @@map("logs")
+}
+
+model Notification {
+  id          String             @id @default(uuid())
+  userId      String             @map("user_id")
+  title       String
+  message     String
+  type        NotificationType
+  status      NotificationStatus @default(UNREAD)
+  referenceId String?            @map("reference_id")
+  readAt      DateTime?          @map("read_at")
+  createdAt   DateTime           @default(now()) @map("created_at")
+  updatedAt   DateTime           @updatedAt @map("updated_at")
+
+  user        User               @relation(fields: [userId], references: [id])
+
+  @@map("notifications")
 }

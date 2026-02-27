@@ -9,6 +9,7 @@ import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
 import { BookingModule } from './booking/booking.module';
 import { SearchModule } from './search/search.module';
+import { NotificationGatewayGateway } from './gateway/notification-gateway.gateway';
 
 @Module({
   imports: [
@@ -21,6 +22,6 @@ import { SearchModule } from './search/search.module';
     SearchModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [AppService, PrismaService, NotificationGatewayGateway],
 })
 export class AppModule {}
