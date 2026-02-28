@@ -49,3 +49,4 @@ vitest.config.*.timestamp*
 
 apps/api/.env
 /lib/generated/prisma
+CLAUDE.md

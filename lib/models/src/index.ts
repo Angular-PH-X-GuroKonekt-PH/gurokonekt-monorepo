@@ -21,3 +21,6 @@ export * from './lib/dto/interceptors/avatar.interceptor';
 export * from './lib/dto/users/admin.dto';
 export * from './lib/dto/users/update-user-profile.dto';
 export * from './lib/dto/constants/user-profile-validator.const';
+export * from './lib/interfaces/contants/allowed-cors-origins.conts';
+export * from './lib/interfaces/notification/notification.model';
+export * from './lib/dto/notification/notification.dto';

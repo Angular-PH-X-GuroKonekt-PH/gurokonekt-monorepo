@@ -65,6 +65,30 @@ export const API_RESPONSE = {
       code: 200,
       message: 'User profile get successfully',
     },
+
+    /**
+     * NOTIFICATIONS
+     */
+    CREATE_NOTIFICATION: {
+      code: 201,
+      message: 'Notification created successfully',
+    },
+    GET_NOTIFICATIONS: {
+      code: 200,
+      message: 'Notifications retrieved successfully',
+    },
+    GET_NOTIFICATION: {
+      code: 200,
+      message: 'Notification retrieved successfully',
+    },
+    UPDATE_NOTIFICATION: {
+      code: 200,
+      message: 'Notification updated successfully',
+    },
+    DELETE_NOTIFICATION: {
+      code: 200,
+      message: 'Notification deleted successfully',
+    },
   },
   ERROR: {
     /**
@@ -187,6 +211,38 @@ export const API_RESPONSE = {
     GET_USER_PROFILE: {
       code: 400,
       message: 'Failed to get user profile',
+    },
+
+    /**
+     * NOTIFICATIONS
+     */
+    CREATE_NOTIFICATION: {
+      code: 500,
+      message: 'Failed to create notification',
+    },
+    GET_NOTIFICATIONS: {
+      code: 500,
+      message: 'Failed to get notifications',
+    },
+    GET_NOTIFICATION: {
+      code: 500,
+      message: 'Failed to get notification',
+    },
+    UPDATE_NOTIFICATION: {
+      code: 500,
+      message: 'Failed to update notification',
+    },
+    DELETE_NOTIFICATION: {
+      code: 500,
+      message: 'Failed to delete notification',
+    },
+    NOTIFICATION_NOT_FOUND: {
+      code: 404,
+      message: 'Notification not found',
+    },
+    NOTIFICATION_ACCESS_DENIED: {
+      code: 403,
+      message: 'Access denied: notification does not belong to the authenticated user',
     },
   }
 }
