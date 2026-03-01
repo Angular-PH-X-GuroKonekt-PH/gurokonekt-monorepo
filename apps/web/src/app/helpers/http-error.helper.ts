@@ -35,7 +35,7 @@ export class HttpErrorHelper {
       case 403:
         return 'Access denied. Please check your permissions.';
       case 409:
-        return 'An account with this email already exists. Please try logging in instead.';
+        return serverMessage || 'An account with this email already exists. Please try logging in instead.';
       case 422:
         return 'Validation failed. Please check your inputs and try again.';
       case 429:

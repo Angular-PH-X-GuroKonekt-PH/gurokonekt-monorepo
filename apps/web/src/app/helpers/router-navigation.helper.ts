@@ -52,7 +52,7 @@ export class RouterNavigationHelper {
       queryParams: { 
         email, 
         role,
-        message: message || 'Registration successful! Please check your email to verify your account.' 
+        message: message || 'Thank you for joining GuroKonekt! We have sent you an email to verify your account.' 
       }
     });
   }
