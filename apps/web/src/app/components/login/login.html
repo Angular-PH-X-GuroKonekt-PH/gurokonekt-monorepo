@@ -1,7 +1,7 @@
 <section
   class="min-h-screen bg-gradient-to-br from-blue-50 via-orange-50 to-blue-50 py-16"
 >
-  <div class="mx-auto max-w-md px-4 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-xl px-4 sm:px-6 lg:px-8">
     <!-- Logo Section -->
     <div class="mb-12 text-center">
       <img src="assets/logos/logo-light.svg" alt="GuroKonekt Logo" class="h-16 w-16 mx-auto" />
@@ -12,28 +12,28 @@
     </div>
 
     <!-- Header Section -->
-    <div class="text-center mb-10">
+    <div class="text-center mb-8">
       <h1
         class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent"
       >
         Welcome Back
       </h1>
-      <p class="mt-3 text-base text-gray-700">
+      <p class="mt-3 text-base text-gray-700 mx-auto max-w-sm">
         Sign in to continue your journey
       </p>
     </div>
 
     <!-- Login Form Card -->
     <div
-      class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-8 sm:p-10"
+      class="mx-auto w-full max-w-lg bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-8 sm:p-10"
     >
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <!-- Error Message -->
-        @if (submissionState.error()) {
+        @if (errorMessage()) {
         <div
           class="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 text-sm"
         >
-          {{ submissionState.error() }}
+          {{ errorMessage() }}
         </div>
         }
 
@@ -118,9 +118,9 @@
         <button
           type="submit"
           class="w-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-4 text-base font-bold text-white shadow-lg transition duration-200 hover:shadow-xl hover:-translate-y-1 disabled:cursor-not-allowed disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none disabled:transform-none"
-          [disabled]="submissionState.isLoading()"
+          [disabled]="isLoading()"
         >
-          @if (submissionState.isLoading()) {
+          @if (isLoading()) {
           <span class="inline-flex items-center gap-2">
             <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             Signing in...
