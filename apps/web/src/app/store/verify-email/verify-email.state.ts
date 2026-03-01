@@ -1,5 +1,6 @@
 import { Injectable, inject } from '@angular/core';
 import { State, Action, StateContext, Selector } from '@ngxs/store';
+import { tap, catchError, throwError } from 'rxjs';
 
 import { AuthService } from '../../services/auth.service';
 import { VerifyEmailStateModel, initialVerifyEmailState } from './verify-email.state.model';
@@ -53,43 +54,49 @@ export class VerifyEmailState {
 
   @Action(VerifyEmailActions.ResendVerificationEmail)
   resendVerificationEmail(ctx: StateContext<VerifyEmailStateModel>) {
+    const state = ctx.getState();
+    
+    // Validate email exists before making API call
+    if (!state.email || state.email.trim() === '') {
+      ctx.patchState({
+        isResendLoading: false,
+        resendError: 'Unable to resend verification email. Please register again or contact support.'
+      });
+      return;
+    }
+
     ctx.patchState({
       isResendLoading: true,
       resendError: null
     });
 
-    // TODO: Replace with actual API call when backend is ready
-    // const state = ctx.getState();
-    // return this.authService.resendVerificationEmail(state.email).pipe(
-    //   tap(() => {
-    //     ctx.dispatch(new VerifyEmailActions.ResendVerificationEmailSuccess());
-    //   }),
-    //   catchError((error) => {
-    //     ctx.dispatch(new VerifyEmailActions.ResendVerificationEmailFailure(
-    //       error?.error?.message || 'Failed to resend verification email. Please try again.'
-    //     ));
-    //     return throwError(() => error);
-    //   })
-    // );
-
-    // Simulate API call for now
-    return new Promise<void>((resolve) => {
-      setTimeout(() => {
+    return this.authService.resendVerificationEmail(state.email).pipe(
+      tap(() => {
         ctx.dispatch(new VerifyEmailActions.ResendVerificationEmailSuccess());
-        resolve();
-      }, 1500);
-    }).catch(() => {
-      ctx.dispatch(new VerifyEmailActions.ResendVerificationEmailFailure(
-        'Failed to resend verification email. Please try again.'
-      ));
-    });
+      }),
+      catchError((error) => {
+        // Extract error message from various possible formats
+        let errorMessage = 'Unable to resend verification email at this time. Please try again later or contact support.';
+        
+        if (error?.message) {
+          errorMessage = error.message;
+        } else if (error?.originalError?.error?.message) {
+          errorMessage = error.originalError.error.message;
+        } else if (error?.error?.message) {
+          errorMessage = error.error.message;
+        }
+        
+        ctx.dispatch(new VerifyEmailActions.ResendVerificationEmailFailure(errorMessage));
+        return throwError(() => error);
+      })
+    );
   }
 
   @Action(VerifyEmailActions.ResendVerificationEmailSuccess)
   resendVerificationEmailSuccess(ctx: StateContext<VerifyEmailStateModel>) {
     ctx.patchState({
       isResendLoading: false,
-      message: 'Verification email has been resent! Please check your inbox.',
+      message: 'Verification email sent successfully! Please check your inbox and spam folder.',
       resendError: null
     });
 

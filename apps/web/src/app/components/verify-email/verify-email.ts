@@ -43,7 +43,7 @@ export class VerifyEmail implements OnInit {
   }
 
   protected getDefaultMessage(): string {
-    return 'We\'ve sent a verification email to your inbox. Please check your email and click the verification link to activate your account.';
+    return 'Thank you for joining GuroKonekt! We have sent you an email to verify your account. Please check your inbox and click the verification link to activate your account.';
   }
 
   protected navigateToLogin(): void {

@@ -3,7 +3,7 @@ import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMentorRequest } from '@gurokonekt/models';
 import { AuthState } from '../../../store/auth';
-import { RegisterMentor } from '../../../store/auth/auth.actions';
+import { ClearAuthMessages, RegisterMentor } from '../../../store/auth/auth.actions';
 
 import { IconComponent } from '../../shared/icon/icon.component';
 import { BaseStepperRegistrationComponent } from '../../shared/base-stepper-registration.component';
@@ -89,11 +89,13 @@ export class MentorRegister
       const errorMsg = this.errorMessage();
       
       if (successMsg) {
-        this.toastService.success(successMsg, 'Registration Successful!');
+        this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
+        this.store.dispatch(new ClearAuthMessages());
       }
       
       if (errorMsg) {
         this.toastService.error(errorMsg, 'Registration Failed');
+        this.store.dispatch(new ClearAuthMessages());
       }
     });
   }

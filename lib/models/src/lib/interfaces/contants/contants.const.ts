@@ -98,6 +98,10 @@ export const API_RESPONSE = {
       code: 409,
       message: 'User already exists',
     },
+    PHONE_NUMBER_ALREADY_EXISTS: {
+      code: 409,
+      message: 'Phone number already exists',
+    },
     USER_NOT_FOUND: {
       code: 404,
       message: 'User not found',

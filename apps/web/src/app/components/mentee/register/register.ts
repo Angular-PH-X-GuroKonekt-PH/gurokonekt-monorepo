@@ -4,7 +4,7 @@ import { FormGroup } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMenteeRequest } from '@gurokonekt/models';
 import { AuthState } from '../../../store/auth';
-import { RegisterMentee } from '../../../store/auth/auth.actions';
+import { ClearAuthMessages, RegisterMentee } from '../../../store/auth/auth.actions';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { BaseStepperRegistrationComponent } from '../../shared/base-stepper-registration.component';
 import { FORM_FIELD_VALIDATORS } from '../../../constants/form-validation-configs.constants';
@@ -74,11 +74,13 @@ export class Register
       const errorMsg = this.errorMessage();
       
       if (successMsg) {
-        this.toastService.success(successMsg, 'Registration Successful!');
+        this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
+        this.store.dispatch(new ClearAuthMessages());
       }
       
       if (errorMsg) {
         this.toastService.error(errorMsg, 'Registration Failed');
+        this.store.dispatch(new ClearAuthMessages());
       }
     });
   }
@@ -136,7 +138,7 @@ export class Register
       };
 
       this.store.dispatch(new RegisterMentee(registrationData));
-    } catch (error) {
+    } catch {
       this.handleSubmissionError(
         'An unexpected error occurred. Please try again.'
       );
