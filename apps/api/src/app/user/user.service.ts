@@ -67,13 +67,14 @@ export class UserService {
         data: null,
       };
     } catch (error) {
-      this.logger.error(error.message, error.stack);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
       await this.prisma.db.logs.create({
         data: {
           actionType: LogsActionType.Read,
           targetId: userId,
           details: API_RESPONSE.ERROR.GET_USER_PROFILE.message,
-          metadata: { error: { ...error } },
+          metadata: { error: err.message },
           ipAddress,
           userAgent,
           createdById: userId,
@@ -153,6 +154,7 @@ export class UserService {
         try {
           UserProfileValidator.throwIfMissingFields(dto, user.role as UserRole);
         } catch (err) {
+          const validationError = err instanceof Error ? err : new Error(String(err));
           await this.prisma.db.logs.create({
             data: {
               actionType: LogsActionType.Update,
@@ -167,7 +169,7 @@ export class UserService {
           return {
             status: ResponseStatus.Error,
             statusCode: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.code,
-            message: `${API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.message}: ${err.message}`,
+            message: `${API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.message}: ${validationError.message}`,
             data: null,
           };
         }
@@ -176,7 +178,7 @@ export class UserService {
       
       const userUpdateData = UserProfileValidator.buildUserUpdateData(dto, isProfileComplete);
 
-      let profileResponse: any = null;
+      let profileResponse: Record<string, unknown> | null = null;
 
       if (role === UserRole.Mentor) {
         const payload = UserProfileValidator.buildProfilePayload(dto, role, isProfileComplete);
@@ -253,7 +255,8 @@ export class UserService {
         data: updatedProfile || profileResponse
       };
     } catch (error) {
-      this.logger.error(error.message, error.stack);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
       return {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.UPDATE_USER_PROFILE.code,
@@ -264,9 +267,9 @@ export class UserService {
   }
 
   async uploadFilesAndFetchProfile(userId: string, avatar: Express.Multer.File[], files: Express.Multer.File[], role: UserRole) {
-    let avatarResponse: ResponseDto = null;
-    let documentResponse: ResponseDto = null;
-    let profileResponse: any = null;
+    let avatarResponse: ResponseDto | null = null;
+    let documentResponse: ResponseDto | null = null;
+    let profileResponse: Record<string, unknown> | null = null;
 
     if (avatar?.length) {
       avatarResponse = await this.storageService.uploadAvatar(avatar, userId, role);
@@ -303,7 +306,8 @@ export class UserService {
         data: user,
       };
     } catch (error) {
-      this.logger.error(error.message, error.stack);
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
       return {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.UPDATE_USER_STATUS.code,
@@ -333,7 +337,8 @@ export class UserService {
           data: user,
         };
       } catch (error) {
-        this.logger.error(error.message, error.stack);
+        const err = error instanceof Error ? error : new Error(String(error));
+        this.logger.error(err.message, err.stack);
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.UPDATE_USER_ROLE.code,

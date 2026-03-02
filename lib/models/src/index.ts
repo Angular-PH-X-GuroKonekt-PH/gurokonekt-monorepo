@@ -26,3 +26,5 @@ export * from './lib/interfaces/notification/notification.model';
 export * from './lib/dto/notification/notification.dto';
 export * from './lib/interfaces/booking/booking.model';
 export * from './lib/dto/booking/booking.dto';
+export * from './lib/interfaces/search/search.model';
+export * from './lib/dto/search/search-mentor.dto';

@@ -79,4 +79,37 @@ export class SelectFields {
       fileName: true
     }
   }
+
+  static getMentorSearchSelect() {
+    return {
+      id: true,
+      firstName: true,
+      middleName: true,
+      lastName: true,
+      suffix: true,
+      email: true,
+      country: true,
+      timezone: true,
+      language: true,
+      isMentorApproved: true,
+      isMentorProfileComplete: true,
+      createdAt: true,
+      avatarAttachments: {
+        select: { publicUrl: true, fileName: true },
+      },
+      mentorProfiles: {
+        select: {
+          id: true,
+          areasOfExpertise: true,
+          yearsOfExperience: true,
+          bio: true,
+          skills: true,
+          sessionRate: true,
+          availability: true,
+          linkedInUrl: true,
+          updatedAt: true,
+        },
+      },
+    }
+  }
 }
