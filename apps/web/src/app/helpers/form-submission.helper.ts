@@ -1,5 +1,5 @@
 import { FormGroup } from '@angular/forms';
-import { WritableSignal } from '@angular/core';
+import { Signal, WritableSignal } from '@angular/core';
 
 /**
  * Helper for handling common form submission patterns
@@ -94,7 +94,7 @@ export class FormSubmissionHelper {
   /**
    * Pre-submission validation and loading check (alternative signature for BaseRegistrationComponent)
    */
-  static preSubmissionValidation(form: FormGroup, isLoading: WritableSignal<boolean>): boolean {
+  static preSubmissionValidation(form: FormGroup, isLoading: Signal<boolean>): boolean {
     // Check if form is valid
     if (form.invalid) {
       form.markAllAsTouched();
