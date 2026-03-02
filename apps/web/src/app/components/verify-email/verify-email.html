@@ -1,0 +1,129 @@
+<section
+  class="min-h-screen bg-gradient-to-br from-blue-50 via-orange-50 to-blue-50 py-16"
+>
+  <div class="mx-auto max-w-2xl px-4 sm:px-6 lg:px-8">
+    <!-- Logo Section -->
+    <div class="mb-12 text-center">
+      <img src="assets/logos/logo-light.svg" alt="GuroKonekt Logo" class="h-16 w-16 mx-auto" />
+      <div class="mt-4 flex items-center justify-center gap-1">
+        <span class="text-3xl font-bold text-blue-900">Guro</span>
+        <span class="text-3xl font-bold text-orange-500">Konekt</span>
+      </div>
+    </div>
+
+    <!-- Header Section -->
+    <div class="text-center mb-10">
+      <h1
+        class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent"
+      >
+        Verify Your Email
+      </h1>
+      <p class="mt-3 text-base text-gray-700">
+        One more step to get started
+      </p>
+    </div>
+
+    <!-- Verification Card -->
+    <div
+      class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-8 sm:p-10"
+    >
+      <!-- Success Icon -->
+      <div class="flex justify-center mb-6">
+        <div class="w-20 h-20 rounded-full bg-orange-100 flex items-center justify-center">
+          <app-icon name="mail" class="w-10 h-10 text-orange-600"></app-icon>
+        </div>
+      </div>
+
+      <!-- Email Display -->
+      @if (email$ | async; as email) {
+      <div class="mb-6 text-center">
+        <p class="text-sm text-gray-600 mb-1">Email sent to:</p>
+        <p class="text-base font-semibold text-gray-900">{{ email }}</p>
+      </div>
+      }
+
+      <!-- Main Message -->
+      <div class="mb-8 text-center">
+        <p class="text-gray-700 leading-relaxed">
+          {{ (message$ | async) || getDefaultMessage() }}
+        </p>
+      </div>
+
+      <!-- Instructions -->
+      <div class="mb-8 bg-blue-50 border-2 border-blue-200 rounded-xl p-4">
+        <h3 class="text-sm font-semibold text-blue-900 mb-2">What's next?</h3>
+        <ol class="text-sm text-blue-800 space-y-2 list-decimal list-inside">
+          <li>Check your email inbox</li>
+          <li>Look for an email from GuroKonekt</li>
+          <li>Click the verification link in the email</li>
+          <li>Your account will be activated and ready to use</li>
+        </ol>
+      </div>
+
+      <!-- Error Message for Resend -->
+      @if (resendError$ | async; as error) {
+      <div class="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl">
+        <div class="flex items-center gap-2">
+          <app-icon name="alert-circle" class="w-5 h-5 text-red-600"></app-icon>
+          <p class="text-sm text-red-600">{{ error }}</p>
+        </div>
+      </div>
+      }
+
+      <!-- Resend Button -->
+      <div class="mb-6">
+        <button
+          type="button"
+          (click)="resendVerificationEmail()"
+          [disabled]="isResendLoading$ | async"
+          class="w-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-4 text-base font-bold text-white shadow-lg transition duration-200 hover:shadow-xl hover:-translate-y-1 disabled:cursor-not-allowed disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none disabled:transform-none"
+        >
+          @if (isResendLoading$ | async) {
+          <span class="inline-flex items-center gap-2">
+            <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
+            Sending...
+          </span>
+          } @else {
+          <span class="inline-flex items-center gap-2">
+            <app-icon name="refresh" class="w-5 h-5"></app-icon>
+            Resend Verification Email
+          </span>
+          }
+        </button>
+      </div>
+
+      <!-- Help Text -->
+      <div class="text-center text-sm text-gray-600 mb-6">
+        <p>Didn't receive the email? Please check your spam folder.</p>
+        <p>If you still can't find it, click the button above to resend.</p>
+      </div>
+
+      <!-- Back to Login Link -->
+      <div class="text-center pt-6 border-t border-gray-200">
+        <p class="text-sm text-gray-600">
+          Already verified?
+          <button
+            type="button"
+            (click)="navigateToLogin()"
+            class="text-orange-600 hover:text-orange-700 font-semibold ml-1"
+          >
+            Sign in
+          </button>
+        </p>
+      </div>
+    </div>
+
+    <!-- Additional Help -->
+    <div class="mt-8 text-center">
+      <p class="text-sm text-gray-600">
+        Need help?
+        <a
+          href="mailto:support@gurokonekt.com"
+          class="text-orange-600 hover:text-orange-700 font-semibold ml-1"
+        >
+          Contact Support
+        </a>
+      </p>
+    </div>
+  </div>
+</section>

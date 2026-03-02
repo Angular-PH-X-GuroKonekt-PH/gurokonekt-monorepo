@@ -1,15 +1,29 @@
 import { Route } from '@angular/router';
-import { Dashboard } from './components/dashboard/dashboard';
-import { RoleSelection } from './components/role-selection/role-selection';
-import { Register } from './components/mentee/register/register';
-import { Login } from './components/login/login';
-import { MentorRegister } from './components/mentor/register/register';
 
 export const appRoutes: Route[] = [
-	{ path: 'choose-role', component: RoleSelection },
-	{ path: 'register', component: Register },
-	{ path: 'mentor/register', component: MentorRegister },
-	{ path: 'login', component: Login },
-	{ path: 'dashboard', component: Dashboard },
-	{ path: '', pathMatch: 'full', redirectTo: 'choose-role' },
+	{ 
+		path: 'register',
+		loadComponent: () => import('./components/registration-container/registration-container').then(m => m.RegistrationContainer),
+		title: 'Register'
+	},
+	{ 
+		path: 'login', 
+		loadComponent: () => import('./components/login/login').then(m => m.Login),
+		title: 'Login'
+	},
+	{ 
+		path: 'verify-email', 
+		loadComponent: () => import('./components/verify-email/verify-email').then(m => m.VerifyEmail),
+		title: 'Verify Email'
+	},
+	{ 
+		path: 'dashboard', 
+		loadComponent: () => import('./components/dashboard/dashboard').then(m => m.Dashboard),
+		title: 'Dashboard'
+	},
+	{ 
+		path: '', 
+		pathMatch: 'full', 
+		redirectTo: 'login' 
+	},
 ];

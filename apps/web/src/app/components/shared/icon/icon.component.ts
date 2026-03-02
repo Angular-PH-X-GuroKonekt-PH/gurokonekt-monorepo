@@ -30,7 +30,10 @@ export type IconName =
   | 'alert-success'
   | 'alert-error'
   | 'alert-warning'
-  | 'alert-info';
+  | 'alert-info'
+  | 'mail'
+  | 'alert-circle'
+  | 'refresh';
 
 @Component({
   selector: 'app-icon',
@@ -62,7 +65,7 @@ export class IconComponent {
 
   private assetIcons: IconName[] = [
     'eye', 'eye-off', 'chevron-down',
-    'check-mark', 'close', 'alert-success', 'alert-error', 'alert-warning', 'alert-info'
+    'close', 'alert-success', 'alert-error', 'alert-warning', 'alert-info'
   ];
 
   isAssetIcon(): boolean {
@@ -94,13 +97,15 @@ export class IconComponent {
       'light-bulb': 'M12 18v-5.25m0 0a6.01 6.01 0 0 0 1.5-.189m-1.5.189a6.01 6.01 0 0 1-1.5-.189m3.75 7.478a12.06 12.06 0 0 1-4.5 0m3.75 2.383a14.406 14.406 0 0 1-3 0M14.25 18v-.192c0-.983.658-1.823 1.508-2.316a7.5 7.5 0 1 0-7.517 0c.85.493 1.509 1.333 1.509 2.316V18',
       'arrow-trending-up': 'M2.25 18 9 11.25l4.306 4.306a11.95 11.95 0 0 1 5.814-5.518l2.74-1.22m0 0-5.94-2.281m5.94 2.28-2.28 5.941',
       'cursor-arrow-rays': 'M15.042 21.672 13.684 16.6m0 0-2.51 2.225.569-9.47 5.227 7.917-3.286-.672Zm-7.518-.267A8.25 8.25 0 1 1 20.25 10.5M8.288 14.212A5.25 5.25 0 1 1 17.25 10.5',
+      'mail': 'M21.75 6.75v10.5a2.25 2.25 0 0 1-2.25 2.25h-15a2.25 2.25 0 0 1-2.25-2.25V6.75m19.5 0A2.25 2.25 0 0 0 19.5 4.5h-15a2.25 2.25 0 0 0-2.25 2.25m19.5 0v.243a2.25 2.25 0 0 1-1.07 1.916l-7.5 4.615a2.25 2.25 0 0 1-2.36 0L3.32 8.91a2.25 2.25 0 0 1-1.07-1.916V6.75',
+      'alert-circle': 'M12 9v3.75m9-.75a9 9 0 1 1-18 0 9 9 0 0 1 18 0Zm-9 3.75h.008v.008H12v-.008Z',
+      'refresh': 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
       'chevron-left': 'M15.75 19.5 8.25 12l7.5-7.5',
       'chevron-right': 'M8.25 4.5l7.5 7.5-7.5 7.5',
+      'check-mark': 'M5 13l4 4L19 7',
       'eye': '',
       'eye-off': '',
       'chevron-down': '',
-
-      'check-mark': '',
       'close': '',
       'alert-success': '',
       'alert-error': '',
