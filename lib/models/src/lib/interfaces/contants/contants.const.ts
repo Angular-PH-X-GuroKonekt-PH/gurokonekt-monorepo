@@ -65,6 +65,54 @@ export const API_RESPONSE = {
       code: 200,
       message: 'User profile get successfully',
     },
+
+    /**
+     * NOTIFICATIONS
+     */
+    CREATE_NOTIFICATION: {
+      code: 201,
+      message: 'Notification created successfully',
+    },
+    GET_NOTIFICATIONS: {
+      code: 200,
+      message: 'Notifications retrieved successfully',
+    },
+    GET_NOTIFICATION: {
+      code: 200,
+      message: 'Notification retrieved successfully',
+    },
+    UPDATE_NOTIFICATION: {
+      code: 200,
+      message: 'Notification updated successfully',
+    },
+    DELETE_NOTIFICATION: {
+      code: 200,
+      message: 'Notification deleted successfully',
+    },
+
+    /**
+     * BOOKINGS
+     */
+    CREATE_BOOKING: {
+      code: 201,
+      message: 'Booking created successfully',
+    },
+    GET_BOOKINGS: {
+      code: 200,
+      message: 'Bookings retrieved successfully',
+    },
+    GET_BOOKING: {
+      code: 200,
+      message: 'Booking retrieved successfully',
+    },
+    UPDATE_BOOKING: {
+      code: 200,
+      message: 'Booking updated successfully',
+    },
+    DELETE_BOOKING: {
+      code: 200,
+      message: 'Booking deleted successfully',
+    },
   },
   ERROR: {
     /**
@@ -97,6 +145,10 @@ export const API_RESPONSE = {
     USER_ALREADY_EXISTS: {
       code: 409,
       message: 'User already exists',
+    },
+    PHONE_NUMBER_ALREADY_EXISTS: {
+      code: 409,
+      message: 'Phone number already exists',
     },
     USER_NOT_FOUND: {
       code: 404,
@@ -187,6 +239,70 @@ export const API_RESPONSE = {
     GET_USER_PROFILE: {
       code: 400,
       message: 'Failed to get user profile',
+    },
+
+    /**
+     * NOTIFICATIONS
+     */
+    CREATE_NOTIFICATION: {
+      code: 500,
+      message: 'Failed to create notification',
+    },
+    GET_NOTIFICATIONS: {
+      code: 500,
+      message: 'Failed to get notifications',
+    },
+    GET_NOTIFICATION: {
+      code: 500,
+      message: 'Failed to get notification',
+    },
+    UPDATE_NOTIFICATION: {
+      code: 500,
+      message: 'Failed to update notification',
+    },
+    DELETE_NOTIFICATION: {
+      code: 500,
+      message: 'Failed to delete notification',
+    },
+    NOTIFICATION_NOT_FOUND: {
+      code: 404,
+      message: 'Notification not found',
+    },
+    NOTIFICATION_ACCESS_DENIED: {
+      code: 403,
+      message: 'Access denied: notification does not belong to the authenticated user',
+    },
+
+    /**
+     * BOOKINGS
+     */
+    CREATE_BOOKING: {
+      code: 500,
+      message: 'Failed to create booking',
+    },
+    GET_BOOKINGS: {
+      code: 500,
+      message: 'Failed to get bookings',
+    },
+    GET_BOOKING: {
+      code: 500,
+      message: 'Failed to get booking',
+    },
+    UPDATE_BOOKING: {
+      code: 500,
+      message: 'Failed to update booking',
+    },
+    DELETE_BOOKING: {
+      code: 500,
+      message: 'Failed to delete booking',
+    },
+    BOOKING_NOT_FOUND: {
+      code: 404,
+      message: 'Booking not found',
+    },
+    BOOKING_ACCESS_DENIED: {
+      code: 403,
+      message: 'Access denied: booking does not belong to the authenticated user',
     },
   }
 }

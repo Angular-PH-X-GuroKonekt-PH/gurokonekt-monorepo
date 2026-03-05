@@ -6,6 +6,10 @@ import { AuthModule } from './auth/auth.module';
 import { StorageModule } from './storage/storage.module';
 import { SupabaseModule } from './supabase/supabase.module';
 import { UserModule } from './user/user.module';
+import { NotificationModule } from './notification/notification.module';
+import { BookingModule } from './booking/booking.module';
+import { SearchModule } from './search/search.module';
+import { NotificationGateway } from './gateway/notification-gateway.gateway';
 
 @Module({
   imports: [
@@ -13,8 +17,11 @@ import { UserModule } from './user/user.module';
     StorageModule,
     SupabaseModule,
     UserModule,
+    NotificationModule,
+    BookingModule,
+    SearchModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService],
+  providers: [AppService, PrismaService, NotificationGateway],
 })
 export class AppModule {}

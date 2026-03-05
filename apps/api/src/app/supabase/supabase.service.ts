@@ -9,9 +9,9 @@ export class SupabaseService {
   private readonly logger = new Logger(SupabaseService.name);
 
   constructor() {
-    const supabaseUrl = process.env.TEST_SUPABASE_URL;
-    const supabaseKey = process.env.TEST_SUPABASE_ANON_KEY;
-    const serviceRoleKey = process.env.TEST_SUPABASE_SERVICE_ROLE_KEY;
+    const supabaseUrl = process.env.SUPABASE_URL;
+    const supabaseKey = process.env.SUPABASE_ANON_KEY;
+    const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
     if (!supabaseUrl || !supabaseKey || !serviceRoleKey) {
       this.logger.error(API_RESPONSE.ERROR.SUPABASE_CREDENTIALS_NOT_FOUND);

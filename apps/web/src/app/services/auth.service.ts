@@ -1,7 +1,7 @@
 import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
-import { catchError } from 'rxjs/operators';
+import { catchError, map } from 'rxjs/operators';
 import { RegisterMenteeRequest, RegisterMentorRequest, AuthResponse } from '@gurokonekt/models';
 
 import { API_CONFIG } from '../config/api.config';
@@ -70,9 +70,47 @@ export class AuthService {
    * Login with email and password
    */
   login(credentials: { email: string; password: string }): Observable<AuthResponse> {
-    return this.http.post<AuthResponse>(
+    return this.http.post<{
+      status: string;
+      statusCode: number;
+      message: string;
+      data: {
+        user: any;
+        session: any;
+      } | null;
+    }>(
       buildApiUrl(API_CONFIG.endpoints.auth.login),
       credentials
+    ).pipe(
+      map((response) => {
+        // Transform ResponseDto to AuthResponse
+        if (!response.data || !response.data.user || !response.data.session) {
+          throw new Error(response.message || 'Login failed');
+        }
+
+        return {
+          user: {
+            id: response.data.user.id,
+            email: response.data.user.email,
+            fullName: `${response.data.user.firstName} ${response.data.user.lastName}`,
+            role: response.data.user.role
+          },
+          accessToken: response.data.session.access_token,
+          token: response.data.session.access_token,
+          message: response.message
+        } as AuthResponse;
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Resend verification email
+   */
+  resendVerificationEmail(email: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.resendConfirmation),
+      { type: 'signup', email }
     ).pipe(
       catchError(this.handleError)
     );
