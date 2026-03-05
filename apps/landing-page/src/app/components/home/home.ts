@@ -6,10 +6,11 @@ import { Footer } from "../footer/footer";
 import { ContactUs } from "../contact-us/contact-us";
 import { AboutUs } from '../about/about-us';
 import { Mentors } from "../mentors/mentors";
+import { Community } from "../community/community";
 
 @Component({
   selector: 'app-home',
-  imports: [Header, Creators, Hero, Footer, ContactUs, AboutUs, Mentors],
+  imports: [Header, Creators, Hero, Footer, ContactUs, AboutUs, Mentors, Community],
   templateUrl: './home.html',
   styleUrl: './home.scss',
 })
