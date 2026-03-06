@@ -1,31 +1,31 @@
-<section class="bg-white dark:bg-gray-900">
-  <div class="py-8 px-4 mx-auto max-w-screen-xl text-center lg:py-16 lg:px-6">
-
-    <div class="mx-auto mb-8 max-w-screen-sm lg:mb-16">
-      <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-gray-900 dark:text-white">
+<section class="bg-gray-900 min-h-screen mb-16">
+  
+  <div class="mx-auto max-w-screen-xl text-center px-4 lg:px-6">
+    <div class="mx-auto max-w-screen-sm my-8 lg:my-16">
+      <h2 class="mb-4 text-4xl tracking-tight font-extrabold text-white">
         The Creators
       </h2>
       <!-- <p class="font-light text-gray-500 sm:text-xl dark:text-gray-400">
         Meet the creators of the GuroKonekt
-      </p> -->
+      </p> -->      
     </div>
 
     <div class="grid gap-8 lg:gap-16 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4">
       @for (creator of creatorItems(); track creator.id) {
-      <div class="text-center text-gray-500 dark:text-gray-400">
+      <div class="text-center text-gray-400">
         <img class="mx-auto mb-4 w-36 h-36 rounded-full" src="{{ creator.image }}" alt="{{ creator.name }}" />
-        <h3 class="mb-1 text-2xl font-bold tracking-tight text-gray-900 dark:text-white">
+        <h3 class="mb-1 text-2xl font-bold tracking-tight text-white">
           <a href="#">{{ creator.name }}</a>
         </h3>
       </div>
       }
     </div>
 
-    <div class="flex flex-row items-center justify-center mt-16 mb-9">
+    <div class="flex flex-row items-center justify-center mt-16">
 
       <div class="w-full flex flex-col lg:flex-row items-center justify-center gap-7">
 
-        <div class="w-full flex items-center justify-center gap-4 md:gap-6 max-w-md rounded-3xl px-8 md:px-12 py-8 md:py-10 relative" style="background-color: #b83d18;">
+        <div class="w-full flex items-center justify-center gap-4 md:gap-6 max-w-md rounded-3xl px-8 md:px-12 py-8 md:py-10 relative bg-[#b83d18]">
           <div>
             <span class="text-white text-4xl xl:text-5xl font-bold">{{mentors()}}+</span>
           </div>
@@ -40,7 +40,7 @@
           <img src="spaceship-slanting.png" alt="spaceship-slanting logo" class="absolute bottom-[128px] -left-[55px] hidden xl:block w-28 h-28" />
         </div>
 
-        <div class="w-full flex items-center justify-center gap-4 md:gap-6 max-w-md rounded-3xl px-8 md:px-12 py-8 md:py-10" style="background-color: #b83d18;">
+        <div class="w-full flex items-center justify-center gap-4 md:gap-6 max-w-md rounded-3xl px-8 md:px-12 py-8 md:py-10 bg-[#b83d18]">
           <div>
             <span class="text-white text-4xl xl:text-5xl font-bold">{{courses()}}+</span>
           </div>
