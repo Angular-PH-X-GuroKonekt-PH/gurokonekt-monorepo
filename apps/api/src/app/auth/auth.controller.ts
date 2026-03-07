@@ -9,7 +9,7 @@ import {
   UploadedFiles,
   UseInterceptors,
 } from '@nestjs/common';
-import { MentorDocumentsInterceptor, RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/models';
+import { MentorDocumentsInterceptor, RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyResetPinDto } from '@gurokonekt/models';
 
 
 @ApiTags('auth')
@@ -70,5 +70,50 @@ export class AuthController {
     @Headers('user-agent') userAgent: string
   ) {
     return this.authService.resendEmailSignUpConfirmation(input, ipAddress, userAgent);
+  }
+
+  @Post('update-password')
+  @ApiOperation({ summary: 'Update password for authenticated Mentee/Mentor' })
+  @ApiResponse({ status: 200, description: 'Password updated successfully', type: ResponseDto })
+  async updatePassword(
+    @Body() input: UpdatePasswordDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.authService.updatePassword(input, ipAddress, userAgent);
+  }
+
+  @Post('forgot-password')
+  @ApiOperation({ summary: 'Request password reset link via email' })
+  @ApiResponse({ status: 200, description: 'Reset link sent to email', type: ResponseDto })
+  async forgotPassword(
+    @Body() input: ForgotPasswordDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+    @Headers('origin') origin: string
+  ) {
+    return this.authService.forgotPassword(input, ipAddress, userAgent, origin);
+  }
+
+  @Post('reset-password')
+  @ApiOperation({ summary: 'Submit new password after clicking reset link; sends PIN to email' })
+  @ApiResponse({ status: 200, description: 'PIN sent to email', type: ResponseDto })
+  async resetPassword(
+    @Body() input: ResetPasswordDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.authService.resetPassword(input, ipAddress, userAgent);
+  }
+
+  @Post('verify-reset-pin')
+  @ApiOperation({ summary: 'Verify PIN and finalize password reset' })
+  @ApiResponse({ status: 200, description: 'Password updated successfully', type: ResponseDto })
+  async verifyResetPin(
+    @Body() input: VerifyResetPinDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    return this.authService.verifyResetPin(input, ipAddress, userAgent);
   }
 }

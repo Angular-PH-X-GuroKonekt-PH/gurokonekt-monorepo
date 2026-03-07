@@ -31,6 +31,18 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Signed in with password successfully',
     },
+    UPDATE_PASSWORD: {
+      code: 200,
+      message: 'Your password has been updated!',
+    },
+    FORGOT_PASSWORD_EMAIL_SENT: {
+      code: 200,
+      message: 'Password reset link sent to your email',
+    },
+    RESET_PASSWORD_PIN_SENT: {
+      code: 200,
+      message: 'PIN code sent to your email',
+    },
     SIGN_OUT: {
       code: 200,
       message: 'Signed out successfully',
@@ -169,6 +181,26 @@ export const API_RESPONSE = {
     SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS: {
       code: 429,
       message: 'Too many failed login attempts. Try again later.',
+    },
+    PASSWORD_INCORRECT: {
+      code: 401,
+      message: 'Password incorrect',
+    },
+    UPDATE_PASSWORD_TOO_MANY_ATTEMPTS: {
+      code: 429,
+      message: 'Too many incorrect password attempts. Try again later.',
+    },
+    UPDATE_PASSWORD: {
+      code: 400,
+      message: 'Failed to update password',
+    },
+    RESET_PIN_INVALID: {
+      code: 400,
+      message: 'Invalid or expired PIN code',
+    },
+    RESET_PASSWORD: {
+      code: 400,
+      message: 'Failed to reset password',
     },
     PASSWORD_REGEX_MISMATCH: {
       code: 400,
@@ -385,6 +417,7 @@ Frontend should call profile endpoint after role change if needed.
 export const REDIRECT_LINKS  = {
   DEFAULT: 'localhost:4200',
   ADMIN_DASHBOARD: '/admin/dashboard',
+  RESET_PASSWORD: '/reset-password',
 }
 
 export const RESEND_EMAIL_CONFIRMATION = {
@@ -394,6 +427,10 @@ export const RESEND_EMAIL_CONFIRMATION = {
 
 export const SIGN_IN_WITH_PASSWORD = {
   MAX_ATTEMPTS_PER_DAY: 3
+}
+
+export const UPDATE_PASSWORD = {
+  MAX_INCORRECT_ATTEMPTS_PER_DAY: 3
 }
 
 export const BUCKET_NAMES = {
