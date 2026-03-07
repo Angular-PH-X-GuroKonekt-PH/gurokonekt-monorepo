@@ -77,6 +77,18 @@ export const API_RESPONSE = {
       code: 200,
       message: 'User profile get successfully',
     },
+    GET_MENTOR_DASHBOARD: {
+      code: 200,
+      message: 'Mentor dashboard data retrieved successfully',
+    },
+    GET_MENTEE_DASHBOARD: {
+      code: 200,
+      message: 'Mentee dashboard data retrieved successfully',
+    },
+    GET_MENTEE_BOOKING_OVERVIEW: {
+      code: 200,
+      message: 'Mentee booking overview retrieved successfully',
+    },
 
     /**
      * NOTIFICATIONS
@@ -271,6 +283,30 @@ export const API_RESPONSE = {
     GET_USER_PROFILE: {
       code: 400,
       message: 'Failed to get user profile',
+    },
+    GET_MENTOR_DASHBOARD: {
+      code: 500,
+      message: 'Failed to get mentor dashboard data',
+    },
+    MENTOR_NOT_APPROVED: {
+      code: 403,
+      message: 'Access denied: mentor account is not verified or approved',
+    },
+    MENTOR_PROFILE_INCOMPLETE: {
+      code: 403,
+      message: 'Access denied: mentor profile is not complete',
+    },
+    GET_MENTEE_DASHBOARD: {
+      code: 500,
+      message: 'Failed to get mentee dashboard data',
+    },
+    GET_MENTEE_BOOKING_OVERVIEW: {
+      code: 500,
+      message: 'Failed to get mentee booking overview',
+    },
+    MENTEE_ACCESS_DENIED: {
+      code: 403,
+      message: 'Access denied: account does not have mentee privileges',
     },
 
     /**

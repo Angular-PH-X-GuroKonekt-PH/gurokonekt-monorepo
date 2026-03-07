@@ -10,6 +10,8 @@ export * from './lib/interfaces/storage/storage.model';
 export * from './lib/interfaces/attachments/attachments.model';
 export * from './lib/interfaces/user/user.model';
 export * from './lib/interfaces/user/admin.model';
+export * from './lib/interfaces/user/mentor-dashboard.model';
+export * from './lib/interfaces/user/mentee-dashboard.model';
 export * from './lib/dto/response/response.dto';
 export * from './lib/dto/constants/select-fields.const';
 export * from './lib/dto/storage/storage.dto';
