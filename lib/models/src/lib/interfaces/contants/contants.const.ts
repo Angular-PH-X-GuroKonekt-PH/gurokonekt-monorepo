@@ -384,6 +384,7 @@ Frontend should call profile endpoint after role change if needed.
 
 export const REDIRECT_LINKS  = {
   DEFAULT: 'localhost:4200',
+  ADMIN_DASHBOARD: '/admin/dashboard',
 }
 
 export const RESEND_EMAIL_CONFIRMATION = {
