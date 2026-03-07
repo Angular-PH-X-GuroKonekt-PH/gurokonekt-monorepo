@@ -48,9 +48,10 @@ export class AuthController {
   async signIn(
     @Body() input: SignInWithPasswordDto,
     @Ip() ipAddress: string,
-    @Headers('user-agent') userAgent: string
+    @Headers('user-agent') userAgent: string,
+    @Headers('origin') origin: string
   ) {
-    return this.authService.signInWithPassword(input, ipAddress, userAgent);
+    return this.authService.signInWithPassword(input, ipAddress, userAgent, origin);
   }
 
   @Post('signin/oauth')

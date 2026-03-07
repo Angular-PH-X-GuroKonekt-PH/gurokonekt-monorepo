@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/models';
-import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, 
-  SIGN_IN_WITH_PASSWORD, UserRole, UserStatus, LogsActionType, 
-  ResendOTPTypes
+import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION,
+  SIGN_IN_WITH_PASSWORD, UserRole, UserStatus, LogsActionType,
+  ResendOTPTypes, REDIRECT_LINKS
 } from '@gurokonekt/models';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -484,7 +484,7 @@ export class AuthService {
    * 4. check if user email is verified if false then return 403
    * 5. if all checks passed return success with status 200
    * */ 
-  async signInWithPassword(input: SignInWithPasswordDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+  async signInWithPassword(input: SignInWithPasswordDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     try {
       const todayStart = new Date();
       const todayEnd = new Date();
@@ -661,13 +661,19 @@ export class AuthService {
         select: SelectFields.getUserCredentialsSelect()
       });
 
+      const redirectUrl =
+        userData?.role === UserRole.Admin && userData?.isProfileComplete === false
+          ? `${origin ?? ''}${REDIRECT_LINKS.ADMIN_DASHBOARD}`
+          : null;
+
       return {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.code,
         message: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
         data: {
           user: userData,
-          session: data.session
+          session: data.session,
+          redirectUrl
         }
       };
     } catch (error) {
