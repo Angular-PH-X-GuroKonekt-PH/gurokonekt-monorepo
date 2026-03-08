@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, afterNextRender } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 @Component({
@@ -9,4 +9,9 @@ import { RouterModule } from '@angular/router';
 })
 export class App {
   protected title = 'GuroKonekt';
+  constructor() {
+    afterNextRender(() => {
+      import('flowbite').then(({ initFlowbite }) => initFlowbite());
+    });
+  }  
 }
