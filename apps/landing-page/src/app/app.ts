@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, afterNextRender } from '@angular/core';
 import { RouterModule } from '@angular/router';
 
 @Component({
@@ -8,4 +8,9 @@ import { RouterModule } from '@angular/router';
   styleUrl: './app.scss',
 })
 export class App {
+  constructor() {
+    afterNextRender(() => {
+      import('flowbite').then(({ initFlowbite }) => initFlowbite());
+    });
+  }
 }

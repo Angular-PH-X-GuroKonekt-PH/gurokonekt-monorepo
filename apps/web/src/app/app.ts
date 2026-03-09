@@ -1,4 +1,4 @@
-import { Component, signal, inject, effect } from '@angular/core';
+import { Component, signal, inject, effect, afterNextRender } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
@@ -25,6 +25,10 @@ export class App {
   );
 
   constructor() {
+    afterNextRender(() => {
+      import('flowbite').then(({ initFlowbite }) => initFlowbite());
+    });
+
     effect(() => {
       const url = this.navigationEnd();
       if (url) {
