@@ -21,7 +21,7 @@
             "input": "apps/landing-page/public"
           }
         ],
-        "styles": ["apps/landing-page/src/styles.scss"],
+        "styles": ["apps/landing-page/src/styles.css"],
         "server": "apps/landing-page/src/main.server.ts",
         "ssr": {
           "entry": "apps/landing-page/src/server.ts"

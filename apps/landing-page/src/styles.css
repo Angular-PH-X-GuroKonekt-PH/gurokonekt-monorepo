@@ -1,0 +1,36 @@
+/* You can add global styles to this file, and also import other style files */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+
+@import "tailwindcss";
+@import "flowbite/src/themes/default";
+
+@plugin "flowbite/plugin";
+@source "../node_modules/flowbite";
+
+@theme {
+  /* Font Family */
+  --font-sans: 'Inter', system-ui, sans-serif;
+
+  /* Colors - Primary (alias for blue) */
+  --color-primary-50: #eff6ff;
+  --color-primary-500: #3b82f6;
+  --color-primary-600: #2563eb;
+  --color-primary-700: #1d4ed8;
+  --color-primary-900: #1e3a8a;
+
+  /* Colors - Secondary (alias for gray) */
+  --color-secondary-50: #f9fafb;
+  --color-secondary-500: #6b7280;
+  --color-secondary-600: #4b5563;
+  --color-secondary-700: #374151;
+  --color-secondary-900: #111827;
+
+  /* Colors - Tertiary (custom) */
+  --color-tertiary-50: #FF8E1C;
+  --color-tertiary-100: #1B99F4;
+  --color-tertiary-700: #FF8E1C;
+  --color-tertiary-900: #FF8E1C;
+
+  /* Screens - only xs is non-default */
+  --breakpoint-xs: 320px;
+}
