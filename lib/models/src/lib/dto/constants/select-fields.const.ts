@@ -27,6 +27,7 @@ export class SelectFields {
   static getMentorProfileSelect() {
     return {
       id: true,
+      title: true,
       areasOfExpertise: true,
       yearsOfExperience: true,
       linkedInUrl: true,
@@ -100,6 +101,7 @@ export class SelectFields {
       mentorProfiles: {
         select: {
           id: true,
+          title: true,
           areasOfExpertise: true,
           yearsOfExperience: true,
           bio: true,

@@ -9,6 +9,7 @@ import {
   Max,
   Min,
 } from 'class-validator';
+import { DaysInWeek } from '../../interfaces/user/user.model';
 
 export enum SearchSortBy {
   NEWEST = 'newest',
@@ -76,6 +77,33 @@ export class SearchMentorDto {
   @IsInt()
   @Min(0)
   minYearsExperience?: number;
+
+  @ApiPropertyOptional({
+    description: 'Maximum years of experience',
+    example: 10,
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(0)
+  maxYearsExperience?: number;
+
+  @ApiPropertyOptional({
+    description: 'Filter by mentor language (case-insensitive)',
+    example: 'English',
+  })
+  @IsOptional()
+  @IsString()
+  language?: string;
+
+  @ApiPropertyOptional({
+    enum: DaysInWeek,
+    description: 'Filter by availability day',
+    example: DaysInWeek.Monday,
+  })
+  @IsOptional()
+  @IsEnum(DaysInWeek)
+  availabilityDay?: DaysInWeek;
 
   @ApiPropertyOptional({
     description: 'Page number (1-based)',

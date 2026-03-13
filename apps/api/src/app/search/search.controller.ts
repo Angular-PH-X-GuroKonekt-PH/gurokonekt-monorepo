@@ -2,6 +2,7 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  Param,
   Query,
   Req,
   UseGuards,
@@ -9,6 +10,7 @@ import {
 import {
   ApiBearerAuth,
   ApiOperation,
+  ApiParam,
   ApiQuery,
   ApiResponse,
   ApiTags,
@@ -17,6 +19,7 @@ import { Request } from 'express';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { SearchService } from './search.service';
 import {
+  DaysInWeek,
   ResponseDto,
   SearchMentorDto,
   SearchSortBy,
@@ -29,6 +32,23 @@ import {
 @Controller('search')
 export class SearchController {
   constructor(private readonly searchService: SearchService) {}
+
+  // ====================================================
+  // GET /api/search – Mentor Search
+  // ====================================================
+
+  // ====================================================
+  // GET /api/search/mentor/:mentorId – Mentor Profile Detail
+  // ====================================================
+
+  @Get('mentor/:mentorId')
+  @ApiOperation({ summary: 'Get full mentor profile by mentor user ID' })
+  @ApiParam({ name: 'mentorId', type: String })
+  @ApiResponse({ status: 200, description: 'Mentor profile retrieved successfully', type: ResponseDto })
+  @ApiResponse({ status: 404, description: 'Mentor not found or not available' })
+  async getMentorProfile(@Param('mentorId') mentorId: string) {
+    return this.searchService.getMentorProfileById(mentorId);
+  }
 
   // ====================================================
   // GET /api/search – Mentor Search
@@ -49,7 +69,9 @@ Returns a paginated list of approved, active mentors.
 - \`skills\` — comma-separated skills (e.g. \`TypeScript,Node.js\`)
 - \`expertise\` — comma-separated expertise areas
 - \`minSessionRate\` / \`maxSessionRate\` — session rate range
-- \`minYearsExperience\` — minimum years of experience
+- \`minYearsExperience\` / \`maxYearsExperience\` — years of experience range
+- \`language\` — case-insensitive language filter
+- \`availabilityDay\` — filter by day of availability
 - \`sortBy\` — newest | sessionRate | yearsExperience | name
 - \`sortOrder\` — asc | desc
 - \`page\` / \`limit\` — pagination (limit max 50)
@@ -61,6 +83,9 @@ Returns a paginated list of approved, active mentors.
   @ApiQuery({ name: 'minSessionRate', required: false, type: Number })
   @ApiQuery({ name: 'maxSessionRate', required: false, type: Number })
   @ApiQuery({ name: 'minYearsExperience', required: false, type: Number })
+  @ApiQuery({ name: 'maxYearsExperience', required: false, type: Number })
+  @ApiQuery({ name: 'language', required: false, type: String })
+  @ApiQuery({ name: 'availabilityDay', required: false, enum: DaysInWeek })
   @ApiQuery({ name: 'sortBy', required: false, enum: SearchSortBy })
   @ApiQuery({ name: 'sortOrder', required: false, enum: SearchSortOrder })
   @ApiQuery({ name: 'page', required: false, type: Number })
