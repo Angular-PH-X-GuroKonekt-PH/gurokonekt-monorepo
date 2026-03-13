@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Req,
   UseGuards,
 } from '@nestjs/common';
@@ -13,6 +14,7 @@ import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -20,7 +22,10 @@ import { Request } from 'express';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { BookingService } from './booking.service';
 import {
+  ApproveBookingDto,
+  BookingStatus,
   CreateBookingDto,
+  MentorBookingsQueryDto,
   ResponseDto,
   UpdateBookingDto,
 } from '@gurokonekt/models';
@@ -59,6 +64,23 @@ export class BookingController {
   }
 
   // ====================================================
+  // GET - Get Mentor's Own Bookings (from JWT)
+  // NOTE: declared before :id and user/:userId to prevent route conflict
+  // ====================================================
+
+  @Get('mentor')
+  @ApiOperation({ summary: 'Get bookings for the authenticated mentor, with optional status filter' })
+  @ApiQuery({ name: 'status', required: false, enum: BookingStatus, description: 'Filter by booking status' })
+  @ApiResponse({ status: 200, description: 'Bookings retrieved successfully', type: ResponseDto })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  async findMentorBookings(
+    @Query() query: MentorBookingsQueryDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.bookingService.findMentorBookings(req.user.id, req.user.id, query);
+  }
+
+  // ====================================================
   // GET - Get Bookings By User ID
   // NOTE: declared before :id to prevent route conflict
   // ====================================================
@@ -90,6 +112,62 @@ export class BookingController {
     @Req() req: Request & { user: { id: string } },
   ) {
     return this.bookingService.findById(id, req.user.id);
+  }
+
+  // ====================================================
+  // PATCH - Approve Booking (mentor only, PENDING → APPROVED)
+  // NOTE: declared before :id to prevent route conflict
+  // ====================================================
+
+  @Patch(':id/approve')
+  @ApiOperation({ summary: 'Approve a pending booking (mentor only). Requires session link.' })
+  @ApiParam({ name: 'id', type: String, description: 'UUID of the booking', example: 'uuid-booking-id' })
+  @ApiResponse({ status: 200, description: 'Booking approved successfully', type: ResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid status transition' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
+  async approveBooking(
+    @Param('id') id: string,
+    @Body() dto: ApproveBookingDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.bookingService.approveBooking(id, req.user.id, dto);
+  }
+
+  // ====================================================
+  // PATCH - Reject Booking (mentor only, PENDING → REJECTED)
+  // ====================================================
+
+  @Patch(':id/reject')
+  @ApiOperation({ summary: 'Reject a pending booking (mentor only)' })
+  @ApiParam({ name: 'id', type: String, description: 'UUID of the booking', example: 'uuid-booking-id' })
+  @ApiResponse({ status: 200, description: 'Booking rejected successfully', type: ResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid status transition' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
+  async rejectBooking(
+    @Param('id') id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.bookingService.rejectBooking(id, req.user.id);
+  }
+
+  // ====================================================
+  // PATCH - Complete Booking (mentor only, APPROVED → COMPLETED)
+  // ====================================================
+
+  @Patch(':id/complete')
+  @ApiOperation({ summary: 'Mark an approved booking as completed (mentor only, session must have already occurred)' })
+  @ApiParam({ name: 'id', type: String, description: 'UUID of the booking', example: 'uuid-booking-id' })
+  @ApiResponse({ status: 200, description: 'Session marked as completed', type: ResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid status transition or session has not yet occurred' })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  @ApiResponse({ status: 404, description: 'Booking not found' })
+  async completeBooking(
+    @Param('id') id: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.bookingService.completeBooking(id, req.user.id);
   }
 
   // ====================================================

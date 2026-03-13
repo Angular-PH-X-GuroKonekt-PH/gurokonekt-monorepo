@@ -3,6 +3,27 @@ import { Type } from 'class-transformer';
 import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
 import { BookingInterface, BookingStatus } from '../../interfaces/booking/booking.model';
 
+export class MentorBookingsQueryDto {
+  @ApiPropertyOptional({
+    enum: BookingStatus,
+    description: 'Filter bookings by status',
+    example: BookingStatus.PENDING,
+  })
+  @IsOptional()
+  @IsEnum(BookingStatus)
+  status?: BookingStatus;
+}
+
+export class ApproveBookingDto {
+  @ApiProperty({
+    description: 'Video call or meeting link for the confirmed session',
+    example: 'https://meet.google.com/abc-defg-hij',
+  })
+  @IsUrl()
+  @IsNotEmpty()
+  sessionLink!: string;
+}
+
 export class CreateBookingDto implements Partial<BookingInterface> {
   @ApiProperty({
     description: 'UUID of the mentor to book a session with',

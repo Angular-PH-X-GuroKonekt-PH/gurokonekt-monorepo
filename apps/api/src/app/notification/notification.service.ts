@@ -267,6 +267,96 @@ export class NotificationService {
   }
 
   // ====================================================
+  // GET MY NOTIFICATIONS (from JWT)
+  // ====================================================
+
+  async findMyNotifications(
+    authenticatedUserId: string,
+  ): Promise<ResponseDto<NotificationInterface[]>> {
+    try {
+      const notifications = await this.prisma.db.notification.findMany({
+        where: {
+          userId: authenticatedUserId,
+          status: { not: NotificationStatus.DELETED },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_NOTIFICATIONS.code,
+        message: API_RESPONSE.SUCCESS.GET_NOTIFICATIONS.message,
+        data: notifications as unknown as NotificationInterface[],
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.GET_NOTIFICATIONS.code,
+        message: API_RESPONSE.ERROR.GET_NOTIFICATIONS.message,
+        data: null,
+      };
+    }
+  }
+
+  // ====================================================
+  // MARK AS READ
+  // ====================================================
+
+  async markAsRead(
+    id: string,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto<NotificationInterface>> {
+    try {
+      const existing = await this.prisma.db.notification.findUnique({ where: { id } });
+
+      if (!existing || existing.status === NotificationStatus.DELETED) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.NOTIFICATION_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.NOTIFICATION_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      if (existing.userId !== authenticatedUserId) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.NOTIFICATION_ACCESS_DENIED.code,
+          message: API_RESPONSE.ERROR.NOTIFICATION_ACCESS_DENIED.message,
+          data: null,
+        };
+      }
+
+      const updated = await this.prisma.db.notification.update({
+        where: { id },
+        data: { status: NotificationStatus.READ, readAt: new Date() },
+      });
+
+      this.notificationGateway.sendNotificationToUser(
+        updated.userId,
+        updated as unknown as NotificationInterface,
+        NOTIFICATION_EVENTS.UPDATED,
+      );
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.UPDATE_NOTIFICATION.code,
+        message: API_RESPONSE.SUCCESS.UPDATE_NOTIFICATION.message,
+        data: updated as unknown as NotificationInterface,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.UPDATE_NOTIFICATION.code,
+        message: API_RESPONSE.ERROR.UPDATE_NOTIFICATION.message,
+        data: null,
+      };
+    }
+  }
+
+  // ====================================================
   // SOFT DELETE
   // ====================================================
 
