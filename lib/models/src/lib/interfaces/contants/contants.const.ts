@@ -153,6 +153,22 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Session marked as completed',
     },
+
+    /**
+     * ACCOUNT DEACTIVATION
+     */
+    DEACTIVATION_INITIATED: {
+      code: 200,
+      message: 'Deactivation confirmation email sent',
+    },
+    DEACTIVATION_TOKEN_VALID: {
+      code: 200,
+      message: 'Deactivation token is valid',
+    },
+    ACCOUNT_DEACTIVATED: {
+      code: 200,
+      message: 'Account deactivated successfully',
+    },
   },
   ERROR: {
     /**
@@ -408,6 +424,26 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Invalid booking status transition',
     },
+
+    /**
+     * ACCOUNT DEACTIVATION
+     */
+    DEACTIVATION_TOKEN_INVALID: {
+      code: 400,
+      message: 'Invalid or expired deactivation token',
+    },
+    DEACTIVATION_INITIATE: {
+      code: 500,
+      message: 'Failed to initiate account deactivation',
+    },
+    DEACTIVATION_CONFIRM: {
+      code: 500,
+      message: 'Failed to confirm account deactivation',
+    },
+    ACCOUNT_DEACTIVATION_FAILED: {
+      code: 500,
+      message: 'Failed to deactivate account',
+    },
   }
 }
 
@@ -490,6 +526,7 @@ export const REDIRECT_LINKS  = {
   DEFAULT: 'localhost:4200',
   ADMIN_DASHBOARD: '/admin/dashboard',
   RESET_PASSWORD: '/reset-password',
+  DEACTIVATE_ACCOUNT: '/deactivate',
 }
 
 export const RESEND_EMAIL_CONFIRMATION = {

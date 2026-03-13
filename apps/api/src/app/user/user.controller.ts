@@ -6,6 +6,7 @@ import {
   Ip,
   Param,
   Patch,
+  Post,
   Req,
   UploadedFiles,
   UseGuards,
@@ -23,6 +24,8 @@ import {
 } from '@nestjs/swagger';
 import {
   AvatarInterceptor,
+  DeactivationFeedbackDto,
+  InitiateDeactivationDto,
   MentorDocumentsInterceptor,
   ResponseDto,
   SWAGGER_DOCUMENTATION,
@@ -30,6 +33,7 @@ import {
   UpdateMentorProfileDto,
   UpdateUserRoleDto,
   UpdateUserStatusDto,
+  VerifyDeactivationTokenDto,
 } from '@gurokonekt/models';
 import { UserService } from './user.service';
 
@@ -37,6 +41,18 @@ import { UserService } from './user.service';
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+  // ====================================================
+  // POST - Deactivate Verify (public — no JWT; declared BEFORE :userId routes)
+  // ====================================================
+
+  @Post('deactivate/verify')
+  @ApiOperation({ summary: 'Verify deactivation token from email link (public)' })
+  @ApiResponse({ status: 200, description: 'Token is valid', type: ResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  verifyDeactivationToken(@Body() dto: VerifyDeactivationTokenDto) {
+    return this.userService.verifyDeactivationToken(dto);
+  }
+
   // ====================================================
   // GET
   // ====================================================
@@ -222,5 +238,48 @@ export class UserController {
     @Body() dto: UpdateUserRoleDto,
   ) {
     return this.userService.updateUserRole(dto, userId);
+  }
+
+  // ====================================================
+  // POST - Initiate Account Deactivation
+  // ====================================================
+
+  @Post(':userId/deactivate/initiate')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Initiate mentee account deactivation — verifies password and sends confirmation email' })
+  @ApiParam({ name: 'userId', type: String, description: 'Unique ID of the mentee' })
+  @ApiResponse({ status: 200, description: 'Deactivation email sent', type: ResponseDto })
+  @ApiResponse({ status: 401, description: 'Password incorrect' })
+  @ApiResponse({ status: 403, description: 'Access denied: not a mentee account' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  initiateDeactivation(
+    @Param('userId') userId: string,
+    @Body() dto: InitiateDeactivationDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+    @Headers('origin') origin: string,
+  ) {
+    return this.userService.initiateDeactivation(userId, dto, ipAddress, userAgent, origin ?? '');
+  }
+
+  // ====================================================
+  // POST - Submit Deactivation Feedback
+  // ====================================================
+
+  @Post(':userId/deactivate/feedback')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Submit deactivation feedback and finalize account deactivation' })
+  @ApiParam({ name: 'userId', type: String, description: 'Unique ID of the mentee' })
+  @ApiResponse({ status: 200, description: 'Account deactivated successfully', type: ResponseDto })
+  @ApiResponse({ status: 400, description: 'Invalid or expired deactivation token' })
+  submitDeactivationFeedback(
+    @Param('userId') userId: string,
+    @Body() dto: DeactivationFeedbackDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.userService.submitDeactivationFeedback(userId, dto, ipAddress, userAgent);
   }
 }

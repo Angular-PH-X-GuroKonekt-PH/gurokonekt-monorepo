@@ -1,9 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_RESPONSE, BookingStatus, LogsActionType, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorSearchItemInterface, ResponseDto, ResponseStatus, SelectFields, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus } from '@gurokonekt/models';
+import { API_RESPONSE, BookingStatus, DeactivationFeedbackDto, InitiateDeactivationDto, LogsActionType, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorSearchItemInterface, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
 import { StorageService } from '../storage/storage.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { instanceToPlain } from 'class-transformer';
 import { MENTOR_DASHBOARD_SHORTCUTS, MENTOR_DASHBOARD_NAV_ITEMS, MENTEE_DASHBOARD_SHORTCUTS, MENTEE_DASHBOARD_NAV_ITEMS } from '@gurokonekt/utils';
+import * as crypto from 'crypto';
+import bcrypt from 'bcrypt';
 
 @Injectable()
 export class UserService {
@@ -11,6 +14,7 @@ export class UserService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
+    private readonly supabase: SupabaseService,
   ) {}
 
   // ====================================================
@@ -697,7 +701,7 @@ export class UserService {
           },
           select: SelectFields.getUserCredentialsSelect(),
         });
-  
+
         return {
           status: ResponseStatus.Success,
           statusCode: API_RESPONSE.SUCCESS.UPDATE_USER_ROLE.code,
@@ -715,4 +719,229 @@ export class UserService {
         };
       }
     }
+
+  // ====================================================
+  // ACCOUNT DEACTIVATION
+  // ====================================================
+
+  async initiateDeactivation(
+    userId: string,
+    dto: InitiateDeactivationDto,
+    ipAddress: string,
+    userAgent: string,
+    origin: string,
+  ): Promise<ResponseDto> {
+    try {
+      const user = await this.prisma.db.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, role: true, hashPassword: true },
+      });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      if (user.role !== UserRole.Mentee) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.MENTEE_ACCESS_DENIED.code,
+          message: API_RESPONSE.ERROR.MENTEE_ACCESS_DENIED.message,
+          data: null,
+        };
+      }
+
+      const isPasswordValid = await bcrypt.compare(dto.password, user.hashPassword);
+      if (!isPasswordValid) {
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.DeactivateAccount,
+            targetId: userId,
+            details: 'Deactivation initiation failed: incorrect password',
+            metadata: { userId },
+            ipAddress,
+            userAgent,
+            createdById: userId,
+          },
+        });
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.PASSWORD_INCORRECT.code,
+          message: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
+          data: null,
+        };
+      }
+
+      const token = crypto.randomBytes(32).toString('hex');
+      const expiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000);
+
+      await this.prisma.db.user.update({
+        where: { id: userId },
+        data: { deactivationToken: token, deactivationTokenExpiresAt: expiresAt },
+      });
+
+      const redirectTo = `${origin}${REDIRECT_LINKS.DEACTIVATE_ACCOUNT}?token=${token}`;
+      const { error } = await this.supabase.client.auth.signInWithOtp({
+        email: user.email,
+        options: { shouldCreateUser: false, emailRedirectTo: redirectTo },
+      });
+
+      if (error) {
+        this.logger.error(error.message, error);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.DEACTIVATION_INITIATE.code,
+          message: API_RESPONSE.ERROR.DEACTIVATION_INITIATE.message,
+          data: null,
+        };
+      }
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.DeactivateAccount,
+          targetId: userId,
+          details: 'Deactivation initiated',
+          metadata: { userId },
+          ipAddress,
+          userAgent,
+          createdById: userId,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.DEACTIVATION_INITIATED.code,
+        message: API_RESPONSE.SUCCESS.DEACTIVATION_INITIATED.message,
+        data: null,
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.DEACTIVATION_INITIATE.code,
+        message: API_RESPONSE.ERROR.DEACTIVATION_INITIATE.message,
+        data: null,
+      };
+    }
+  }
+
+  async verifyDeactivationToken(dto: VerifyDeactivationTokenDto): Promise<ResponseDto> {
+    try {
+      const user = await this.prisma.db.user.findFirst({
+        where: { deactivationToken: dto.token },
+        select: { id: true, deactivationTokenExpiresAt: true },
+      });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.DEACTIVATION_TOKEN_INVALID.code,
+          message: API_RESPONSE.ERROR.DEACTIVATION_TOKEN_INVALID.message,
+          data: null,
+        };
+      }
+
+      if (!user.deactivationTokenExpiresAt || user.deactivationTokenExpiresAt < new Date()) {
+        await this.prisma.db.user.update({
+          where: { id: user.id },
+          data: { deactivationToken: null, deactivationTokenExpiresAt: null },
+        });
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.DEACTIVATION_TOKEN_INVALID.code,
+          message: API_RESPONSE.ERROR.DEACTIVATION_TOKEN_INVALID.message,
+          data: null,
+        };
+      }
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.DEACTIVATION_TOKEN_VALID.code,
+        message: API_RESPONSE.SUCCESS.DEACTIVATION_TOKEN_VALID.message,
+        data: { userId: user.id },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.DEACTIVATION_CONFIRM.code,
+        message: API_RESPONSE.ERROR.DEACTIVATION_CONFIRM.message,
+        data: null,
+      };
+    }
+  }
+
+  async submitDeactivationFeedback(
+    userId: string,
+    dto: DeactivationFeedbackDto,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<ResponseDto> {
+    try {
+      const user = await this.prisma.db.user.findFirst({
+        where: { id: userId, deactivationToken: dto.token },
+        select: { id: true, deactivationTokenExpiresAt: true },
+      });
+
+      if (!user || !user.deactivationTokenExpiresAt || user.deactivationTokenExpiresAt < new Date()) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.DEACTIVATION_TOKEN_INVALID.code,
+          message: API_RESPONSE.ERROR.DEACTIVATION_TOKEN_INVALID.message,
+          data: null,
+        };
+      }
+
+      await this.prisma.db.$transaction(async (tx) => {
+        await tx.deactivationFeedback.upsert({
+          where: { userId },
+          update: { reason: dto.reason },
+          create: { userId, reason: dto.reason },
+        });
+
+        await tx.user.update({
+          where: { id: userId },
+          data: {
+            status: UserStatus.Inactive,
+            deactivationToken: null,
+            deactivationTokenExpiresAt: null,
+          },
+        });
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.DeactivateAccount,
+          targetId: userId,
+          details: 'Account deactivated',
+          metadata: { userId },
+          ipAddress,
+          userAgent,
+          createdById: userId,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.ACCOUNT_DEACTIVATED.code,
+        message: API_RESPONSE.SUCCESS.ACCOUNT_DEACTIVATED.message,
+        data: null,
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.ACCOUNT_DEACTIVATION_FAILED.code,
+        message: API_RESPONSE.ERROR.ACCOUNT_DEACTIVATION_FAILED.message,
+        data: null,
+      };
+    }
+  }
 }

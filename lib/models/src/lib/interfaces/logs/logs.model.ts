@@ -13,6 +13,7 @@ export enum LogsActionType {
   ForgotPassword = "forgot_password",
   ResetPassword = "reset_password",
   VerifyResetPin = "verify_reset_pin",
+  DeactivateAccount = "deactivate_account",
 }
 
 export interface LogsInterface {
