@@ -9,6 +9,10 @@ export enum LogsActionType {
   SignUp = "signup",
   Signout = "signout",
   ResendEmailConfirmation = "resend_email_confirmation",
+  UpdatePassword = "update_password",
+  ForgotPassword = "forgot_password",
+  ResetPassword = "reset_password",
+  VerifyResetPin = "verify_reset_pin",
 }
 
 export interface LogsInterface {

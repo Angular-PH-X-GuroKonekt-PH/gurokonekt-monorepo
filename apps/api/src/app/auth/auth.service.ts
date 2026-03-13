@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto } from '@gurokonekt/models';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyResetPinDto } from '@gurokonekt/models';
 import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION,
-  SIGN_IN_WITH_PASSWORD, UserRole, UserStatus, LogsActionType,
+  SIGN_IN_WITH_PASSWORD, UPDATE_PASSWORD, UserRole, UserStatus, LogsActionType,
   ResendOTPTypes, REDIRECT_LINKS
 } from '@gurokonekt/models';
 import { SupabaseService } from '../supabase/supabase.service';
@@ -683,6 +683,392 @@ export class AuthService {
         statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
         message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error
+      };
+    }
+  }
+
+  /**
+   * Update Password (authenticated Mentee/Mentor)
+   * Flow:
+   * 1. Check failed attempts (max 3/day) per user
+   * 2. Verify user exists
+   * 3. Compare currentPassword against stored hash
+   * 4. Validate confirmPassword matches newPassword
+   * 5. Hash newPassword, update Supabase + DB
+   */
+  async updatePassword(dto: UpdatePasswordDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+    try {
+      const todayStart = new Date();
+      const todayEnd = new Date();
+      todayStart.setUTCHours(0, 0, 0, 0);
+      todayEnd.setUTCHours(23, 59, 59, 999);
+
+      // Rate-limit incorrect current password attempts
+      const failedAttempts = await this.prisma.db.logs.count({
+        where: {
+          actionType: LogsActionType.UpdatePassword,
+          metadata: { path: ['userId'], equals: dto.userId },
+          details: { contains: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message, mode: 'insensitive' },
+          createdAt: { gte: todayStart, lte: todayEnd },
+        },
+      });
+
+      if (failedAttempts >= UPDATE_PASSWORD.MAX_INCORRECT_ATTEMPTS_PER_DAY) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.UPDATE_PASSWORD_TOO_MANY_ATTEMPTS.code,
+          message: API_RESPONSE.ERROR.UPDATE_PASSWORD_TOO_MANY_ATTEMPTS.message,
+          data: null,
+        };
+      }
+
+      const user = await this.prisma.db.user.findUnique({
+        where: { id: dto.userId },
+      });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      // Verify current password
+      const isCurrentPasswordValid = await bcrypt.compare(dto.currentPassword, user.hashPassword);
+
+      if (!isCurrentPasswordValid) {
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.UpdatePassword,
+            targetId: user.id,
+            details: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
+            metadata: { userId: dto.userId },
+            ipAddress,
+            userAgent,
+            createdById: user.id,
+          },
+        });
+
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.PASSWORD_INCORRECT.code,
+          message: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
+          data: null,
+        };
+      }
+
+      // Validate confirmPassword matches newPassword
+      if (dto.newPassword !== dto.confirmPassword) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.PASSWORD_MISMATCH.code,
+          message: API_RESPONSE.ERROR.PASSWORD_MISMATCH.message,
+          data: null,
+        };
+      }
+
+      const newHashPassword = await bcrypt.hash(dto.newPassword, 10);
+
+      // Update password in Supabase
+      const { error: supabaseError } = await this.supabase.clientAdmin.auth.admin.updateUserById(
+        user.id,
+        { password: dto.newPassword },
+      );
+
+      if (supabaseError) {
+        this.logger.error(supabaseError.message, supabaseError.stack);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+          data: supabaseError,
+        };
+      }
+
+      // Update hashed password in DB
+      await this.prisma.db.user.update({
+        where: { id: user.id },
+        data: { hashPassword: newHashPassword },
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.UpdatePassword,
+          targetId: user.id,
+          details: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
+          metadata: { userId: dto.userId },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.code,
+        message: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
+        data: null,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.UPDATE_PASSWORD.code,
+        message: API_RESPONSE.ERROR.UPDATE_PASSWORD.message,
+        data: error,
+      };
+    }
+  }
+
+  /**
+   * Forgot Password — sends a secure reset link to the user's email.
+   * Flow:
+   * 1. Verify email exists in DB
+   * 2. Send password reset link via Supabase (redirects to frontend reset page)
+   */
+  async forgotPassword(dto: ForgotPasswordDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
+    try {
+      const user = await this.prisma.db.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      const redirectTo = `${origin ?? ''}${REDIRECT_LINKS.RESET_PASSWORD}`;
+
+      const { error } = await this.supabase.client.auth.resetPasswordForEmail(dto.email, {
+        redirectTo,
+      });
+
+      if (error) {
+        this.logger.error(error.message, error.stack);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+          data: error,
+        };
+      }
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.ForgotPassword,
+          targetId: user.id,
+          details: API_RESPONSE.SUCCESS.FORGOT_PASSWORD_EMAIL_SENT.message,
+          metadata: { email: dto.email },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.FORGOT_PASSWORD_EMAIL_SENT.code,
+        message: API_RESPONSE.SUCCESS.FORGOT_PASSWORD_EMAIL_SENT.message,
+        data: null,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.RESET_PASSWORD.code,
+        message: API_RESPONSE.ERROR.RESET_PASSWORD.message,
+        data: error,
+      };
+    }
+  }
+
+  /**
+   * Reset Password — validates the new password then sends a PIN to the user's email.
+   * Called after the user clicks the reset link and fills in the new password form.
+   * Flow:
+   * 1. Validate confirmPassword matches newPassword
+   * 2. Verify email exists in DB
+   * 3. Send 6-digit OTP (PIN) via Supabase signInWithOtp
+   */
+  async resetPassword(dto: ResetPasswordDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+    try {
+      if (dto.newPassword !== dto.confirmPassword) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.PASSWORD_MISMATCH.code,
+          message: API_RESPONSE.ERROR.PASSWORD_MISMATCH.message,
+          data: null,
+        };
+      }
+
+      const user = await this.prisma.db.user.findUnique({
+        where: { email: dto.email },
+      });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      // Send OTP as PIN via Supabase (valid per Supabase OTP expiry, capped at 20 min in verifyResetPin)
+      const { error } = await this.supabase.client.auth.signInWithOtp({
+        email: dto.email,
+        options: { shouldCreateUser: false },
+      });
+
+      if (error) {
+        this.logger.error(error.message, error.stack);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+          data: error,
+        };
+      }
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.ResetPassword,
+          targetId: user.id,
+          details: API_RESPONSE.SUCCESS.RESET_PASSWORD_PIN_SENT.message,
+          metadata: { email: dto.email },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.RESET_PASSWORD_PIN_SENT.code,
+        message: API_RESPONSE.SUCCESS.RESET_PASSWORD_PIN_SENT.message,
+        data: null,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.RESET_PASSWORD.code,
+        message: API_RESPONSE.ERROR.RESET_PASSWORD.message,
+        data: error,
+      };
+    }
+  }
+
+  /**
+   * Verify Reset PIN — validates the PIN (OTP) and updates the password.
+   * Flow:
+   * 1. Validate confirmPassword matches newPassword
+   * 2. Verify OTP via Supabase verifyOtp
+   * 3. Check the PIN was issued within the last 20 minutes (via Logs)
+   * 4. Hash newPassword, update Supabase + DB
+   */
+  async verifyResetPin(dto: VerifyResetPinDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+    try {
+      if (dto.newPassword !== dto.confirmPassword) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.PASSWORD_MISMATCH.code,
+          message: API_RESPONSE.ERROR.PASSWORD_MISMATCH.message,
+          data: null,
+        };
+      }
+
+      // Verify OTP issued by resetPassword step
+      const { data, error } = await this.supabase.client.auth.verifyOtp({
+        email: dto.email,
+        token: dto.pin,
+        type: 'email',
+      });
+
+      if (error || !data.user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.RESET_PIN_INVALID.code,
+          message: API_RESPONSE.ERROR.RESET_PIN_INVALID.message,
+          data: null,
+        };
+      }
+
+      // Enforce 20-minute expiry via the ResetPassword log entry
+      const twentyMinutesAgo = new Date(Date.now() - 20 * 60 * 1000);
+      const recentResetLog = await this.prisma.db.logs.findFirst({
+        where: {
+          actionType: LogsActionType.ResetPassword,
+          metadata: { path: ['email'], equals: dto.email },
+          createdAt: { gte: twentyMinutesAgo },
+        },
+        orderBy: { createdAt: 'desc' },
+      });
+
+      if (!recentResetLog) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.RESET_PIN_INVALID.code,
+          message: API_RESPONSE.ERROR.RESET_PIN_INVALID.message,
+          data: null,
+        };
+      }
+
+      const newHashPassword = await bcrypt.hash(dto.newPassword, 10);
+
+      // Update password in Supabase
+      const { error: updateError } = await this.supabase.clientAdmin.auth.admin.updateUserById(
+        data.user.id,
+        { password: dto.newPassword },
+      );
+
+      if (updateError) {
+        this.logger.error(updateError.message, updateError.stack);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+          data: updateError,
+        };
+      }
+
+      // Update hashed password in DB
+      await this.prisma.db.user.update({
+        where: { id: data.user.id },
+        data: { hashPassword: newHashPassword },
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.VerifyResetPin,
+          targetId: data.user.id,
+          details: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
+          metadata: { email: dto.email },
+          ipAddress,
+          userAgent,
+          createdById: data.user.id,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.code,
+        message: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
+        data: null,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.RESET_PASSWORD.code,
+        message: API_RESPONSE.ERROR.RESET_PASSWORD.message,
+        data: error,
       };
     }
   }

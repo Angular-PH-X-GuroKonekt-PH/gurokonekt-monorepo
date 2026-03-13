@@ -48,6 +48,10 @@ enum LogsActionType {
   signup
   signout
   resend_email_confirmation
+  update_password
+  forgot_password
+  reset_password
+  verify_reset_pin
 
   @@map("logs_action_type")
 }

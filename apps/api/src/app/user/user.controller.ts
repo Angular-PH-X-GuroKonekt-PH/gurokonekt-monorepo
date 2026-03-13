@@ -6,10 +6,14 @@ import {
   Ip,
   Param,
   Patch,
+  Req,
   UploadedFiles,
+  UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import {
+  ApiBearerAuth,
   ApiConsumes,
   ApiOperation,
   ApiParam,
@@ -67,6 +71,45 @@ export class UserController {
       ipAddress,
       userAgent,
     );
+  }
+
+  // ====================================================
+  // GET - Unified Dashboard (role-based)
+  // ====================================================
+
+  @Get(':userId/dashboard')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get Dashboard data — automatically returns Mentor or Mentee dashboard based on the authenticated user role',
+  })
+  @ApiParam({ name: 'userId', type: String, description: 'Unique ID of the user' })
+  @ApiResponse({ status: 200, description: 'Dashboard data retrieved successfully', type: ResponseDto })
+  @ApiResponse({ status: 403, description: 'Access denied' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getUserDashboard(
+    @Param('userId') userId: string,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    return this.userService.getUserDashboard(userId, ipAddress, userAgent);
+  }
+
+  // ====================================================
+  // GET - Mentee Booking Overview
+  // ====================================================
+
+  @Get(':userId/booking-overview')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get Mentee booking summary (total, upcoming, completed, pending)' })
+  @ApiParam({ name: 'userId', type: String, description: 'Unique ID of the mentee' })
+  @ApiResponse({ status: 200, description: 'Booking overview retrieved successfully', type: ResponseDto })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  async getMenteeBookingOverview(
+    @Param('userId') userId: string,
+  ) {
+    return this.userService.getMenteeBookingOverview(userId);
   }
 
   // ====================================================
