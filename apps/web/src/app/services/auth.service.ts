@@ -7,6 +7,7 @@ import { RegisterMenteeRequest, RegisterMentorRequest, AuthResponse } from '@gur
 import { API_CONFIG } from '../config/api.config';
 import { buildApiUrl } from '../helpers/api.helper';
 import { HttpErrorHelper } from '../helpers/http-error.helper';
+import type { LoginApiResponse } from '../interfaces/auth-api.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -70,15 +71,7 @@ export class AuthService {
    * Login with email and password
    */
   login(credentials: { email: string; password: string }): Observable<AuthResponse> {
-    return this.http.post<{
-      status: string;
-      statusCode: number;
-      message: string;
-      data: {
-        user: any;
-        session: any;
-      } | null;
-    }>(
+    return this.http.post<LoginApiResponse>(
       buildApiUrl(API_CONFIG.endpoints.auth.login),
       credentials
     ).pipe(
@@ -93,7 +86,8 @@ export class AuthService {
             id: response.data.user.id,
             email: response.data.user.email,
             fullName: `${response.data.user.firstName} ${response.data.user.lastName}`,
-            role: response.data.user.role
+            role: response.data.user.role,
+            isProfileComplete: response.data.user.isProfileComplete,
           },
           accessToken: response.data.session.access_token,
           token: response.data.session.access_token,

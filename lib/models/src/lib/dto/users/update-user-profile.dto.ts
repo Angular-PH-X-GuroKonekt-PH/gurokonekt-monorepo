@@ -86,12 +86,20 @@ export class UpdateMenteeProfileDto implements Partial<UpdateMenteeProfileInterf
   timezone?: string;
 
   @ApiPropertyOptional({ type: [String] })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') return [value];
+    return Array.isArray(value) ? value : [];
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   learningGoals?: string[];
 
   @ApiPropertyOptional({ type: [String] })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') return [value];
+    return Array.isArray(value) ? value : [];
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
@@ -103,6 +111,12 @@ export class UpdateMenteeProfileDto implements Partial<UpdateMenteeProfileInterf
   preferredSessionType?: MenteePreferredSessionType;
 
   @ApiPropertyOptional({ type: [UserAvailabilityDto] })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch { return value; }
+    }
+    return value;
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UserAvailabilityDto)

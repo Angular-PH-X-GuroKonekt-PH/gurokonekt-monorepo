@@ -1,4 +1,5 @@
-import { UpdateUserRoleInterface, UpdateUserStatusInterface, UserRole, UserStatus } from "@gurokonekt/models";
+import { UpdateUserRoleInterface, UpdateUserStatusInterface } from '../../interfaces/user/admin.model';
+import { UserRole, UserStatus } from '../../interfaces/user/user.model';
 
 export class UpdateUserStatusDto implements UpdateUserStatusInterface {
     updatedById!: string;

@@ -1,11 +1,11 @@
 import { Injectable, inject } from '@angular/core';
 import { State, Action, StateContext, Selector } from '@ngxs/store';
-import { Router } from '@angular/router';
 import { catchError, tap } from 'rxjs/operators';
 import { throwError } from 'rxjs';
 import { AuthResponse } from '@gurokonekt/models';
 
 import { AuthService } from '../../services/auth.service';
+import { ProfileService } from '../../services/profile.service';
 import { NavigationHelper } from '../../helpers';
 import { AuthStateModel, initialAuthState } from './auth.state.model';
 import * as AuthActions from './auth.actions';
@@ -16,8 +16,8 @@ import * as AuthActions from './auth.actions';
 })
 @Injectable()
 export class AuthState {
-  private readonly router = inject(Router);
   private readonly authService = inject(AuthService);
+  private readonly profileService = inject(ProfileService);
   private readonly navigationHelper = new NavigationHelper();
 
   @Selector()
@@ -107,7 +107,9 @@ export class AuthState {
       errorMessage: null
     });
 
-    this.navigationHelper.navigateToDashboard(user.role);
+    // Check if user profile is complete before navigating
+    const isProfileComplete = user['isProfileComplete'] === true;
+    this.navigationHelper.navigateToDashboard(user.role, isProfileComplete);
   }
 
   @Action(AuthActions.LoginFailure)
@@ -226,6 +228,54 @@ export class AuthState {
   registerMentorFailure(ctx: StateContext<AuthStateModel>, action: AuthActions.RegisterMentorFailure) {
     ctx.patchState({
       isMentorRegisterLoading: false,
+      isLoading: false,
+      errorMessage: action.error,
+      successMessage: null
+    });
+  }
+
+  @Action(AuthActions.UpdateMenteeProfile)
+  updateMenteeProfile(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMenteeProfile) {
+    ctx.patchState({
+      isLoading: true,
+      errorMessage: null,
+      successMessage: null
+    });
+
+    return this.profileService.updateMenteeProfile(
+      action.payload.userId,
+      action.payload.profileData,
+      action.payload.avatarFile
+    ).pipe(
+      tap(() => {
+        ctx.dispatch(new AuthActions.UpdateMenteeProfileSuccess('Profile updated successfully!'));
+      }),
+      catchError((error) => {
+        ctx.dispatch(new AuthActions.UpdateMenteeProfileFailure(this.getErrorMessage(error)));
+        return throwError(() => error);
+      })
+    );
+  }
+
+  @Action(AuthActions.UpdateMenteeProfileSuccess)
+  updateMenteeProfileSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMenteeProfileSuccess) {
+    const state = ctx.getState();
+    if (!state.user) return;
+
+    ctx.patchState({
+      user: {
+        ...state.user,
+        isProfileComplete: true,
+      },
+      isLoading: false,
+      successMessage: action.message || 'Profile updated successfully!',
+      errorMessage: null
+    });
+  }
+
+  @Action(AuthActions.UpdateMenteeProfileFailure)
+  updateMenteeProfileFailure(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMenteeProfileFailure) {
+    ctx.patchState({
       isLoading: false,
       errorMessage: action.error,
       successMessage: null
