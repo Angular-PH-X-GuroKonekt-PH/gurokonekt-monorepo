@@ -137,6 +137,22 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Booking deleted successfully',
     },
+    GET_MENTOR_BOOKINGS: {
+      code: 200,
+      message: 'Mentor bookings retrieved successfully',
+    },
+    APPROVE_BOOKING: {
+      code: 200,
+      message: 'Booking approved successfully',
+    },
+    REJECT_BOOKING: {
+      code: 200,
+      message: 'Booking rejected successfully',
+    },
+    COMPLETE_BOOKING: {
+      code: 200,
+      message: 'Session marked as completed',
+    },
   },
   ERROR: {
     /**
@@ -371,6 +387,26 @@ export const API_RESPONSE = {
     BOOKING_ACCESS_DENIED: {
       code: 403,
       message: 'Access denied: booking does not belong to the authenticated user',
+    },
+    GET_MENTOR_BOOKINGS: {
+      code: 500,
+      message: 'Failed to get mentor bookings',
+    },
+    APPROVE_BOOKING: {
+      code: 500,
+      message: 'Failed to approve booking',
+    },
+    REJECT_BOOKING: {
+      code: 500,
+      message: 'Failed to reject booking',
+    },
+    COMPLETE_BOOKING: {
+      code: 500,
+      message: 'Failed to complete booking',
+    },
+    BOOKING_INVALID_TRANSITION: {
+      code: 400,
+      message: 'Invalid booking status transition',
     },
   }
 }
