@@ -15,8 +15,9 @@ export interface MentorSearchItemInterface {
   mentorProfiles: MentorProfileSearch[];
 }
 
-export interface MentorProfileSearch { 
+export interface MentorProfileSearch {
   id: string;
+  title: string | null;
   areasOfExpertise: string[];
   yearsOfExperience: number | null;
   bio: string | null;
@@ -25,6 +26,30 @@ export interface MentorProfileSearch {
   availability: unknown;
   linkedInUrl: string | null;
   updatedAt: Date;
+}
+
+export interface MentorProfileDetailInterface {
+  id: string;
+  title: string | null;
+  bio: string | null;
+  areasOfExpertise: string[];
+  yearsOfExperience: number | null;
+  skills: string[];
+  sessionRate: number | null;
+  availability: unknown;
+  linkedInUrl: string | null;
+  updatedAt: Date;
+  user: {
+    id: string;
+    firstName: string;
+    middleName: string | null;
+    lastName: string;
+    suffix: string | null;
+    language: string | null;
+    country: string | null;
+    timezone: string | null;
+    avatarAttachments: { publicUrl: string; fileName: string }[];
+  };
 }
 
 export interface MenttorAttachmentSearch {

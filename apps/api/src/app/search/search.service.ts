@@ -2,6 +2,8 @@ import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import {
   API_RESPONSE,
+  DaysInWeek,
+  MentorProfileDetailInterface,
   MentorSearchItemInterface,
   MentorSearchResultInterface,
   ResponseDto,
@@ -60,8 +62,9 @@ export class SearchService {
         });
 
         const sorted = this.sortInMemory(all as unknown as MentorSearchItemInterface[], sortBy, sortOrder);
-        total = sorted.length;
-        results = sorted.slice((page - 1) * limit, page * limit);
+        const filtered = this.filterByAvailabilityDay(sorted, dto.availabilityDay);
+        total = filtered.length;
+        results = filtered.slice((page - 1) * limit, page * limit);
       } else {
         const orderBy = this.buildOrderBy(sortBy, sortOrder);
         [total, results] = await Promise.all([
@@ -74,6 +77,8 @@ export class SearchService {
             take: limit,
           }) as unknown as Promise<MentorSearchItemInterface[]>,
         ]);
+        results = this.filterByAvailabilityDay(results, dto.availabilityDay);
+        total = results.length;
       }
 
       return {
@@ -126,6 +131,11 @@ export class SearchService {
       { isMentorApproved: true },
       { isMentorProfileComplete: true },
     ];
+
+    // Language filter (case-insensitive)
+    if (dto.language) {
+      topLevelAnd.push({ language: { equals: dto.language, mode: 'insensitive' } });
+    }
 
     // Name filter (partial, case-insensitive)
     if (dto.name?.trim()) {
@@ -183,9 +193,14 @@ export class SearchService {
       });
     }
 
-    // Minimum years of experience 
-    if (dto.minYearsExperience !== undefined) {
-      profileConditions.push({ yearsOfExperience: { gte: dto.minYearsExperience } });
+    // Years of experience range
+    if (dto.minYearsExperience !== undefined || dto.maxYearsExperience !== undefined) {
+      profileConditions.push({
+        yearsOfExperience: {
+          ...(dto.minYearsExperience !== undefined ? { gte: dto.minYearsExperience } : {}),
+          ...(dto.maxYearsExperience !== undefined ? { lte: dto.maxYearsExperience } : {}),
+        },
+      });
     }
 
     // Attach profile conditions. Always require at least one mentorProfile record.
@@ -248,5 +263,122 @@ export class SearchService {
 
       return 0;
     });
+  }
+
+  // ====================================================
+  // PRIVATE – AVAILABILITY DAY POST-FILTER
+  // ====================================================
+
+  private filterByAvailabilityDay(
+    mentors: MentorSearchItemInterface[],
+    day: DaysInWeek | undefined,
+  ): MentorSearchItemInterface[] {
+    if (!day) return mentors;
+
+    return mentors.filter((mentor) => {
+      const availability = mentor.mentorProfiles[0]?.availability;
+      if (!availability || !Array.isArray(availability)) return false;
+      return (availability as { day: string }[]).some(
+        (slot) => slot.day?.toLowerCase() === day.toLowerCase(),
+      );
+    });
+  }
+
+  // ====================================================
+  // GET MENTOR PROFILE BY ID
+  // ====================================================
+
+  async getMentorProfileById(
+    mentorId: string,
+  ): Promise<ResponseDto<MentorProfileDetailInterface | null>> {
+    try {
+      const profile = await this.prisma.db.mentorProfile.findUnique({
+        where: { userId: mentorId },
+        select: {
+          id: true,
+          title: true,
+          bio: true,
+          areasOfExpertise: true,
+          yearsOfExperience: true,
+          skills: true,
+          sessionRate: true,
+          availability: true,
+          linkedInUrl: true,
+          updatedAt: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              middleName: true,
+              lastName: true,
+              suffix: true,
+              language: true,
+              country: true,
+              timezone: true,
+              status: true,
+              isMentorApproved: true,
+              isMentorProfileComplete: true,
+              avatarAttachments: {
+                select: { publicUrl: true, fileName: true },
+              },
+            },
+          },
+        },
+      });
+
+      if (
+        !profile ||
+        profile.user.status !== 'active' ||
+        !profile.user.isMentorApproved ||
+        !profile.user.isMentorProfileComplete
+      ) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: 'Mentor not found or not available',
+          data: null,
+        };
+      }
+
+      const { user } = profile;
+      const result: MentorProfileDetailInterface = {
+        id: profile.id,
+        title: profile.title,
+        bio: profile.bio,
+        areasOfExpertise: profile.areasOfExpertise,
+        yearsOfExperience: profile.yearsOfExperience,
+        skills: profile.skills,
+        sessionRate: profile.sessionRate,
+        availability: profile.availability,
+        linkedInUrl: profile.linkedInUrl,
+        updatedAt: profile.updatedAt,
+        user: {
+          id: user.id,
+          firstName: user.firstName,
+          middleName: user.middleName,
+          lastName: user.lastName,
+          suffix: user.suffix,
+          language: user.language,
+          country: user.country,
+          timezone: user.timezone,
+          avatarAttachments: user.avatarAttachments,
+        },
+      };
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_BOOKINGS.code,
+        message: 'Mentor profile retrieved successfully',
+        data: result,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+        data: null,
+      };
+    }
   }
 }

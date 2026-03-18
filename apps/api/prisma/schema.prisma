@@ -151,6 +151,7 @@ model MenteeProfile {
 model MentorProfile {
   id                String    @id @default(uuid())
   userId            String    @unique @map("user_id")
+  title             String?
   areasOfExpertise  String[]  @map("areas_of_expertise")
   yearsOfExperience Int?      @map("years_of_experience")
   linkedInUrl       String?   @map("linkedin_url")
