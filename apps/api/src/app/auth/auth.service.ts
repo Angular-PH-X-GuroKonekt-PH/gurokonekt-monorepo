@@ -74,6 +74,16 @@ export class AuthService {
         };
       }
 
+      if (!data.user.identities || data.user.identities.length === 0) {
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email}) — Supabase identity empty`);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
+          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
+          data: null,
+        };
+      }
+
       const authId = data.user.id;
       const hashPassword = await bcrypt.hash(dto.password, 10);
       const mentee = await this.prisma.db.user.create({
@@ -120,6 +130,15 @@ export class AuthService {
         }
       }
     } catch (error) {
+      if (error?.code === 'P2002') {
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email}) — DB constraint`);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
+          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
+          data: null,
+        };
+      }
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
@@ -193,6 +212,16 @@ export class AuthService {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
           message: API_RESPONSE.ERROR.NO_DATA_RETURNED_ON_AUTH.message,
+          data: null,
+        };
+      }
+
+      if (!data.user.identities || data.user.identities.length === 0) {
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email}) — Supabase identity empty`);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
+          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
           data: null,
         };
       }
@@ -272,6 +301,15 @@ export class AuthService {
         }
       }
     } catch (error) {
+      if (error?.code === 'P2002') {
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email}) — DB constraint`);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
+          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
+          data: null,
+        };
+      }
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
