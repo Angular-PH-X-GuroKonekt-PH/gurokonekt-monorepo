@@ -1,6 +1,8 @@
 import { inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Role } from '@gurokonekt/models';
+import { APP_ROUTES } from '../constants/routes';
+import { normalizeRole, requiresProfileSetup } from './profile-completion.helper';
 
 /**
  * Navigation helper for common routing operations
@@ -13,21 +15,21 @@ export class NavigationHelper {
    * Navigate to login page
    */
   async navigateToLogin(): Promise<boolean> {
-    return this.router.navigate(['/login']);
+    return this.router.navigate([APP_ROUTES.LOGIN]);
   }
 
   /**
    * Navigate to role selection
    */
   async navigateToRoleSelection(): Promise<boolean> {
-    return this.router.navigate(['/register']);
+    return this.router.navigate([APP_ROUTES.REGISTER]);
   }
 
   /**
    * Navigate to register based on role
    */
   async navigateToRegister(role: Role = 'mentee'): Promise<boolean> {
-    return this.router.navigate(['/register'], {
+    return this.router.navigate([APP_ROUTES.REGISTER], {
       queryParams: { step: role }
     });
   }
@@ -36,17 +38,21 @@ export class NavigationHelper {
    * Navigate to forgot password
    */
   async navigateToForgotPassword(): Promise<boolean> {
-    return this.router.navigate(['/forgot-password']);
+    return this.router.navigate([APP_ROUTES.FORGOT_PASSWORD]);
   }
 
   /**
-   * Navigate to dashboard based on user role
+   * Navigate to dashboard based on user role and profile completion status
    */
-  async navigateToDashboard(role: string): Promise<boolean> {
-    if (role === 'mentor') {
-      return this.router.navigate(['/mentor/dashboard']);
+  async navigateToDashboard(role: string, isProfileComplete?: boolean): Promise<boolean> {
+    if (requiresProfileSetup(role, isProfileComplete)) {
+      return this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
+    }
+    
+    if (normalizeRole(role) === 'mentor') {
+      return this.router.navigate([APP_ROUTES.MENTOR_DASHBOARD]);
     } else {
-      return this.router.navigate(['/dashboard']);
+      return this.router.navigate([APP_ROUTES.DASHBOARD]);
     }
   }
 
@@ -54,7 +60,7 @@ export class NavigationHelper {
    * Navigate to email verification page
    */
   async navigateToVerifyEmail(params: { email: string; role: string; message: string }): Promise<boolean> {
-    return this.router.navigate(['/verify-email'], {
+    return this.router.navigate([APP_ROUTES.VERIFY_EMAIL], {
       queryParams: { 
         email: params.email,
         role: params.role,

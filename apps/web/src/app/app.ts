@@ -3,6 +3,7 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
 import { ToastContainerComponent } from './components/shared/toast/toast.component';
+import { SIDEBAR_PREFIX_ROUTES } from './constants/routes';
 
 @Component({
   imports: [RouterModule, ToastContainerComponent],
@@ -32,8 +33,7 @@ export class App {
     effect(() => {
       const url = this.navigationEnd();
       if (url) {
-        const showSidebarRoutes = ['/dashboard', '/profile', '/settings', '/mentoring'];
-        const shouldShow = showSidebarRoutes.some(route => url.startsWith(route));
+        const shouldShow = SIDEBAR_PREFIX_ROUTES.some(route => url.startsWith(route));
         this.showSidebar.set(shouldShow);
       }
     });
