@@ -48,7 +48,30 @@
           "optimization": false,
           "extractLicenses": false,
           "sourceMap": true
+        },
+        "test": {
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "800kb",
+              "maximumError": "1.5mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "8kb",
+              "maximumError": "12kb"
+            }
+          ],
+          "outputHashing": "all",
+          "fileReplacements": [
+          {
+            "replace": "apps/web/src/environments/environment.ts",
+            "with": "apps/web/src/environments/environment.test.ts"
+          }
+      ]
         }
+
+
       },
       "defaultConfiguration": "production"
     },
