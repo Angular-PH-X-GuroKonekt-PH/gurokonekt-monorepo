@@ -521,10 +521,39 @@ export class UserService {
 
       const isProfileComplete = user.isProfileComplete;
       const role = user.role as UserRole;
+      const effectiveDto: UpdateMenteeProfileDto | UpdateMentorProfileDto = role === UserRole.Mentee
+        ? (() => {
+            const currentDto = dto as UpdateMenteeProfileDto;
+            const normalizeToArray = (value: unknown): string[] | undefined => {
+              if (Array.isArray(value)) return value as string[];
+              if (typeof value === 'string' && value.trim().length > 0) return [value];
+              return undefined;
+            };
+            const normalizeAvailability = (value: unknown): UpdateMenteeProfileDto['availability'] => {
+              if (Array.isArray(value)) return value;
+              if (typeof value === 'string') {
+                try {
+                  const parsed = JSON.parse(value);
+                  return Array.isArray(parsed) ? parsed : undefined;
+                } catch {
+                  return undefined;
+                }
+              }
+              return undefined;
+            };
+
+            return {
+              ...currentDto,
+              learningGoals: normalizeToArray(currentDto.learningGoals),
+              areasOfInterest: normalizeToArray(currentDto.areasOfInterest),
+              availability: normalizeAvailability(currentDto.availability),
+            };
+          })()
+        : dto;
 
       if (!isProfileComplete) {
         try {
-          UserProfileValidator.throwIfMissingFields(dto, user.role as UserRole);
+          UserProfileValidator.throwIfMissingFields(effectiveDto, user.role as UserRole);
         } catch (err) {
           const validationError = err instanceof Error ? err : new Error(String(err));
           await this.prisma.db.logs.create({
@@ -532,7 +561,7 @@ export class UserService {
               actionType: LogsActionType.Update,
               targetId: userId,
               details: API_RESPONSE.ERROR.MISSING_REQUIRED_FIELDS.message,
-              metadata: { dto: instanceToPlain(dto) },
+              metadata: { dto: instanceToPlain(effectiveDto) },
               ipAddress,
               userAgent,
               createdById: userId,
@@ -548,12 +577,12 @@ export class UserService {
       }
 
       
-      const userUpdateData = UserProfileValidator.buildUserUpdateData(dto, isProfileComplete);
+      const userUpdateData = UserProfileValidator.buildUserUpdateData(effectiveDto, isProfileComplete);
 
       let profileResponse: Record<string, unknown> | null = null;
 
       if (role === UserRole.Mentor) {
-        const payload = UserProfileValidator.buildProfilePayload(dto, role, isProfileComplete);
+        const payload = UserProfileValidator.buildProfilePayload(effectiveDto, role, isProfileComplete);
         await this.prisma.db.$transaction(async (tx) => {
           profileResponse = await tx.mentorProfile.upsert({
             where: { userId },
@@ -571,8 +600,8 @@ export class UserService {
           });
         });
       } else if (role === UserRole.Mentee) {
-        const userUpdateData = UserProfileValidator.buildUserUpdateData(dto, isProfileComplete);
-        const currentDto = dto as UpdateMenteeProfileDto;
+        const userUpdateData = UserProfileValidator.buildUserUpdateData(effectiveDto, isProfileComplete);
+        const currentDto = effectiveDto as UpdateMenteeProfileDto;
         const payload = {
           bio: currentDto.bio,
           learningGoals: currentDto.learningGoals,
@@ -606,7 +635,7 @@ export class UserService {
           details: `${API_RESPONSE.SUCCESS.UPDATE_USER_PROFILE.message} for ${user.role}`,
           ipAddress: ipAddress,
           userAgent: userAgent,
-          createdById: dto.updatedById,
+          createdById: effectiveDto.updatedById,
         },
       });
 
@@ -628,11 +657,22 @@ export class UserService {
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
-      this.logger.error(err.message, err.stack);
+      this.logger.error(`Profile update failed: ${err.message}`, err.stack);
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.Update,
+          targetId: userId,
+          details: `Profile update error: ${err.message}`,
+          metadata: { error: err.message, stack: err.stack },
+          ipAddress,
+          userAgent,
+          createdById: userId,
+        },
+      }).catch(() => undefined); // Silently ignore log errors
       return {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.UPDATE_USER_PROFILE.code,
-        message: API_RESPONSE.ERROR.UPDATE_USER_PROFILE.message,
+        message: `Failed to update user profile: ${err.message}`,
         data: null,
       };
     }

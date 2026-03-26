@@ -99,6 +99,7 @@ export class AuthService {
           timezone: dto.timezone,
           phoneNumber: dto.phoneNumber ?? null,
           hashPassword: hashPassword,
+          isProfileComplete: false,
           role: UserRole.Mentee,
           status: UserStatus.Active,
           createdById: authId,
@@ -694,10 +695,33 @@ export class AuthService {
       });
 
       // After successful signin return the user data without sensitive info
-      const userData = await this.prisma.db.user.findUnique({
+      let userData = await this.prisma.db.user.findUnique({
         where: { id: data.user.id },
         select: SelectFields.getUserCredentialsSelect()
       });
+
+      // Mentee profile is created on profile setup submit. If no profile row exists,
+      // force profile completion flag to false to keep onboarding flow consistent.
+      if (userData?.role === UserRole.Mentee) {
+        const menteeProfile = await this.prisma.db.menteeProfile.findUnique({
+          where: { userId: userData.id },
+          select: { id: true },
+        });
+
+        const effectiveIsProfileComplete = userData.isProfileComplete === true && !!menteeProfile;
+
+        if (userData.isProfileComplete !== effectiveIsProfileComplete) {
+          await this.prisma.db.user.update({
+            where: { id: userData.id },
+            data: { isProfileComplete: effectiveIsProfileComplete },
+          });
+        }
+
+        userData = {
+          ...userData,
+          isProfileComplete: effectiveIsProfileComplete,
+        };
+      }
 
       const redirectUrl =
         userData?.role === UserRole.Admin && userData?.isProfileComplete === false

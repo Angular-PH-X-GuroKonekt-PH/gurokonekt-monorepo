@@ -3,16 +3,17 @@ import {
   Controller,
   Get,
   Headers,
+  HttpException,
   Ip,
   Param,
   Patch,
   Post,
-  Req,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
   ApiConsumes,
@@ -23,10 +24,8 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import {
-  AvatarInterceptor,
   DeactivationFeedbackDto,
   InitiateDeactivationDto,
-  MentorDocumentsInterceptor,
   ResponseDto,
   SWAGGER_DOCUMENTATION,
   UpdateMenteeProfileDto,
@@ -161,23 +160,42 @@ export class UserController {
     status: 404,
     description: 'User not found',
   })
-  @UseInterceptors(AvatarInterceptor, MentorDocumentsInterceptor)
+  @UseInterceptors(FileFieldsInterceptor([
+    { name: 'avatar', maxCount: 1 },
+    { name: 'files', maxCount: 5 },
+  ], {
+    limits: { fileSize: 10 * 1024 * 1024 },
+    fileFilter: (req, file, cb) => {
+      const avatarTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+      const docTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+      const allowed = file.fieldname === 'avatar' ? avatarTypes : docTypes;
+      if (!allowed.includes(file.mimetype)) {
+        return cb(new Error(`Invalid file type for field ${file.fieldname}`), false);
+      }
+      cb(null, true);
+    },
+  }))
   async updateUserProfile(
     @Param('userId') userId: string,
     @Body() dto: UpdateMenteeProfileDto | UpdateMentorProfileDto,
-    @UploadedFiles() avatar: Express.Multer.File[],
-    @UploadedFiles() files: Express.Multer.File[],
+    @UploadedFiles() uploadedFiles: { avatar?: Express.Multer.File[], files?: Express.Multer.File[] },
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    return this.userService.updateUserProfile(
+    const result = await this.userService.updateUserProfile(
       userId,
       dto,
-      avatar,
-      files,
+      uploadedFiles?.avatar,
+      uploadedFiles?.files,
       ipAddress,
       userAgent,
     );
+
+    if (result.status === 'error') {
+      throw new HttpException(result.message, result.statusCode || 400);
+    }
+
+    return result;
   }
 
   // ====================================================
