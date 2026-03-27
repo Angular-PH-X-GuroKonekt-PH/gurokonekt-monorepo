@@ -161,8 +161,9 @@ model MentorProfile {
   linkedInUrl       String?   @map("linkedin_url")
   bio               String?
   skills            String[]
-  sessionRate       Float?    @map("session_rate")
-  availability      Json
+  sessionRate             Float?    @map("session_rate")
+  sessionDurationMinutes  Int       @default(60) @map("session_duration_minutes")
+  availability            Json
   updatedById       String?   @map("updated_by_id")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 

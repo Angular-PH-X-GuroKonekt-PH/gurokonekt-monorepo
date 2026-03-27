@@ -48,6 +48,9 @@ export class BookingService {
     menteeId: string,
   ): Promise<ResponseDto<BookingInterface>> {
     try {
+      const overlapError = await this.checkBookingConflict(dto.mentorId, dto.sessionDateTime);
+      if (overlapError) return overlapError;
+
       const booking = await this.prisma.db.booking.create({
         data: {
           menteeId,
@@ -258,6 +261,11 @@ export class BookingService {
           message: API_RESPONSE.ERROR.BOOKING_ACCESS_DENIED.message,
           data: null,
         };
+      }
+
+      if (dto.sessionDateTime !== undefined) {
+        const overlapError = await this.checkBookingConflict(existing.mentorId, dto.sessionDateTime, id);
+        if (overlapError) return overlapError;
       }
 
       const updated = await this.prisma.db.booking.update({
@@ -656,6 +664,88 @@ export class BookingService {
     } catch (error) {
       this.logger.warn(`Failed to create notification for userId=${userId}: ${error.message}`);
     }
+  }
+
+  /**
+   * Validates that a new booking for `mentorId` at `sessionDateTime` does not:
+   * 1. Fall outside the mentor's available time frames for that day of week.
+   * 2. Overlap (time-range) with an existing PENDING or APPROVED booking.
+   *
+   * Returns a ResponseDto error if a conflict is found, or null if the slot is free.
+   */
+  private async checkBookingConflict(
+    mentorId: string,
+    sessionDateTime: Date,
+    excludeBookingId?: string,
+  ): Promise<ResponseDto<BookingInterface> | null> {
+    const mentorProfile = await this.prisma.db.mentorProfile.findUnique({
+      where: { userId: mentorId },
+      select: { sessionDurationMinutes: true, availability: true },
+    });
+
+    const duration = mentorProfile?.sessionDurationMinutes ?? 60;
+    const newStart = new Date(sessionDateTime);
+    const newEnd = new Date(newStart.getTime() + duration * 60 * 1000);
+
+    // 1. Availability check — is this day/time within the mentor's available windows?
+    const dayName = newStart.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
+    type AvailSlot = { day: string; timeFrames: { from: string; to: string }[] };
+    const availability = (mentorProfile?.availability as AvailSlot[] | null) ?? [];
+    const dayEntry = availability.find(s => s.day === dayName);
+
+    if (!dayEntry) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.BOOKING_MENTOR_NOT_AVAILABLE_DAY.code,
+        message: API_RESPONSE.ERROR.BOOKING_MENTOR_NOT_AVAILABLE_DAY.message,
+        data: null,
+      };
+    }
+
+    const sessionTimeStr = `${newStart.getHours().toString().padStart(2, '0')}:${newStart.getMinutes().toString().padStart(2, '0')}`;
+    const sessionEndStr = `${newEnd.getHours().toString().padStart(2, '0')}:${newEnd.getMinutes().toString().padStart(2, '0')}`;
+    const fitsInWindow = dayEntry.timeFrames.some(f => f.from <= sessionTimeStr && sessionEndStr <= f.to);
+
+    if (!fitsInWindow) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.BOOKING_OUTSIDE_AVAILABILITY.code,
+        message: `${API_RESPONSE.ERROR.BOOKING_OUTSIDE_AVAILABILITY.message} (${sessionTimeStr}–${sessionEndStr})`,
+        data: null,
+      };
+    }
+
+    // 2. Conflict check — does this time range overlap any active booking for this mentor?
+    const dayStart = new Date(newStart);
+    dayStart.setHours(0, 0, 0, 0);
+    const dayEnd = new Date(newStart);
+    dayEnd.setHours(23, 59, 59, 999);
+
+    const existingBookings = await this.prisma.db.booking.findMany({
+      where: {
+        mentorId,
+        isDeleted: false,
+        status: { in: [BookingStatus.PENDING, BookingStatus.APPROVED] },
+        sessionDateTime: { gte: dayStart, lte: dayEnd },
+        ...(excludeBookingId ? { NOT: { id: excludeBookingId } } : {}),
+      },
+      select: { sessionDateTime: true },
+    });
+
+    for (const b of existingBookings) {
+      const existStart = new Date(b.sessionDateTime);
+      const existEnd = new Date(existStart.getTime() + duration * 60 * 1000);
+      if (newStart < existEnd && existStart < newEnd) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.BOOKING_SCHEDULE_CONFLICT.code,
+          message: API_RESPONSE.ERROR.BOOKING_SCHEDULE_CONFLICT.message,
+          data: null,
+        };
+      }
+    }
+
+    return null;
   }
 
   private async checkIsAdmin(userId: string): Promise<boolean> {

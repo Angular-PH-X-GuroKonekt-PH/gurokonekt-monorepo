@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpException,
@@ -8,10 +9,13 @@ import {
   Param,
   Patch,
   Post,
+  Put,
+  Req,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
 } from '@nestjs/common';
+import { Request } from 'express';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
@@ -24,9 +28,14 @@ import {
   ApiBody,
 } from '@nestjs/swagger';
 import {
+  AddAvailabilitySlotDto,
   DeactivationFeedbackDto,
+  DeleteAvailabilitySlotDto,
+  DowngradeMentorDto,
   InitiateDeactivationDto,
+  ManageAvailabilityDto,
   ResponseDto,
+  SetSessionDurationDto,
   SWAGGER_DOCUMENTATION,
   UpdateMenteeProfileDto,
   UpdateMentorProfileDto,
@@ -299,5 +308,228 @@ export class UserController {
     @Headers('user-agent') userAgent: string,
   ) {
     return this.userService.submitDeactivationFeedback(userId, dto, ipAddress, userAgent);
+  }
+
+  // ====================================================
+  // POST - Downgrade Mentor to Mentee
+  // ====================================================
+
+  @Post(':userId/downgrade')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.summary,
+    description: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.description,
+  })
+  @ApiParam({ name: 'userId', type: String, description: 'UUID of the mentor account to downgrade', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
+  @ApiBody({ type: DowngradeMentorDto, examples: { default: { value: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.bodyExample } } })
+  @ApiResponse({ status: 200, description: 'Mentor account downgraded to mentee successfully', type: ResponseDto })
+  @ApiResponse({ status: 401, description: 'Password incorrect' })
+  @ApiResponse({ status: 403, description: 'Account is not a mentor' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  downgradeMentor(
+    @Param('userId') userId: string,
+    @Body() dto: DowngradeMentorDto,
+    @Req() req: Request,
+  ) {
+    const requesterId = (req as Request & { user?: { sub?: string } }).user?.sub ?? userId;
+    return this.userService.downgradeMentorToMentee(userId, requesterId, dto);
+  }
+
+  // ====================================================
+  // PATCH - Set Session Duration
+  // ====================================================
+
+  @Patch(':userId/availability/duration')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.summary,
+    description: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.description,
+  })
+  @ApiParam({ name: 'userId', type: String, description: 'UUID of the mentor', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
+  @ApiBody({ type: SetSessionDurationDto, examples: { default: { value: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.bodyExample } } })
+  @ApiResponse({
+    status: 200,
+    description: 'Session duration updated successfully',
+    schema: { example: { status: 'success', statusCode: 200, message: 'Session duration updated successfully', data: { sessionDurationMinutes: 60 } } },
+  })
+  @ApiResponse({ status: 400, description: 'sessionDurationMinutes must be at least 15' })
+  @ApiResponse({ status: 403, description: 'Access denied — not an approved mentor' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  setSessionDuration(
+    @Param('userId') userId: string,
+    @Body() dto: SetSessionDurationDto,
+    @Req() req: Request,
+  ) {
+    const requesterId = (req as Request & { user?: { sub?: string } }).user?.sub ?? userId;
+    return this.userService.setSessionDuration(userId, requesterId, dto);
+  }
+
+  // ====================================================
+  // GET - Mentor Availability
+  // ====================================================
+
+  @Get(':userId/availability')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.GET_AVAILABILITY.summary,
+    description: SWAGGER_DOCUMENTATION.GET_AVAILABILITY.description,
+  })
+  @ApiParam({ name: 'userId', type: String, description: 'UUID of the mentor', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
+  @ApiResponse({
+    status: 200,
+    description: 'Availability schedule and session duration retrieved successfully',
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability schedule retrieved successfully',
+        data: {
+          sessionDurationMinutes: 60,
+          availability: [
+            { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
+            { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  getMentorAvailability(@Param('userId') userId: string) {
+    return this.userService.getMentorAvailability(userId);
+  }
+
+  // ====================================================
+  // PUT - Replace Full Availability Schedule
+  // ====================================================
+
+  @Put(':userId/availability')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.summary,
+    description: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.description,
+  })
+  @ApiParam({ name: 'userId', type: String, description: 'UUID of the mentor', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
+  @ApiBody({ type: ManageAvailabilityDto, examples: { default: { value: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.bodyExample } } })
+  @ApiResponse({
+    status: 200,
+    description: 'Availability schedule updated successfully',
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability schedule updated successfully',
+        data: {
+          sessionDurationMinutes: 60,
+          availability: [
+            { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
+            { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid time range | overlapping frames | duplicate day | frame shorter than sessionDurationMinutes' })
+  @ApiResponse({ status: 403, description: 'Access denied — not an approved mentor' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  updateAvailability(
+    @Param('userId') userId: string,
+    @Body() dto: ManageAvailabilityDto,
+    @Req() req: Request,
+  ) {
+    const requesterId = (req as Request & { user?: { sub?: string } }).user?.sub ?? userId;
+    return this.userService.updateMentorAvailability(userId, requesterId, dto);
+  }
+
+  // ====================================================
+  // POST - Add / Replace a Single Day Slot
+  // ====================================================
+
+  @Post(':userId/availability/slot')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.summary,
+    description: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.description,
+  })
+  @ApiParam({ name: 'userId', type: String, description: 'UUID of the mentor', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
+  @ApiBody({ type: AddAvailabilitySlotDto, examples: { default: { value: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.bodyExample } } })
+  @ApiResponse({
+    status: 200,
+    description: 'Time frames appended to the day successfully',
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability slot added successfully',
+        data: {
+          sessionDurationMinutes: 60,
+          availability: [
+            { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Invalid time range | new frames overlap existing frames | frame shorter than sessionDurationMinutes' })
+  @ApiResponse({ status: 403, description: 'Access denied — not an approved mentor' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  addAvailabilitySlot(
+    @Param('userId') userId: string,
+    @Body() dto: AddAvailabilitySlotDto,
+    @Req() req: Request,
+  ) {
+    const requesterId = (req as Request & { user?: { sub?: string } }).user?.sub ?? userId;
+    return this.userService.addAvailabilitySlot(userId, requesterId, dto);
+  }
+
+  // ====================================================
+  // DELETE - Remove a Day or Specific Time Frame
+  // ====================================================
+
+  @Delete(':userId/availability/slot')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.summary,
+    description: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.description,
+  })
+  @ApiParam({ name: 'userId', type: String, description: 'UUID of the mentor', example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' })
+  @ApiBody({ type: DeleteAvailabilitySlotDto, examples: { default: { value: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.bodyExample } } })
+  @ApiResponse({
+    status: 200,
+    description: 'Availability slot deleted successfully',
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability slot deleted successfully',
+        data: {
+          sessionDurationMinutes: 60,
+          availability: [
+            { day: 'monday', timeFrames: [{ from: '14:00', to: '17:00' }] },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 403, description: 'Access denied — not an approved mentor' })
+  @ApiResponse({ status: 404, description: 'Day not found in availability schedule' })
+  @ApiResponse({ status: 500, description: 'Internal server error' })
+  deleteAvailabilitySlot(
+    @Param('userId') userId: string,
+    @Body() dto: DeleteAvailabilitySlotDto,
+    @Req() req: Request,
+  ) {
+    const requesterId = (req as Request & { user?: { sub?: string } }).user?.sub ?? userId;
+    return this.userService.deleteAvailabilitySlot(userId, requesterId, dto);
   }
 }
