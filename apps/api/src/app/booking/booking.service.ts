@@ -62,10 +62,28 @@ export class BookingService {
         },
       });
 
+      // Notify mentor — new booking request
       await this.createNotification(
         dto.mentorId,
         'New Booking Request',
-        'You have received a new booking request from a mentee.',
+        `You have received a new booking request for ${new Date(dto.sessionDateTime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}.`,
+        NotificationType.BOOKING,
+        booking.id,
+      );
+
+      // Notify mentee — booking pending confirmation
+      await this.createNotification(
+        menteeId,
+        'Booking Request Submitted',
+        'Your booking request has been submitted and is pending mentor approval.',
+        NotificationType.BOOKING,
+        booking.id,
+      );
+
+      // Notify all admins — new booking created
+      await this.notifyAllAdmins(
+        'New Booking Request',
+        `A new session booking has been created between a mentee and mentor. Booking ID: ${booking.id}`,
         NotificationType.BOOKING,
         booking.id,
       );
@@ -655,6 +673,31 @@ export class BookingService {
       );
     } catch (error) {
       this.logger.warn(`Failed to create notification for userId=${userId}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Finds all admin users and sends each an in-app notification.
+   * Failures are swallowed so they never block the main flow.
+   */
+  private async notifyAllAdmins(
+    title: string,
+    message: string,
+    type: NotificationType,
+    referenceId?: string,
+  ): Promise<void> {
+    try {
+      const admins = await this.prisma.db.user.findMany({
+        where: { role: UserRole.Admin },
+        select: { id: true },
+      });
+      await Promise.all(
+        admins.map(admin =>
+          this.createNotification(admin.id, title, message, type, referenceId),
+        ),
+      );
+    } catch (error) {
+      this.logger.warn(`Failed to notify admins: ${error.message}`);
     }
   }
 

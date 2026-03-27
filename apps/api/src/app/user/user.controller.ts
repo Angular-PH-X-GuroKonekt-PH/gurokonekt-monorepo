@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpException,
@@ -8,6 +9,8 @@ import {
   Param,
   Patch,
   Post,
+  Put,
+  Req,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -24,8 +27,12 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import {
+  AddAvailabilitySlotDto,
   DeactivationFeedbackDto,
+  DeleteAvailabilitySlotDto,
+  DowngradeMentorDto,
   InitiateDeactivationDto,
+  ManageAvailabilityDto,
   ResponseDto,
   SWAGGER_DOCUMENTATION,
   UpdateMenteeProfileDto,
@@ -34,6 +41,7 @@ import {
   UpdateUserStatusDto,
   VerifyDeactivationTokenDto,
 } from '@gurokonekt/models';
+import { Request } from 'express';
 import { UserService } from './user.service';
 
 @ApiTags('User Management')
@@ -428,6 +436,241 @@ export class UserController {
     @Headers('origin') origin: string,
   ) {
     return this.userService.initiateDeactivation(userId, dto, ipAddress, userAgent, origin ?? '');
+  }
+
+  // ====================================================
+  // POST - Mentor Downgrade to Mentee
+  // ====================================================
+
+  @Post(':userId/downgrade')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.summary,
+    description: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor to downgrade',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: DowngradeMentorDto,
+    examples: {
+      default: { summary: 'Confirm downgrade with password', value: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Account downgraded to Mentee. Status set to inactive. Confirmation email sent.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Account successfully downgraded to Mentee access',
+        data: null,
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Password is incorrect.' })
+  @ApiResponse({ status: 403, description: 'Access denied — account is not a Mentor.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  downgradeMentorToMentee(
+    @Param('userId') userId: string,
+    @Body() dto: DowngradeMentorDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+    @Headers('origin') origin: string,
+  ) {
+    return this.userService.downgradeMentorToMentee(userId, dto, ipAddress, userAgent, origin ?? '');
+  }
+
+  // ====================================================
+  // GET - Mentor Availability
+  // ====================================================
+
+  @Get(':userId/availability')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.GET_AVAILABILITY.summary,
+    description: SWAGGER_DOCUMENTATION.GET_AVAILABILITY.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Availability schedule retrieved successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability retrieved successfully',
+        data: [
+          { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }] },
+          { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
+        ],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — you can only view your own availability.' })
+  getMentorAvailability(
+    @Param('userId') userId: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.getMentorAvailability(userId, req.user.id);
+  }
+
+  // ====================================================
+  // PUT - Replace Full Availability Schedule
+  // ====================================================
+
+  @Put(':userId/availability')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.summary,
+    description: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: ManageAvailabilityDto,
+    examples: {
+      default: { summary: 'Set weekly schedule', value: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Full availability schedule replaced successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability updated successfully',
+        data: [{ day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }] }],
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  updateMentorAvailability(
+    @Param('userId') userId: string,
+    @Body() dto: ManageAvailabilityDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.updateMentorAvailability(userId, dto, req.user.id);
+  }
+
+  // ====================================================
+  // POST - Add / Replace Availability Slot for a Day
+  // ====================================================
+
+  @Post(':userId/availability/slot')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.summary,
+    description: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: AddAvailabilitySlotDto,
+    examples: {
+      default: { summary: 'Add Tuesday slots', value: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Slot added/replaced successfully. Returns the full updated schedule.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability slot added successfully',
+        data: [{ day: 'tuesday', timeFrames: [{ from: '08:00', to: '10:00' }] }],
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  addAvailabilitySlot(
+    @Param('userId') userId: string,
+    @Body() dto: AddAvailabilitySlotDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.addAvailabilitySlot(userId, dto, req.user.id);
+  }
+
+  // ====================================================
+  // DELETE - Remove Availability Slot for a Day
+  // ====================================================
+
+  @Delete(':userId/availability/slot')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.summary,
+    description: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: DeleteAvailabilitySlotDto,
+    examples: {
+      deleteDay: { summary: 'Delete all slots for a day', value: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.bodyExample },
+      deleteSlot: { summary: 'Delete a specific time frame', value: { day: 'monday', timeFrameIndex: 0 } },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Slot deleted successfully. Returns the updated schedule.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability slot deleted successfully',
+        data: [],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'Slot not found for specified day / time frame index.' })
+  deleteAvailabilitySlot(
+    @Param('userId') userId: string,
+    @Body() dto: DeleteAvailabilitySlotDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.deleteAvailabilitySlot(userId, dto, req.user.id);
   }
 
   // ====================================================

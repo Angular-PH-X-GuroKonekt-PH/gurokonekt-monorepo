@@ -155,6 +155,38 @@ export const API_RESPONSE = {
     },
 
     /**
+     * MENTOR DOWNGRADE
+     */
+    MENTOR_DOWNGRADE_INITIATED: {
+      code: 200,
+      message: 'Account downgrade initiated. A confirmation email has been sent.',
+    },
+    MENTOR_DOWNGRADED: {
+      code: 200,
+      message: 'Account successfully downgraded to Mentee access',
+    },
+
+    /**
+     * AVAILABILITY
+     */
+    GET_AVAILABILITY: {
+      code: 200,
+      message: 'Availability retrieved successfully',
+    },
+    UPDATE_AVAILABILITY: {
+      code: 200,
+      message: 'Availability updated successfully',
+    },
+    ADD_AVAILABILITY_SLOT: {
+      code: 200,
+      message: 'Availability slot added successfully',
+    },
+    DELETE_AVAILABILITY_SLOT: {
+      code: 200,
+      message: 'Availability slot deleted successfully',
+    },
+
+    /**
      * ACCOUNT DEACTIVATION
      */
     DEACTIVATION_INITIATED: {
@@ -423,6 +455,50 @@ export const API_RESPONSE = {
     BOOKING_INVALID_TRANSITION: {
       code: 400,
       message: 'Invalid booking status transition',
+    },
+
+    /**
+     * MENTOR DOWNGRADE
+     */
+    MENTOR_DOWNGRADE_NOT_MENTOR: {
+      code: 403,
+      message: 'Access denied: only mentor accounts can be downgraded',
+    },
+    MENTOR_DOWNGRADE_FAILED: {
+      code: 500,
+      message: 'Failed to downgrade mentor account',
+    },
+
+    /**
+     * AVAILABILITY
+     */
+    GET_AVAILABILITY_FAILED: {
+      code: 500,
+      message: 'Failed to retrieve availability',
+    },
+    UPDATE_AVAILABILITY_FAILED: {
+      code: 500,
+      message: 'Failed to update availability',
+    },
+    ADD_AVAILABILITY_SLOT_FAILED: {
+      code: 500,
+      message: 'Failed to add availability slot',
+    },
+    DELETE_AVAILABILITY_SLOT_FAILED: {
+      code: 500,
+      message: 'Failed to delete availability slot',
+    },
+    AVAILABILITY_OVERLAP: {
+      code: 400,
+      message: 'Time slots overlap with an existing slot on the same day',
+    },
+    AVAILABILITY_INVALID_RANGE: {
+      code: 400,
+      message: 'Invalid time range: start time must be before end time',
+    },
+    AVAILABILITY_SLOT_NOT_FOUND: {
+      code: 404,
+      message: 'Availability slot not found',
     },
 
     /**
@@ -890,6 +966,110 @@ Returns a paginated list of approved, active mentors matching the given filters.
 
 **Sorting options (\`sortBy\`):** \`newest\` | \`sessionRate\` | \`yearsExperience\` | \`name\`
 `,
+  },
+
+  // ─── Mentor Downgrade ─────────────────────────────────────────────────────
+
+  DOWNGRADE_MENTOR: {
+    summary: 'Downgrade mentor account to mentee access only',
+    description: `
+Downgrades an approved mentor account to mentee-only access.
+
+**Flow:**
+1. Verifies the supplied password against the current account.
+2. In a single transaction: sets role to \`mentee\`, status to \`inactive\`, clears \`isMentorApproved\` and \`isMentorProfileComplete\`.
+3. Sends a downgrade confirmation email to the mentor's registered email.
+4. Creates an in-app notification.
+
+**After downgrade:**
+- The mentor profile data is retained in the database but is no longer accessible through mentor endpoints.
+- If the user wants to become a mentor again, they must re-apply through the full mentor registration process.
+- The user's mentee profile (if any) is preserved and can be set up via the profile update endpoint.
+
+**Access:** JWT required; mentor role only. Returns \`403\` for mentee/admin accounts.
+`,
+    bodyExample: {
+      password: 'CurrentPassword@123',
+    },
+  },
+
+  // ─── Availability ─────────────────────────────────────────────────────────
+
+  GET_AVAILABILITY: {
+    summary: 'Get mentor availability schedule',
+    description: `
+Returns the current availability schedule for the mentor identified by \`userId\`.
+
+**Access:** JWT required; only the mentor themselves can view their own availability. Admins can view any mentor's availability.
+
+**Response \`data\`** is an array of day schedules:
+\`\`\`json
+[
+  {
+    "day": "monday",
+    "timeFrames": [
+      { "from": "09:00", "to": "12:00" },
+      { "from": "14:00", "to": "17:00" }
+    ]
+  }
+]
+\`\`\`
+`,
+  },
+
+  UPDATE_AVAILABILITY: {
+    summary: 'Replace the full availability schedule',
+    description: `
+Replaces the entire availability schedule with the provided array. All existing slots are overwritten.
+
+**Validation rules:**
+- No overlapping time slots within the same day.
+- Each time slot must have \`from\` before \`to\` (24h format, e.g. \`"09:00"\`).
+- Only approved mentors can set availability.
+
+**Use this endpoint** when you want to set a complete weekly schedule in one call.
+**Use \`POST /availability/slot\`** to add or update a single day's slots.
+`,
+    bodyExample: {
+      availability: [
+        { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
+        { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
+        { day: 'friday', timeFrames: [{ from: '09:00', to: '11:00' }] },
+      ],
+    },
+  },
+
+  ADD_AVAILABILITY_SLOT: {
+    summary: 'Add or replace availability slots for a specific day',
+    description: `
+Adds availability slots for a given day of the week. If a schedule entry for that day already exists, it is **replaced** with the new time frames.
+
+**Validation rules:**
+- No overlapping time slots within the provided time frames.
+- Each time slot must have \`from\` before \`to\` (24h format).
+- Only approved mentors can set availability.
+
+**To remove all slots for a day**, use \`DELETE /availability/slot\` instead.
+`,
+    bodyExample: {
+      day: 'tuesday',
+      timeFrames: [{ from: '08:00', to: '10:00' }, { from: '13:00', to: '15:00' }],
+    },
+  },
+
+  DELETE_AVAILABILITY_SLOT: {
+    summary: 'Delete availability slots for a specific day',
+    description: `
+Removes availability slots for a given day.
+
+- If \`timeFrameIndex\` is omitted, **all** slots for that day are removed.
+- If \`timeFrameIndex\` is provided (0-based), only that specific time frame is removed. If it is the last one, the day entry is removed entirely.
+
+Only approved mentors can manage their own availability.
+`,
+    bodyExample: {
+      day: 'tuesday',
+    },
   },
 
   // ─── Field-level helpers ──────────────────────────────────────────────────
