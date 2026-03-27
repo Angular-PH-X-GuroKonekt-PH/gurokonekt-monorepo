@@ -48,6 +48,9 @@ export class BookingService {
     menteeId: string,
   ): Promise<ResponseDto<BookingInterface>> {
     try {
+      const conflict = await this.checkBookingConflict(dto.mentorId, new Date(dto.sessionDateTime));
+      if (conflict) return conflict as ResponseDto<BookingInterface>;
+
       const booking = await this.prisma.db.booking.create({
         data: {
           menteeId,
@@ -276,6 +279,11 @@ export class BookingService {
           message: API_RESPONSE.ERROR.BOOKING_ACCESS_DENIED.message,
           data: null,
         };
+      }
+
+      if (dto.sessionDateTime !== undefined) {
+        const conflict = await this.checkBookingConflict(existing.mentorId, new Date(dto.sessionDateTime), id);
+        if (conflict) return conflict as ResponseDto<BookingInterface>;
       }
 
       const updated = await this.prisma.db.booking.update({
@@ -711,5 +719,99 @@ export class BookingService {
     } catch {
       return false;
     }
+  }
+
+  /**
+   * Validates that the requested sessionDateTime:
+   * 1. Falls on a day the mentor is available
+   * 2. Fits within one of the mentor's time frames for that day
+   * 3. Does not overlap an existing PENDING or APPROVED booking for the mentor
+   *
+   * Returns a ResponseDto error on conflict, or null if the slot is valid.
+   */
+  private async checkBookingConflict(
+    mentorId: string,
+    sessionDateTime: Date,
+    excludeBookingId?: string,
+  ): Promise<ResponseDto<null> | null> {
+    const profile = await this.prisma.db.mentorProfile.findUnique({
+      where: { userId: mentorId },
+      select: { availability: true, sessionDurationMinutes: true },
+    });
+
+    if (!profile) return null; // no profile — let the DB FK handle it
+
+    const duration = profile.sessionDurationMinutes ?? 60;
+    const availability = (profile.availability as unknown as { day: string; timeFrames: { from: string; to: string }[] }[]) ?? [];
+
+    const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const dayName = DAYS[sessionDateTime.getDay()];
+
+    const daySlot = availability.find(s => s.day === dayName);
+    if (!daySlot || daySlot.timeFrames.length === 0) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.BOOKING_MENTOR_NOT_AVAILABLE_DAY.code,
+        message: `${API_RESPONSE.ERROR.BOOKING_MENTOR_NOT_AVAILABLE_DAY.message}: mentor is not available on ${dayName}`,
+        data: null,
+      };
+    }
+
+    // Convert session to minutes-since-midnight (UTC)
+    const sessionStart = sessionDateTime.getUTCHours() * 60 + sessionDateTime.getUTCMinutes();
+    const sessionEnd = sessionStart + duration;
+
+    const timeToMinutes = (t: string) => {
+      const [h, m] = t.split(':').map(Number);
+      return h * 60 + m;
+    };
+
+    const fitsInFrame = daySlot.timeFrames.some(f => {
+      const fStart = timeToMinutes(f.from);
+      const fEnd = timeToMinutes(f.to);
+      return sessionStart >= fStart && sessionEnd <= fEnd;
+    });
+
+    if (!fitsInFrame) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.BOOKING_OUTSIDE_AVAILABILITY.code,
+        message: `${API_RESPONSE.ERROR.BOOKING_OUTSIDE_AVAILABILITY.message}: the session does not fit in any available time frame for ${dayName}`,
+        data: null,
+      };
+    }
+
+    // Check for overlapping existing bookings
+    const startOfDay = new Date(sessionDateTime);
+    startOfDay.setUTCHours(0, 0, 0, 0);
+    const endOfDay = new Date(sessionDateTime);
+    endOfDay.setUTCHours(23, 59, 59, 999);
+
+    const existingBookings = await this.prisma.db.booking.findMany({
+      where: {
+        mentorId,
+        isDeleted: false,
+        status: { in: [BookingStatus.PENDING, BookingStatus.APPROVED] },
+        sessionDateTime: { gte: startOfDay, lte: endOfDay },
+        ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
+      },
+      select: { sessionDateTime: true },
+    });
+
+    for (const existing of existingBookings) {
+      const existStart = existing.sessionDateTime.getUTCHours() * 60 + existing.sessionDateTime.getUTCMinutes();
+      const existEnd = existStart + duration;
+      // Overlap if: sessionStart < existEnd AND existStart < sessionEnd
+      if (sessionStart < existEnd && existStart < sessionEnd) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.BOOKING_SCHEDULE_CONFLICT.code,
+          message: `${API_RESPONSE.ERROR.BOOKING_SCHEDULE_CONFLICT.message}: mentor already has a booking at this time`,
+          data: null,
+        };
+      }
+    }
+
+    return null;
   }
 }

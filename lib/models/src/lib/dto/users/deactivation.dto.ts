@@ -28,6 +28,17 @@ export class DeactivationFeedbackDto {
   reason!: string;
 }
 
+export class SetSessionDurationDto {
+  @ApiProperty({
+    description: 'Standard session length in minutes. All bookable time slots will use this duration.',
+    example: 60,
+    minimum: 15,
+  })
+  @IsInt()
+  @Min(15)
+  sessionDurationMinutes!: number;
+}
+
 export class DowngradeMentorDto {
   @ApiProperty({
     description: 'Current account password for verification before downgrading',
@@ -40,9 +51,19 @@ export class DowngradeMentorDto {
 
 export class ManageAvailabilityDto {
   @ApiProperty({
-    description: 'Array of day-availability entries to set as the full schedule',
+    description: 'Standard session length in minutes. Each time frame must be at least this long. Minimum 15.',
+    example: 60,
+    minimum: 15,
+  })
+  @IsInt()
+  @Min(15)
+  sessionDurationMinutes!: number;
+
+  @ApiProperty({
+    description: 'Full weekly availability schedule. Replaces existing schedule entirely.',
     example: [
-      { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }] },
+      { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
+      { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
     ],
   })
   availability!: { day: DaysInWeek; timeFrames: { from: string; to: string }[] }[];
@@ -58,10 +79,20 @@ export class AddAvailabilitySlotDto {
   day!: DaysInWeek;
 
   @ApiProperty({
-    description: 'Time frames for this day (24h format). Replaces all existing slots for the day.',
-    example: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }],
+    description: 'New time frames to append to this day. Must not overlap with existing frames for this day.',
+    example: [{ from: '14:00', to: '17:00' }],
   })
   timeFrames!: { from: string; to: string }[];
+
+  @ApiPropertyOptional({
+    description: 'Optionally update the standard session duration (minutes) at the same time. Minimum 15.',
+    example: 60,
+    minimum: 15,
+  })
+  @IsOptional()
+  @IsInt()
+  @Min(15)
+  sessionDurationMinutes?: number;
 }
 
 export class DeleteAvailabilitySlotDto {

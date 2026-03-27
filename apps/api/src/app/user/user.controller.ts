@@ -34,6 +34,7 @@ import {
   InitiateDeactivationDto,
   ManageAvailabilityDto,
   ResponseDto,
+  SetSessionDurationDto,
   SWAGGER_DOCUMENTATION,
   UpdateMenteeProfileDto,
   UpdateMentorProfileDto,
@@ -513,20 +514,22 @@ export class UserController {
         status: 'success',
         statusCode: 200,
         message: 'Availability retrieved successfully',
-        data: [
-          { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }] },
-          { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
-        ],
+        data: {
+          sessionDurationMinutes: 60,
+          availability: [
+            { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }] },
+            { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
+          ],
+        },
       },
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — you can only view your own availability.' })
+  @ApiResponse({ status: 404, description: 'Mentor profile not found.' })
   getMentorAvailability(
     @Param('userId') userId: string,
-    @Req() req: Request & { user: { id: string } },
   ) {
-    return this.userService.getMentorAvailability(userId, req.user.id);
+    return this.userService.getMentorAvailability(userId);
   }
 
   // ====================================================
@@ -578,6 +581,53 @@ export class UserController {
   }
 
   // ====================================================
+  // PATCH - Set Standard Session Duration
+  // ====================================================
+
+  @Patch(':userId/availability/duration')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.summary,
+    description: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: SetSessionDurationDto,
+    examples: {
+      default: { summary: 'Set 60-minute sessions', value: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Session duration updated successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Session duration updated successfully',
+        data: { sessionDurationMinutes: 60 },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'Mentor profile not found.' })
+  setSessionDuration(
+    @Param('userId') userId: string,
+    @Body() dto: SetSessionDurationDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.setSessionDuration(userId, dto, req.user.id);
+  }
+
+  // ====================================================
   // POST - Add / Replace Availability Slot for a Day
   // ====================================================
 
@@ -602,14 +652,17 @@ export class UserController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Slot added/replaced successfully. Returns the full updated schedule.',
+    description: 'Slot appended successfully. Returns the full updated schedule including sessionDurationMinutes.',
     type: ResponseDto,
     schema: {
       example: {
         status: 'success',
         statusCode: 200,
         message: 'Availability slot added successfully',
-        data: [{ day: 'tuesday', timeFrames: [{ from: '08:00', to: '10:00' }] }],
+        data: {
+          sessionDurationMinutes: 60,
+          availability: [{ day: 'tuesday', timeFrames: [{ from: '08:00', to: '10:00' }] }],
+        },
       },
     },
   })
@@ -651,14 +704,14 @@ export class UserController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Slot deleted successfully. Returns the updated schedule.',
+    description: 'Slot deleted successfully. Returns the updated schedule including sessionDurationMinutes.',
     type: ResponseDto,
     schema: {
       example: {
         status: 'success',
         statusCode: 200,
         message: 'Availability slot deleted successfully',
-        data: [],
+        data: { sessionDurationMinutes: 60, availability: [] },
       },
     },
   })

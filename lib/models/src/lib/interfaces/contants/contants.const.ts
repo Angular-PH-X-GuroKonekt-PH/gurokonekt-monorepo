@@ -185,6 +185,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Availability slot deleted successfully',
     },
+    UPDATE_SESSION_DURATION: {
+      code: 200,
+      message: 'Session duration updated successfully',
+    },
 
     /**
      * ACCOUNT DEACTIVATION
@@ -499,6 +503,38 @@ export const API_RESPONSE = {
     AVAILABILITY_SLOT_NOT_FOUND: {
       code: 404,
       message: 'Availability slot not found',
+    },
+    AVAILABILITY_DUPLICATE_DAY: {
+      code: 400,
+      message: 'Availability schedule contains duplicate day entries',
+    },
+    AVAILABILITY_FRAME_TOO_SHORT: {
+      code: 400,
+      message: 'Each time frame must be at least as long as the session duration',
+    },
+    SET_SESSION_DURATION_FAILED: {
+      code: 500,
+      message: 'Failed to update session duration',
+    },
+
+    /**
+     * BOOKING CONFLICTS
+     */
+    BOOKING_SCHEDULE_CONFLICT: {
+      code: 409,
+      message: 'The mentor already has a booking scheduled at this time',
+    },
+    BOOKING_OUTSIDE_AVAILABILITY: {
+      code: 400,
+      message: 'The selected time is outside the mentor\'s available hours',
+    },
+    BOOKING_MENTOR_NOT_AVAILABLE_DAY: {
+      code: 400,
+      message: 'The mentor is not available on the selected day',
+    },
+    BOOKING_SLOT_TOO_SHORT: {
+      code: 400,
+      message: 'The selected time frame does not fit a full session within the mentor\'s available window',
     },
 
     /**
@@ -971,105 +1007,168 @@ Returns a paginated list of approved, active mentors matching the given filters.
   // ─── Mentor Downgrade ─────────────────────────────────────────────────────
 
   DOWNGRADE_MENTOR: {
-    summary: 'Downgrade mentor account to mentee access only',
+    summary: 'Downgrade mentor account to mentee',
     description: `
-Downgrades an approved mentor account to mentee-only access.
+Downgrades an approved mentor account to a regular mentee account.
 
-**Flow:**
-1. Verifies the supplied password against the current account.
-2. In a single transaction: sets role to \`mentee\`, status to \`inactive\`, clears \`isMentorApproved\` and \`isMentorProfileComplete\`.
-3. Sends a downgrade confirmation email to the mentor's registered email.
-4. Creates an in-app notification.
+**Behavior:**
+- Requires the user's current password for identity verification before any change is made.
+- Updates role → \`mentee\`, status → \`active\`.
+- Clears \`isMentorApproved\` and \`isMentorProfileComplete\` flags.
+- **Permanently deletes the MentorProfile record** — bio, skills, session rate, and availability are all removed.
+- Sends an in-app notification and an email to the user confirming the downgrade.
 
-**After downgrade:**
-- The mentor profile data is retained in the database but is no longer accessible through mentor endpoints.
-- If the user wants to become a mentor again, they must re-apply through the full mentor registration process.
-- The user's mentee profile (if any) is preserved and can be set up via the profile update endpoint.
+**Access:** JWT required. Only the account owner or an admin can trigger this.
 
-**Access:** JWT required; mentor role only. Returns \`403\` for mentee/admin accounts.
+**Payload:**
+\`\`\`json
+{ "password": "CurrentPassword@123" }
+\`\`\`
 `,
-    bodyExample: {
-      password: 'CurrentPassword@123',
-    },
+    bodyExample: { password: 'CurrentPassword@123' },
   },
 
   // ─── Availability ─────────────────────────────────────────────────────────
 
-  GET_AVAILABILITY: {
-    summary: 'Get mentor availability schedule',
+  SET_SESSION_DURATION: {
+    summary: 'Set standard session duration (minutes)',
     description: `
-Returns the current availability schedule for the mentor identified by \`userId\`.
+Sets the mentor's standard session length in minutes. This value is used to:
+- Validate that availability time frames are long enough to fit at least one session.
+- Compute bookable time slots shown to mentees (e.g. 60 min → 09:00–10:00, 10:00–11:00, ...).
+- Enforce booking conflict range checks when a mentee schedules a session.
 
-**Access:** JWT required; only the mentor themselves can view their own availability. Admins can view any mentor's availability.
+**Rules:**
+- Minimum value is **15 minutes**.
+- Changing this does NOT retroactively affect existing bookings.
 
-**Response \`data\`** is an array of day schedules:
+**Access:** JWT required. Approved mentor or admin only.
+
+**Payload:**
 \`\`\`json
-[
-  {
-    "day": "monday",
-    "timeFrames": [
-      { "from": "09:00", "to": "12:00" },
-      { "from": "14:00", "to": "17:00" }
-    ]
-  }
-]
+{ "sessionDurationMinutes": 60 }
 \`\`\`
+`,
+    bodyExample: { sessionDurationMinutes: 60 },
+  },
+
+  GET_AVAILABILITY: {
+    summary: 'Get mentor availability schedule and session duration',
+    description: `
+Returns the mentor's full weekly availability schedule together with their standard session duration.
+
+**Response \`data\` shape:**
+\`\`\`json
+{
+  "sessionDurationMinutes": 60,
+  "availability": [
+    {
+      "day": "monday",
+      "timeFrames": [
+        { "from": "09:00", "to": "12:00" },
+        { "from": "14:00", "to": "17:00" }
+      ]
+    }
+  ]
+}
+\`\`\`
+
+**Frontend usage:**
+Use \`sessionDurationMinutes\` to compute individual bookable slots from each time frame.
+Example: \`09:00–12:00\` with 60-min sessions → bookable slots \`09:00\`, \`10:00\`, \`11:00\`.
+Filter out slots already booked before displaying to the mentee.
+
+**Access:** JWT required. Any authenticated user can view a mentor's availability.
 `,
   },
 
   UPDATE_AVAILABILITY: {
     summary: 'Replace the full availability schedule',
     description: `
-Replaces the entire availability schedule with the provided array. All existing slots are overwritten.
+Completely replaces the mentor's weekly availability schedule and updates the session duration in one call.
 
-**Validation rules:**
-- No overlapping time slots within the same day.
-- Each time slot must have \`from\` before \`to\` (24h format, e.g. \`"09:00"\`).
-- Only approved mentors can set availability.
+**Rules:**
+- \`sessionDurationMinutes\` must be at least **15 minutes** (required).
+- Each time frame's duration must be **≥ sessionDurationMinutes** (e.g. a 30-min frame is rejected if duration is 60).
+- \`from\` must be earlier than \`to\` for every time frame.
+- Time frames within the same day must not overlap.
+- The same day must not appear more than once in the \`availability\` array.
+- Days not listed are treated as unavailable.
 
-**Use this endpoint** when you want to set a complete weekly schedule in one call.
-**Use \`POST /availability/slot\`** to add or update a single day's slots.
+**Day values (lowercase):** \`monday\` \`tuesday\` \`wednesday\` \`thursday\` \`friday\` \`saturday\` \`sunday\`
+
+**Access:** JWT required. Approved mentor or admin only.
+
+**Payload:**
+\`\`\`json
+{
+  "sessionDurationMinutes": 60,
+  "availability": [
+    { "day": "monday", "timeFrames": [{ "from": "09:00", "to": "12:00" }, { "from": "14:00", "to": "17:00" }] },
+    { "day": "wednesday", "timeFrames": [{ "from": "10:00", "to": "13:00" }] }
+  ]
+}
+\`\`\`
 `,
     bodyExample: {
+      sessionDurationMinutes: 60,
       availability: [
         { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
         { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
-        { day: 'friday', timeFrames: [{ from: '09:00', to: '11:00' }] },
       ],
     },
   },
 
   ADD_AVAILABILITY_SLOT: {
-    summary: 'Add or replace availability slots for a specific day',
+    summary: 'Append time frames to a single day',
     description: `
-Adds availability slots for a given day of the week. If a schedule entry for that day already exists, it is **replaced** with the new time frames.
+Adds new time frames to a specific day in the mentor's schedule. Unlike the full-replace endpoint, this **appends** to existing frames for that day instead of overwriting them.
 
-**Validation rules:**
-- No overlapping time slots within the provided time frames.
-- Each time slot must have \`from\` before \`to\` (24h format).
-- Only approved mentors can set availability.
+**Rules:**
+- New frames must not overlap with **existing** frames already saved for that day.
+- New frames must not overlap with each other.
+- Each new frame must be **≥ sessionDurationMinutes** long (uses the saved duration unless \`sessionDurationMinutes\` is provided).
+- Optionally updates \`sessionDurationMinutes\` at the same time.
 
-**To remove all slots for a day**, use \`DELETE /availability/slot\` instead.
+**Day values (lowercase):** \`monday\` \`tuesday\` \`wednesday\` \`thursday\` \`friday\` \`saturday\` \`sunday\`
+
+**Access:** JWT required. Approved mentor or admin only.
+
+**Payload:**
+\`\`\`json
+{
+  "day": "monday",
+  "timeFrames": [{ "from": "14:00", "to": "17:00" }],
+  "sessionDurationMinutes": 60
+}
+\`\`\`
 `,
     bodyExample: {
-      day: 'tuesday',
-      timeFrames: [{ from: '08:00', to: '10:00' }, { from: '13:00', to: '15:00' }],
+      day: 'monday',
+      timeFrames: [{ from: '14:00', to: '17:00' }],
+      sessionDurationMinutes: 60,
     },
   },
 
   DELETE_AVAILABILITY_SLOT: {
-    summary: 'Delete availability slots for a specific day',
+    summary: 'Remove a time frame or entire day from availability',
     description: `
-Removes availability slots for a given day.
+Removes a specific time frame or an entire day from the mentor's availability schedule.
 
-- If \`timeFrameIndex\` is omitted, **all** slots for that day are removed.
-- If \`timeFrameIndex\` is provided (0-based), only that specific time frame is removed. If it is the last one, the day entry is removed entirely.
+**Behavior:**
+- If \`timeFrameIndex\` is provided → removes only that time frame (0-based index). If it was the last frame for that day, the day entry is also removed.
+- If \`timeFrameIndex\` is omitted → removes the entire day entry.
+- Returns 404 if the specified day is not in the schedule.
 
-Only approved mentors can manage their own availability.
+**Day values (lowercase):** \`monday\` \`tuesday\` \`wednesday\` \`thursday\` \`friday\` \`saturday\` \`sunday\`
+
+**Access:** JWT required. Approved mentor or admin only.
+
+**Payload examples:**
+Remove one time frame: \`{ "day": "monday", "timeFrameIndex": 0 }\`
+Remove entire day: \`{ "day": "monday" }\`
 `,
-    bodyExample: {
-      day: 'tuesday',
-    },
+    bodyExample: { day: 'monday', timeFrameIndex: 0 },
   },
 
   // ─── Field-level helpers ──────────────────────────────────────────────────
