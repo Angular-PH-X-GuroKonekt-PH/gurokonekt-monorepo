@@ -1,0 +1,86 @@
+<aside id="top-bar-sidebar"
+  class="fixed top-0 left-0 z-50 w-64 h-full transition-transform -translate-x-full sm:translate-x-0"
+  aria-label="Sidebar" >
+  <div class="h-full px-3 py-4 overflow-y-auto bg-neutral-primary-soft border-e border-default">
+    <a [routerLink]="'mentee-dashboard'" class="flex items-center ps-2.5 mb-5  justify-start">
+      <img src="assets/logos/logo-light.svg" class="h-12 me-1" alt="Flowbite Logo" />
+      <div class="flex items-center justify-center gap-1">
+        <span class="text-xl font-bold text-blue-900">Guro</span>
+        <span class="text-xl font-bold text-orange-500">Konekt</span>
+      </div>
+    </a>
+
+
+    <ul class="space-y-2 font-medium px-4">
+
+
+      <h4 class="text-gray-500 py-3">Main Menu</h4>
+
+      <li>
+
+        <a [routerLink]="['/mentee/dashboard']"
+          routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+          [routerLinkActiveOptions]="{exact: false}"
+          class="flex items-center gap-3 px-4 py-3 text-gray-600  font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
+          <app-icon [name]="'chart-bar'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
+          <span class="truncate">Dashboard</span>
+        </a>
+      </li>
+
+      <li>
+
+        <a [routerLink]="['/mentee/find-mentors']" routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+          [routerLinkActiveOptions]="{exact: false}"
+          class="flex items-center gap-3 px-4 py-3 text-gray-600  font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
+          <app-icon [name]="'users'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
+          <span class="truncate">Find Mentors</span>
+        </a>
+      </li>
+
+
+      <li>
+
+        <a [routerLink]="'booking-overview'"
+          routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+          [routerLinkActiveOptions]="{exact: false}"
+          class="flex items-center gap-3 px-4 py-3 text-gray-600  font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
+          <app-icon [name]="'book-open'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
+          <span class="truncate">Booking </span>
+        </a>
+      </li>
+
+
+      <li>
+
+        <a [routerLink]="'notifications'" routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+          [routerLinkActiveOptions]="{exact: false}"
+          class="flex items-center gap-3 px-4 py-3 text-gray-600  font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
+          <app-icon [name]="'bell'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
+          <span class="truncate">Notifications</span>
+        </a>
+      </li>
+
+
+
+
+      <!-- Divider -->
+      <div class="my-4 border-t border-gray-200"></div>
+      <h4 class="text-gray-500 py-3">Settings</h4>
+
+        <li>
+
+          <a [routerLink]="'profile-settings'"
+            routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+            [routerLinkActiveOptions]="{exact: false}"
+            class="flex items-center gap-3 px-4 py-3 text-gray-600  font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
+            <app-icon [name]="'user'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
+            <span class="truncate">Profile Settings</span>
+
+          </a>
+        </li>
+
+       
+
+    </ul>
+  </div>
+</aside>

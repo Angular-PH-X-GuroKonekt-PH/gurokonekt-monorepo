@@ -1,0 +1,87 @@
+@if (bookingList().length === 0) {
+<div class="rounded-2xl border border-default bg-white p-4 text-sm text-body">
+  No bookings found.
+</div>
+} @else {
+
+<div class="space-y-5">
+
+
+  @for (booking of bookingList(); track booking.id) {
+
+  <div
+    class="flex flex-col gap-4 rounded-2xl transition duration-300 border  bg-white p-5 lg:flex-row lg:items-end lg:justify-between focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 border-blue-100 bg-linear-to-br from-white to-blue-50 hover:ring-2   hover:ring-offset-2 hover:ring-blue-300 ">
+    <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
+      <div class="flex flex-col justify-center  md:justify-start md:flex-row gap-4">
+        <img [src]="booking.mentorProfilePicture || 'assets/img/no_profile_avatar.png'" [alt]="booking.mentorName"
+          class="h-24 w-24 shrink-0 rounded-2xl object-cover" />
+
+        <div class="space-y-2">
+          <div class="flex items-center gap-2">
+            <p class="text-base font-semibold text-gray-900">{{ booking.mentorName }}</p>
+            <span class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100"
+              title="Verified Mentor" aria-label="Verified Mentor">
+              <app-icon name="verified-badge" class="h-5 w-5 text-blue-700"></app-icon>
+            </span>
+          </div>
+
+          <div class="flex flex-wrap items-center gap-3  text-slate-500">
+            <span class="inline-flex items-center gap-1.5 text-sm">
+              <app-icon name="calendar-days" class="h-4 w-4 text-orange-500"></app-icon>
+              {{ booking.sessionDateTime | date: 'MMM d, y - h:mm a z' }}
+            </span>
+          </div>
+
+          <app-session-badge [status]="booking.status"></app-session-badge>
+
+
+        </div>
+      </div>
+
+    </div>
+
+
+
+    <div class="flex h-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
+      @if (booking.status === 'PENDING') {
+      <button type="button"
+        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-5 py-3 font-semibold text-orange-500 shadow-sm ring-1 ring-orange-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:ring-2 hover:ring-orange-200 sm:w-auto">
+        <app-icon name="alert-circle" class="h-5 w-5 text-orange-500"></app-icon>
+        Cancel Request
+      </button>
+      }
+
+      @if (booking.status === 'APPROVED') {
+      <a type="button"  href="{{booking.sessionLink}}" target="_blank"
+        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-5 py-3 font-semibold text-blue-900 shadow-sm ring-1 ring-blue-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50 hover:ring-2 hover:ring-blue-200 sm:w-auto">
+        <app-icon name="video-camera" class="h-5 w-5 text-blue-900"></app-icon>
+        Join Session 
+      </a>
+      }
+
+      @if (booking.status === 'COMPLETED') {
+      <button type="button"
+        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-5 py-3 font-semibold text-orange-500 shadow-sm ring-1 ring-orange-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:ring-2 hover:ring-orange-200 sm:w-auto">
+        <app-icon name="chat-bubble-left-right" class="h-5 w-5 text-orange-500"></app-icon>
+        Add Review
+      </button>
+      }
+
+<button
+  type="button"
+  class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-900 bg-blue-900 px-5 py-3 font-semibold text-white shadow-sm ring-1 ring-transparent transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-900 hover:bg-blue-900/90 hover:ring-2 hover:ring-blue-200 sm:w-auto"
+>
+  <app-icon name="book-open" class="h-5 w-5 text-white"></app-icon>
+  View Details
+</button>
+
+    </div>
+
+  </div>
+
+
+  }
+
+</div>
+
+}

@@ -1,0 +1,82 @@
+<div class="flex flex-col gap-8">
+  <section class="grid grid-cols-1 gap-6 xl:grid-cols-12">
+    <div class="xl:col-span-3">
+
+
+
+      @if (userProfile$ | async; as userProfile) {
+       <app-user-profile-card [userProfile]="userProfile"></app-user-profile-card>
+      }
+
+    </div>
+
+    <div class="xl:col-span-9">
+
+
+
+      <app-greeting-card />
+
+    </div>
+  </section>
+
+  <section class="grid grid-cols-1 gap-6">
+    <app-section-card>
+
+      <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <app-section-title title="Upcoming Sessions" [count]="upcomingSessionsCount$ | async"
+          subtitle="Stay on top of your scheduled mentoring sessions."></app-section-title>
+        <app-view-all-button link="/mentee/booking-overview" label="View all sessions"></app-view-all-button>
+      </div>
+
+      <div class="flex flex-col gap-3">
+        <!-- <app-session-booking-card  [bookingList]="upcomingSessions$ | async"  /> -->
+        <app-session-booking-card [bookingList]="(upcomingSessions$ | async) ?? []" />
+
+      </div>
+    </app-section-card>
+
+  </section>
+
+  <section class="grid grid-cols-1 gap-6 ">
+    <app-section-card>
+      <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+        <app-section-title title="Sessions history" [count]="completedSessionsCount$ | async"
+          subtitle="Your last 5 completed mentoring sessions."></app-section-title>
+        <app-view-all-button link="/mentee/booking-overview" label="View session history"></app-view-all-button>
+      </div>
+
+      <app-session-history-card [completedSessions]="(completedSessions$ | async) ?? []" />
+
+
+
+    </app-section-card>
+
+
+  </section>
+
+
+  <section class="grid grid-cols-1 gap-6 ">
+    <app-section-card>
+      <!-- <div class="mb-5">
+        <h2 class="text-2xl font-extrabold text-slate-900">Recommended Mentor</h2>
+        <p class="mt-1 text-[0.95rem] text-slate-500">Mentors that matches your interest.</p>
+      </div> -->
+
+
+      <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+
+        <app-section-title title="Recommended Mentor"
+          subtitle="Mentors that matches your interest."></app-section-title>
+        <app-view-all-button link="/mentee/find-mentors" label="View all mentors"></app-view-all-button>
+
+      </div>
+
+      <app-recommended-mentor-card [mentorInformation]="(recommendedMentors$ | async) ?? []" />
+
+    </app-section-card>
+
+
+  </section>
+
+
+</div>

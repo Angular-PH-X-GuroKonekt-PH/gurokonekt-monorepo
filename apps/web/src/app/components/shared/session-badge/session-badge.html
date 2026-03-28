@@ -1,0 +1,34 @@
+@if (status() === BookingStatus.PENDING) {
+  <span class="inline-flex w-fit items-center gap-1.5 rounded-full bg-orange-100 px-3 py-1 text-[0.8rem] font-bold text-orange-700">
+    <app-icon name="clock" class="h-4 w-4 text-orange-700"></app-icon>
+    Pending
+  </span>
+}
+
+@if (status() === BookingStatus.APPROVED) {
+  <span class="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-[0.8rem] font-bold text-blue-700">
+    <app-icon name="check-mark" class="h-4 w-4 text-blue-700"></app-icon>
+    Approved
+  </span>
+}
+
+@if (status() === BookingStatus.REJECTED) {
+  <span class="inline-flex w-fit items-center gap-1.5 rounded-full bg-red-100 px-3 py-1 text-[0.8rem] font-bold text-red-700">
+    <app-icon name="alert-circle" class="h-4 w-4 text-red-700"></app-icon>
+    Rejected
+  </span>
+}
+
+@if (status() === BookingStatus.COMPLETED) {
+  <span class="inline-flex w-fit items-center gap-1.5 rounded-full bg-blue-100 px-3 py-1 text-[0.8rem] font-bold text-blue-700">
+    <app-icon name="check-mark" class="h-4 w-4 text-blue-700"></app-icon>
+    Completed
+  </span>
+}
+
+@if (status() === BookingStatus.CANCELLED) {
+  <span class="inline-flex w-fit items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-[0.8rem] font-bold text-gray-700">
+    <app-icon name="alert-circle" class="h-4 w-4 text-gray-700"></app-icon>
+    Cancelled
+  </span>
+}

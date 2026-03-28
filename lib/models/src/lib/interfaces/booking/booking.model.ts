@@ -1,3 +1,4 @@
+
 export enum BookingStatus {
   PENDING = 'PENDING',
   APPROVED = 'APPROVED',
@@ -18,4 +19,17 @@ export interface BookingInterface {
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface BookingSessionCardInterface {
+  id: string;
+  mentorId: string;
+  mentorName: string;
+  mentorProfilePicture: string | null;
+  sessionDateTime: Date;
+  sessionRating: number | null;
+  status: BookingStatus;
+  sessionLink?: string | null;
+  notes?: string | null;
+  isDeleted: boolean;
 }

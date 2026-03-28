@@ -1,7 +1,6 @@
 import { Route } from '@angular/router';
 
 import { APP_ROUTES } from './constants/routes';
-import { dashboardAccessGuard } from './guards/dashboard-access.guard';
 
 export const appRoutes: Route[] = [
 	{ 
@@ -24,11 +23,14 @@ export const appRoutes: Route[] = [
 		loadComponent: () => import('./components/mentee/post-login/post-login').then(m => m.PostLogin),
 		title: 'Complete Your Profile'
 	},
+	
 	{ 
-		path: APP_ROUTES.DASHBOARD.replace('/', ''), 
-		canActivate: [dashboardAccessGuard],
-		loadComponent: () => import('./components/dashboard/dashboard').then(m => m.Dashboard),
-		title: 'Dashboard'
+		path: 'mentee',
+		loadChildren: () => import('./routes/mentee.routes').then(m => m.MENTEE_ROUTES), 
+  },
+		{ 
+		path: 'mentor', 
+		loadChildren: () => import('./routes/mentor.routes').then(m => m.MENTOR_ROUTES)
 	},
 	{ 
 		path: APP_ROUTES.ROOT, 

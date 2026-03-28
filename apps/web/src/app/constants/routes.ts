@@ -4,13 +4,14 @@ export const APP_ROUTES = {
   REGISTER: '/register',
   VERIFY_EMAIL: '/verify-email',
   PROFILE_SETUP: '/profile-setup',
-  DASHBOARD: '/dashboard',
+  MENTEE_DASHBOARD: '/mentee/dashboard',
+  FIND_MENTORS: '/mentee/find-mentors',
   MENTOR_DASHBOARD: '/mentor/dashboard',
   FORGOT_PASSWORD: '/forgot-password',
 } as const;
 
 export const SIDEBAR_PREFIX_ROUTES: readonly string[] = [
-  APP_ROUTES.DASHBOARD,
+  APP_ROUTES.MENTEE_DASHBOARD,
   '/profile/',
   '/settings',
   '/mentoring',

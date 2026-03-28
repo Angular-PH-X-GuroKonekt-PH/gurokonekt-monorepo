@@ -52,7 +52,7 @@ export class NavigationHelper {
     if (normalizeRole(role) === 'mentor') {
       return this.router.navigate([APP_ROUTES.MENTOR_DASHBOARD]);
     } else {
-      return this.router.navigate([APP_ROUTES.DASHBOARD]);
+      return this.router.navigate([APP_ROUTES.MENTEE_DASHBOARD]);
     }
   }
 

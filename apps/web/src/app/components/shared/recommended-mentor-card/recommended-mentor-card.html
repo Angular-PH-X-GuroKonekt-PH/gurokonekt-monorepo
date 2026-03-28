@@ -1,0 +1,116 @@
+<div class="grid md:grid-cols-1 lg:grid-cols-3 xl:grid-cols-3 gap-6">
+
+
+  @for (mentorProfile of mentorInformation(); track mentorProfile.id) {
+
+  <div
+    class="group overflow-hidden rounded-3xl border  bg-white  transition-all duration-200 hover:shadow-lg
+ focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 border-blue-100 bg-linear-to-br from-white to-blue-50 hover:ring-2   hover:ring-offset-2 hover:ring-blue-300 ">
+    <div class="p-5">
+      <div class="flex items-start gap-4">
+
+        <!-- Avatar -->
+        <div class="relative shrink-0">
+          <img [src]="mentorProfile.user.avatarAttachments.publicUrl" [alt]="mentorProfile.user.firstName"
+            class="h-16 w-16 rounded-base border-2 border-gray-100 object-cover " />
+        </div>
+
+        <!-- Name + Expertise -->
+        <div class="min-w-0 flex-1">
+          <h3 class="truncate text-base font-semibold text-gray-900">
+            {{mentorProfile.user.firstName}} {{mentorProfile.user.lastName}}
+            {{mentorProfile.user.suffix}}
+          </h3>
+
+          <p class="truncate text-sm text-body">
+            {{mentorProfile.areasOfExpertise.join(', ')}}
+          </p>
+
+          <!-- Rating -->
+          <div class="mt-1 flex items-center gap-1.5">
+
+
+            <app-star-rating [rating]="4"></app-star-rating>
+
+            <span class="text-sm font-semibold text-gray-700">
+              4.7
+            </span>
+
+            <!-- <span class="text-xs text-gray-400">
+            (124)
+          </span> -->
+          </div>
+
+        </div>
+
+
+
+        <!-- Price -->
+        <div class="shrink-0 text-right">
+          <p class="text-lg font-bold text-gray-900">P{{mentorProfile.sessionRate}}</p>
+          <p class="text-xs text-gray-400">Session</p>
+        </div>
+      </div>
+
+
+      <div class="mt-2 flex items-center gap-1.5 flex-wrap">
+
+        @for (skill of mentorProfile.skills; track skill) {
+        <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+          {{ skill }}
+        </span>
+        }
+      </div>
+      <!-- Bio -->
+      <p class="mt-4 line-clamp-2 text-sm leading-relaxed text-gray-600">
+        {{mentorProfile.bio}}
+
+      </p>
+
+      <!-- Skills -->
+      <!-- <div class="mt-4 flex flex-wrap gap-1.5">
+
+      @for (skill of mentorProfile.skills; track skill) {
+      <span class="rounded-full bg-gray-100 px-2.5 py-1 text-xs font-medium text-gray-600">
+        {{ skill }}
+      </span>
+      }
+    </div> -->
+
+      <!-- Footer -->
+      <div class="mt-4 flex items-center justify-between">
+
+        <div class="mt-4 flex flex-wrap items-center gap-2">
+          @for (availability of mentorProfile.availability.slice(0, 1); track availability.day) {
+          <span
+            class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700">
+            <svg class="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+              <path stroke-linecap="round" stroke-linejoin="round"
+                d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />
+            </svg>
+            <span class="capitalize">{{ availability.day }}</span>
+          </span>
+          }
+
+          @if (mentorProfile.availability.length > 1) {
+          <a routerLink="/mentors"
+            class="inline-flex items-center rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700 hover:bg-green-200">
+            +{{ mentorProfile.availability.length - 1 }} more
+          </a>
+          }
+        </div>
+
+        <button
+          class="flex items-center gap-2 rounded-lg bg-blue-700 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-blue-800">
+          <svg class="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path stroke-linecap="round" stroke-linejoin="round"
+              d="M8 2v4M16 2v4M3 10h18M5 6h14a2 2 0 0 1 2 2v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2Z" />
+          </svg>
+          Book Session
+        </button>
+      </div>
+
+    </div>
+  </div>
+
+  }
