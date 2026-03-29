@@ -1,21 +1,14 @@
 <div class="flex flex-col gap-8">
   <section class="grid grid-cols-1 gap-6 xl:grid-cols-12">
     <div class="xl:col-span-3">
-
-
-
       @if (userProfile$ | async; as userProfile) {
        <app-user-profile-card [userProfile]="userProfile"></app-user-profile-card>
       }
-
     </div>
 
-    <div class="xl:col-span-9">
-
-
-
+    <div class="xl:col-span-9 flex flex-col gap-6">      
       <app-greeting-card />
-
+      <app-mentor-search />
     </div>
   </section>
 

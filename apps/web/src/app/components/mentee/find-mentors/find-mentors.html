@@ -1,1 +1,70 @@
-<p>find-mentors works!</p>
+<div class="py-4 flex flex-col gap-8">
+
+  <h1 class="mb-6 w-full text-center text-blue-900 text-4xl font-bold tracking-tighter md:text-5xl lg:text-6xl">
+    Find Your Next <span class="text-orange-500">Mentor</span> .
+  </h1>
+
+  <app-mentor-search />
+
+  <!-- Loading spinner -->
+  @if (isLoading()) {
+    <div class="flex items-center justify-center py-20">
+      <svg class="h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
+        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
+        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+      </svg>
+    </div>
+  }
+
+  <!-- Error -->
+  @if (!isLoading() && error()) {
+    <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+      <svg class="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+        <path fill-rule="evenodd"
+          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+          clip-rule="evenodd" />
+      </svg>
+      {{ error() }}
+    </div>
+  }
+
+  <!-- Empty states -->
+  @if (!isLoading() && !error()) {
+    @if (hasSearched() && cards().length === 0) {
+      <p class="text-center text-gray-500 py-16">No mentors found. Try adjusting your filters.</p>
+    }
+    @if (!hasSearched()) {
+      <p class="text-center text-gray-400 py-16">Use the search above to find mentors.</p>
+    }
+  }
+
+  <!-- Results -->
+  @if (!isLoading() && cards().length > 0) {
+    <div class="flex flex-col gap-4">
+      <div class="text-sm text-gray-400">
+        Showing {{ cards().length }} of {{ totalCount() }} mentor{{ totalCount() === 1 ? '' : 's' }} found
+      </div>
+      <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
+        @for (card of cards(); track card.id) {
+          <app-mentor-card
+            [uid]="card.id"
+            [fullName]="card.fullName"
+            [tagline]="card.tagline"
+            [bio]="card.bio"
+            [avatarUrl]="card.avatarUrl"
+            [rating]="card.rating"
+            [reviewCount]="card.reviewCount"
+            [hourlyRate]="card.sessionRate"
+            [skills]="card.skills"
+            [availability]="card.availability" />
+        }
+      </div>
+      <gk-pagination
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalItems]="totalCount()"
+        (pageChange)="onPageChange($event)" />
+    </div>
+  }
+
+</div>

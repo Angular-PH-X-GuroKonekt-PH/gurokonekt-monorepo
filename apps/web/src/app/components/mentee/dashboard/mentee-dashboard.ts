@@ -1,5 +1,4 @@
 import { Component, computed, inject } from '@angular/core';
-import { RouterLink } from '@angular/router';
 import { Store } from '@ngxs/store';
 
 import * as AuthActions from '../../../store/auth/auth.actions';
@@ -22,6 +21,7 @@ import { SectionTitle } from '../../shared/section-title/section-title';
 import { ViewAllButton } from '../../shared/view-all-button/view-all-button';
 import { ProfileService } from '../../../services/profile.service';
 import { UserProfileCard } from '../../shared/user-profile-card/user-profile-card';
+import { MentorSearch } from '../../shared/mentor-search/mentor-search';
 
 @Component({
   selector: 'app-mentee-dashboard',
@@ -34,7 +34,8 @@ import { UserProfileCard } from '../../shared/user-profile-card/user-profile-car
     RecommendedMentorCard,
     SectionTitle,
     ViewAllButton,
-    UserProfileCard
+    UserProfileCard,
+    MentorSearch
   ],
   templateUrl: './mentee-dashboard.html',
   styleUrl: './mentee-dashboard.scss',

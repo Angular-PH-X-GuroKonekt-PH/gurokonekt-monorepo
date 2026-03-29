@@ -1,0 +1,37 @@
+@if (totalPages() > 1) {
+  <nav class="flex flex-wrap items-center justify-center gap-2" aria-label="Pagination">
+    <button
+      type="button"
+      class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+      [disabled]="!canGoPrevious()"
+      (click)="goToPreviousPage()">
+      Previous
+    </button>
+
+    <div class="flex flex-wrap items-center justify-center gap-2">
+      @for (item of pageItems(); track trackPageItem($index, item)) {
+        @if (item === 'ellipsis') {
+          <span class="inline-flex h-10 min-w-10 items-center justify-center px-1 text-sm text-slate-400">
+            ...
+          </span>
+        } @else {
+          <button
+            type="button"
+            [class]="getPageButtonClasses(item)"
+            [attr.aria-current]="isCurrentPage(item) ? 'page' : null"
+            (click)="goToPage(item)">
+            {{ item }}
+          </button>
+        }
+      }
+    </div>
+
+    <button
+      type="button"
+      class="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 px-3 text-sm font-medium text-slate-600 transition hover:border-blue-300 hover:text-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
+      [disabled]="!canGoNext()"
+      (click)="goToNextPage()">
+      Next
+    </button>
+  </nav>
+}

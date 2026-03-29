@@ -10,18 +10,7 @@ import {
   Min,
 } from 'class-validator';
 import { DaysInWeek } from '../../interfaces/user/user.model';
-
-export enum SearchSortBy {
-  NEWEST = 'newest',
-  SESSION_RATE = 'sessionRate',
-  YEARS_EXPERIENCE = 'yearsExperience',
-  NAME = 'name',
-}
-
-export enum SearchSortOrder {
-  ASC = 'asc',
-  DESC = 'desc',
-}
+import { SearchSortBy, SearchSortOrder } from '../../interfaces/search/search.model';
 
 export class SearchMentorDto {
   @ApiPropertyOptional({
