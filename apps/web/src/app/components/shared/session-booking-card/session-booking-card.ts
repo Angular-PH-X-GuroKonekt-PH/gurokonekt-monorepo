@@ -1,18 +1,21 @@
-import { Component, input } from '@angular/core';
-import { IconComponent } from "../icon/icon.component";
-import { BookingSessionCardInterface, BookingStatus } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { CommonModule } from '@angular/common';
+import { Component, input } from '@angular/core';
+
+import {
+  BookingSessionCardInterface,
+  BookingStatus,
+} from '@gurokonekt/models/interfaces/booking/booking.model';
+
+import { IconComponent } from '../icon/icon.component';
 import { SessionBadge } from '../session-badge/session-badge';
-import { RouterLink } from "@angular/router";
 
 @Component({
   selector: 'app-session-booking-card',
-  imports: [IconComponent, CommonModule, SessionBadge, RouterLink],
+  imports: [IconComponent, CommonModule, SessionBadge],
   templateUrl: './session-booking-card.html',
   styleUrl: './session-booking-card.scss',
 })
 export class SessionBookingCard {
-
   bookingList = input<BookingSessionCardInterface[]>([]);
 
   BookingStatus = BookingStatus;

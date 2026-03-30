@@ -27,11 +27,14 @@
           [class.text-blue-700]="showFilterPanel()" 
           [class.border-gray-300]="!showFilterPanel()"
           [class.text-gray-700]="!showFilterPanel()">
-          <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
+          <!-- <svg class="h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"
             stroke-width="1.8" stroke="currentColor">
             <path stroke-linecap="round" stroke-linejoin="round"
               d="M12 3c2.755 0 4.591 0 5.69.674a4 4 0 0 1 1.636 1.636C20 6.41 20 8.245 20 11s0 4.591-.674 5.69a4 4 0 0 1-1.636 1.636C16.59 19 14.755 19 12 19s-4.591 0-5.69-.674a4 4 0 0 1-1.636-1.636C4 15.59 4 13.755 4 11s0-4.591.674-5.69A4 4 0 0 1 6.31 3.674C7.41 3 9.245 3 12 3Zm-4 5h8m-6 4h4m-3 4h2" />
           </svg>
+           -->
+
+           <app-icon name="filter" class="h-5 w-5" />
           Filters
           <!-- @if (activeFilterCount() > 0) {
             <span class="inline-flex items-center justify-center w-4 h-4 text-[10px] font-bold

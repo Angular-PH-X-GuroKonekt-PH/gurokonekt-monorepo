@@ -1,4 +1,4 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { Store } from '@ngxs/store';
 
 import * as AuthActions from '../../../store/auth/auth.actions';
@@ -49,8 +49,6 @@ export class MenteeDashboard {
   private mentorService = inject(MentorService);
   public $bookingStatus = BookingStatus;
 
-  protected readonly userId = computed(() => this.authUser()?.id ?? null);
-
   userProfile$: Observable<UserInterface | null> = of(this.authUser()).pipe(
     switchMap((user) => {
       const userId = user?.['id'];
@@ -63,14 +61,36 @@ export class MenteeDashboard {
       );
     })
   );
+  upcomingSessions$: Observable<BookingSessionCardInterface[]> = of(
+    this.authUser()
+  ).pipe(
+    switchMap((user) => {
+      const userId = user?.id;
 
+      if (!userId) {
+        return of([]);
+      }
 
-  upcomingSessions$: Observable<BookingSessionCardInterface[]> =
-    this.bookingService.getUpcomingSessions( this.userId() ?? '');
+      return this.bookingService.getUpcomingSessions(userId);
+    })
+  );
 
+  completedSessions$: Observable<BookingSessionCardInterface[]> = of(
+    this.authUser()
+  ).pipe(
+    switchMap((user) => {
+      const userId = user?.id;
 
-  completedSessions$: Observable<BookingSessionCardInterface[]> =
-    this.bookingService.getBookingsByStatus(this.userId() ?? '', BookingStatus.COMPLETED);
+      if (!userId) {
+        return of([]);
+      }
+
+      return this.bookingService.getBookingsByStatus(
+        userId,
+        BookingStatus.COMPLETED
+      );
+    })
+  );
 
   recommendedMentors$: Observable<MentorProfileInterface[]> =
     this.mentorService.getAllMentorProfiles();
@@ -82,7 +102,6 @@ export class MenteeDashboard {
   completedSessionsCount$: Observable<number> = this.completedSessions$.pipe(
     map((sessions) => sessions.length)
   );
-
   protected logout(): void {
     void this.store.dispatch(new AuthActions.Logout());
   }

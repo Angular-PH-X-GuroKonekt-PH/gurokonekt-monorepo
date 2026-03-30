@@ -8,6 +8,9 @@ export enum BookingStatus {
   DELETED = 'DELETED',
 }
 
+export type BookingFilter = 'ALL' | BookingStatus;
+
+
 export interface BookingInterface {
   id: string;
   menteeId: string;
@@ -32,4 +35,21 @@ export interface BookingSessionCardInterface {
   sessionLink?: string | null;
   notes?: string | null;
   isDeleted: boolean;
+}
+
+
+export interface BookingUserAttachmentInterface {
+  publicUrl: string;
+}
+
+export interface BookingUserSummaryInterface {
+  id: string;
+  firstName: string;
+  lastName: string;
+  avatarAttachments?: BookingUserAttachmentInterface[] | null;
+}
+
+export interface BookingWithUsersInterface extends BookingInterface {
+  mentor?: BookingUserSummaryInterface | null;
+  mentee?: BookingUserSummaryInterface | null;
 }

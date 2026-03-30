@@ -1,1 +1,60 @@
-<p>booking-overview works!</p>
+<div class="flex flex-col gap-8">
+
+
+  <section class="grid grid-cols-1 gap-6">
+
+    @if (bookingOverviewData$ | async; as bookingData) {
+
+      <app-section-title title="Coming Up!" subtitle="Get ready for your next scheduled session." />
+      <app-session-booking-card [bookingList]="bookingData.nearestApprovedSession" />
+
+
+      <app-section-title title="Manage Your Bookings" subtitle="Stay organized with all your mentorship sessions." />
+
+      
+      <div class="space-y-4">
+
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-start">
+
+              <div class="relative w-full sm:w-50">
+                <select
+                  id="booking-sort"
+                  [value]="selectedSort"
+                  (change)="setSort($event)"
+                  class="block min-h-11 w-full appearance-none rounded-xl border border-default-medium bg-white px-4 py-3 pr-10 text-sm font-medium text-heading shadow-xs transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
+                >
+                  <option value="DATE_ASC">Nearest Session First</option>
+                  <option value="NAME_ASC">Mentor Name (A-Z)</option>
+                </select>
+
+              
+              </div>
+
+              <div class="flex flex-wrap items-center gap-3">
+                <app-filter-button label="All" value="ALL" [count]="bookingData.counts.ALL" [selectedValue]="selectedFilter"
+                  (clicked)="setFilter($event)" />
+
+                <app-filter-button label="Upcoming" [value]="bookingStatus.APPROVED" [count]="bookingData.counts.UPCOMING"
+                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
+
+                <app-filter-button label="Pending" [value]="bookingStatus.PENDING" [count]="bookingData.counts.PENDING"
+                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
+
+                <app-filter-button label="Cancelled" [value]="bookingStatus.CANCELLED" [count]="bookingData.counts.CANCELLED"
+                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
+
+                <app-filter-button label="Rejected" [value]="bookingStatus.REJECTED" [count]="bookingData.counts.REJECTED"
+                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
+
+                <app-filter-button label="Completed" [value]="bookingStatus.COMPLETED" [count]="bookingData.counts.COMPLETED"
+                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
+              </div>
+          </div>
+
+        <app-session-booking-card [bookingList]="bookingData.filteredBookings" />
+      </div>
+    }
+
+  </section>
+
+</div>

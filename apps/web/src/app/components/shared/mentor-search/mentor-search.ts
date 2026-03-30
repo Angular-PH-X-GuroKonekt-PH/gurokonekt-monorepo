@@ -11,6 +11,7 @@ import {
   SearchSortBy,
   SearchSortOrder,
 } from '@gurokonekt/models/interfaces/search/search.model';
+import { IconComponent } from '../icon/icon.component';
 
 const USE_REAL_METADATA_API = false;
 
@@ -49,7 +50,7 @@ const DUMMY_EXPERTISE = [
 
 @Component({
   selector: 'app-mentor-search',
-  imports: [CommonModule, ReactiveFormsModule],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent],
   templateUrl: './mentor-search.html',
   styleUrl: './mentor-search.scss',
 })
