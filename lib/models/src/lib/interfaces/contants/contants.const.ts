@@ -155,6 +155,42 @@ export const API_RESPONSE = {
     },
 
     /**
+     * MENTOR DOWNGRADE
+     */
+    MENTOR_DOWNGRADE_INITIATED: {
+      code: 200,
+      message: 'Account downgrade initiated. A confirmation email has been sent.',
+    },
+    MENTOR_DOWNGRADED: {
+      code: 200,
+      message: 'Account successfully downgraded to Mentee access',
+    },
+
+    /**
+     * AVAILABILITY
+     */
+    GET_AVAILABILITY: {
+      code: 200,
+      message: 'Availability retrieved successfully',
+    },
+    UPDATE_AVAILABILITY: {
+      code: 200,
+      message: 'Availability updated successfully',
+    },
+    ADD_AVAILABILITY_SLOT: {
+      code: 200,
+      message: 'Availability slot added successfully',
+    },
+    DELETE_AVAILABILITY_SLOT: {
+      code: 200,
+      message: 'Availability slot deleted successfully',
+    },
+    UPDATE_SESSION_DURATION: {
+      code: 200,
+      message: 'Session duration updated successfully',
+    },
+
+    /**
      * ACCOUNT DEACTIVATION
      */
     DEACTIVATION_INITIATED: {
@@ -426,6 +462,82 @@ export const API_RESPONSE = {
     },
 
     /**
+     * MENTOR DOWNGRADE
+     */
+    MENTOR_DOWNGRADE_NOT_MENTOR: {
+      code: 403,
+      message: 'Access denied: only mentor accounts can be downgraded',
+    },
+    MENTOR_DOWNGRADE_FAILED: {
+      code: 500,
+      message: 'Failed to downgrade mentor account',
+    },
+
+    /**
+     * AVAILABILITY
+     */
+    GET_AVAILABILITY_FAILED: {
+      code: 500,
+      message: 'Failed to retrieve availability',
+    },
+    UPDATE_AVAILABILITY_FAILED: {
+      code: 500,
+      message: 'Failed to update availability',
+    },
+    ADD_AVAILABILITY_SLOT_FAILED: {
+      code: 500,
+      message: 'Failed to add availability slot',
+    },
+    DELETE_AVAILABILITY_SLOT_FAILED: {
+      code: 500,
+      message: 'Failed to delete availability slot',
+    },
+    AVAILABILITY_OVERLAP: {
+      code: 400,
+      message: 'Time slots overlap with an existing slot on the same day',
+    },
+    AVAILABILITY_INVALID_RANGE: {
+      code: 400,
+      message: 'Invalid time range: start time must be before end time',
+    },
+    AVAILABILITY_SLOT_NOT_FOUND: {
+      code: 404,
+      message: 'Availability slot not found',
+    },
+    AVAILABILITY_DUPLICATE_DAY: {
+      code: 400,
+      message: 'Availability schedule contains duplicate day entries',
+    },
+    AVAILABILITY_FRAME_TOO_SHORT: {
+      code: 400,
+      message: 'Each time frame must be at least as long as the session duration',
+    },
+    SET_SESSION_DURATION_FAILED: {
+      code: 500,
+      message: 'Failed to update session duration',
+    },
+
+    /**
+     * BOOKING CONFLICTS
+     */
+    BOOKING_SCHEDULE_CONFLICT: {
+      code: 409,
+      message: 'The mentor already has a booking scheduled at this time',
+    },
+    BOOKING_OUTSIDE_AVAILABILITY: {
+      code: 400,
+      message: 'The selected time is outside the mentor\'s available hours',
+    },
+    BOOKING_MENTOR_NOT_AVAILABLE_DAY: {
+      code: 400,
+      message: 'The mentor is not available on the selected day',
+    },
+    BOOKING_SLOT_TOO_SHORT: {
+      code: 400,
+      message: 'The selected time frame does not fit a full session within the mentor\'s available window',
+    },
+
+    /**
      * ACCOUNT DEACTIVATION
      */
     DEACTIVATION_TOKEN_INVALID: {
@@ -448,54 +560,619 @@ export const API_RESPONSE = {
 }
 
 export const SWAGGER_DOCUMENTATION = {
+  // ─── Auth ────────────────────────────────────────────────────────────────
+
+  REGISTER_MENTEE: {
+    summary: 'Register a new mentee account',
+    description: `
+Creates a new mentee user account in Supabase and the local database.
+
+**Flow:**
+1. Validates that email and phone number are not already registered.
+2. Creates the Supabase auth user (sends a confirmation email automatically).
+3. Creates the local \`User\` record with role \`mentee\` and status \`pending_approval\`.
+4. Logs the registration event.
+
+**After registration:**
+- The user must confirm their email before they can sign in.
+- Use \`POST /auth/resend-confirmation-link\` if the email is not received.
+
+**Password rules:** minimum 8 characters, must include uppercase, lowercase, number, and symbol (e.g. \`Password@123\`).
+`,
+    bodyExample: {
+      firstName: 'Jane',
+      lastName: 'Dela Cruz',
+      email: 'jane.delacruz@example.com',
+      password: 'Password@123',
+      confirmPassword: 'Password@123',
+      phoneNumber: '+639171234567',
+      country: 'Philippines',
+      language: 'English',
+      timezone: 'Asia/Manila',
+    },
+  },
+
+  REGISTER_MENTOR: {
+    summary: 'Register a new mentor account',
+    description: `
+Creates a new mentor user account. Accepts \`multipart/form-data\` because mentor registration includes file uploads.
+
+**Flow:**
+1. Validates email and phone uniqueness.
+2. Creates the Supabase auth user (confirmation email sent automatically).
+3. Creates the local \`User\` record with role \`mentor\` and status \`pending_review\`.
+4. Uploads any provided supporting documents (PDF, PNG, JPEG) to Supabase Storage.
+5. Logs the registration event.
+
+**File fields:**
+- \`files\` — supporting documents (PDF, PNG, JPEG; max 10 MB each; up to 5 files). Required for mentor verification.
+
+**After registration:**
+- Account enters \`pending_review\` state until an admin approves it.
+- The mentor must also confirm their email.
+`,
+    bodyExample: {
+      firstName: 'Carlos',
+      lastName: 'Reyes',
+      email: 'carlos.reyes@example.com',
+      password: 'Password@123',
+      confirmPassword: 'Password@123',
+      phoneNumber: '+639281234567',
+      country: 'Philippines',
+      language: 'English',
+      timezone: 'Asia/Manila',
+      yearsOfExperience: 7,
+      areasOfExpertise: '["Web Development", "System Design"]',
+      linkedInUrl: 'https://linkedin.com/in/carlosreyes',
+    },
+  },
+
+  LOGIN: {
+    summary: 'Sign in with email and password',
+    description: `
+Authenticates a user with email and password via Supabase.
+
+**Returns:** a JWT access token on success. Store this token and send it as \`Authorization: Bearer <token>\` on all protected requests.
+
+**Rate limiting:** after 3 failed attempts the account is temporarily locked. Returns \`429\` if the limit is exceeded.
+
+**Possible failures:**
+- \`401\` — wrong email or password.
+- \`403\` — email address not yet confirmed.
+- \`429\` — too many failed login attempts.
+`,
+    bodyExample: {
+      email: 'jane.delacruz@example.com',
+      password: 'Password@123',
+    },
+  },
+
+  SIGNIN_OAUTH: {
+    summary: 'Sign in with an OAuth provider (Google / GitHub)',
+    description: `
+Exchanges an OAuth provider access token for a Gurokonekt session.
+
+**Flow:**
+1. The frontend completes the OAuth flow and receives an access token from the provider.
+2. Send that token here along with the provider name.
+3. The API validates the token with Supabase and returns a JWT.
+
+**Supported providers:** \`google\`, \`github\`
+`,
+    bodyExample: {
+      provider: 'google',
+    },
+  },
+
+  RESEND_CONFIRMATION: {
+    summary: 'Resend email confirmation link',
+    description: `
+Resends the confirmation email for a pending user registration.
+
+**Rate limiting:** maximum 3 resend attempts per day with a minimum 60-second interval between requests.
+
+**Use case:** call this when the user did not receive the confirmation email after \`POST /auth/register-mentee\` or \`POST /auth/register-mentor\`.
+
+**\`type\` field:** use \`signup\` for new account confirmation.
+`,
+    bodyExample: {
+      email: 'jane.delacruz@example.com',
+      type: 'signup',
+    },
+  },
+
+  UPDATE_PASSWORD: {
+    summary: 'Update password for an authenticated user',
+    description: `
+Changes the password for an already authenticated user who knows their current password.
+
+**Use this endpoint when:** the user is logged in and wants to change their password from account settings.
+
+**Use \`POST /auth/forgot-password\` instead when:** the user has forgotten their current password.
+
+**Rate limiting:** maximum 3 incorrect current-password attempts per day. Returns \`429\` if exceeded.
+`,
+    bodyExample: {
+      userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      currentPassword: 'OldPassword@123',
+      newPassword: 'NewPassword@456',
+      confirmPassword: 'NewPassword@456',
+    },
+  },
+
+  FORGOT_PASSWORD: {
+    summary: 'Request a password reset link via email',
+    description: `
+Sends a password reset email to the given address if an account exists for it.
+
+**Flow after this call:**
+1. User receives an email with a reset link.
+2. Frontend navigates the user to the reset-password page (link contains context).
+3. User submits new password → \`POST /auth/reset-password\` → receives a PIN by email.
+4. User submits the PIN → \`POST /auth/verify-reset-pin\` → password is updated.
+
+**Note:** the endpoint always returns \`200\` regardless of whether the email exists (prevents user enumeration).
+`,
+    bodyExample: {
+      email: 'jane.delacruz@example.com',
+    },
+  },
+
+  RESET_PASSWORD: {
+    summary: 'Submit new password after clicking reset link (step 2 of 3)',
+    description: `
+Second step of the password reset flow. Validates the new password and sends a 6-digit PIN to the user's email for final confirmation.
+
+**Step sequence:**
+1. \`POST /auth/forgot-password\` — sends reset link.
+2. **\`POST /auth/reset-password\`** ← you are here — submits new password, sends PIN.
+3. \`POST /auth/verify-reset-pin\` — verifies PIN, applies the password change.
+`,
+    bodyExample: {
+      email: 'jane.delacruz@example.com',
+      newPassword: 'NewPassword@456',
+      confirmPassword: 'NewPassword@456',
+    },
+  },
+
+  VERIFY_RESET_PIN: {
+    summary: 'Verify PIN and finalise password reset (step 3 of 3)',
+    description: `
+Final step of the password reset flow. Validates the 6-digit PIN sent by \`POST /auth/reset-password\` and applies the password change in Supabase.
+
+**The PIN expires after a short window.** If it is expired, restart from \`POST /auth/forgot-password\`.
+`,
+    bodyExample: {
+      email: 'jane.delacruz@example.com',
+      pin: '482910',
+      newPassword: 'NewPassword@456',
+      confirmPassword: 'NewPassword@456',
+    },
+  },
+
+  // ─── User ─────────────────────────────────────────────────────────────────
+
+  VERIFY_DEACTIVATION_TOKEN: {
+    summary: 'Verify deactivation token from email link (public)',
+    description: `
+Validates the one-time deactivation token that was emailed to the user when they initiated account deactivation via \`POST /user/:userId/deactivate/initiate\`.
+
+**This endpoint is public** — no JWT required. It is called by the frontend when the user clicks the confirmation link in the email.
+
+**On success:** returns \`200\` confirming the token is valid. The frontend should then prompt the user for deactivation feedback and call \`POST /user/:userId/deactivate/feedback\` to finalise.
+
+**On failure:** returns \`400\` if the token is invalid or expired.
+`,
+    bodyExample: {
+      token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+    },
+  },
+
+  GET_USER_PROFILE: {
+    summary: 'Get user profile by ID',
+    description: `
+Returns the full profile of a user including their role-specific sub-profile (MenteeProfile or MentorProfile), avatar, and account metadata.
+
+**This endpoint is public** — no JWT required. Use it to display any user's profile page.
+
+**Response \`data\`** shape varies by role:
+- **Mentee:** includes \`menteeProfile\` with bio, learning goals, areas of interest, availability.
+- **Mentor:** includes \`mentorProfile\` with bio, expertise, skills, session rate, years of experience, availability, documents.
+`,
+  },
+
+  GET_USER_DASHBOARD: {
+    summary: 'Get dashboard data (role-based)',
+    description: `
+Returns dashboard data for the authenticated user. The shape of the response \`data\` field differs by role:
+
+- **Mentor dashboard:** upcoming bookings, total sessions, pending requests, earnings summary.
+- **Mentee dashboard:** upcoming sessions, booking history, recommended mentors.
+
+**Access rules:**
+- Mentors must have status \`approved\` and a complete profile; otherwise returns \`403\`.
+- Mentees must have role \`mentee\`; otherwise returns \`403\`.
+- The \`userId\` path param must match the authenticated user's JWT.
+`,
+  },
+
+  GET_BOOKING_OVERVIEW: {
+    summary: 'Get mentee booking summary',
+    description: `
+Returns a counts summary of the authenticated mentee's bookings broken down by status: total, upcoming (approved future sessions), completed, and pending.
+
+**Access:** mentee role only. Returns \`403\` if the user is not a mentee.
+`,
+  },
+
+  INITIATE_DEACTIVATION: {
+    summary: 'Initiate account deactivation — verifies password and sends confirmation email',
+    description: `
+Step 1 of the account deactivation flow for mentee accounts.
+
+**Flow:**
+1. Verifies the supplied password against the current account.
+2. Generates a one-time deactivation token and emails it to the user.
+3. Frontend polls for the user to click the email link (which calls \`POST /user/deactivate/verify\`).
+4. After token verification, user submits feedback via \`POST /user/:userId/deactivate/feedback\`.
+
+**Access:** JWT required; mentee role only. Returns \`403\` for mentor/admin accounts.
+`,
+    bodyExample: {
+      password: 'CurrentPassword@123',
+    },
+  },
+
+  DEACTIVATION_FEEDBACK: {
+    summary: 'Submit deactivation feedback and finalise account deactivation',
+    description: `
+Final step of the account deactivation flow. Validates the deactivation token (from the email link) one more time, records the user's reason for leaving, and marks the account as \`deleted\` in both Supabase and the local database.
+
+**After this call:** the user's JWT will be rejected on all subsequent requests. The account cannot be recovered without admin intervention.
+`,
+    bodyExample: {
+      token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+      reason: 'I found a mentor outside the platform and no longer need the service.',
+    },
+  },
+
   UPDATE_USER_PROFILE: {
     summary: 'Update User Profile (Mentor or Mentee)',
     description: `
-This endpoint creates or updates the profile of a user.
+Creates or updates the profile of a user. Must be sent as \`multipart/form-data\`.
 
-Behavior:
-- If user role is **Mentor**, it updates/creates a MentorProfile.
-- If user role is **Mentee**, it updates/creates a MenteeProfile.
-- Automatically sets \`isProfileComplete = true\` after successful update.
-- Supports optional avatar upload via multipart/form-data.
+**Behavior:**
+- If user role is **Mentor**, updates/creates a \`MentorProfile\`.
+- If user role is **Mentee**, updates/creates a \`MenteeProfile\`.
+- Automatically sets \`isProfileComplete = true\` after a successful update.
 - Logs the activity in system logs.
 
-Frontend Notes:
-- Must send multipart/form-data.
-- "avatar" is optional.
-- "files" is optional.
-- DTO fields depend on user role.
-`,
+**File fields (optional):**
+- \`avatar\` — profile picture (PNG, JPEG, JPG; max 10 MB).
+- \`files\` — supporting documents for mentors (PDF, PNG, JPEG; max 10 MB each; up to 5 files).
 
+**Mentee fields:** bio, phoneNumber, country, language, timezone, learningGoals, areasOfInterest, preferredSessionType, availability, updatedById.
+
+**Mentor fields:** bio, phoneNumber, country, language, timezone, areasOfExpertise, yearsOfExperience, skills, sessionRate, availability, updatedById.
+`,
   },
+
   UPDATE_USER_STATUS: {
     summary: 'Update User Account Status',
     description: `
-Updates the status of a user account.
+Updates the status of a user account. Intended for admin panel use.
 
-Possible statuses:
-- Active
-- Inactive
-- Suspended
-- Pending
+**Possible statuses:** \`active\`, \`inactive\`, \`pending_approval\`, \`pending_review\`, \`approved\`, \`rejected\`, \`banned\`, \`suspended\`, \`deleted\`
 
-Used by admin panel.
+**\`updatedById\`** must be the UUID of the admin performing the action (used for audit logging).
 `,
+    bodyExample: {
+      status: 'approved',
+      updatedById: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    },
   },
+
   UPDATE_USER_ROLE: {
     summary: 'Update User Role',
     description: `
-Updates the role of a user.
+Updates the role of a user. Intended for admin panel use.
 
-Possible roles:
-- Mentee
-- Mentor
-- Admin
+**Possible roles:** \`mentee\`, \`mentor\`, \`admin\`
 
-⚠️ Changing role does NOT automatically create profile records.
-Frontend should call profile endpoint after role change if needed.
+**\`updatedById\`** must be the UUID of the admin performing the action (used for audit logging).
+
+⚠️ Changing role does **not** automatically create or migrate profile records. Call the profile update endpoint after a role change if a profile needs to be initialised.
+`,
+    bodyExample: {
+      role: 'mentor',
+      updatedById: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+    },
+  },
+
+  // ─── Booking ──────────────────────────────────────────────────────────────
+
+  CREATE_BOOKING: {
+    summary: 'Create a new booking request (mentee only)',
+    description: `
+Creates a new session booking request from the authenticated mentee to a mentor.
+
+**The mentee ID is read from the JWT** — do not send it in the body.
+
+**Status flow:** \`PENDING\` → \`APPROVED\` (mentor approves) or \`REJECTED\` (mentor rejects) → \`COMPLETED\` (mentor marks done).
+
+**\`sessionDateTime\`** must be a future ISO 8601 datetime string.
+`,
+    bodyExample: {
+      mentorId: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21',
+      sessionDateTime: '2026-04-15T10:00:00.000Z',
+      notes: 'I would like to discuss transitioning into backend engineering.',
+    },
+  },
+
+  APPROVE_BOOKING: {
+    summary: 'Approve a pending booking (mentor only) — PENDING → APPROVED',
+    description: `
+Approves a booking that is currently in \`PENDING\` status. Only the mentor assigned to the booking can approve it.
+
+**Requires \`sessionLink\`** — a video call or meeting URL that the mentee will use to join the session (e.g. Google Meet, Zoom).
+
+**Status transition:** \`PENDING\` → \`APPROVED\` only. Attempting to approve a booking that is not \`PENDING\` returns \`400\`.
+`,
+    bodyExample: {
+      sessionLink: 'https://meet.google.com/abc-defg-hij',
+    },
+  },
+
+  UPDATE_BOOKING: {
+    summary: 'Update booking details (partial)',
+    description: `
+Partially updates a booking. All fields are optional — send only the fields you want to change.
+
+**Access:** only the booking owner (mentee) or the assigned mentor can update it.
+
+**Note:** to approve or reject a booking, use the dedicated \`PATCH /:id/approve\` or \`PATCH /:id/reject\` endpoints — do not use this endpoint for status transitions.
+`,
+    bodyExample: {
+      sessionDateTime: '2026-04-20T14:00:00.000Z',
+      notes: 'Rescheduled — please confirm the new time.',
+    },
+  },
+
+  // ─── Notification ─────────────────────────────────────────────────────────
+
+  CREATE_NOTIFICATION: {
+    summary: 'Create a new notification (internal / admin use)',
+    description: `
+Creates a notification record and delivers it in real-time via WebSocket to the target user if they are connected.
+
+**Real-time delivery:** the \`NotificationGateway\` (Socket.IO) emits a \`notification:created\` event to the target user's socket if online.
+
+**\`type\` options:** \`BOOKING\`, \`SESSION\`, \`MESSAGE\`, \`ANNOUNCEMENT\`
+
+**\`referenceId\`** is optional — pass the related resource ID (e.g. booking UUID) so the frontend can deep-link to it.
+`,
+    bodyExample: {
+      userId: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21',
+      title: 'Booking Approved',
+      message: 'Your session with Carlos Reyes on April 15 has been approved.',
+      type: 'BOOKING',
+      referenceId: 'c9d0e1f2-a3b4-5678-cdef-012345678901',
+    },
+  },
+
+  UPDATE_NOTIFICATION: {
+    summary: 'Update a notification (status or message)',
+    description: `
+Updates a notification's status or message text.
+
+**\`status\` options:** \`UNREAD\`, \`READ\`, \`DELETED\`
+
+**Access:** only the notification's owner can update it. Returns \`403\` if the authenticated user does not own the notification.
+
+**Tip:** to simply mark as read, use the dedicated \`PATCH /:id/read\` endpoint instead.
+`,
+    bodyExample: {
+      status: 'READ',
+    },
+  },
+
+  // ─── Search ───────────────────────────────────────────────────────────────
+
+  GET_MENTOR_PROFILE: {
+    summary: 'Get full mentor profile by mentor user ID',
+    description: `
+Returns the complete public profile of a single mentor including bio, areas of expertise, skills, session rate, years of experience, availability schedule, and avatar.
+
+**Access:** JWT required. The mentor must have an \`approved\` status and a complete profile; otherwise returns \`404\`.
 `,
   },
+
+  SEARCH_MENTORS: {
+    summary: 'Search and filter the mentor catalogue',
+    description: `
+Returns a paginated list of approved, active mentors matching the given filters.
+
+**Role-based behaviour:**
+- **Mentee:** applies intelligent profile-based matching using the mentee's learning goals and areas of interest in addition to any explicit filters.
+- **Mentor / Admin:** applies only the explicit filters provided — no profile-based matching.
+
+**All filters are optional and combinable.**
+
+**Pagination:** default \`page=1\`, \`limit=10\`, maximum \`limit=50\`.
+
+**Sorting options (\`sortBy\`):** \`newest\` | \`sessionRate\` | \`yearsExperience\` | \`name\`
+`,
+  },
+
+  // ─── Mentor Downgrade ─────────────────────────────────────────────────────
+
+  DOWNGRADE_MENTOR: {
+    summary: 'Downgrade mentor account to mentee',
+    description: `
+Downgrades an approved mentor account to a regular mentee account.
+
+**Behavior:**
+- Requires the user's current password for identity verification before any change is made.
+- Updates role → \`mentee\`, status → \`active\`.
+- Clears \`isMentorApproved\` and \`isMentorProfileComplete\` flags.
+- **Permanently deletes the MentorProfile record** — bio, skills, session rate, and availability are all removed.
+- Sends an in-app notification and an email to the user confirming the downgrade.
+
+**Access:** JWT required. Only the account owner or an admin can trigger this.
+
+**Payload:**
+\`\`\`json
+{ "password": "CurrentPassword@123" }
+\`\`\`
+`,
+    bodyExample: { password: 'CurrentPassword@123' },
+  },
+
+  // ─── Availability ─────────────────────────────────────────────────────────
+
+  SET_SESSION_DURATION: {
+    summary: 'Set standard session duration (minutes)',
+    description: `
+Sets the mentor's standard session length in minutes. This value is used to:
+- Validate that availability time frames are long enough to fit at least one session.
+- Compute bookable time slots shown to mentees (e.g. 60 min → 09:00–10:00, 10:00–11:00, ...).
+- Enforce booking conflict range checks when a mentee schedules a session.
+
+**Rules:**
+- Minimum value is **15 minutes**.
+- Changing this does NOT retroactively affect existing bookings.
+
+**Access:** JWT required. Approved mentor or admin only.
+
+**Payload:**
+\`\`\`json
+{ "sessionDurationMinutes": 60 }
+\`\`\`
+`,
+    bodyExample: { sessionDurationMinutes: 60 },
+  },
+
+  GET_AVAILABILITY: {
+    summary: 'Get mentor availability schedule and session duration',
+    description: `
+Returns the mentor's full weekly availability schedule together with their standard session duration.
+
+**Response \`data\` shape:**
+\`\`\`json
+{
+  "sessionDurationMinutes": 60,
+  "availability": [
+    {
+      "day": "monday",
+      "timeFrames": [
+        { "from": "09:00", "to": "12:00" },
+        { "from": "14:00", "to": "17:00" }
+      ]
+    }
+  ]
+}
+\`\`\`
+
+**Frontend usage:**
+Use \`sessionDurationMinutes\` to compute individual bookable slots from each time frame.
+Example: \`09:00–12:00\` with 60-min sessions → bookable slots \`09:00\`, \`10:00\`, \`11:00\`.
+Filter out slots already booked before displaying to the mentee.
+
+**Access:** JWT required. Any authenticated user can view a mentor's availability.
+`,
+  },
+
+  UPDATE_AVAILABILITY: {
+    summary: 'Replace the full availability schedule',
+    description: `
+Completely replaces the mentor's weekly availability schedule and updates the session duration in one call.
+
+**Rules:**
+- \`sessionDurationMinutes\` must be at least **15 minutes** (required).
+- Each time frame's duration must be **≥ sessionDurationMinutes** (e.g. a 30-min frame is rejected if duration is 60).
+- \`from\` must be earlier than \`to\` for every time frame.
+- Time frames within the same day must not overlap.
+- The same day must not appear more than once in the \`availability\` array.
+- Days not listed are treated as unavailable.
+
+**Day values (lowercase):** \`monday\` \`tuesday\` \`wednesday\` \`thursday\` \`friday\` \`saturday\` \`sunday\`
+
+**Access:** JWT required. Approved mentor or admin only.
+
+**Payload:**
+\`\`\`json
+{
+  "sessionDurationMinutes": 60,
+  "availability": [
+    { "day": "monday", "timeFrames": [{ "from": "09:00", "to": "12:00" }, { "from": "14:00", "to": "17:00" }] },
+    { "day": "wednesday", "timeFrames": [{ "from": "10:00", "to": "13:00" }] }
+  ]
+}
+\`\`\`
+`,
+    bodyExample: {
+      sessionDurationMinutes: 60,
+      availability: [
+        { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
+        { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
+      ],
+    },
+  },
+
+  ADD_AVAILABILITY_SLOT: {
+    summary: 'Append time frames to a single day',
+    description: `
+Adds new time frames to a specific day in the mentor's schedule. Unlike the full-replace endpoint, this **appends** to existing frames for that day instead of overwriting them.
+
+**Rules:**
+- New frames must not overlap with **existing** frames already saved for that day.
+- New frames must not overlap with each other.
+- Each new frame must be **≥ sessionDurationMinutes** long (uses the saved duration unless \`sessionDurationMinutes\` is provided).
+- Optionally updates \`sessionDurationMinutes\` at the same time.
+
+**Day values (lowercase):** \`monday\` \`tuesday\` \`wednesday\` \`thursday\` \`friday\` \`saturday\` \`sunday\`
+
+**Access:** JWT required. Approved mentor or admin only.
+
+**Payload:**
+\`\`\`json
+{
+  "day": "monday",
+  "timeFrames": [{ "from": "14:00", "to": "17:00" }],
+  "sessionDurationMinutes": 60
+}
+\`\`\`
+`,
+    bodyExample: {
+      day: 'monday',
+      timeFrames: [{ from: '14:00', to: '17:00' }],
+      sessionDurationMinutes: 60,
+    },
+  },
+
+  DELETE_AVAILABILITY_SLOT: {
+    summary: 'Remove a time frame or entire day from availability',
+    description: `
+Removes a specific time frame or an entire day from the mentor's availability schedule.
+
+**Behavior:**
+- If \`timeFrameIndex\` is provided → removes only that time frame (0-based index). If it was the last frame for that day, the day entry is also removed.
+- If \`timeFrameIndex\` is omitted → removes the entire day entry.
+- Returns 404 if the specified day is not in the schedule.
+
+**Day values (lowercase):** \`monday\` \`tuesday\` \`wednesday\` \`thursday\` \`friday\` \`saturday\` \`sunday\`
+
+**Access:** JWT required. Approved mentor or admin only.
+
+**Payload examples:**
+Remove one time frame: \`{ "day": "monday", "timeFrameIndex": 0 }\`
+Remove entire day: \`{ "day": "monday" }\`
+`,
+    bodyExample: { day: 'monday', timeFrameIndex: 0 },
+  },
+
+  // ─── Field-level helpers ──────────────────────────────────────────────────
+
   PHONE_NUMBER: {
     example: '+639123456789',
     description: 'Mobile number in E.164 international format. Must start with "+" followed by country code and subscriber number (no spaces or dashes).'

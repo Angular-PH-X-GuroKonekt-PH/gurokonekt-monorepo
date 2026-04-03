@@ -1,12 +1,48 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_RESPONSE, BookingStatus, DeactivationFeedbackDto, InitiateDeactivationDto, LogsActionType, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorSearchItemInterface, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
+import { API_RESPONSE, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
 import { StorageService } from '../storage/storage.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { instanceToPlain } from 'class-transformer';
 import { MENTOR_DASHBOARD_SHORTCUTS, MENTOR_DASHBOARD_NAV_ITEMS, MENTEE_DASHBOARD_SHORTCUTS, MENTEE_DASHBOARD_NAV_ITEMS } from '@gurokonekt/utils';
 import * as crypto from 'crypto';
 import bcrypt from 'bcrypt';
+
+// ────────────────────────────────────────────────────────────────────────────
+// Availability helpers
+// ────────────────────────────────────────────────────────────────────────────
+
+interface TimeFrame { from: string; to: string; }
+interface AvailabilitySlot { day: DaysInWeek; timeFrames: TimeFrame[]; }
+
+/** Convert "HH:MM" string to total minutes since midnight. */
+function timeToMinutes(time: string): number {
+  const [h, m] = time.split(':').map(Number);
+  return h * 60 + m;
+}
+
+/** Returns true if two time-frames overlap (inclusive boundary). */
+function framesOverlap(a: TimeFrame, b: TimeFrame): boolean {
+  return timeToMinutes(a.from) < timeToMinutes(b.to) &&
+         timeToMinutes(b.from) < timeToMinutes(a.to);
+}
+
+/** Validates a single list of time frames for a day. */
+function validateTimeFrames(frames: TimeFrame[]): string | null {
+  for (const f of frames) {
+    if (timeToMinutes(f.from) >= timeToMinutes(f.to)) {
+      return `Invalid range ${f.from}–${f.to}: start must be before end`;
+    }
+  }
+  for (let i = 0; i < frames.length; i++) {
+    for (let j = i + 1; j < frames.length; j++) {
+      if (framesOverlap(frames[i], frames[j])) {
+        return `Overlapping slots: ${frames[i].from}–${frames[i].to} and ${frames[j].from}–${frames[j].to}`;
+      }
+    }
+  }
+  return null;
+}
 
 @Injectable()
 export class UserService {
@@ -759,6 +795,501 @@ export class UserService {
         };
       }
     }
+
+  // ====================================================
+  // MENTOR DOWNGRADE
+  // ====================================================
+
+  /**
+   * Downgrades a Mentor account to Mentee-only access.
+   * Flow:
+   * 1. Verify user exists and is a Mentor.
+   * 2. Verify the supplied password.
+   * 3. In a transaction: set role=mentee, status=inactive,
+   *    isMentorApproved=false, isMentorProfileComplete=false.
+   * 4. Create an in-app notification for the user.
+   * 5. Send a downgrade confirmation email via Supabase OTP (magic link).
+   * 6. Log the event.
+   */
+  async downgradeMentorToMentee(
+    userId: string,
+    dto: DowngradeMentorDto,
+    ipAddress: string,
+    userAgent: string,
+    origin: string,
+  ): Promise<ResponseDto> {
+    try {
+      const user = await this.prisma.db.user.findUnique({
+        where: { id: userId },
+        select: { id: true, email: true, firstName: true, role: true, hashPassword: true },
+      });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      if (user.role !== UserRole.Mentor) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.MENTOR_DOWNGRADE_NOT_MENTOR.code,
+          message: API_RESPONSE.ERROR.MENTOR_DOWNGRADE_NOT_MENTOR.message,
+          data: null,
+        };
+      }
+
+      const isPasswordValid = await bcrypt.compare(dto.password, user.hashPassword);
+      if (!isPasswordValid) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.PASSWORD_INCORRECT.code,
+          message: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
+          data: null,
+        };
+      }
+
+      // Atomically downgrade the account and delete the mentor profile
+      await this.prisma.db.$transaction([
+        this.prisma.db.user.update({
+          where: { id: userId },
+          data: {
+            role: UserRole.Mentee,
+            status: UserStatus.Active,
+            isMentorApproved: false,
+            isMentorProfileComplete: false,
+          },
+        }),
+        this.prisma.db.mentorProfile.deleteMany({ where: { userId } }),
+        this.prisma.db.notification.create({
+          data: {
+            userId,
+            title: 'Account Downgraded to Mentee',
+            message: 'Your mentor account has been downgraded to a mentee account. Your mentor profile has been permanently removed. Contact support if you wish to re-apply as a mentor.',
+            type: NotificationType.ANNOUNCEMENT,
+            status: NotificationStatus.UNREAD,
+          },
+        }),
+      ]);
+
+      // Send a confirmation email via Supabase magic link (OTP)
+      const redirectTo = `${origin || ''}`;
+      await this.supabase.client.auth.signInWithOtp({
+        email: user.email,
+        options: { shouldCreateUser: false, emailRedirectTo: redirectTo || undefined },
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.Update,
+          targetId: userId,
+          details: 'Mentor account downgraded to Mentee',
+          metadata: { userId, previousRole: UserRole.Mentor },
+          ipAddress,
+          userAgent,
+          createdById: userId,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.MENTOR_DOWNGRADED.code,
+        message: API_RESPONSE.SUCCESS.MENTOR_DOWNGRADED.message,
+        data: null,
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.MENTOR_DOWNGRADE_FAILED.code,
+        message: API_RESPONSE.ERROR.MENTOR_DOWNGRADE_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  // ====================================================
+  // MENTOR AVAILABILITY MANAGEMENT
+  // ====================================================
+
+  /**
+   * GET - Returns the current availability schedule for a mentor.
+   */
+  async getMentorAvailability(userId: string): Promise<ResponseDto> {
+    try {
+      const profile = await this.prisma.db.mentorProfile.findUnique({
+        where: { userId },
+        select: { availability: true, sessionDurationMinutes: true },
+      });
+
+      if (!profile) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_AVAILABILITY.code,
+        message: API_RESPONSE.SUCCESS.GET_AVAILABILITY.message,
+        data: { sessionDurationMinutes: profile.sessionDurationMinutes, availability: profile.availability },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.GET_AVAILABILITY_FAILED.code,
+        message: API_RESPONSE.ERROR.GET_AVAILABILITY_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * PUT - Replaces the entire availability schedule for a mentor.
+   * Validates all slots for overlaps and range correctness.
+   */
+  async updateMentorAvailability(
+    userId: string,
+    dto: ManageAvailabilityDto,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto> {
+    try {
+      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      if (check) return check;
+
+      // Check for duplicate days
+      const days = dto.availability.map(e => e.day);
+      if (new Set(days).size !== days.length) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_DUPLICATE_DAY.code,
+          message: API_RESPONSE.ERROR.AVAILABILITY_DUPLICATE_DAY.message,
+          data: null,
+        };
+      }
+
+      // Validate time frames and minimum frame length
+      for (const entry of dto.availability) {
+        const err = validateTimeFrames(entry.timeFrames);
+        if (err) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE.code,
+            message: `${API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE.message} (${entry.day}): ${err}`,
+            data: null,
+          };
+        }
+        for (const f of entry.timeFrames) {
+          const frameMins = timeToMinutes(f.to) - timeToMinutes(f.from);
+          if (frameMins < dto.sessionDurationMinutes) {
+            return {
+              status: ResponseStatus.Error,
+              statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
+              message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message}: ${f.from}–${f.to} is shorter than ${dto.sessionDurationMinutes} min`,
+              data: null,
+            };
+          }
+        }
+      }
+
+      await this.prisma.db.mentorProfile.update({
+        where: { userId },
+        data: {
+          sessionDurationMinutes: dto.sessionDurationMinutes,
+          availability: JSON.parse(JSON.stringify(dto.availability)),
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.code,
+        message: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.message,
+        data: { sessionDurationMinutes: dto.sessionDurationMinutes, availability: dto.availability },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.UPDATE_AVAILABILITY_FAILED.code,
+        message: API_RESPONSE.ERROR.UPDATE_AVAILABILITY_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * POST - Adds or replaces availability slots for a single day.
+   * If the day already exists in the schedule, its time frames are replaced.
+   */
+  async addAvailabilitySlot(
+    userId: string,
+    dto: AddAvailabilitySlotDto,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto> {
+    try {
+      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      if (check) return check;
+
+      const profile = await this.prisma.db.mentorProfile.findUnique({
+        where: { userId },
+        select: { availability: true, sessionDurationMinutes: true },
+      });
+
+      const duration = dto.sessionDurationMinutes ?? profile?.sessionDurationMinutes ?? 60;
+
+      // Validate the new frames themselves
+      const validationError = validateTimeFrames(dto.timeFrames);
+      if (validationError) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE.code,
+          message: `${API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE.message}: ${validationError}`,
+          data: null,
+        };
+      }
+
+      // Each new frame must be long enough for at least one session
+      for (const f of dto.timeFrames) {
+        const frameMins = timeToMinutes(f.to) - timeToMinutes(f.from);
+        if (frameMins < duration) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
+            message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message}: ${f.from}–${f.to} is shorter than ${duration} min`,
+            data: null,
+          };
+        }
+      }
+
+      const current: AvailabilitySlot[] = (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
+
+      // Merge: append new frames to existing frames for this day and check for overlaps
+      const existingDay = current.find(s => s.day === dto.day);
+      const existingFrames = existingDay?.timeFrames ?? [];
+      const mergedFrames = [...existingFrames, ...dto.timeFrames];
+      const overlapErr = validateTimeFrames(mergedFrames);
+      if (overlapErr) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_OVERLAP.code,
+          message: `${API_RESPONSE.ERROR.AVAILABILITY_OVERLAP.message}: ${overlapErr}`,
+          data: null,
+        };
+      }
+
+      const updated = existingDay
+        ? current.map(s => s.day === dto.day ? { ...s, timeFrames: mergedFrames } : s)
+        : [...current, { day: dto.day, timeFrames: dto.timeFrames }];
+
+      const updateData: Record<string, unknown> = { availability: JSON.parse(JSON.stringify(updated)) };
+      if (dto.sessionDurationMinutes !== undefined) updateData['sessionDurationMinutes'] = dto.sessionDurationMinutes;
+
+      await this.prisma.db.mentorProfile.update({ where: { userId }, data: updateData });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.ADD_AVAILABILITY_SLOT.code,
+        message: API_RESPONSE.SUCCESS.ADD_AVAILABILITY_SLOT.message,
+        data: { sessionDurationMinutes: duration, availability: updated },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.ADD_AVAILABILITY_SLOT_FAILED.code,
+        message: API_RESPONSE.ERROR.ADD_AVAILABILITY_SLOT_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * DELETE - Removes availability slots for a specific day (or a single time frame).
+   */
+  async deleteAvailabilitySlot(
+    userId: string,
+    dto: DeleteAvailabilitySlotDto,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto> {
+    try {
+      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      if (check) return check;
+
+      const profile = await this.prisma.db.mentorProfile.findUnique({
+        where: { userId },
+        select: { availability: true, sessionDurationMinutes: true },
+      });
+
+      const current: AvailabilitySlot[] = (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
+      const dayEntry = current.find(s => s.day === dto.day);
+
+      if (!dayEntry) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_SLOT_NOT_FOUND.code,
+          message: `${API_RESPONSE.ERROR.AVAILABILITY_SLOT_NOT_FOUND.message} for day: ${dto.day}`,
+          data: null,
+        };
+      }
+
+      let updated: AvailabilitySlot[];
+
+      if (dto.timeFrameIndex === undefined) {
+        // Remove the entire day
+        updated = current.filter(s => s.day !== dto.day);
+      } else {
+        if (dto.timeFrameIndex < 0 || dto.timeFrameIndex >= dayEntry.timeFrames.length) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.AVAILABILITY_SLOT_NOT_FOUND.code,
+            message: `Time frame index ${dto.timeFrameIndex} does not exist for day: ${dto.day}`,
+            data: null,
+          };
+        }
+        const newFrames = dayEntry.timeFrames.filter((_, i) => i !== dto.timeFrameIndex);
+        if (newFrames.length === 0) {
+          // Remove the day entirely if no frames remain
+          updated = current.filter(s => s.day !== dto.day);
+        } else {
+          updated = current.map(s => s.day === dto.day ? { ...s, timeFrames: newFrames } : s);
+        }
+      }
+
+      await this.prisma.db.mentorProfile.update({
+        where: { userId },
+        data: { availability: JSON.parse(JSON.stringify(updated)) },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.DELETE_AVAILABILITY_SLOT.code,
+        message: API_RESPONSE.SUCCESS.DELETE_AVAILABILITY_SLOT.message,
+        data: { sessionDurationMinutes: profile?.sessionDurationMinutes ?? 60, availability: updated },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.DELETE_AVAILABILITY_SLOT_FAILED.code,
+        message: API_RESPONSE.ERROR.DELETE_AVAILABILITY_SLOT_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * PATCH - Updates only the session duration for the mentor's profile.
+   */
+  async setSessionDuration(
+    userId: string,
+    dto: SetSessionDurationDto,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto> {
+    try {
+      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      if (check) return check;
+
+      await this.prisma.db.mentorProfile.update({
+        where: { userId },
+        data: { sessionDurationMinutes: dto.sessionDurationMinutes },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.UPDATE_SESSION_DURATION.code,
+        message: API_RESPONSE.SUCCESS.UPDATE_SESSION_DURATION.message,
+        data: { sessionDurationMinutes: dto.sessionDurationMinutes },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.SET_SESSION_DURATION_FAILED.code,
+        message: API_RESPONSE.ERROR.SET_SESSION_DURATION_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  // ====================================================
+  // PRIVATE HELPERS
+  // ====================================================
+
+  private async isAdmin(userId: string): Promise<boolean> {
+    try {
+      const u = await this.prisma.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+      return u?.role === UserRole.Admin;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Checks that the target user is an approved mentor and the caller is either
+   * the mentor themselves or an admin. Returns a ResponseDto error if the check
+   * fails, or null if it passes.
+   */
+  private async requireApprovedMentor(
+    userId: string,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto | null> {
+    const isAdmin = await this.isAdmin(authenticatedUserId);
+    if (!isAdmin && userId !== authenticatedUserId) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.BOOKING_ACCESS_DENIED.code,
+        message: 'Access denied: you can only manage your own availability',
+        data: null,
+      };
+    }
+
+    const user = await this.prisma.db.user.findUnique({
+      where: { id: userId },
+      select: { role: true, isMentorApproved: true },
+    });
+
+    if (!user) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+        message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+        data: null,
+      };
+    }
+
+    if (user.role !== UserRole.Mentor) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.code,
+        message: 'Only mentor accounts can manage availability',
+        data: null,
+      };
+    }
+
+    if (!user.isMentorApproved) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.code,
+        message: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.message,
+        data: null,
+      };
+    }
+
+    return null;
+  }
 
   // ====================================================
   // ACCOUNT DEACTIVATION

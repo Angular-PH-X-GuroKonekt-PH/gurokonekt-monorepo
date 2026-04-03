@@ -102,7 +102,7 @@ model User {
   phoneNumber         String?    @unique         @map("phone_number")        
   hashPassword        String                     @map("hash_password")
   isProfileComplete   Boolean    @default(false) @map("is_profile_complete")
-  isMentorProfileComplete   Boolean    @default(true)  @map("is_mentor_profile_complete")
+  isMentorProfileComplete   Boolean    @default(false)  @map("is_mentor_profile_complete")
   isMentorApproved    Boolean    @default(false) @map("is_mentor_approved")
   role                UserRole
   status              UserStatus
@@ -162,6 +162,7 @@ model MentorProfile {
   bio               String?
   skills            String[]
   sessionRate       Float?    @map("session_rate")
+  sessionDurationMinutes  Int       @default(60) @map("session_duration_minutes")
   availability      Json
   updatedById       String?   @map("updated_by_id")
   updatedAt         DateTime  @updatedAt @map("updated_at")
