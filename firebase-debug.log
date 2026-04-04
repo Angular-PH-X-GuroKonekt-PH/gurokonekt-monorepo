@@ -1,0 +1,42 @@
+[debug] [2026-03-27T05:09:08.069Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-27T05:09:08.071Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-27T05:09:08.076Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-03-27T05:09:08.077Z] Checked if tokens are valid: false, expires at: 1774588563627
+[debug] [2026-03-27T05:09:08.077Z] Checked if tokens are valid: false, expires at: 1774588563627
+[debug] [2026-03-27T05:09:08.078Z] > refreshing access token with scopes: []
+[debug] [2026-03-27T05:09:08.081Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-27T05:09:08.082Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-27T05:09:08.074Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-03-27T05:09:08.074Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-27T05:09:08.075Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-03-27T05:09:08.076Z] Checked if tokens are valid: false, expires at: 1774588563627
+[debug] [2026-03-27T05:09:08.076Z] Checked if tokens are valid: false, expires at: 1774588563627
+[debug] [2026-03-27T05:09:08.077Z] > refreshing access token with scopes: []
+[debug] [2026-03-27T05:09:08.080Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-27T05:09:08.080Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-27T05:09:08.083Z] Checked if tokens are valid: false, expires at: 1774588563627
+[debug] [2026-03-27T05:09:08.084Z] Checked if tokens are valid: false, expires at: 1774588563627
+[debug] [2026-03-27T05:09:08.084Z] > refreshing access token with scopes: []
+[debug] [2026-03-27T05:09:08.085Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-27T05:09:08.085Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-27T05:09:08.087Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-03-27T05:09:08.087Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-03-27T05:09:08.087Z] Checked if tokens are valid: false, expires at: 1774588563627
+[debug] [2026-03-27T05:09:08.088Z] Checked if tokens are valid: false, expires at: 1774588563627
+[debug] [2026-03-27T05:09:08.088Z] > refreshing access token with scopes: []
+[debug] [2026-03-27T05:09:08.088Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-03-27T05:09:08.088Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-27T05:09:08.472Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-27T05:09:08.479Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-27T05:09:08.472Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-27T05:09:08.486Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-03-27T05:09:08.490Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-27T05:09:08.480Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-27T05:09:08.494Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-03-27T05:09:08.491Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-27T05:09:08.499Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-03-27T05:09:08.514Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-03-27T05:09:08.514Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-03-27T05:09:08.520Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-03-27T05:09:10.014Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo 403
+[debug] [2026-03-27T05:09:10.428Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo 403
