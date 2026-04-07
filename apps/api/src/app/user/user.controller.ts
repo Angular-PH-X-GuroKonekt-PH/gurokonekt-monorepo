@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Headers,
   HttpException,
@@ -8,6 +9,8 @@ import {
   Param,
   Patch,
   Post,
+  Put,
+  Req,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
@@ -16,17 +19,22 @@ import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { FileFieldsInterceptor } from '@nestjs/platform-express';
 import {
   ApiBearerAuth,
+  ApiBody,
   ApiConsumes,
   ApiOperation,
   ApiParam,
   ApiResponse,
   ApiTags,
-  ApiBody,
 } from '@nestjs/swagger';
 import {
+  AddAvailabilitySlotDto,
   DeactivationFeedbackDto,
+  DeleteAvailabilitySlotDto,
+  DowngradeMentorDto,
   InitiateDeactivationDto,
+  ManageAvailabilityDto,
   ResponseDto,
+  SetSessionDurationDto,
   SWAGGER_DOCUMENTATION,
   UpdateMenteeProfileDto,
   UpdateMentorProfileDto,
@@ -34,48 +42,90 @@ import {
   UpdateUserStatusDto,
   VerifyDeactivationTokenDto,
 } from '@gurokonekt/models';
+import { Request } from 'express';
 import { UserService } from './user.service';
 
 @ApiTags('User Management')
 @Controller('user')
 export class UserController {
   constructor(private readonly userService: UserService) {}
+
   // ====================================================
   // POST - Deactivate Verify (public — no JWT; declared BEFORE :userId routes)
   // ====================================================
 
   @Post('deactivate/verify')
-  @ApiOperation({ summary: 'Verify deactivation token from email link (public)' })
-  @ApiResponse({ status: 200, description: 'Token is valid', type: ResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid or expired token' })
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.VERIFY_DEACTIVATION_TOKEN.summary,
+    description: SWAGGER_DOCUMENTATION.VERIFY_DEACTIVATION_TOKEN.description,
+  })
+  @ApiBody({
+    type: VerifyDeactivationTokenDto,
+    examples: {
+      default: { summary: 'Validate deactivation token from email link', value: SWAGGER_DOCUMENTATION.VERIFY_DEACTIVATION_TOKEN.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token is valid. Proceed to POST /user/:userId/deactivate/feedback.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Deactivation token is valid',
+        data: null,
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Token is invalid or has expired.' })
   verifyDeactivationToken(@Body() dto: VerifyDeactivationTokenDto) {
     return this.userService.verifyDeactivationToken(dto);
   }
 
   // ====================================================
-  // GET
+  // GET - User Profile
   // ====================================================
 
   @Get(':userId/profile')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.GET_USER_PROFILE.summary,
+    description: SWAGGER_DOCUMENTATION.GET_USER_PROFILE.description,
+  })
   @ApiParam({
     name: 'userId',
     type: String,
-    description: 'Unique ID of the user',
-    example: 'uuid-user-id',
+    description: 'UUID of the user',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
   @ApiResponse({
     status: 200,
-    description: 'User get successfully',
+    description: 'User profile retrieved successfully.',
     type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'User profile get successfully',
+        data: {
+          id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          firstName: 'Jane',
+          lastName: 'Dela Cruz',
+          email: 'jane.delacruz@example.com',
+          role: 'mentee',
+          status: 'active',
+          isProfileComplete: true,
+          menteeProfile: {
+            bio: 'Aspiring backend engineer.',
+            learningGoals: ['System Design', 'Node.js'],
+            areasOfInterest: ['Backend', 'Cloud'],
+          },
+        },
+      },
+    },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Validation error',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found',
-  })
+  @ApiResponse({ status: 400, description: 'Validation error.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async getUserProfileById(
     @Param('userId') userId: string,
     @Ip() ipAddress: string,
@@ -96,12 +146,37 @@ export class UserController {
   @UseGuards(JwtGuardGuard)
   @ApiBearerAuth()
   @ApiOperation({
-    summary: 'Get Dashboard data — automatically returns Mentor or Mentee dashboard based on the authenticated user role',
+    summary: SWAGGER_DOCUMENTATION.GET_USER_DASHBOARD.summary,
+    description: SWAGGER_DOCUMENTATION.GET_USER_DASHBOARD.description,
   })
-  @ApiParam({ name: 'userId', type: String, description: 'Unique ID of the user' })
-  @ApiResponse({ status: 200, description: 'Dashboard data retrieved successfully', type: ResponseDto })
-  @ApiResponse({ status: 403, description: 'Access denied' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the authenticated user (must match JWT)',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Dashboard data retrieved successfully. Shape varies by role.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Mentee dashboard data retrieved successfully',
+        data: {
+          upcomingSessions: [],
+          bookingHistory: [],
+          totalSessions: 0,
+          pendingRequests: 0,
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor account not approved/complete, or user is not a mentee.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getUserDashboard(
     @Param('userId') userId: string,
     @Ip() ipAddress: string,
@@ -117,10 +192,37 @@ export class UserController {
   @Get(':userId/booking-overview')
   @UseGuards(JwtGuardGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Get Mentee booking summary (total, upcoming, completed, pending)' })
-  @ApiParam({ name: 'userId', type: String, description: 'Unique ID of the mentee' })
-  @ApiResponse({ status: 200, description: 'Booking overview retrieved successfully', type: ResponseDto })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.GET_BOOKING_OVERVIEW.summary,
+    description: SWAGGER_DOCUMENTATION.GET_BOOKING_OVERVIEW.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentee',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Booking overview retrieved successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Mentee booking overview retrieved successfully',
+        data: {
+          total: 8,
+          upcoming: 2,
+          completed: 5,
+          pending: 1,
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — user is not a mentee.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   async getMenteeBookingOverview(
     @Param('userId') userId: string,
   ) {
@@ -140,26 +242,29 @@ export class UserController {
   @ApiParam({
     name: 'userId',
     type: String,
-    description: 'Unique ID of the user',
-    example: 'uuid-user-id',
+    description: 'UUID of the user',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
   @ApiBody({
-    description: 'Profile data + optional avatar file',
-    type: UpdateMenteeProfileDto, 
+    description: 'Profile data + optional avatar file. Fields depend on user role (see endpoint description).',
+    type: UpdateMenteeProfileDto,
   })
   @ApiResponse({
     status: 200,
-    description: 'User profile updated successfully',
+    description: 'Profile updated successfully. isProfileComplete is set to true.',
     type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'User profile updated successfully',
+        data: null,
+      },
+    },
   })
-  @ApiResponse({
-    status: 400,
-    description: 'Validation error',
-  })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found',
-  })
+  @ApiResponse({ status: 400, description: 'Validation error or unsupported file type.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  @ApiResponse({ status: 500, description: 'Internal server error (file upload or database failure).' })
   @UseInterceptors(FileFieldsInterceptor([
     { name: 'avatar', maxCount: 1 },
     { name: 'files', maxCount: 5 },
@@ -210,17 +315,31 @@ export class UserController {
   @ApiParam({
     name: 'userId',
     type: String,
-    description: 'Unique ID of the user',
+    description: 'UUID of the user to update',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: UpdateUserStatusDto,
+    examples: {
+      approve: { summary: 'Approve a mentor', value: SWAGGER_DOCUMENTATION.UPDATE_USER_STATUS.bodyExample },
+      suspend: { summary: 'Suspend a user', value: { status: 'suspended', updatedById: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' } },
+    },
   })
   @ApiResponse({
     status: 200,
-    description: 'User status updated successfully',
+    description: 'User status updated successfully.',
     type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'User status updated successfully',
+        data: null,
+      },
+    },
   })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found',
-  })
+  @ApiResponse({ status: 400, description: 'Validation error or invalid status value.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   updateUserStatus(
     @Param('userId') userId: string,
     @Body() dto: UpdateUserStatusDto,
@@ -240,17 +359,30 @@ export class UserController {
   @ApiParam({
     name: 'userId',
     type: String,
-    description: 'Unique ID of the user',
+    description: 'UUID of the user to update',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: UpdateUserRoleDto,
+    examples: {
+      default: { summary: 'Promote to mentor', value: SWAGGER_DOCUMENTATION.UPDATE_USER_ROLE.bodyExample },
+    },
   })
   @ApiResponse({
     status: 200,
-    description: 'User role updated successfully',
+    description: 'User role updated successfully.',
     type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'User role updated successfully',
+        data: null,
+      },
+    },
   })
-  @ApiResponse({
-    status: 404,
-    description: 'User not found',
-  })
+  @ApiResponse({ status: 400, description: 'Validation error or invalid role value.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   updateUserRole(
     @Param('userId') userId: string,
     @Body() dto: UpdateUserRoleDto,
@@ -265,12 +397,38 @@ export class UserController {
   @Post(':userId/deactivate/initiate')
   @UseGuards(JwtGuardGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Initiate mentee account deactivation — verifies password and sends confirmation email' })
-  @ApiParam({ name: 'userId', type: String, description: 'Unique ID of the mentee' })
-  @ApiResponse({ status: 200, description: 'Deactivation email sent', type: ResponseDto })
-  @ApiResponse({ status: 401, description: 'Password incorrect' })
-  @ApiResponse({ status: 403, description: 'Access denied: not a mentee account' })
-  @ApiResponse({ status: 404, description: 'User not found' })
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.INITIATE_DEACTIVATION.summary,
+    description: SWAGGER_DOCUMENTATION.INITIATE_DEACTIVATION.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentee',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: InitiateDeactivationDto,
+    examples: {
+      default: { summary: 'Initiate deactivation with password', value: SWAGGER_DOCUMENTATION.INITIATE_DEACTIVATION.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Deactivation confirmation email sent. User must click the link in the email to continue.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Deactivation confirmation email sent',
+        data: null,
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Password is incorrect.' })
+  @ApiResponse({ status: 403, description: 'Access denied — account is not a mentee.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   initiateDeactivation(
     @Param('userId') userId: string,
     @Body() dto: InitiateDeactivationDto,
@@ -282,16 +440,330 @@ export class UserController {
   }
 
   // ====================================================
+  // POST - Mentor Downgrade to Mentee
+  // ====================================================
+
+  @Post(':userId/downgrade')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.summary,
+    description: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor to downgrade',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: DowngradeMentorDto,
+    examples: {
+      default: { summary: 'Confirm downgrade with password', value: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Account downgraded to Mentee. Status set to inactive. Confirmation email sent.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Account successfully downgraded to Mentee access',
+        data: null,
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Password is incorrect.' })
+  @ApiResponse({ status: 403, description: 'Access denied — account is not a Mentor.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  downgradeMentorToMentee(
+    @Param('userId') userId: string,
+    @Body() dto: DowngradeMentorDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+    @Headers('origin') origin: string,
+  ) {
+    return this.userService.downgradeMentorToMentee(userId, dto, ipAddress, userAgent, origin ?? '');
+  }
+
+  // ====================================================
+  // GET - Mentor Availability
+  // ====================================================
+
+  @Get(':userId/availability')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.GET_AVAILABILITY.summary,
+    description: SWAGGER_DOCUMENTATION.GET_AVAILABILITY.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Availability schedule retrieved successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability retrieved successfully',
+        data: {
+          sessionDurationMinutes: 60,
+          availability: [
+            { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }] },
+            { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 404, description: 'Mentor profile not found.' })
+  getMentorAvailability(
+    @Param('userId') userId: string,
+  ) {
+    return this.userService.getMentorAvailability(userId);
+  }
+
+  // ====================================================
+  // PUT - Replace Full Availability Schedule
+  // ====================================================
+
+  @Put(':userId/availability')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.summary,
+    description: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: ManageAvailabilityDto,
+    examples: {
+      default: { summary: 'Set weekly schedule', value: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Full availability schedule replaced successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability updated successfully',
+        data: [{ day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }] }],
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  updateMentorAvailability(
+    @Param('userId') userId: string,
+    @Body() dto: ManageAvailabilityDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.updateMentorAvailability(userId, dto, req.user.id);
+  }
+
+  // ====================================================
+  // PATCH - Set Standard Session Duration
+  // ====================================================
+
+  @Patch(':userId/availability/duration')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.summary,
+    description: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: SetSessionDurationDto,
+    examples: {
+      default: { summary: 'Set 60-minute sessions', value: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Session duration updated successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Session duration updated successfully',
+        data: { sessionDurationMinutes: 60 },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'Mentor profile not found.' })
+  setSessionDuration(
+    @Param('userId') userId: string,
+    @Body() dto: SetSessionDurationDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.setSessionDuration(userId, dto, req.user.id);
+  }
+
+  // ====================================================
+  // POST - Add / Replace Availability Slot for a Day
+  // ====================================================
+
+  @Post(':userId/availability/slot')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.summary,
+    description: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: AddAvailabilitySlotDto,
+    examples: {
+      default: { summary: 'Add Tuesday slots', value: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Slot appended successfully. Returns the full updated schedule including sessionDurationMinutes.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability slot added successfully',
+        data: {
+          sessionDurationMinutes: 60,
+          availability: [{ day: 'tuesday', timeFrames: [{ from: '08:00', to: '10:00' }] }],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  addAvailabilitySlot(
+    @Param('userId') userId: string,
+    @Body() dto: AddAvailabilitySlotDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.addAvailabilitySlot(userId, dto, req.user.id);
+  }
+
+  // ====================================================
+  // DELETE - Remove Availability Slot for a Day
+  // ====================================================
+
+  @Delete(':userId/availability/slot')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.summary,
+    description: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: DeleteAvailabilitySlotDto,
+    examples: {
+      deleteDay: { summary: 'Delete all slots for a day', value: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.bodyExample },
+      deleteSlot: { summary: 'Delete a specific time frame', value: { day: 'monday', timeFrameIndex: 0 } },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Slot deleted successfully. Returns the updated schedule including sessionDurationMinutes.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Availability slot deleted successfully',
+        data: { sessionDurationMinutes: 60, availability: [] },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'Slot not found for specified day / time frame index.' })
+  deleteAvailabilitySlot(
+    @Param('userId') userId: string,
+    @Body() dto: DeleteAvailabilitySlotDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    return this.userService.deleteAvailabilitySlot(userId, dto, req.user.id);
+  }
+
+  // ====================================================
   // POST - Submit Deactivation Feedback
   // ====================================================
 
   @Post(':userId/deactivate/feedback')
   @UseGuards(JwtGuardGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Submit deactivation feedback and finalize account deactivation' })
-  @ApiParam({ name: 'userId', type: String, description: 'Unique ID of the mentee' })
-  @ApiResponse({ status: 200, description: 'Account deactivated successfully', type: ResponseDto })
-  @ApiResponse({ status: 400, description: 'Invalid or expired deactivation token' })
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.DEACTIVATION_FEEDBACK.summary,
+    description: SWAGGER_DOCUMENTATION.DEACTIVATION_FEEDBACK.description,
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentee',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: DeactivationFeedbackDto,
+    examples: {
+      default: { summary: 'Submit feedback and finalise deactivation', value: SWAGGER_DOCUMENTATION.DEACTIVATION_FEEDBACK.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Account deactivated successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Account deactivated successfully',
+        data: null,
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'Deactivation token is invalid or has expired.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
   submitDeactivationFeedback(
     @Param('userId') userId: string,
     @Body() dto: DeactivationFeedbackDto,
