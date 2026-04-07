@@ -7,6 +7,7 @@ export const APP_ROUTES = {
   DASHBOARD: '/dashboard',
   MENTOR_DASHBOARD: '/mentor/dashboard',
   FORGOT_PASSWORD: '/forgot-password',
+  SETTINGS_PROFILE: '/settings/profile',
 } as const;
 
 export const SIDEBAR_PREFIX_ROUTES: readonly string[] = [

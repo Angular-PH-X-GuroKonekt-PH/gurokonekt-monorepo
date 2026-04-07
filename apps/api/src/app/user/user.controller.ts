@@ -234,6 +234,8 @@ export class UserController {
   // ====================================================
 
   @Patch(':userId/profile')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
   @ApiConsumes('multipart/form-data')
   @ApiOperation({
     summary: SWAGGER_DOCUMENTATION.UPDATE_USER_PROFILE.summary,
@@ -263,13 +265,14 @@ export class UserController {
     },
   })
   @ApiResponse({ status: 400, description: 'Validation error or unsupported file type.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized. JWT token missing or invalid.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error (file upload or database failure).' })
   @UseInterceptors(FileFieldsInterceptor([
     { name: 'avatar', maxCount: 1 },
     { name: 'files', maxCount: 5 },
   ], {
-    limits: { fileSize: 10 * 1024 * 1024 },
+    limits: { fileSize: 5 * 1024 * 1024 },
     fileFilter: (req, file, cb) => {
       const avatarTypes = ['image/png', 'image/jpeg', 'image/jpg'];
       const docTypes = ['application/pdf', 'image/png', 'image/jpeg'];

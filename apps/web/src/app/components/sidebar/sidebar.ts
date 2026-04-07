@@ -28,7 +28,7 @@ export class Sidebar {
   ];
 
   readonly bottomNavItems: NavItem[] = [
-    { label: 'Profile', route: '/profile', icon: 'user' },
+    { label: 'Profile Settings', route: '/settings/profile', icon: 'user' },
     { label: 'Settings', route: '/settings', icon: 'cog-6-tooth' },
   ];
 

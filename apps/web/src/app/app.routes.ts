@@ -31,6 +31,12 @@ export const appRoutes: Route[] = [
 		title: 'Dashboard'
 	},
 	{ 
+		path: APP_ROUTES.SETTINGS_PROFILE.replace('/', ''), 
+		canActivate: [dashboardAccessGuard],
+		loadComponent: () => import('./components/mentee/profile-settings/profile-settings').then(m => m.ProfileSettingsComponent),
+		title: 'Profile Settings'
+	},
+	{ 
 		path: APP_ROUTES.ROOT, 
 		pathMatch: 'full', 
 		redirectTo: APP_ROUTES.LOGIN.replace('/', '') 
