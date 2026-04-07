@@ -68,6 +68,13 @@ export class ProfileService {
     );
   }
 
+  /**
+   * Get mentee profile (convenience method)
+   */
+  getMenteeProfile(userId: string): Observable<ApiResponse> {
+    return this.getUserProfile(userId);
+  }
+
   private buildMenteeProfileFormData(
     userId: string,
     data: Partial<UpdateMenteeProfileInterface>,

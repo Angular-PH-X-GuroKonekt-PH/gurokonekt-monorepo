@@ -11,7 +11,9 @@ import {
   IsNumber,
   Min,
   IsOptional,
-  Matches
+  Matches,
+  MaxLength,
+  ArrayMinSize
 } from 'class-validator';
 
 export class TimeFrameDto implements TimeFrameInterface {
@@ -92,6 +94,7 @@ export class UpdateMenteeProfileDto implements Partial<UpdateMenteeProfileInterf
   })
   @IsArray()
   @IsString({ each: true })
+  @MaxLength(500, { each: true, message: 'Each learning goal cannot exceed 500 characters' })
   @IsOptional()
   learningGoals?: string[];
 
@@ -102,6 +105,7 @@ export class UpdateMenteeProfileDto implements Partial<UpdateMenteeProfileInterf
   })
   @IsArray()
   @IsString({ each: true })
+  @ArrayMinSize(1, { message: 'At least one area of interest is required' })
   @IsOptional()
   areasOfInterest?: string[];
 

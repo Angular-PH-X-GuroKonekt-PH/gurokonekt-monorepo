@@ -10,6 +10,7 @@ export const APP_ROUTES = {
   SETTINGS: '/settings',
   SETTINGS_OVERVIEW: '/settings/overview',
   FORGOT_PASSWORD: '/forgot-password',
+  SETTINGS_PROFILE: '/settings/profile',
 } as const;
 
 export const SIDEBAR_PREFIX_ROUTES: readonly string[] = [
