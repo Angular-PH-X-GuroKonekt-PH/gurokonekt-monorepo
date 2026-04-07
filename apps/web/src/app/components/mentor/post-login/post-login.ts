@@ -283,7 +283,7 @@ export class MentorPostLogin implements OnInit {
           new AuthActions.UpdateMentorProfile({
             userId: user.id,
             profileData,
-            avatarFile: this.selectedAvatarFile,
+            avatarFile: this.selectedAvatarFile ?? undefined,
           })
         )
       );
