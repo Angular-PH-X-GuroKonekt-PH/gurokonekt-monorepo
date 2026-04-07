@@ -109,7 +109,12 @@ export class AuthState {
 
     // Check if user profile is complete before navigating
     const isProfileComplete = user['isProfileComplete'] === true;
-    this.navigationHelper.navigateToDashboard(user.role, isProfileComplete);
+    const isMentorProfileComplete = user['isMentorProfileComplete'] === true;
+    this.navigationHelper.navigateToDashboard(
+      user.role,
+      isProfileComplete,
+      isMentorProfileComplete
+    );
   }
 
   @Action(AuthActions.LoginFailure)
@@ -275,6 +280,54 @@ export class AuthState {
 
   @Action(AuthActions.UpdateMenteeProfileFailure)
   updateMenteeProfileFailure(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMenteeProfileFailure) {
+    ctx.patchState({
+      isLoading: false,
+      errorMessage: action.error,
+      successMessage: null
+    });
+  }
+
+  @Action(AuthActions.UpdateMentorProfile)
+  updateMentorProfile(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMentorProfile) {
+    ctx.patchState({
+      isLoading: true,
+      errorMessage: null,
+      successMessage: null
+    });
+
+    return this.profileService.updateMentorProfile(
+      action.payload.userId,
+      action.payload.profileData,
+      action.payload.avatarFile
+    ).pipe(
+      tap(() => {
+        ctx.dispatch(new AuthActions.UpdateMentorProfileSuccess('Mentor profile updated successfully!'));
+      }),
+      catchError((error) => {
+        ctx.dispatch(new AuthActions.UpdateMentorProfileFailure(this.getErrorMessage(error)));
+        return throwError(() => error);
+      })
+    );
+  }
+
+  @Action(AuthActions.UpdateMentorProfileSuccess)
+  updateMentorProfileSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMentorProfileSuccess) {
+    const state = ctx.getState();
+    if (!state.user) return;
+
+    ctx.patchState({
+      user: {
+        ...state.user,
+        isMentorProfileComplete: true,
+      },
+      isLoading: false,
+      successMessage: action.message || 'Mentor profile updated successfully!',
+      errorMessage: null
+    });
+  }
+
+  @Action(AuthActions.UpdateMentorProfileFailure)
+  updateMentorProfileFailure(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMentorProfileFailure) {
     ctx.patchState({
       isLoading: false,
       errorMessage: action.error,

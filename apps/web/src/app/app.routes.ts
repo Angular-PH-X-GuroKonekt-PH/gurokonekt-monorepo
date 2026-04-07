@@ -24,6 +24,11 @@ export const appRoutes: Route[] = [
 		loadComponent: () => import('./components/mentee/post-login/post-login').then(m => m.PostLogin),
 		title: 'Complete Your Profile'
 	},
+	{
+		path: APP_ROUTES.MENTOR_PROFILE_SETUP.replace('/', ''),
+		loadComponent: () => import('./components/mentor/post-login/post-login').then(m => m.MentorPostLogin),
+		title: 'Complete Your Mentor Profile'
+	},
 	{ 
 		path: APP_ROUTES.DASHBOARD.replace('/', ''), 
 		canActivate: [dashboardAccessGuard],
