@@ -2,7 +2,10 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError, of } from 'rxjs';
 import { catchError, mergeMap } from 'rxjs/operators';
-import type { UpdateMenteeProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
+import type {
+  UpdateMenteeProfileInterface,
+  UpdateMentorProfileInterface,
+} from '@gurokonekt/models/interfaces/user/user.model';
 
 import { buildApiUrl } from '../helpers/api.helper';
 import { HttpErrorHelper } from '../helpers/http-error.helper';
@@ -30,6 +33,25 @@ export class ProfileService {
       formData
     ).pipe(
       mergeMap((response) => this.validateApiResponse(response, 'Failed to update profile')),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Update mentor profile with required avatar upload during setup
+   */
+  updateMentorProfile(
+    userId: string,
+    data: Partial<UpdateMentorProfileInterface>,
+    avatarFile?: File
+  ): Observable<ApiResponse> {
+    const formData = this.buildMentorProfileFormData(userId, data, avatarFile);
+
+    return this.http.patch<ApiResponse>(
+      buildApiUrl(`/user/${userId}/profile`),
+      formData
+    ).pipe(
+      mergeMap((response) => this.validateApiResponse(response, 'Failed to update mentor profile')),
       catchError(this.handleError)
     );
   }
@@ -68,6 +90,35 @@ export class ProfileService {
     this.appendArrayField(formData, 'learningGoals', data.learningGoals);
     this.appendArrayField(formData, 'areasOfInterest', data.areasOfInterest);
     this.appendFieldIfPresent(formData, 'preferredSessionType', data.preferredSessionType);
+
+    if (data.availability) {
+      formData.append('availability', JSON.stringify(data.availability));
+    }
+
+    formData.append('updatedById', userId);
+
+    if (avatarFile) {
+      formData.append('avatar', avatarFile, avatarFile.name);
+    }
+
+    return formData;
+  }
+
+  private buildMentorProfileFormData(
+    userId: string,
+    data: Partial<UpdateMentorProfileInterface>,
+    avatarFile?: File
+  ): FormData {
+    const formData = new FormData();
+
+    this.appendFieldIfPresent(formData, 'bio', data.bio);
+    this.appendFieldIfPresent(formData, 'phoneNumber', data.phoneNumber);
+    this.appendFieldIfPresent(formData, 'country', data.country);
+    this.appendFieldIfPresent(formData, 'language', data.language);
+    this.appendFieldIfPresent(formData, 'timezone', data.timezone);
+    this.appendFieldIfPresent(formData, 'yearsOfExperience', data.yearsOfExperience?.toString());
+    this.appendArrayField(formData, 'areasOfExpertise', data.areasOfExpertise);
+    this.appendArrayField(formData, 'skills', data.skills);
 
     if (data.availability) {
       formData.append('availability', JSON.stringify(data.availability));

@@ -3,10 +3,11 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { filter, map } from 'rxjs/operators';
 import { ToastContainerComponent } from './components/shared/toast/toast.component';
+import { Sidebar } from './components/sidebar/sidebar';
 import { SIDEBAR_PREFIX_ROUTES } from './constants/routes';
 
 @Component({
-  imports: [RouterModule, ToastContainerComponent],
+  imports: [RouterModule, ToastContainerComponent, Sidebar],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',

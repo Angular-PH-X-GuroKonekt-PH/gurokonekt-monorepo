@@ -1,0 +1,344 @@
+<section class="min-h-screen bg-gradient-to-br from-blue-50 via-emerald-50 to-orange-50 py-8 sm:py-12">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <div class="mb-8 text-center">
+      <img src="assets/logos/logo-light.svg" alt="GuroKonekt Logo" class="h-16 w-16 mx-auto" />
+      <div class="mt-4 flex items-center justify-center gap-1">
+        <span class="text-3xl font-bold text-blue-900">Guro</span>
+        <span class="text-3xl font-bold text-orange-500">Konekt</span>
+      </div>
+    </div>
+
+    <div class="text-center mb-8">
+      <h1 class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-900 via-emerald-600 to-orange-600 bg-clip-text text-transparent">
+        Complete Your Mentor Profile
+      </h1>
+      <p class="mt-3 text-base text-gray-700">Set up your public mentor profile to access your mentor dashboard</p>
+    </div>
+
+    <div class="mb-10">
+      <div class="flex items-center justify-center max-w-3xl mx-auto">
+        @for (step of [1, 2, 3]; track step) {
+          <div class="flex flex-col items-center relative flex-1">
+            <div
+              class="relative flex items-center justify-center w-14 h-14 rounded-full border-2 transition-all duration-300 z-10 bg-white"
+              [class]="currentStep() > step ? 'border-green-500 text-green-600' :
+                       currentStep() === step ? 'border-emerald-500 bg-white text-emerald-500 shadow-lg' :
+                       'border-gray-300 text-gray-700'"
+            >
+              @if (currentStep() > step) {
+                <app-icon name="check-mark" class="w-6 h-6 text-green-600"></app-icon>
+              } @else {
+                <span class="text-lg font-extrabold">{{ step }}</span>
+              }
+            </div>
+
+            @if (step < 3) {
+              <div
+                class="absolute top-6 left-1/2 w-full h-0.5 -z-10"
+                [class]="currentStep() > step ? 'bg-green-500' : 'bg-gray-200'"
+                style="transform: translateX(50%);"
+              ></div>
+            }
+
+            <div class="mt-4 text-center max-w-32">
+              <h3
+                class="text-sm font-semibold leading-tight mb-1"
+                [class]="currentStep() === step ? 'text-emerald-600' :
+                         currentStep() > step ? 'text-green-600' :
+                         'text-gray-500'"
+              >
+                @switch (step) {
+                  @case (1) { About You }
+                  @case (2) { Topics & Skills }
+                  @case (3) { Availability }
+                }
+              </h3>
+            </div>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-8 sm:p-12">
+      <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+        @if (currentStep() === 1) {
+          <div class="space-y-8">
+            <div class="text-center mb-6">
+              <h2 class="text-2xl font-bold text-gray-900">Build Your Mentor Presence</h2>
+              <p class="text-gray-600 mt-2">Add your professional bio and profile photo</p>
+            </div>
+
+            <div class="flex flex-col items-center mb-8">
+              <div class="relative">
+                @if (avatarPreview()) {
+                  <img
+                    [src]="avatarPreview()"
+                    alt="Profile preview"
+                    class="w-32 h-32 rounded-full object-cover border-4 border-emerald-500"
+                  />
+                  <button
+                    type="button"
+                    (click)="removeAvatar()"
+                    class="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-2 hover:bg-red-600 transition-colors"
+                  >
+                    <app-icon name="close" class="w-4 h-4"></app-icon>
+                  </button>
+                } @else {
+                  <div class="w-32 h-32 rounded-full bg-gray-200 flex items-center justify-center border-4 border-dashed border-gray-300">
+                    <app-icon name="user" class="w-12 h-12 text-gray-400"></app-icon>
+                  </div>
+                }
+              </div>
+
+              <label class="mt-4 cursor-pointer">
+                <span class="px-6 py-2 bg-emerald-600 text-white rounded-lg hover:bg-emerald-700 transition-colors inline-block">
+                  Upload Profile Picture <span class="text-red-200">*</span>
+                </span>
+                <input type="file" accept=".jpg,.jpeg,.png" (change)="onAvatarSelected($event)" class="hidden" />
+              </label>
+
+              <p class="text-sm text-gray-500 mt-2">JPG, JPEG or PNG. Max 5MB. Required.</p>
+
+              @if (avatarError()) {
+                <p class="text-sm text-red-600 mt-2">{{ avatarError() }}</p>
+              }
+            </div>
+
+            <div>
+              <div class="block text-sm font-semibold text-gray-700 mb-2">
+                Professional Bio <span class="text-red-500">*</span>
+              </div>
+              <textarea
+                formControlName="bio"
+                rows="5"
+                placeholder="Introduce your experience, mentorship approach, and what mentees can expect from your sessions."
+                class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                [class.border-red-500]="profileForm.get('bio')?.invalid && profileForm.get('bio')?.touched"
+              ></textarea>
+              <div class="flex justify-between items-center mt-1">
+                <span class="text-sm text-gray-500">
+                  {{ profileForm.get('bio')?.value?.length || 0 }} / 500 characters (min: 50)
+                </span>
+                @if (profileForm.get('bio')?.invalid && profileForm.get('bio')?.touched) {
+                  <span class="text-sm text-red-600">
+                    @if (profileForm.get('bio')?.errors?.['required']) {
+                      Bio is required
+                    } @else if (profileForm.get('bio')?.errors?.['minlength']) {
+                      Bio must be at least 50 characters
+                    }
+                  </span>
+                }
+              </div>
+            </div>
+
+            <div class="flex justify-end pt-6">
+              <button
+                type="button"
+                (click)="nextStep()"
+                [disabled]="!canProceedToNextStep()"
+                class="px-8 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (currentStep() === 2) {
+          <div class="space-y-8">
+            <div class="text-center mb-6">
+              <h2 class="text-2xl font-bold text-gray-900">Topics and Skills</h2>
+              <p class="text-gray-600 mt-2">Choose mentorship topics and list additional skills you can teach</p>
+            </div>
+
+            <div>
+              <div class="block text-sm font-semibold text-gray-700 mb-3">
+                Topics of Mentorship <span class="text-red-500">*</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-4">Select one or more expertise areas</p>
+
+              <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-3">
+                @for (topic of expertiseOptions; track topic) {
+                  <button
+                    type="button"
+                    (click)="toggleExpertise(topic)"
+                    class="px-4 py-3 rounded-lg border-2 transition-all text-sm font-medium"
+                    [class]="isExpertiseSelected(topic)
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-white text-gray-700 border-gray-300 hover:border-emerald-500'"
+                  >
+                    {{ topic }}
+                  </button>
+                }
+              </div>
+
+              @if (areasOfExpertise.length === 0) {
+                <p class="text-sm text-red-600 mt-2">Please select at least one mentorship topic</p>
+              }
+            </div>
+
+            <div>
+              <div class="block text-sm font-semibold text-gray-700 mb-3">
+                Additional Skills <span class="text-red-500">*</span>
+              </div>
+              <p class="text-sm text-gray-600 mb-4">Add specific skills you can mentor (max 8)</p>
+
+              <div class="space-y-3">
+                @for (skill of skills.controls; track $index) {
+                  <div class="flex gap-2">
+                    <input
+                      [formControl]="$any(skill)"
+                      type="text"
+                      placeholder="E.g., CV review, React architecture, interview coaching"
+                      class="flex-1 px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 transition-colors"
+                      [class.border-red-500]="skill.invalid && skill.touched"
+                    />
+                    @if (skills.length > 1) {
+                      <button
+                        type="button"
+                        (click)="removeSkill($index)"
+                        class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <app-icon name="close" class="w-5 h-5"></app-icon>
+                      </button>
+                    }
+                  </div>
+                }
+              </div>
+
+              @if (skills.length < 8) {
+                <button
+                  type="button"
+                  (click)="addSkill()"
+                  class="mt-3 px-4 py-2 text-emerald-700 hover:bg-emerald-50 rounded-lg transition-colors flex items-center gap-2"
+                >
+                  <span class="text-xl font-bold">+</span>
+                  Add Skill
+                </button>
+              }
+            </div>
+
+            <div class="flex justify-between pt-6">
+              <button
+                type="button"
+                (click)="previousStep()"
+                class="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Back
+              </button>
+              <button
+                type="button"
+                (click)="nextStep()"
+                [disabled]="!canProceedToNextStep()"
+                class="px-8 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        }
+
+        @if (currentStep() === 3) {
+          <div class="space-y-8">
+            <div class="text-center mb-6">
+              <h2 class="text-2xl font-bold text-gray-900">Set Weekly Availability</h2>
+              <p class="text-gray-600 mt-2">Define when mentees can book sessions with you</p>
+            </div>
+
+            <div class="space-y-4">
+              @for (day of daysOfWeek; track day) {
+                @let schedule = getDaySchedule(day);
+                @if (schedule) {
+                  <div class="border-2 rounded-lg p-4" [class]="schedule.enabled ? 'border-emerald-500 bg-emerald-50' : 'border-gray-200'">
+                    <div class="flex items-center justify-between mb-3">
+                      <label class="flex items-center gap-3 cursor-pointer">
+                        <input
+                          type="checkbox"
+                          [checked]="schedule.enabled"
+                          (change)="toggleDay(day)"
+                          class="w-5 h-5 text-emerald-600 rounded focus:ring-emerald-500"
+                        />
+                        <span class="font-semibold text-gray-900 capitalize">{{ day }}</span>
+                      </label>
+
+                      @if (schedule.enabled && schedule.timeFrames.length < 3) {
+                        <button
+                          type="button"
+                          (click)="addTimeFrame(day)"
+                          class="text-sm px-3 py-1 text-emerald-700 hover:bg-emerald-100 rounded transition-colors"
+                        >
+                          + Add Time
+                        </button>
+                      }
+                    </div>
+
+                    @if (schedule.enabled) {
+                      <div class="space-y-2 ml-8">
+                        @for (timeFrame of schedule.timeFrames; track $index) {
+                          <div class="flex items-center gap-3">
+                            <input
+                              type="time"
+                              [value]="timeFrame.from"
+                              (change)="updateTimeFrame(day, $index, 'from', $any($event.target).value)"
+                              class="px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            />
+                            <span class="text-gray-500">to</span>
+                            <input
+                              type="time"
+                              [value]="timeFrame.to"
+                              (change)="updateTimeFrame(day, $index, 'to', $any($event.target).value)"
+                              class="px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500"
+                            />
+                            @if (schedule.timeFrames.length > 1) {
+                              <button
+                                type="button"
+                                (click)="removeTimeFrame(day, $index)"
+                                class="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
+                              >
+                                <app-icon name="close" class="w-4 h-4"></app-icon>
+                              </button>
+                            }
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                }
+              }
+            </div>
+
+            <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 flex items-start gap-3">
+              <app-icon name="alert-info" class="w-5 h-5 text-blue-600 mt-0.5"></app-icon>
+              <p class="text-sm text-blue-800">Please select at least one day and time slot for mentor sessions.</p>
+            </div>
+
+            <div class="flex justify-between pt-6">
+              <button
+                type="button"
+                (click)="previousStep()"
+                class="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
+              >
+                Back
+              </button>
+              <button
+                type="submit"
+                [disabled]="isSubmitting() || !canProceedToNextStep()"
+                class="px-8 py-3 bg-emerald-600 text-white rounded-lg font-semibold hover:bg-emerald-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center gap-2"
+              >
+                @if (isSubmitting()) {
+                  <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                  Saving...
+                } @else {
+                  Save Profile
+                }
+              </button>
+            </div>
+          </div>
+        }
+      </form>
+    </div>
+  </div>
+</section>

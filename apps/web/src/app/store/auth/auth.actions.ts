@@ -1,5 +1,8 @@
 import { RegisterMenteeRequest, RegisterMentorRequest } from '@gurokonekt/models';
-import type { UpdateMenteeProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
+import type {
+  UpdateMenteeProfileInterface,
+  UpdateMentorProfileInterface,
+} from '@gurokonekt/models/interfaces/user/user.model';
 
 export class Login {
   static readonly type = '[Auth] Login';
@@ -58,6 +61,21 @@ export class UpdateMenteeProfileSuccess {
 
 export class UpdateMenteeProfileFailure {
   static readonly type = '[Auth] Update Mentee Profile Failure';
+  constructor(public error: string) {}
+}
+
+export class UpdateMentorProfile {
+  static readonly type = '[Auth] Update Mentor Profile';
+  constructor(public payload: { userId: string; profileData: Partial<UpdateMentorProfileInterface>; avatarFile?: File }) {}
+}
+
+export class UpdateMentorProfileSuccess {
+  static readonly type = '[Auth] Update Mentor Profile Success';
+  constructor(public message?: string) {}
+}
+
+export class UpdateMentorProfileFailure {
+  static readonly type = '[Auth] Update Mentor Profile Failure';
   constructor(public error: string) {}
 }
 

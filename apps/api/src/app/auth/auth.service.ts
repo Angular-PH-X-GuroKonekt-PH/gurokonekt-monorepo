@@ -245,6 +245,7 @@ export class AuthService {
             hashPassword: hashPassword,
             role: UserRole.Mentor,
             status: UserStatus.PendingApproval,
+            isMentorProfileComplete: false,
             createdById: authId,
             updatedById: authId
           },

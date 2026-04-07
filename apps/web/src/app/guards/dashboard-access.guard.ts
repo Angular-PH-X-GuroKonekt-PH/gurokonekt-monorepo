@@ -3,7 +3,7 @@ import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { Store } from '@ngxs/store';
 
 import { APP_ROUTES } from '../constants/routes';
-import { requiresProfileSetup } from '../helpers/profile-completion.helper';
+import { normalizeRole, requiresProfileSetup } from '../helpers/profile-completion.helper';
 import { AuthState } from '../store/auth/auth.state';
 
 export const dashboardAccessGuard: CanActivateFn = (): boolean | UrlTree => {
@@ -17,8 +17,13 @@ export const dashboardAccessGuard: CanActivateFn = (): boolean | UrlTree => {
   }
 
   const isProfileComplete = user['isProfileComplete'] === true;
+  const isMentorProfileComplete = user['isMentorProfileComplete'] === true;
 
-  if (requiresProfileSetup(user.role, isProfileComplete)) {
+  if (requiresProfileSetup(user.role, isProfileComplete, isMentorProfileComplete)) {
+    if (normalizeRole(user.role) === 'mentor') {
+      return router.createUrlTree([APP_ROUTES.MENTOR_PROFILE_SETUP]);
+    }
+
     return router.createUrlTree([APP_ROUTES.PROFILE_SETUP]);
   }
 
