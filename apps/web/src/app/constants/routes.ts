@@ -4,6 +4,7 @@ export const APP_ROUTES = {
   REGISTER: '/register',
   VERIFY_EMAIL: '/verify-email',
   PROFILE_SETUP: '/profile-setup',
+  MENTOR_PROFILE_SETUP: '/mentor/profile-setup',
   DASHBOARD: '/dashboard',
   MENTOR_DASHBOARD: '/mentor/dashboard',
   FORGOT_PASSWORD: '/forgot-password',

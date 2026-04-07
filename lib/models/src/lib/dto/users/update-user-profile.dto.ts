@@ -165,13 +165,20 @@ export class UpdateMentorProfileDto implements Partial<UpdateMentorProfileInterf
   yearsOfExperience?: number;
 
   @ApiPropertyOptional()
-  @Transform(({ value }) => Array.isArray(value) ? value : JSON.parse(value || '[]'))
+  @Transform(({ value }) => {
+    if (typeof value === 'string') return [value];
+    return Array.isArray(value) ? value : [];
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
   areasOfExpertise?: string[];
 
   @ApiPropertyOptional({ type: [String] })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') return [value];
+    return Array.isArray(value) ? value : [];
+  })
   @IsArray()
   @IsString({ each: true })
   @IsOptional()
@@ -184,6 +191,12 @@ export class UpdateMentorProfileDto implements Partial<UpdateMentorProfileInterf
   sessionRate?: number;
 
   @ApiPropertyOptional({ type: [UserAvailabilityDto] })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') {
+      try { return JSON.parse(value); } catch { return value; }
+    }
+    return value;
+  })
   @IsArray()
   @ValidateNested({ each: true })
   @Type(() => UserAvailabilityDto)

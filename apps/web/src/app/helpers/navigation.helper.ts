@@ -44,16 +44,20 @@ export class NavigationHelper {
   /**
    * Navigate to dashboard based on user role and profile completion status
    */
-  async navigateToDashboard(role: string, isProfileComplete?: boolean): Promise<boolean> {
-    if (requiresProfileSetup(role, isProfileComplete)) {
+  async navigateToDashboard(
+    role: string,
+    isProfileComplete?: boolean,
+    isMentorProfileComplete?: boolean
+  ): Promise<boolean> {
+    if (requiresProfileSetup(role, isProfileComplete, isMentorProfileComplete)) {
+      if (normalizeRole(role) === 'mentor') {
+        return this.router.navigate([APP_ROUTES.MENTOR_PROFILE_SETUP]);
+      }
+
       return this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
     }
     
-    if (normalizeRole(role) === 'mentor') {
-      return this.router.navigate([APP_ROUTES.MENTOR_DASHBOARD]);
-    } else {
-      return this.router.navigate([APP_ROUTES.DASHBOARD]);
-    }
+    return this.router.navigate([APP_ROUTES.DASHBOARD]);
   }
 
   /**

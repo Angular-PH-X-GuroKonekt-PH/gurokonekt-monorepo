@@ -519,8 +519,11 @@ export class UserService {
         };
       }
 
-      const isProfileComplete = user.isProfileComplete;
       const role = user.role as UserRole;
+      const isProfileComplete = role === UserRole.Mentor
+        ? user.isMentorProfileComplete
+        : user.isProfileComplete;
+
       const effectiveDto: UpdateMenteeProfileDto | UpdateMentorProfileDto = role === UserRole.Mentee
         ? (() => {
             const currentDto = dto as UpdateMenteeProfileDto;
@@ -549,7 +552,33 @@ export class UserService {
               availability: normalizeAvailability(currentDto.availability),
             };
           })()
-        : dto;
+        : (() => {
+            const currentDto = dto as UpdateMentorProfileDto;
+            const normalizeToArray = (value: unknown): string[] | undefined => {
+              if (Array.isArray(value)) return value as string[];
+              if (typeof value === 'string' && value.trim().length > 0) return [value];
+              return undefined;
+            };
+            const normalizeAvailability = (value: unknown): UpdateMentorProfileDto['availability'] => {
+              if (Array.isArray(value)) return value;
+              if (typeof value === 'string') {
+                try {
+                  const parsed = JSON.parse(value);
+                  return Array.isArray(parsed) ? parsed : undefined;
+                } catch {
+                  return undefined;
+                }
+              }
+              return undefined;
+            };
+
+            return {
+              ...currentDto,
+              skills: normalizeToArray(currentDto.skills),
+              areasOfExpertise: normalizeToArray(currentDto.areasOfExpertise),
+              availability: normalizeAvailability(currentDto.availability),
+            };
+          })();
 
       if (!isProfileComplete) {
         try {
@@ -577,7 +606,11 @@ export class UserService {
       }
 
       
-      const userUpdateData = UserProfileValidator.buildUserUpdateData(effectiveDto, isProfileComplete);
+      const userUpdateData = UserProfileValidator.buildUserUpdateData(
+        effectiveDto,
+        isProfileComplete,
+        role
+      );
 
       let profileResponse: Record<string, unknown> | null = null;
 
@@ -600,7 +633,11 @@ export class UserService {
           });
         });
       } else if (role === UserRole.Mentee) {
-        const userUpdateData = UserProfileValidator.buildUserUpdateData(effectiveDto, isProfileComplete);
+        const userUpdateData = UserProfileValidator.buildUserUpdateData(
+          effectiveDto,
+          isProfileComplete,
+          role
+        );
         const currentDto = effectiveDto as UpdateMenteeProfileDto;
         const payload = {
           bio: currentDto.bio,
