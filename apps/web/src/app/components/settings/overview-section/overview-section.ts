@@ -26,7 +26,7 @@ interface OverviewData {
       <div class="mb-6 flex items-start justify-between gap-4">
         <div>
           <h2 class="text-2xl font-bold text-gray-900">Overview Section</h2>
-          <p class="mt-1 text-sm text-gray-600">Review your mentor profile basics and account identity details.</p>
+          <p class="mt-1 text-sm text-gray-600">{{ sectionDescription() }}</p>
         </div>
 
         <button
@@ -93,10 +93,12 @@ interface OverviewData {
               <p class="mt-1 text-base font-medium text-gray-900">{{ accountTypeLabel() }}</p>
             </div>
 
-            <div>
-              <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Mentor Status</p>
-              <p class="mt-1 text-base font-medium text-gray-900">{{ statusLabel() }}</p>
-            </div>
+            @if (!isMentee()) {
+              <div>
+                <p class="text-xs font-semibold uppercase tracking-wide text-gray-500">Mentor Status</p>
+                <p class="mt-1 text-base font-medium text-gray-900">{{ statusLabel() }}</p>
+              </div>
+            }
           </div>
         </div>
 
@@ -135,12 +137,12 @@ export class OverviewSection {
     const activeProfile = this.profile();
 
     if (!activeProfile) {
-      return 'M';
+      return '--';
     }
 
     const fullName = activeProfile.fullName.trim();
     if (!fullName) {
-      return 'M';
+      return '--';
     }
 
     return fullName
@@ -153,6 +155,12 @@ export class OverviewSection {
 
   protected readonly statusLabel = computed(() => this.mapStatusLabel(this.profile()?.status));
   protected readonly accountTypeLabel = computed(() => this.mapRoleLabel(this.profile()?.role));
+  protected readonly isMentee = computed(() => (this.profile()?.role ?? '').toLowerCase().trim() === 'mentee');
+  protected readonly sectionDescription = computed(() =>
+    this.isMentee()
+      ? 'Review your basic account and identity details.'
+      : 'Review your mentor profile basics and account identity details.',
+  );
 
   constructor() {
     effect(() => {
@@ -197,7 +205,7 @@ export class OverviewSection {
     const firstName = this.getString(source['firstName']);
     const lastName = this.getString(source['lastName']);
     const fallbackFullName = this.getString(source['fullName']);
-    const fullName = `${firstName} ${lastName}`.trim() || fallbackFullName || 'Mentor';
+    const fullName = `${firstName} ${lastName}`.trim() || fallbackFullName || 'User';
 
     const avatarRecord = this.getAvatarRecord(source['avatarAttachments']);
 
@@ -206,7 +214,7 @@ export class OverviewSection {
       lastName,
       fullName,
       email: this.getString(source['email']),
-      role: this.getString(source['role']) || 'mentor',
+      role: this.getString(source['role']),
       status: this.getString(source['status']) || 'pending_approval',
       avatarUrl: this.getString(avatarRecord?.publicUrl),
     };
