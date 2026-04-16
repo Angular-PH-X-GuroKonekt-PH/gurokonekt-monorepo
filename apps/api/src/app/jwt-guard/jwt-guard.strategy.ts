@@ -1,21 +1,28 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy, ExtractJwt } from 'passport-jwt';
-import * as jwksRsa from 'jwks-rsa';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class JwtGuardStrategy extends PassportStrategy(Strategy) {
+  private readonly logger = new Logger(JwtGuardStrategy.name);
+
   constructor(private readonly prisma: PrismaService) {
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
-      secretOrKeyProvider: jwksRsa.passportJwtSecret({
-        cache: true,
-        rateLimit: true,
-        jwksRequestsPerMinute: 5,
-        jwksUri: 'https://utsktclxlwtjedrhqtuh.supabase.co/auth/v1/.well-known/jwks.json',
-      }),
-      algorithms: ['ES256'],
+      secretOrKeyProvider: (
+        _request: unknown,
+        _rawJwtToken: unknown,
+        done: (err: Error | null, secret?: string) => void,
+      ) => {
+        const secret = process.env['JWT_SECRET'];
+        if (!secret) {
+          done(new Error('JWT_SECRET environment variable is not set'));
+          return;
+        }
+        done(null, secret);
+      },
+      algorithms: ['HS256'],
     });
   }
 
@@ -26,20 +33,37 @@ export class JwtGuardStrategy extends PassportStrategy(Strategy) {
       role?: string;
     };
 
-    const blockedStatuses = ['inactive', 'banned', 'deleted', 'suspended'];
-    const dbUser = await this.prisma.db.user.findUnique({
-      where: { id: user.sub },
-      select: { status: true },
-    });
-
-    if (!dbUser || blockedStatuses.includes(dbUser.status)) {
+    if (!user.sub) {
+      this.logger.warn('JWT payload missing sub claim');
       return null;
     }
 
-    return {
-      id: user.sub,
-      email: user.email,
-      role: user.role,
-    };
+    const blockedStatuses = ['inactive', 'banned', 'deleted', 'suspended'];
+
+    try {
+      const dbUser = await this.prisma.db.user.findUnique({
+        where: { id: user.sub },
+        select: { status: true },
+      });
+
+      if (!dbUser) {
+        this.logger.warn(`User not found in DB: ${user.sub}`);
+        return null;
+      }
+
+      if (blockedStatuses.includes(dbUser.status)) {
+        this.logger.warn(`User ${user.sub} has blocked status: ${dbUser.status}`);
+        return null;
+      }
+
+      return {
+        id: user.sub,
+        email: user.email,
+        role: user.role,
+      };
+    } catch (err) {
+      this.logger.error(`DB error during JWT validation: ${(err as Error).message}`);
+      return null;
+    }
   }
 }
