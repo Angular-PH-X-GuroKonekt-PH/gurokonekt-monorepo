@@ -125,7 +125,7 @@ export class Register
       const registrationData: RegisterMenteeRequest = {
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: formData.email,
+        email: formData.email.toLowerCase().trim(),
         phoneNumber: formatPhoneToE164(
           formData.phoneNumber,
           formData.country || 'PH'
