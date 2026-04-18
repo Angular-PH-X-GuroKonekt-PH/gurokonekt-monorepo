@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -28,6 +30,7 @@ import {
   CreateBookingDto,
   MentorBookingsQueryDto,
   ResponseDto,
+  ResponseStatus,
   SWAGGER_DOCUMENTATION,
   UpdateBookingDto,
 } from '@gurokonekt/models';
@@ -79,7 +82,21 @@ export class BookingController {
     @Body() dto: CreateBookingDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.create(dto, req.user.id);
+    const response = await this.bookingService.create(dto, req.user.id);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -106,7 +123,21 @@ export class BookingController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
   async findAll() {
-    return this.bookingService.findAll();
+    const response = await this.bookingService.findAll();
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -145,7 +176,21 @@ export class BookingController {
     @Query() query: MentorBookingsQueryDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.findMentorBookings(req.user.id, req.user.id, query);
+    const response = await this.bookingService.findMentorBookings(req.user.id, req.user.id, query);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -183,7 +228,21 @@ export class BookingController {
     @Param('userId') userId: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.findByUserId(userId, req.user.id);
+    const response = await this.bookingService.findByUserId(userId, req.user.id);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -227,7 +286,21 @@ export class BookingController {
     @Param('id') id: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.findById(id, req.user.id);
+    const response = await this.bookingService.findById(id, req.user.id);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -274,7 +347,21 @@ export class BookingController {
     @Body() dto: ApproveBookingDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.approveBooking(id, req.user.id, dto);
+    const response = await this.bookingService.approveBooking(id, req.user.id, dto);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -313,7 +400,21 @@ export class BookingController {
     @Param('id') id: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.rejectBooking(id, req.user.id);
+    const response = await this.bookingService.rejectBooking(id, req.user.id);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -352,7 +453,21 @@ export class BookingController {
     @Param('id') id: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.completeBooking(id, req.user.id);
+    const response = await this.bookingService.completeBooking(id, req.user.id);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -397,7 +512,21 @@ export class BookingController {
     @Body() dto: UpdateBookingDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.update(id, dto, req.user.id);
+    const response = await this.bookingService.update(id, dto, req.user.id);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 
   // ====================================================
@@ -435,6 +564,20 @@ export class BookingController {
     @Param('id') id: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.bookingService.softDelete(id, req.user.id);
+    const response = await this.bookingService.softDelete(id, req.user.id);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
   }
 }

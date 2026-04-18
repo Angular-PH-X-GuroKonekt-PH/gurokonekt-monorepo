@@ -37,7 +37,6 @@ export const appRoutes: Route[] = [
 	},
 	{
 		path: APP_ROUTES.MENTOR_DASHBOARD.replace('/', ''),
-		canActivate: [dashboardAccessGuard],
 		redirectTo: APP_ROUTES.DASHBOARD.replace('/', ''),
 		pathMatch: 'full',
 	},

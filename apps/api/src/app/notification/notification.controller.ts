@@ -3,6 +3,8 @@ import {
   Controller,
   Delete,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Patch,
   Post,
@@ -23,6 +25,7 @@ import { NotificationService } from './notification.service';
 import {
   CreateNotificationDto,
   ResponseDto,
+  ResponseStatus,
   SWAGGER_DOCUMENTATION,
   UpdateNotificationDto,
 } from '@gurokonekt/models';
@@ -84,7 +87,19 @@ export class NotificationController {
   @ApiResponse({ status: 400, description: 'Validation error — missing required fields or invalid type.' })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
   async create(@Body() dto: CreateNotificationDto) {
-    return this.notificationService.create(dto);
+    const response = await this.notificationService.create(dto);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 
   // ====================================================
@@ -112,7 +127,19 @@ export class NotificationController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
   async findMyNotifications(@Req() req: Request & { user: { id: string } }) {
-    return this.notificationService.findMyNotifications(req.user.id);
+    const response = await this.notificationService.findMyNotifications(req.user.id);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 
   // ====================================================
@@ -139,7 +166,19 @@ export class NotificationController {
   })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
   async findAll() {
-    return this.notificationService.findAll();
+    const response = await this.notificationService.findAll();
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 
   // ====================================================
@@ -177,7 +216,19 @@ export class NotificationController {
     @Param('userId') userId: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.notificationService.findByUserId(userId, req.user.id);
+    const response = await this.notificationService.findByUserId(userId, req.user.id);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 
   // ====================================================
@@ -222,7 +273,19 @@ export class NotificationController {
     @Param('id') id: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.notificationService.findById(id, req.user.id);
+    const response = await this.notificationService.findById(id, req.user.id);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 
   // ====================================================
@@ -261,7 +324,19 @@ export class NotificationController {
     @Param('id') id: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.notificationService.markAsRead(id, req.user.id);
+    const response = await this.notificationService.markAsRead(id, req.user.id);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 
   // ====================================================
@@ -313,7 +388,19 @@ export class NotificationController {
     @Body() dto: UpdateNotificationDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.notificationService.update(id, dto, req.user.id);
+    const response = await this.notificationService.update(id, dto, req.user.id);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 
   // ====================================================
@@ -351,6 +438,18 @@ export class NotificationController {
     @Param('id') id: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    return this.notificationService.softDelete(id, req.user.id);
+    const response = await this.notificationService.softDelete(id, req.user.id);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 }

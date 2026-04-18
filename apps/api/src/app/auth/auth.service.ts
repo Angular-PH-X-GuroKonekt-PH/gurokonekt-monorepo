@@ -32,14 +32,17 @@ export class AuthService {
    *    configuration in the supabase authentication
    * */ 
   async registerMentee(dto: RegisterMenteeDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+    // Normalize email to lowercase and trim whitespace
+    const normalizedEmail = dto.email.toLowerCase().trim();
+
     try {
       // Check if user already exists in DB
       const existingUser = await this.prisma.db.user.findUnique({
-        where: { email: dto.email }
+        where: { email: normalizedEmail }
       });
 
       if (existingUser) {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email})`);
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail})`);
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
@@ -50,7 +53,7 @@ export class AuthService {
 
       // Create user in Supabase Auth
       const { data, error } = await this.supabase.client.auth.signUp({
-        email: dto.email,
+        email: normalizedEmail,
         password: dto.password
       });   
 
@@ -75,7 +78,7 @@ export class AuthService {
       }
 
       if (!data.user.identities || data.user.identities.length === 0) {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email}) — Supabase identity empty`);
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail}) — Supabase identity empty`);
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
@@ -93,7 +96,7 @@ export class AuthService {
           middleName: dto.middleName ?? null,
           lastName: dto.lastName,
           suffix: dto.suffix ?? null,
-          email: dto.email,
+          email: normalizedEmail,
           country: dto.country,
           language: dto.language,
           timezone: dto.timezone,
@@ -132,7 +135,7 @@ export class AuthService {
       }
     } catch (error) {
       if (error?.code === 'P2002') {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email}) — DB constraint`);
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail}) — DB constraint`);
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
@@ -177,10 +180,13 @@ export class AuthService {
    * 10. if error occured, return error else return success with status 200
    * */ 
   async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string): Promise<ResponseDto> {
+    // Normalize email to lowercase and trim whitespace
+    const normalizedEmail = dto.email.toLowerCase().trim();
+
     try {
       // Check if user already exists
       const existingUser = await this.prisma.db.user.findUnique({
-        where: { email: dto.email },
+        where: { email: normalizedEmail },
       });
 
       if (existingUser) {
@@ -193,7 +199,7 @@ export class AuthService {
       }
 
       const { data, error } = await this.supabase.client.auth.signUp({
-        email: dto.email,
+        email: normalizedEmail,
         password: dto.password
       });   
 
@@ -218,7 +224,7 @@ export class AuthService {
       }
 
       if (!data.user.identities || data.user.identities.length === 0) {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email}) — Supabase identity empty`);
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail}) — Supabase identity empty`);
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
@@ -237,7 +243,7 @@ export class AuthService {
             middleName: dto.middleName ?? null,
             lastName: dto.lastName,
             suffix: dto.suffix ?? null,
-            email: dto.email,
+            email: normalizedEmail,
             country: dto.country,
             language: dto.language ?? 'en',
             timezone: dto.timezone,
@@ -304,7 +310,7 @@ export class AuthService {
       }
     } catch (error) {
       if (error?.code === 'P2002') {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${dto.email}) — DB constraint`);
+        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail}) — DB constraint`);
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
