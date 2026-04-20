@@ -2,7 +2,7 @@ import { Route } from '@angular/router';
 import { dashboardAccessGuard } from '../guards/dashboard-access.guard';
 
 export const MENTEE_ROUTES: Route[] = [
-   {
+  {
     path: '',
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>
@@ -12,11 +12,8 @@ export const MENTEE_ROUTES: Route[] = [
     children: [
       {
         path: '',
-       loadComponent: () =>
-      import('../components/layouts/mentee-lyout/mentee-layout').then(
-        (m) => m.MenteeLayout
-      ),
         pathMatch: 'full',
+        redirectTo: 'dashboard',
       },
       {
         path: 'dashboard',
@@ -57,8 +54,7 @@ export const MENTEE_ROUTES: Route[] = [
             (m) => m.ProfileSettings
           ),
         title: 'Profile Settings',
-      }
+      },
     ],
-    
   },
 ];

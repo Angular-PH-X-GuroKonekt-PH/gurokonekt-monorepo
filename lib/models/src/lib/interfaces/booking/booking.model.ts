@@ -53,3 +53,10 @@ export interface BookingWithUsersInterface extends BookingInterface {
   mentor?: BookingUserSummaryInterface | null;
   mentee?: BookingUserSummaryInterface | null;
 }
+
+
+
+export interface BookingCardInterface extends BookingInterface {
+  mentor?: BookingUserSummaryInterface | null;
+  mentee?: BookingUserSummaryInterface | null;
+}

@@ -6,65 +6,162 @@
 
   <app-mentor-search />
 
-  <!-- Loading spinner -->
-  @if (isLoading()) {
-    <div class="flex items-center justify-center py-20">
-      <svg class="h-8 w-8 animate-spin text-blue-600" fill="none" viewBox="0 0 24 24">
-        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" />
-        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-      </svg>
-    </div>
+  @if (vm$ | async; as vm) {
+  <!-- Loading -->
+  @if (vm.isLoading) {
+  <app-mentor-card-skeleton [count]="6" />
   }
 
   <!-- Error -->
-  @if (!isLoading() && error()) {
-    <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-      <svg class="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-        <path fill-rule="evenodd"
-          d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-          clip-rule="evenodd" />
-      </svg>
-      {{ error() }}
-    </div>
+  @if (!vm.isLoading && vm.error) {
+  <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    <svg class="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+      <path fill-rule="evenodd"
+        d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+        clip-rule="evenodd" />
+    </svg>
+    {{ vm.error }}
+  </div>
   }
 
   <!-- Empty states -->
-  @if (!isLoading() && !error()) {
-    @if (hasSearched() && cards().length === 0) {
-      <p class="text-center text-gray-500 py-16">No mentors found. Try adjusting your filters.</p>
-    }
-    @if (!hasSearched()) {
-      <p class="text-center text-gray-400 py-16">Use the search above to find mentors.</p>
-    }
+  @if (!vm.isLoading && !vm.error) {
+  @if (vm.hasSearched && vm.cards.length === 0) {
+  <div
+    class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
+    <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
+      <app-icon name="magnifying-glass" class="h-7 w-7 text-blue-900"></app-icon>
+    </div>
+
+    <h3 class="text-base font-semibold text-heading">No mentors match your search</h3>
+    <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+      We could not find mentors that match the selected filters. Try broadening your
+      search criteria or clearing a few filters to see more results.
+    </p>
+  </div>
+  }
+  @if (!vm.hasSearched) {
+  <div
+    class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
+    <div
+      class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100">
+      <app-icon name="users" class="h-7 w-7 text-orange-500"></app-icon>
+    </div>
+
+    <h3 class="text-base font-semibold text-heading">Start finding mentors</h3>
+    <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+      Use the search and filters above to discover mentors based on skills, expertise,
+      availability, rating, or name.
+    </p>
+  </div>
+  }
   }
 
   <!-- Results -->
-  @if (!isLoading() && cards().length > 0) {
-    <div class="flex flex-col gap-4">
-      <div class="text-sm text-gray-400">
-        Showing {{ cards().length }} of {{ totalCount() }} mentor{{ totalCount() === 1 ? '' : 's' }} found
+  @if (!vm.isLoading && vm.cards.length > 0) {
+  <div class="flex flex-col gap-4">
+    <div class="text-sm text-gray-400">
+      Showing {{ vm.cards.length }} of {{ vm.totalCount }} mentor{{ vm.totalCount === 1 ? '' : 's' }} found
+    </div>
+    <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
+      @for (card of vm.cards; track card.id) {
+      <app-mentor-card [uid]="card.id" [fullName]="card.fullName" [tagline]="card.tagline" [bio]="card.bio"
+        [avatarUrl]="card.avatarUrl" [rating]="card.rating" [reviewCount]="card.reviewCount"
+        [hourlyRate]="card.sessionRate" [skills]="card.skills" [availability]="card.availability" />
+      }
+    </div>
+    <gk-pagination [currentPage]="vm.currentPage" [pageSize]="vm.pageSize" [totalItems]="vm.totalCount"
+      (pageChange)="onPageChange($event, vm.currentPage)" />
+  </div>
+  }
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  <section class="grid grid-cols-1 gap-6 ">
+    <app-section-card>
+
+      <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+
+        <app-section-title title="Recommended Mentor"
+          subtitle="Mentors that matches your interest."></app-section-title>
+
       </div>
-      <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
-        @for (card of cards(); track card.id) {
-          <app-mentor-card
-            [uid]="card.id"
-            [fullName]="card.fullName"
-            [tagline]="card.tagline"
-            [bio]="card.bio"
-            [avatarUrl]="card.avatarUrl"
-            [rating]="card.rating"
-            [reviewCount]="card.reviewCount"
-            [hourlyRate]="card.sessionRate"
-            [skills]="card.skills"
-            [availability]="card.availability" />
+
+      @if (recommendedMentors$ | async; as mentors) {
+      @if (mentors.length === 0) {
+      <div
+        class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
+        <div
+          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
+          <app-icon name="users" class="h-7 w-7 text-blue-900"></app-icon>
+        </div>
+
+        <h3 class="text-base font-semibold text-heading">No mentor recommendations yet</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+          We could not find available mentor recommendations at the moment. Try updating your
+          interests or browse all mentors to discover more options.
+        </p>
+      </div>
+      } @else {
+      <div class="space-y-5">
+        <div class="overflow-hidden">
+          <div class="flex transition-transform duration-500 ease-out"
+            [style.transform]="'translateX(-' + (currentMentorSlide() * (100 / 3)) + '%)'">
+            @for (mentor of mentors; track mentor.id) {
+            <div class="w-full shrink-0 px-3 md:w-1/2 lg:w-1/3">
+              <app-recommended-mentor-card [mentor]="mentor" />
+            </div>
+            }
+          </div>
+        </div>
+
+        @if (mentors.length > 3) {
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="previousMentorSlide(getMaxMentorSlide(mentors.length))"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-default-medium bg-white px-4 py-2.5 text-sm font-medium text-heading shadow-xs transition hover:bg-neutral-secondary-medium focus:outline-none focus:ring-4 focus:ring-brand-subtle">
+              Previous
+            </button>
+
+            <button type="button" (click)="nextMentorSlide(getMaxMentorSlide(mentors.length))"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-default-medium bg-white px-4 py-2.5 text-sm font-medium text-heading shadow-xs transition hover:bg-neutral-secondary-medium focus:outline-none focus:ring-4 focus:ring-brand-subtle">
+              Next
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            @for (slideIndex of getMentorSlideIndexes(mentors.length); track slideIndex) {
+            <button type="button" (click)="setMentorSlide(slideIndex)"
+              class="h-2.5 w-8 rounded-full transition-all duration-300"
+              [class.bg-orange-500]="currentMentorSlide() === slideIndex"
+              [class.bg-slate-200]="currentMentorSlide() !== slideIndex"
+              [attr.aria-label]="'Go to mentor slide ' + (slideIndex + 1)"></button>
+            }
+          </div>
+        </div>
         }
       </div>
-      <gk-pagination
-        [currentPage]="currentPage()"
-        [pageSize]="pageSize()"
-        [totalItems]="totalCount()"
-        (pageChange)="onPageChange($event)" />
-    </div>
-  }
+      }
+      }
+      @else {
+      <app-mentor-card-skeleton [count]="3" />
+      }
+    </app-section-card>
+
+
+  </section>
+
 
 </div>

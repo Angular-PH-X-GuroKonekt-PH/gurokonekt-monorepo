@@ -1,0 +1,42 @@
+<div
+  class="group flex h-full w-full flex-col rounded-3xl border border-slate-200/80 bg-linear-to-br from-white to-slate-50 p-5 text-left shadow-[0_10px_24px_rgba(15,23,42,0.04)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(15,23,42,0.08)] hover:ring-1 hover:ring-blue-200 focus:outline-none">
+  <div class="mb-4 flex items-start justify-between gap-4">
+    <div class="flex items-start gap-3">
+
+      <img class="h-16 w-16 rounded-2xl border border-slate-100 object-cover shadow-sm"
+        [src]="completedBooking().mentor?.avatarAttachments?.[0]?.publicUrl || 'assets/img/no_profile_avatar.png'"
+        [alt]="completedBooking().mentor ? completedBooking().mentor!.firstName + ' ' + completedBooking().mentor!.lastName : 'Mentor'">
+      <div class="flex flex-col gap-2">
+
+        <p class="text-base font-semibold text-heading">Session with
+          @if (completedBooking().mentor) {
+          {{ completedBooking().mentor!.firstName }} {{ completedBooking().mentor!.lastName }}
+          } @else {
+          Unknown Mentor
+          }</p>
+
+        <span class="inline-flex items-center gap-1.5 text-sm text-body">
+          <app-icon name="calendar-days" class="h-4 w-4 text-orange-500"></app-icon>
+           {{ completedBooking().sessionDateTime | date: 'MMM d, y' }}
+        </span>
+        <app-session-badge [status]="completedBooking().status"></app-session-badge>
+
+      </div>
+    </div>
+
+    
+    <app-star-rating [rating]="0" />
+   
+
+  </div>
+
+  @if(completedBooking().status === 'COMPLETED') {
+  <div class="mt-auto flex items-center justify-end  border-slate-100 pt-4">
+    <button type="button"
+      class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-heading shadow-xs ring-1 ring-slate-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 hover:ring-2 hover:ring-orange-100 sm:w-auto">
+      <app-icon name="star" class="h-5 w-5 text-orange-500"></app-icon>
+      Add Rating
+    </button>
+  </div>
+  }
+</div>

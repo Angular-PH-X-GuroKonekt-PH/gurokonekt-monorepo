@@ -1,10 +1,7 @@
-import { Component, OnInit, DestroyRef, inject, signal, computed } from '@angular/core';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { Component, computed, inject, signal } from '@angular/core';
 import { Router, ActivatedRoute } from '@angular/router';
 import { FormBuilder, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { CommonModule } from '@angular/common';
-import { debounceTime, distinctUntilChanged } from 'rxjs/operators';
-import { MentorSearchService } from '../../../services/mentor-search.service';
 import {
   MentorSearchFilter,
   AvailabilityOption,
@@ -12,8 +9,6 @@ import {
   SearchSortOrder,
 } from '@gurokonekt/models/interfaces/search/search.model';
 import { IconComponent } from '../icon/icon.component';
-
-const USE_REAL_METADATA_API = false;
 
 const DUMMY_SKILLS = [
   'Angular',
@@ -54,12 +49,10 @@ const DUMMY_EXPERTISE = [
   templateUrl: './mentor-search.html',
   styleUrl: './mentor-search.scss',
 })
-export class MentorSearch implements OnInit {
+export class MentorSearch {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly route = inject(ActivatedRoute);
-  private readonly mentorSvc = inject(MentorSearchService);
-  private readonly destroyRef = inject(DestroyRef);
 
   showFilterPanel = signal(false);
   showSkillDropdown = signal(false);
@@ -70,8 +63,19 @@ export class MentorSearch implements OnInit {
   selectedExpertise = signal<string[]>([]);
   skillQuery = signal('');
 
-  allSkills = signal<string[]>([]);
-  allExpertise = signal<string[]>([]);
+  allSkills = signal<string[]>(DUMMY_SKILLS);
+  allExpertise = signal<string[]>(DUMMY_EXPERTISE);
+
+  filterForm: FormGroup = this.fb.group({
+    name: [''],
+    minRating: [null],
+    availability: [null],
+    minSessionRate: [null],
+    maxSessionRate: [null],
+    minYearsExperience: [null],
+    sortBy: [null],
+    sortOrder: [SearchSortOrder.DESC],
+  });
 
   filteredSkills = computed(() =>
     this.allSkills().filter(
@@ -81,8 +85,8 @@ export class MentorSearch implements OnInit {
     )
   );
 
-  activeFilterCount = computed(() => {
-    const value = this.filterForm?.value ?? {};
+  activeFilterCount(): number {
+    const value = this.filterForm.value ?? {};
 
     return [
       !!value.name?.trim(),
@@ -95,7 +99,7 @@ export class MentorSearch implements OnInit {
       value.minYearsExperience != null,
       !!value.sortBy,
     ].filter(Boolean).length;
-  });
+  }
 
   readonly ratingOptions = [
     { label: '4★ & up', value: 4 },
@@ -123,41 +127,15 @@ export class MentorSearch implements OnInit {
     { label: 'Ascending', value: SearchSortOrder.ASC },
   ];
 
-  filterForm!: FormGroup;
-
-  ngOnInit(): void {
-    this.filterForm = this.fb.group({
-      name: [''],
-      minRating: [null],
-      availability: [null],
-      minSessionRate: [null],
-      maxSessionRate: [null],
-      minYearsExperience: [null],
-      sortBy: [null],
-      sortOrder: [SearchSortOrder.DESC],
-    });
-
+  constructor() {
     const params = this.route.snapshot.queryParams;
     if (Object.keys(params).length) {
       this.hydrateFromParams(params);
     }
-
-    this.loadMetadata();
-
-    this.filterForm
-      .get('name')!
-      .valueChanges.pipe(
-        debounceTime(300),
-        distinctUntilChanged(),
-        takeUntilDestroyed(this.destroyRef)
-      )
-      .subscribe(() => this.onFilterChange());
   }
 
   private hydrateFromParams(params: Record<string, string>): void {
-    if (params['name']) {
-      this.filterForm.get('name')!.setValue(params['name'], { emitEvent: false });
-    }
+    this.patchFilterControl('name', params['name']);
 
     if (params['skills']) {
       this.selectedSkills.set(params['skills'].split(',').filter(Boolean));
@@ -168,70 +146,36 @@ export class MentorSearch implements OnInit {
     }
 
     if (params['minRating']) {
-      this.filterForm.get('minRating')!.setValue(Number(params['minRating']), {
-        emitEvent: false,
-      });
+      this.patchFilterControl('minRating', Number(params['minRating']));
     }
 
     if (params['availability']) {
-      this.filterForm
-        .get('availability')!
-        .setValue(params['availability'] as AvailabilityOption, { emitEvent: false });
+      this.patchFilterControl('availability', params['availability'] as AvailabilityOption);
     }
 
     if (params['minSessionRate']) {
-      this.filterForm
-        .get('minSessionRate')!
-        .setValue(Number(params['minSessionRate']), { emitEvent: false });
+      this.patchFilterControl('minSessionRate', Number(params['minSessionRate']));
     }
 
     if (params['maxSessionRate']) {
-      this.filterForm
-        .get('maxSessionRate')!
-        .setValue(Number(params['maxSessionRate']), { emitEvent: false });
+      this.patchFilterControl('maxSessionRate', Number(params['maxSessionRate']));
     }
 
     if (params['minYearsExperience']) {
-      this.filterForm
-        .get('minYearsExperience')!
-        .setValue(Number(params['minYearsExperience']), { emitEvent: false });
+      this.patchFilterControl('minYearsExperience', Number(params['minYearsExperience']));
     }
 
     if (params['sortBy']) {
-      this.filterForm
-        .get('sortBy')!
-        .setValue(params['sortBy'] as SearchSortBy, { emitEvent: false });
+      this.patchFilterControl('sortBy', params['sortBy'] as SearchSortBy);
     }
 
     if (params['sortOrder']) {
-      this.filterForm
-        .get('sortOrder')!
-        .setValue(params['sortOrder'] as SearchSortOrder, { emitEvent: false });
+      this.patchFilterControl('sortOrder', params['sortOrder'] as SearchSortOrder);
     }
   }
 
-  private loadMetadata(): void {
-    if (!USE_REAL_METADATA_API) {
-      this.allSkills.set(DUMMY_SKILLS);
-      this.allExpertise.set(DUMMY_EXPERTISE);
-      return;
-    }
-
-    this.mentorSvc
-      .getSkillOptions()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (skills) => this.allSkills.set(skills),
-        error: () => this.allSkills.set(DUMMY_SKILLS),
-      });
-
-    this.mentorSvc
-      .getExpertiseOptions()
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: (expertise) => this.allExpertise.set(expertise),
-        error: () => this.allExpertise.set(DUMMY_EXPERTISE),
-      });
+  private patchFilterControl(controlName: string, value: unknown): void {
+    this.filterForm.get(controlName)?.setValue(value, { emitEvent: false });
   }
 
   onSkillInput(value: string): void {
@@ -246,12 +190,10 @@ export class MentorSearch implements OnInit {
 
     this.skillQuery.set('');
     this.showSkillDropdown.set(false);
-    this.onFilterChange();
   }
 
   removeSkill(skill: string): void {
     this.selectedSkills.update((skills) => skills.filter((item) => item !== skill));
-    this.onFilterChange();
   }
 
   toggleExpertise(option: string): void {
@@ -261,7 +203,6 @@ export class MentorSearch implements OnInit {
         : [...current, option]
     );
 
-    this.onFilterChange();
   }
 
   isExpertiseSelected(option: string): boolean {
@@ -270,26 +211,18 @@ export class MentorSearch implements OnInit {
 
   selectRating(value: number | null): void {
     this.filterForm.get('minRating')!.setValue(value);
-    this.onFilterChange();
   }
 
   selectAvailability(value: AvailabilityOption | null): void {
     this.filterForm.get('availability')!.setValue(value);
-    this.onFilterChange();
   }
 
   selectSortBy(value: SearchSortBy | null): void {
     this.filterForm.get('sortBy')!.setValue(value);
-    this.onFilterChange();
   }
 
   selectSortOrder(value: SearchSortOrder): void {
     this.filterForm.get('sortOrder')!.setValue(value);
-    this.onFilterChange();
-  }
-
-  onFilterChange(): void {
-    console.log('[MentorSearch] filters:', this.buildFilters());
   }
 
   toggleFilterPanel(): void {

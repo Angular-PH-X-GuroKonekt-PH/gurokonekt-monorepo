@@ -89,12 +89,41 @@ export class AuthState {
     );
   }
 
+  @Action(AuthActions.RestoreSession)
+  restoreSession(ctx: StateContext<AuthStateModel>) {
+    const token = localStorage.getItem('auth_token');
+    const rawUser = localStorage.getItem('auth_user');
+
+    if (!token || !rawUser) {
+      return;
+    }
+
+    try {
+      const user = JSON.parse(rawUser) as AuthStateModel['user'];
+
+      if (!user?.id || !user?.email || !user?.role) {
+        throw new Error('Stored auth user is incomplete');
+      }
+
+      ctx.patchState({
+        user,
+        token,
+        isAuthenticated: true,
+      });
+    } catch {
+      localStorage.removeItem('auth_token');
+      localStorage.removeItem('auth_user');
+      ctx.setState(initialAuthState);
+    }
+  }
+
   @Action(AuthActions.LoginSuccess)
   loginSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.LoginSuccess) {
     const { user, token, message } = action.payload;
     
     if (token) {
       localStorage.setItem('auth_token', token);
+      localStorage.setItem('auth_user', JSON.stringify(user));
     }
 
     ctx.patchState({
@@ -262,11 +291,15 @@ export class AuthState {
     const state = ctx.getState();
     if (!state.user) return;
 
+    const updatedUser = {
+      ...state.user,
+      isProfileComplete: true,
+    };
+
+    localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+
     ctx.patchState({
-      user: {
-        ...state.user,
-        isProfileComplete: true,
-      },
+      user: updatedUser,
       isLoading: false,
       successMessage: action.message || 'Profile updated successfully!',
       errorMessage: null
@@ -285,6 +318,7 @@ export class AuthState {
   @Action(AuthActions.Logout)
   logout(ctx: StateContext<AuthStateModel>) {
     localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     
     ctx.patchState(initialAuthState);
     
@@ -301,6 +335,8 @@ export class AuthState {
 
   @Action(AuthActions.ResetAuthState)
   resetState(ctx: StateContext<AuthStateModel>) {
+    localStorage.removeItem('auth_token');
+    localStorage.removeItem('auth_user');
     ctx.setState(initialAuthState);
   }
 

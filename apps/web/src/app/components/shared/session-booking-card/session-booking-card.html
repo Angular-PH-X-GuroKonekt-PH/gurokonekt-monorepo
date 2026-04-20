@@ -1,102 +1,136 @@
 @if (bookingList().length === 0) {
-<div class="rounded-2xl border border-default bg-white p-4 text-sm text-body">
-  No bookings found.
+<div
+  class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm"
+>
+  <div
+    class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100"
+  >
+    <app-icon [name]="emptyIcon()" class="h-7 w-7 text-orange-500"></app-icon>
+  </div>
+
+  <h3 class="text-base font-semibold text-heading">{{ emptyTitle() }}</h3>
+  <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+    {{ emptyMessage() }}
+  </p>
 </div>
 } @else {
 <div class="space-y-5">
   @for (booking of bookingList(); track booking.id) {
   <div
-    class="flex flex-col gap-4 rounded-2xl border border-blue-100 bg-linear-to-br from-white to-blue-50 p-5 transition duration-300 hover:ring-2 hover:ring-blue-300 hover:ring-offset-2 lg:flex-row lg:items-end lg:justify-between"
+    class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_44px_rgba(15,23,42,0.1)]"
   >
-    <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
-      <div class="flex flex-col gap-4 md:flex-row md:justify-start">
-        <img
-          [src]="booking.mentorProfilePicture || 'assets/img/no_profile_avatar.png'"
-          [alt]="booking.mentorName"
-          class="h-24 w-24 shrink-0 rounded-2xl object-cover"
-        />
+    <div class="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
+      <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+        <div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
+          <img
+            [src]="booking.mentorProfilePicture || 'assets/img/no_profile_avatar.png'"
+            [alt]="booking.mentorName"
+            class="h-full w-full object-cover"
+          />
+        </div>
 
-        <div class="space-y-2">
-          <div class="flex items-center gap-2">
-            <p class="text-base font-semibold text-gray-900">
-              {{ booking.mentorName }}
+        <div class="min-w-0 space-y-3">
+          <div class="space-y-1">
+            <div class="flex flex-wrap items-center gap-2">
+              <p class="truncate text-lg font-semibold text-heading">
+                {{ booking.mentorName }}
+              </p>
+              <!-- <span
+                class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-50 ring-1 ring-blue-100"
+                title="Verified Mentor"
+                aria-label="Verified Mentor"
+              >
+                <app-icon
+                  name="verified-badge"
+                  class="h-5 w-5 text-blue-700"
+                ></app-icon>
+              </span> -->
+            </div>
+
+            <p class="text-sm text-body">
+              Mentorship session
             </p>
-            <span
-              class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-100"
-              title="Verified Mentor"
-              aria-label="Verified Mentor"
-            >
-              <app-icon
-                name="verified-badge"
-                class="h-5 w-5 text-blue-700"
-              ></app-icon>
-            </span>
           </div>
 
-          <div class="flex flex-wrap items-center gap-3 text-slate-500">
-            <span class="inline-flex items-center gap-1.5 text-sm">
+          <div class="flex flex-wrap items-center gap-3">
+            <span
+              class="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700"
+            >
               <app-icon
                 name="calendar-days"
                 class="h-4 w-4 text-orange-500"
               ></app-icon>
-              {{ booking.sessionDateTime | date: 'MMM d, y - h:mm a z' }}
+              {{ booking.sessionDateTime | date: 'MMM d, y' }}
             </span>
-          </div>
 
-          <app-session-badge [status]="booking.status"></app-session-badge>
+            <span
+              class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600"
+            >
+              <app-icon
+                name="clock"
+                class="h-4 w-4 text-slate-500"
+              ></app-icon>
+              {{ booking.sessionDateTime | date: 'h:mm a z' }}
+            </span>
+
+            <app-session-badge [status]="booking.status"></app-session-badge>
+          </div>
         </div>
       </div>
-    </div>
 
-    <div class="flex h-full flex-col gap-3 sm:flex-row sm:flex-wrap sm:justify-end">
-      @if (canCancelRequest(booking)) {
-      <button
-        type="button"
-        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-5 py-3 font-semibold text-orange-500 shadow-sm ring-1 ring-orange-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:ring-2 hover:ring-orange-200 sm:w-auto"
-      >
-        <app-icon
-          name="alert-circle"
-          class="h-5 w-5 text-orange-500"
-        ></app-icon>
-        Cancel Request
-      </button>
-      }
+      <div class="flex shrink-0 flex-col gap-2 sm:flex-row lg:justify-end">
+        @if (canCancelRequest(booking)) {
+        <button
+          type="button"
+          (click)="onCancelRequest(booking)"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100 sm:w-auto"
+        >
+          <app-icon
+            name="alert-circle"
+            class="h-5 w-5 text-orange-500"
+          ></app-icon>
+          Cancel Request
+        </button>
+        }
 
-      @if (canJoinSession(booking)) {
-      <a
-        [href]="booking.sessionLink"
-        target="_blank"
-        rel="noopener noreferrer"
-        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-200 bg-white px-5 py-3 font-semibold text-blue-900 shadow-sm ring-1 ring-blue-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-300 hover:bg-blue-50 hover:ring-2 hover:ring-blue-200 sm:w-auto"
-      >
-        <app-icon
-          name="video-camera"
-          class="h-5 w-5 text-blue-900"
-        ></app-icon>
-        Join Session
-      </a>
-      }
+        @if (canJoinSession(booking)) {
+        <a
+          [href]="booking.sessionLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-900 bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-950 hover:ring-2 hover:ring-blue-100 sm:w-auto"
+        >
+          <app-icon
+            name="video-camera"
+            class="h-5 w-5 text-white"
+          ></app-icon>
+          Join Session
+        </a>
+        }
 
-      @if (canAddReview(booking)) {
-      <button
-        type="button"
-        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-5 py-3 font-semibold text-orange-500 shadow-sm ring-1 ring-orange-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:ring-2 hover:ring-orange-200 sm:w-auto"
-      >
-        <app-icon
-          name="chat-bubble-left-right"
-          class="h-5 w-5 text-orange-500"
-        ></app-icon>
-        Add Review
-      </button>
-      }
+        @if (canAddReview(booking)) {
+        <button
+          type="button"
+          (click)="onAddReview(booking)"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100 sm:w-auto"
+        >
+          <app-icon
+            name="chat-bubble-left-right"
+            class="h-5 w-5 text-orange-500"
+          ></app-icon>
+          Add Review
+        </button>
+        }
 
-      <button
-        type="button"
-        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-900 bg-blue-900 px-5 py-3 font-semibold text-white shadow-sm ring-1 ring-transparent transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-900 hover:bg-blue-900/90 hover:ring-2 hover:ring-blue-200 sm:w-auto"
-      >
-        <app-icon name="book-open" class="h-5 w-5 text-white"></app-icon>
-        View Details
-      </button>
+        <button
+          type="button"
+          (click)="onViewDetails(booking)"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900 sm:w-auto"
+        >
+          <app-icon name="book-open" class="h-5 w-5 text-blue-900"></app-icon>
+          View Details
+        </button>
+      </div>
     </div>
   </div>
   }

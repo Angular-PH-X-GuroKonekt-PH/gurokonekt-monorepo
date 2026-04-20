@@ -1,23 +1,32 @@
 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
 
     @if (completedSessions().length === 0) {
-    <div class="rounded-2xl border border-default bg-white p-4 text-sm text-body">
-        No bookings found.
+    <div
+        class="md:col-span-2 rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
+        <div
+            class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
+            <app-icon name="book-open" class="h-7 w-7 text-blue-900"></app-icon>
+        </div>
+
+        <h3 class="text-base font-semibold text-heading">No completed sessions yet</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+            Your completed mentoring sessions will appear here once you finish a booking.
+            This section helps you review your progress and revisit past sessions.
+        </p>
     </div>
     } @else {
 
     @for (session of completedSessions(); track $index) {
     <div
-        class="group w-full rounded-3xl border bg-white p-5 text-left  transition duration-300   flex flex-col h-full focus:outline-none focus:ring-2 focus:ring-gray-300 focus:ring-offset-2 border-blue-100 bg-linear-to-br from-white to-blue-50 hover:ring-2   hover:ring-offset-2 hover:ring-blue-300 ">
-        <!-- Header -->
-        <div class="flex items-start justify-between gap-4 mb-4">
-            <div class="flex items-start gap-3"> <img class="w-16 h-16 rounded-2xl object-cover"
+        class="group flex h-full w-full flex-col rounded-3xl border border-slate-200/80 bg-linear-to-br from-white to-slate-50 p-5 text-left shadow-[0_10px_24px_rgba(15,23,42,0.04)] transition duration-300 hover:-translate-y-0.5 hover:shadow-[0_18px_36px_rgba(15,23,42,0.08)] hover:ring-1 hover:ring-blue-200 focus:outline-none">
+        <div class="mb-4 flex items-start justify-between gap-4">
+            <div class="flex items-start gap-3"> <img class="h-16 w-16 rounded-2xl border border-slate-100 object-cover shadow-sm"
                     [src]="session.mentorProfilePicture || 'assets/img/no_profile_avatar.png'" alt="Profile">
                 <div class="flex flex-col gap-2">
 
-                    <p class="text-base font-semibold text-gray-900">Session with {{ session.mentorName }} </p>
+                    <p class="text-base font-semibold text-heading">Session with {{ session.mentorName }}</p>
 
-                    <span class="inline-flex text-sm  text-body items-center gap-1.5">
+                    <span class="inline-flex items-center gap-1.5 text-sm text-body">
                         <app-icon name="calendar-days" class="h-4 w-4 text-orange-500"></app-icon>
                         {{ session.sessionDateTime | date: 'MMM d, y, h:mm a z' }}
                     </span>
@@ -36,20 +45,14 @@
         </div>
 
         @if(!session.sessionRating){
-        <div class="flex justify-end items-center ">
+        <div class="mt-auto flex items-center justify-end  border-slate-100 pt-4">
             <button type="button"
-                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-white px-5 py-3 font-semibold text-orange-500 shadow-sm ring-1 ring-orange-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-300 hover:bg-orange-50 hover:ring-2 hover:ring-orange-200 sm:w-auto">
+                class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-heading shadow-xs ring-1 ring-slate-100 transition-all duration-200 hover:-translate-y-0.5 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600 hover:ring-2 hover:ring-orange-100 sm:w-auto">
                 <app-icon name="star" class="h-5 w-5 text-orange-500"></app-icon>
                 Add Rating
             </button>
         </div>
         }
-
-
-
-
-
-
     </div>
     }
 

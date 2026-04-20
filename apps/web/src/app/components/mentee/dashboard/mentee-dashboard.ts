@@ -1,41 +1,47 @@
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
 
-import * as AuthActions from '../../../store/auth/auth.actions';
 import { AuthState } from '../../../store/auth/auth.state';
-import { SessionBookingCard } from '../../shared/session-booking-card/session-booking-card';
+// import { SessionBookingCard } from '../../shared/session-booking-card/session-booking-card';
 import { BookingService } from '../../../services/booking.service';
 import {
-  BookingSessionCardInterface,
+  BookingCardInterface,
   BookingStatus,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
-import { map, Observable, of, switchMap } from 'rxjs';
+import { of, switchMap } from 'rxjs';
 import { MentorService } from '../../../services/mentor.service';
 import { CommonModule } from '@angular/common';
-import { MentorProfileInterface, UserInterface } from '@gurokonekt/models/interfaces/user/user.model';
-import { SessionHistoryCard } from '../../shared/session-history-card/session-history-card';
+import { MentorSearchItemInterface } from '@gurokonekt/models/interfaces/search/search.model';
+// import { SessionHistoryCard } from '../../shared/session-history-card/session-history-card';
 import { RecommendedMentorCard } from '../../shared/recommended-mentor-card/recommended-mentor-card';
 import { GreetingCard } from '../../shared/greeting-card/greeting-card';
 import { SectionCard } from '../../shared/section-card/section-card';
 import { SectionTitle } from '../../shared/section-title/section-title';
 import { ViewAllButton } from '../../shared/view-all-button/view-all-button';
-import { ProfileService } from '../../../services/profile.service';
-import { UserProfileCard } from '../../shared/user-profile-card/user-profile-card';
+// import { UserProfileCard } from '../../shared/user-profile-card/user-profile-card';
 import { MentorSearch } from '../../shared/mentor-search/mentor-search';
+import { IconComponent } from '../../shared/icon/icon.component';
+import { MentorCardSkeleton } from '../../shared/mentor-card-skeleton/mentor-card-skeleton';
+import { BookingCard } from '../../shared/booking-card/booking-card';
+import { CompletedBookingCard } from '../../completed-booking-card/completed-booking-card';
 
 @Component({
   selector: 'app-mentee-dashboard',
   imports: [
     SectionCard,
     GreetingCard,
-    SessionBookingCard,
+    // SessionBookingCard,
     CommonModule,
-    SessionHistoryCard,
+    // SessionHistoryCard,
     RecommendedMentorCard,
     SectionTitle,
     ViewAllButton,
-    UserProfileCard,
-    MentorSearch
+    MentorSearch,
+    IconComponent,
+    MentorCardSkeleton,
+    BookingCard,
+    CompletedBookingCard
   ],
   templateUrl: './mentee-dashboard.html',
   styleUrl: './mentee-dashboard.scss',
@@ -43,66 +49,119 @@ import { MentorSearch } from '../../shared/mentor-search/mentor-search';
 export class MenteeDashboard {
   private readonly store = inject(Store);
   protected readonly authUser = this.store.selectSignal(AuthState.user);
-  private readonly profileService = inject(ProfileService);
+  protected readonly userId = computed(() => this.authUser()?.id);
 
-  private bookingService = inject(BookingService);
-  private mentorService = inject(MentorService);
-  public $bookingStatus = BookingStatus;
+  private readonly bookingService = inject(BookingService);
+  private readonly mentorService = inject(MentorService);
 
-  userProfile$: Observable<UserInterface | null> = of(this.authUser()).pipe(
-    switchMap((user) => {
-      const userId = user?.['id'];
-      if (!userId) {
-        return of(null);
-      }
+  protected readonly fullName = computed<string>(() => {
+    const value = this.authUser()?.['fullName'];
+    return typeof value === 'string' && value.trim() ? value : 'Mentee';
+  });
 
-      return this.profileService.getUserProfile(userId).pipe(
-        map((response) => response.data as UserInterface | null)
-      );
-    })
-  );
-  upcomingSessions$: Observable<BookingSessionCardInterface[]> = of(
-    this.authUser()
-  ).pipe(
-    switchMap((user) => {
-      const userId = user?.id;
+  protected readonly currentMentorSlide = signal(0);
 
+  //FETCH BOOKINGS
+
+  protected readonly upcomingSessions = toSignal<BookingCardInterface[] | null>(
+   toObservable(this.userId).pipe(
+    switchMap((userId) => {
       if (!userId) {
         return of([]);
       }
 
-      return this.bookingService.getUpcomingSessions(userId);
-    })
+      return this.bookingService.getBookingsByStatuses(userId, [
+        BookingStatus.PENDING,
+        BookingStatus.APPROVED,
+      ]);
+
+    }),
+   ),
+   { initialValue: null }
+  );
+  protected readonly upcomingSessionLoading = computed(() => {
+    return this.upcomingSessions() === null;
+  });
+  protected readonly upcomingSessionsCount = computed(
+    () => this.upcomingSessions()?.length ?? 0
   );
 
-  completedSessions$: Observable<BookingSessionCardInterface[]> = of(
-    this.authUser()
-  ).pipe(
-    switchMap((user) => {
-      const userId = user?.id;
 
+  // FETCH COMPLETED SESSIONS
+  protected readonly completedSessionsCount = computed(
+    () => this.completedSessions()?.length ?? 0
+  );
+  protected readonly completedSessionLoading = computed(() => {
+    return this.completedSessions() === null;
+  });
+  protected readonly completedSessions = toSignal<BookingCardInterface [] | null>(
+   toObservable(this.userId).pipe(
+    switchMap((userId) => {
       if (!userId) {
         return of([]);
       }
-
-      return this.bookingService.getBookingsByStatus(
-        userId,
-        BookingStatus.COMPLETED
-      );
-    })
+      return this.bookingService.getBookingsByStatuses(userId, [
+        BookingStatus.COMPLETED,
+      ]);
+    }),
+   ),
+   { initialValue: null }
   );
 
-  recommendedMentors$: Observable<MentorProfileInterface[]> =
-    this.mentorService.getAllMentorProfiles();
 
-  upcomingSessionsCount$: Observable<number> = this.upcomingSessions$.pipe(
-    map((sessions) => sessions.length)
+
+  //RECOMMENDED MENTORS
+  protected readonly recommendedMentors = toSignal<MentorSearchItemInterface[] | null>(
+    this.mentorService.getRecommendedMentors(6),
+    { initialValue: null }
+  );
+  protected readonly recommendedMentorsLoading = computed(
+    () => this.recommendedMentors() === null
   );
 
-  completedSessionsCount$: Observable<number> = this.completedSessions$.pipe(
-    map((sessions) => sessions.length)
-  );
-  protected logout(): void {
-    void this.store.dispatch(new AuthActions.Logout());
+
+
+
+
+
+
+
+
+
+  // CAROUSEL SLIDER FUNCTIONS
+  protected nextMentorSlide(totalSlides: number): void {
+    if (totalSlides <= 0) {
+      return;
+    }
+
+    this.currentMentorSlide.update((currentSlide) =>
+      currentSlide >= totalSlides ? 0 : currentSlide + 1
+    );
   }
+
+  protected previousMentorSlide(totalSlides: number): void {
+    if (totalSlides <= 0) {
+      return;
+    }
+
+    this.currentMentorSlide.update((currentSlide) =>
+      currentSlide === 0 ? totalSlides : currentSlide - 1
+    );
+  }
+
+  protected setMentorSlide(index: number): void {
+    this.currentMentorSlide.set(index);
+  }
+
+  protected getMaxMentorSlide(totalMentors: number): number {
+    return Math.max(totalMentors - 3, 0);
+  }
+
+  protected getMentorSlideIndexes(totalMentors: number): number[] {
+    return Array.from(
+      { length: this.getMaxMentorSlide(totalMentors) + 1 },
+      (_, index) => index
+    );
+  }
+
 }

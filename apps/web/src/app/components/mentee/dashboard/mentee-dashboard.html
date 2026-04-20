@@ -1,53 +1,62 @@
 <div class="flex flex-col gap-8">
-  <section class="grid grid-cols-1 gap-6 xl:grid-cols-12">
-    <div class="xl:col-span-3">
-      @if (userProfile$ | async; as userProfile) {
-      <app-user-profile-card [userProfile]="userProfile" />
-      } @else {
-      <div class="rounded-2xl border border-slate-200 bg-white p-6">
-        <div class="animate-pulse space-y-4">
-          <div class="mx-auto h-24 w-24 rounded-full bg-slate-200"></div>
-          <div class="space-y-2 text-center">
-            <div class="mx-auto h-4 w-32 rounded bg-slate-200"></div>
-            <div class="mx-auto h-3 w-40 rounded bg-slate-100"></div>
-          </div>
-          <div class="h-10 rounded-xl bg-slate-100"></div>
-        </div>
-      </div>
-      }
-    </div>
-    <div class="xl:col-span-9">
-      <app-greeting-card />
-       <app-mentor-search />
+  <section class="grid grid-cols-1 gap-6 xl:grid-cols-12 xl:items-stretch">
+   
+    <div class="xl:col-span-12">
+      <app-greeting-card [name]="fullName()" />
+      <app-mentor-search />
+
     </div>
   </section>
+
 
   <section class="grid grid-cols-1 gap-6">
     <app-section-card>
 
       <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <app-section-title title="Upcoming Sessions" [count]="upcomingSessionsCount$ | async"
+        <app-section-title title="Upcoming Sessions" [count]="upcomingSessionsCount()"
           subtitle="Stay on top of your scheduled mentoring sessions."></app-section-title>
         <app-view-all-button link="/mentee/booking-overview" label="View all sessions"></app-view-all-button>
       </div>
 
+      @if (upcomingSessionsCount() > 0) {
       <div class="flex flex-col gap-3">
-        <!-- <app-session-booking-card  [bookingList]="upcomingSessions$ | async"  /> -->
-        <app-session-booking-card [bookingList]="(upcomingSessions$ | async) ?? []" />
-
+        @for (booking of upcomingSessions(); track booking.id) {
+        <app-booking-card [booking]="booking" />
+        }
       </div>
+      } @else {
+      <div
+        class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
+        <div
+          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100">
+          <app-icon name="calendar-days" class="h-7 w-7 text-orange-500"></app-icon>
+        </div>
+
+        <h3 class="text-base font-semibold text-heading">No bookings yet</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+          You do not have any bookings at the moment. Once you schedule a mentoring
+          session, it will appear here for easy tracking and follow-up.
+        </p>
+      </div>
+      }
     </app-section-card>
   </section>
 
   <section class="grid grid-cols-1 gap-6 ">
     <app-section-card>
       <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <app-section-title title="Sessions history" [count]="completedSessionsCount$ | async"
+        <app-section-title title="Sessions history" [count]="completedSessionsCount()"
           subtitle="Your last 5 completed mentoring sessions."></app-section-title>
         <app-view-all-button link="/mentee/booking-overview" label="View session history"></app-view-all-button>
       </div>
-
-      <app-session-history-card [completedSessions]="(completedSessions$ | async) ?? []" />
+     
+      @if(completedSessionsCount() > 0) {
+      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
+        @for (booking of completedSessions(); track booking.id) {
+        <app-completed-booking-card [completedBooking]="booking" />
+        }
+      </div>
+      }
 
 
 
@@ -58,8 +67,6 @@
 
   <section class="grid grid-cols-1 gap-6 ">
     <app-section-card>
-
-
 
       <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
 
@@ -69,11 +76,69 @@
 
       </div>
 
-      <app-recommended-mentor-card [mentorInformation]="(recommendedMentors$ | async) ?? []" />
+      @let mentors = recommendedMentors() ?? [];
+
+      @if (recommendedMentorsLoading()) {
+      <app-mentor-card-skeleton [count]="3" />
+      } @else if (mentors.length === 0) {
+      <div
+        class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
+        <div
+          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
+          <app-icon name="users" class="h-7 w-7 text-blue-900"></app-icon>
+        </div>
+
+        <h3 class="text-base font-semibold text-heading">No mentor recommendations yet</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+          We could not find available mentor recommendations at the moment. Try updating your
+          interests or browse all mentors to discover more options.
+        </p>
+      </div>
+      } @else {
+      <div class="space-y-5">
+        <div class="overflow-hidden py-2">
+          <div class="flex transition-transform duration-500 ease-out"
+            [style.transform]="'translateX(-' + (currentMentorSlide() * (100 / 3)) + '%)'">
+            @for (mentor of mentors; track mentor.id) {
+            <div class="w-full shrink-0 px-3 md:w-1/2 lg:w-1/3">
+              <app-recommended-mentor-card [mentor]="mentor" />
+            </div>
+            }
+          </div>
+        </div>
+
+        @if (mentors.length > 3) {
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-2">
+            <button type="button" (click)="previousMentorSlide(getMaxMentorSlide(mentors.length))"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-default-medium bg-white px-4 py-2.5 text-sm font-medium text-heading shadow-xs transition hover:bg-neutral-secondary-medium focus:outline-none focus:ring-4 focus:ring-brand-subtle">
+              Previous
+            </button>
+
+            <button type="button" (click)="nextMentorSlide(getMaxMentorSlide(mentors.length))"
+              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-default-medium bg-white px-4 py-2.5 text-sm font-medium text-heading shadow-xs transition hover:bg-neutral-secondary-medium focus:outline-none focus:ring-4 focus:ring-brand-subtle">
+              Next
+            </button>
+          </div>
+
+          <div class="flex items-center gap-2">
+            @for (slideIndex of getMentorSlideIndexes(mentors.length); track slideIndex) {
+            <button type="button" (click)="setMentorSlide(slideIndex)"
+              class="h-2.5 w-8 rounded-full transition-all duration-300"
+              [class.bg-orange-500]="currentMentorSlide() === slideIndex"
+              [class.bg-slate-200]="currentMentorSlide() !== slideIndex"
+              [attr.aria-label]="'Go to mentor slide ' + (slideIndex + 1)"></button>
+            }
+          </div>
+        </div>
+        }
+      </div>
+      }
 
     </app-section-card>
 
 
   </section>
+
 
 </div>

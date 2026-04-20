@@ -1,1 +1,111 @@
-<p>notifications works!</p>
+<div class="flex flex-col gap-8">
+  <app-section-card>
+    <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+      <app-section-title
+        title="Notifications"
+        [count]="notifications()?.length ?? 0"
+        subtitle="Important updates about your bookings, sessions, and platform activity."
+      />
+
+      <div
+        class="inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700"
+      >
+        <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span>
+        {{ unreadCount() }} unread
+      </div>
+    </div>
+  </app-section-card>
+
+  <app-section-card>
+    @if (isNotificationsLoading()) {
+      <div class="space-y-3">
+        @for (_ of [1, 2, 3]; track $index) {
+          <div class="animate-pulse rounded-2xl border border-slate-200 bg-white p-5">
+            <div class="mb-3 h-4 w-24 rounded bg-slate-200"></div>
+            <div class="mb-2 h-4 w-52 rounded bg-slate-200"></div>
+            <div class="h-3 w-full rounded bg-slate-100"></div>
+          </div>
+        }
+      </div>
+    } @else if ((notifications()?.length ?? 0) === 0) {
+      <div
+        class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm"
+      >
+        <div
+          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100"
+        >
+          <app-icon name="bell" class="h-7 w-7 text-orange-500"></app-icon>
+        </div>
+
+        <h3 class="text-base font-semibold text-heading">No notifications yet</h3>
+        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+          Important updates about bookings, sessions, messages, and platform announcements
+          will appear here once they are available.
+        </p>
+      </div>
+    } @else {
+      <div class="space-y-4">
+        @for (notification of notifications()!; track notification.id) {
+          <button
+            type="button"
+            (click)="markAsRead(notification)"
+            class="flex w-full items-start gap-4 rounded-2xl border bg-white p-5 text-left shadow-sm transition hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-md"
+            [class.border-blue-200]="notification.status === 'UNREAD'"
+            [class.bg-blue-50/40]="notification.status === 'UNREAD'"
+            [class.border-default]="notification.status === 'READ'"
+            [attr.aria-label]="notification.status === 'UNREAD'
+              ? 'Mark notification as read: ' + notification.title
+              : 'Notification: ' + notification.title"
+          >
+            <span
+              class="mt-0.5 inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl ring-1"
+              [ngClass]="getNotificationIconClasses(notification.type)"
+            >
+              <app-icon
+                [name]="getNotificationIconName(notification.type)"
+                [class]="'h-5 w-5'"
+              ></app-icon>
+            </span>
+
+            <div class="min-w-0 flex-1">
+              <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+                <div class="space-y-2">
+                  <div class="flex flex-wrap items-center gap-2">
+                    <p class="text-base font-semibold text-heading">
+                      {{ notification.title }}
+                    </p>
+
+                    <span
+                      class="inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide"
+                      [class]="getNotificationTypeClasses(notification.type)"
+                    >
+                      {{ getNotificationTypeLabel(notification.type) }}
+                    </span>
+
+                    @if (notification.status === 'UNREAD') {
+                      <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span>
+                    }
+                  </div>
+
+                  <p class="max-w-3xl text-sm leading-6 text-body">
+                    {{ notification.message }}
+                  </p>
+
+                  @if (notification.status === 'UNREAD') {
+                    <p class="text-xs font-medium text-orange-600">
+                      Click to mark as read
+                    </p>
+                  }
+                </div>
+
+                <div class="shrink-0 text-sm text-body">
+                  {{ notification.createdAt | date: 'MMM d, y - h:mm a' }}
+                </div>
+              </div>
+            </div>
+          </button>
+        }
+      </div>
+    }
+  </app-section-card>
+</div>

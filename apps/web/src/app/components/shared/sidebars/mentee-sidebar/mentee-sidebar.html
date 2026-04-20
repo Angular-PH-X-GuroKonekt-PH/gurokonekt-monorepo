@@ -1,7 +1,7 @@
 <aside id="top-bar-sidebar"
   class="fixed top-0 left-0 z-50 w-64 h-full transition-transform -translate-x-full sm:translate-x-0"
   aria-label="Sidebar" >
-  <div class="h-full px-3 py-4 overflow-y-auto bg-neutral-primary-soft border-e border-default">
+  <div class="flex h-full flex-col overflow-y-auto border-e border-default bg-neutral-primary-soft px-3 py-4">
     <a [routerLink]="'mentee-dashboard'" class="flex items-center ps-2.5 mb-5  justify-start">
       <img src="assets/logos/logo-light.svg" class="h-12 me-1" alt="Flowbite Logo" />
       <div class="flex items-center justify-center gap-1">
@@ -11,7 +11,7 @@
     </a>
 
 
-    <ul class="space-y-2 font-medium px-4">
+    <ul class="space-y-2 px-4 font-medium">
 
 
       <h4 class="text-gray-500 py-3">Main Menu</h4>
@@ -82,5 +82,7 @@
        
 
     </ul>
+
+
   </div>
 </aside>

@@ -1,4 +1,4 @@
-import { Component } from '@angular/core';
+import { Component, input } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 @Component({
@@ -7,4 +7,6 @@ import { RouterLink } from '@angular/router';
   templateUrl: './greeting-card.html',
   styleUrl: './greeting-card.scss',
 })
-export class GreetingCard {}
+export class GreetingCard {
+  name = input<string>('Mentee');
+}

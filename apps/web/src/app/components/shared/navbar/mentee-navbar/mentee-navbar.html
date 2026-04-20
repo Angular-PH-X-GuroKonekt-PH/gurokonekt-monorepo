@@ -1,129 +1,129 @@
-<nav class="fixed top-0 z-50 w-full bg-neutral-primary-soft border-b border-default">
+<nav class="fixed top-0 z-50 w-full border-b border-default bg-neutral-primary-soft">
   <div class="px-3 py-3 lg:px-5 lg:pl-3">
     <div class="flex items-center justify-between">
       <div class="flex items-center justify-start rtl:justify-end">
         <button data-drawer-target="top-bar-sidebar" data-drawer-toggle="top-bar-sidebar"
           aria-controls="top-bar-sidebar" type="button"
-          class="sm:hidden text-heading bg-transparent box-border border border-transparent hover:bg-neutral-secondary-medium focus:ring-4 focus:ring-neutral-tertiary font-medium leading-5 rounded-base text-sm p-2 focus:outline-none">
+          class="box-border rounded-base border border-transparent bg-transparent p-2 text-sm font-medium leading-5 text-heading hover:bg-neutral-secondary-medium focus:outline-none focus:ring-4 focus:ring-neutral-tertiary sm:hidden">
           <span class="sr-only">Open sidebar</span>
-          <svg class="w-6 h-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+          <svg class="h-6 w-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
             viewBox="0 0 24 24">
             <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M5 7h14M5 12h14M5 17h10" />
           </svg>
         </button>
-        <a href="https://flowbite.com" class="flex ms-2 md:me-24">
-          <img src="https://flowbite.com/docs/images/logo.svg" class="h-6 me-3" alt="FlowBite Logo" />
-          <span class="self-center text-lg font-semibold whitespace-nowrap dark:text-white">Flowbite</span>
+
+        <a [routerLink]="'/mentee/dashboard'" class="flex items-center gap-3 ms-2 md:me-24">
+          <div
+            class="flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-500 text-sm font-bold text-white">
+            GK
+          </div>
+          <div class="hidden sm:block">
+            <p class="text-sm font-semibold text-heading">GuroKonekt</p>
+            <p class="text-xs text-body">Mentee Workspace</p>
+          </div>
         </a>
       </div>
-      <!-- <div class="flex items-center">
-        <div class="flex items-center ms-3">
-          <div>
-            <button type="button"
-              class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
-              aria-expanded="false" data-dropdown-toggle="dropdown-user">
-              <span class="sr-only">Open user menu</span>
-              <img class="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg"
-                alt="user photo">
-            </button>
-          </div>
-          <div class="z-50 hidden bg-neutral-primary-medium border border-default-medium rounded-base shadow-lg w-44"
-            id="dropdown-user">
-            <div class="px-4 py-3 border-b border-default-medium" role="none">
-              <p class="text-sm font-medium text-heading" role="none">
-                Neil Sims
-              </p>
-              <p class="text-sm text-body truncate" role="none">
-                neil.sims@flowbite.com
-              </p>
-            </div>
-            <ul class="p-2 text-sm text-body font-medium" role="none">
-              <li>
-                <a href="#"
-                  class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded"
-                  role="menuitem">Profile Settings</a>
-              </li>
 
-              <li>
-                <a href="#"
-                  class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded"
-                  role="menuitem">Sign out</a>
-              </li>
-            </ul>
-          </div>
-        </div>
-      </div> -->
+      <div class="flex items-center justify-center gap-3">
+        <button id="dropdownNotificationButton" data-dropdown-toggle="dropdownNotification"
+          class="relative inline-flex items-center text-sm font-medium text-body hover:text-heading focus:outline-none"
+          type="button">
+          <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z" />
+          </svg>
 
-      <div class="flex items-center justify-center gap-3 ">
-
-        <!-- NOTIFICATIO butoon -->
-      <button
-  id="dropdownNotificationButton"
-  data-dropdown-toggle="dropdownNotification"
-  class="relative inline-flex items-center text-sm font-medium text-body hover:text-heading focus:outline-none"
-  type="button"
->
-  <!-- Icon -->
-  <svg
-    class="w-6 h-6"
-    xmlns="http://www.w3.org/2000/svg"
-    fill="none"
-    viewBox="0 0 24 24"
-    stroke="currentColor"
-  >
-    <path
-      stroke-linecap="round"
-      stroke-linejoin="round"
-      stroke-width="2"
-      d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z"
-    />
-  </svg>
-
-  <!-- @if (unreadCount() > 0) {
-    <span
-      class="absolute -top-1 -right-1 flex items-center justify-center
-             min-w-4.5 h-4.5 px-1 text-xs font-semibold
-             text-white bg-danger border-2 border-buffer rounded-full"
-    >
-      {{ unreadCount() }}
-    </span>
-  } -->
-</button>
-
-
-        <!-- NOTIFICATION dropdown -->
+          @if (unreadCount() > 0) {
+          <span
+            class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-orange-500 px-1 text-[11px] font-semibold text-white">
+            {{ unreadCount() }}
+          </span>
+          }
+        </button>
 
         <div id="dropdownNotification"
-          class="z-20 hidden border border-blue-200 w-full max-w-sm bg-neutral-primary-soft divide-y divide-default-medium rounded-base shadow"
+          class="z-20 hidden w-full max-w-sm divide-y divide-default-medium rounded-base border border-blue-200 bg-neutral-primary-soft shadow"
           aria-labelledby="dropdownNotificationButton">
-          <div class="block px-4 py-2 font-medium text-center text-body rounded-t-base bg-neutral-secondary-medium">
+          <div class="block rounded-t-base bg-neutral-secondary-medium px-4 py-2 text-center font-medium text-body">
             Notifications
           </div>
           <div class="divide-y divide-default">
-
-            <!-- @if (loading()) {
-            <div class="px-4 py-4 text-sm text-body">
-              Loading notifications...
+            @if (isNotificationsLoading()) {
+            <div class="space-y-3 px-4 py-4">
+              @for (_ of [1, 2, 3]; track $index) {
+              <div class="animate-pulse rounded-2xl border border-slate-200 bg-white/70 p-4">
+                <div class="flex items-start gap-3">
+                  <div class="h-10 w-10 rounded-2xl bg-slate-200"></div>
+                  <div class="min-w-0 flex-1 space-y-2">
+                    <div class="h-3 w-20 rounded bg-slate-200"></div>
+                    <div class="h-4 w-40 rounded bg-slate-200"></div>
+                    <div class="h-3 w-full rounded bg-slate-100"></div>
+                  </div>
+                </div>
+              </div>
+              }
             </div>
-            } @else if (notifications().length === 0) {
-            <div class="px-4 py-4 text-sm text-body">
-              No notifications found.
+            }  @else if ((notifications()?.length ?? 0) === 0){
+            <div class="px-5 py-6 text-center">
+              <div
+                class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100">
+                <app-icon name="bell" class="h-5 w-5 text-orange-500"></app-icon>
+              </div>
+              <p class="text-sm font-semibold text-heading">No notifications yet</p>
+              <p class="mt-1 text-xs leading-5 text-body">
+                Updates about your bookings and sessions will appear here.
+              </p>
             </div>
             } @else {
-            @for (notif of latestNotifications(); track notif.id) {
-            <app-notification-items [notification]="notif" (notificationClicked)="markAsRead($event)" />
+            @for (notif of notifications(); track notif.id) {
+            <button type="button" (click)="markAsRead(notif)"
+              class="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-neutral-secondary-medium"
+              [class.bg-orange-50/60]="notif.status === 'UNREAD'" [attr.aria-label]="notif.status === 'UNREAD'
+                ? 'Mark notification as read: ' + notif.title
+                : 'Notification: ' + notif.title">
+              <span class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1"
+                [ngClass]="getNotificationIconClasses(notif.type)">
+                <app-icon [name]="getNotificationIconName(notif.type)" [class]="'h-4 w-4'"></app-icon>
+              </span>
+
+              <div class="min-w-0 flex-1">
+                <div class="flex items-start justify-between gap-3">
+                  <div class="space-y-1">
+                    <div class="flex flex-wrap items-center gap-2">
+                      <span
+                        class="inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide"
+                        [class]="getNotificationTypeClasses(notif.type)">
+                        {{ getNotificationTypeLabel(notif.type) }}
+                      </span>
+
+                      @if (notif.status === 'UNREAD') {
+                      <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span>
+                      }
+                    </div>
+
+                    <p class="text-sm font-semibold text-heading">{{ notif.title }}</p>
+                    <p class="text-sm leading-5 text-body">{{ notif.message }}</p>
+                    @if (notif.status === 'UNREAD') {
+                    <p class="text-[11px] font-medium uppercase tracking-wide text-orange-600">
+                      Click to mark as read
+                    </p>
+                    }
+                  </div>
+
+                  <span class="shrink-0 text-xs text-body">
+                    {{ notif.createdAt | date: 'MMM d, h:mm a' }}
+                  </span>
+                </div>
+              </div>
+            </button>
             }
             }
- -->
-
-
-
           </div>
 
-          <a [routerLink]="'/mentee/notifications'"
-            class="block py-2 font-medium text-center text-body rounded-b-base bg-neutral-secondary-medium hover:bg-neutral-tertiary-medium">
-            <div class="inline-flex items-center ">
-              <svg class="w-5 h-5 me-1.5 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+          <a [routerLink]="'/mentee/notifications'" (click)="closeNotificationDropdown()"
+            class="block rounded-b-base bg-neutral-secondary-medium py-2 text-center font-medium text-body hover:bg-neutral-tertiary-medium">
+            <div class="inline-flex items-center">
+              <svg class="me-1.5 h-5 w-5 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
                 height="24" fill="none" viewBox="0 0 24 24">
                 <path stroke="currentColor" stroke-width="2"
                   d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z" />
@@ -134,38 +134,41 @@
           </a>
         </div>
 
-        <!-- USER profile and dropdown -->
-        <div class="flex items-center ms-3">
+        <div class="ms-3 flex items-center">
           <div>
             <button type="button"
-              class="flex text-sm bg-gray-800 rounded-full focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+              class="flex rounded-full bg-gray-800 text-sm focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
               aria-expanded="false" data-dropdown-toggle="dropdown-user">
-              <span class="sr-only">Open user menu</span>
-              <img class="w-8 h-8 rounded-full" src="https://flowbite.com/docs/images/people/profile-picture-5.jpg"
-                alt="user photo">
+             
+              <img class="h-8 w-8 rounded-full object-cover" src="assets/img/no_profile_avatar.png"
+                [alt]="userFullName()" />
             </button>
           </div>
-          <div class="z-50 hidden bg-neutral-primary-medium border border-default-medium rounded-base shadow-lg w-44"
+
+          <div class="z-50 hidden w-56 rounded-base border border-default-medium bg-neutral-primary-medium shadow-lg"
             id="dropdown-user">
-            <div class="px-4 py-3 border-b border-default-medium" role="none">
+            <div class="border-b border-default-medium px-4 py-3" role="none">
               <p class="text-sm font-medium text-heading" role="none">
-                Neil Sims
+                {{ userFullName() }}
               </p>
-              <p class="text-sm text-body truncate" role="none">
-                neil.sims@flowbite.com
+              <p class="truncate text-sm text-body" role="none">
+                {{ userEmail() }}
               </p>
             </div>
-            <ul class="p-2 text-sm text-body font-medium" role="none">
+
+            <ul class="p-2 text-sm font-medium text-body" role="none">
+           
               <li>
-                <button  (click)="logout()" type="button"
-                  class="inline-flex items-center w-full p-2 hover:bg-neutral-tertiary-medium hover:text-heading rounded"
-                  role="menuitem">Sign out</button>
+                <button (click)="logout()" type="button"
+                  class="inline-flex w-full items-center rounded p-2 hover:bg-neutral-tertiary-medium hover:text-heading"
+                  role="menuitem">
+                  Sign out
+                </button>
               </li>
             </ul>
           </div>
         </div>
-
-    </div>
+      </div>
     </div>
   </div>
 </nav>

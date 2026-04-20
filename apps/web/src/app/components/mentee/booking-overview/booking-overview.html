@@ -1,60 +1,211 @@
 <div class="flex flex-col gap-8">
-
-
   <section class="grid grid-cols-1 gap-6">
+   
 
-    @if (bookingOverviewData$ | async; as bookingData) {
-
-      <app-section-title title="Coming Up!" subtitle="Get ready for your next scheduled session." />
-      <app-session-booking-card [bookingList]="bookingData.nearestApprovedSession" />
-
-
-      <app-section-title title="Manage Your Bookings" subtitle="Stay organized with all your mentorship sessions." />
-
-      
-      <div class="space-y-4">
-
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-start">
-
-              <div class="relative w-full sm:w-50">
-                <select
-                  id="booking-sort"
-                  [value]="selectedSort"
-                  (change)="setSort($event)"
-                  class="block min-h-11 w-full appearance-none rounded-xl border border-default-medium bg-white px-4 py-3 pr-10 text-sm font-medium text-heading shadow-xs transition focus:border-brand focus:outline-none focus:ring-2 focus:ring-brand/20"
-                >
-                  <option value="DATE_ASC">Nearest Session First</option>
-                  <option value="NAME_ASC">Mentor Name (A-Z)</option>
-                </select>
-
-              
+      @if (isBookingsLoading()) {
+        <div class="mt-5 overflow-hidden rounded-4xl bg-slate-900/90 p-6 md:p-8">
+          <div class="animate-pulse space-y-6">
+            <div class="h-8 w-32 rounded-full bg-white/10"></div>
+            <div class="h-12 w-2/3 rounded-2xl bg-white/10"></div>
+            <div class="h-6 w-56 rounded-xl bg-white/10"></div>
+            <div class="flex flex-col gap-4 pt-8 md:flex-row md:items-end md:justify-between">
+              <div class="flex items-center gap-4">
+                <div class="h-16 w-16 rounded-2xl bg-white/10"></div>
+                <div class="space-y-3">
+                  <div class="h-5 w-40 rounded bg-white/10"></div>
+                  <div class="h-4 w-32 rounded bg-white/10"></div>
+                </div>
               </div>
-
-              <div class="flex flex-wrap items-center gap-3">
-                <app-filter-button label="All" value="ALL" [count]="bookingData.counts.ALL" [selectedValue]="selectedFilter"
-                  (clicked)="setFilter($event)" />
-
-                <app-filter-button label="Upcoming" [value]="bookingStatus.APPROVED" [count]="bookingData.counts.UPCOMING"
-                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
-
-                <app-filter-button label="Pending" [value]="bookingStatus.PENDING" [count]="bookingData.counts.PENDING"
-                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
-
-                <app-filter-button label="Cancelled" [value]="bookingStatus.CANCELLED" [count]="bookingData.counts.CANCELLED"
-                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
-
-                <app-filter-button label="Rejected" [value]="bookingStatus.REJECTED" [count]="bookingData.counts.REJECTED"
-                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
-
-                <app-filter-button label="Completed" [value]="bookingStatus.COMPLETED" [count]="bookingData.counts.COMPLETED"
-                  [selectedValue]="selectedFilter" (clicked)="setFilter($event)" />
-              </div>
+              <div class="h-12 w-36 rounded-2xl bg-white/10"></div>
+            </div>
+          </div>
+        </div>
+      } @else if (upcomingBooking(); as booking) {
+        <div
+          class="relative mt-5 overflow-hidden rounded-4xl bg-linear-to-br from-slate-950 via-blue-950 to-indigo-900 p-6 text-white shadow-[0_20px_60px_rgba(15,23,42,0.18)] md:p-8"
+        >
+          <div class="pointer-events-none absolute inset-0 opacity-30">
+            <div class="absolute -right-12 -top-12 h-56 w-56 rounded-full bg-orange-400/20 blur-3xl"></div>
+            <div class="absolute bottom-0 right-1/4 h-72 w-72 rounded-full bg-blue-400/20 blur-3xl"></div>
           </div>
 
-        <app-session-booking-card [bookingList]="bookingData.filteredBookings" />
-      </div>
-    }
+          <div class="relative flex h-full flex-col gap-8">
+            <div class="space-y-4">
+              <span
+                class="inline-flex items-center rounded-full bg-white/12 px-4 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-white/85"
+              >
+                Upcoming Session
+              </span>
 
+              <div class="space-y-3">
+                <h3 class="max-w-3xl text-3xl font-semibold leading-tight text-white md:text-4xl">
+                  {{ getUpcomingBookingTitle(booking) }}
+                </h3>
+
+                <div class="inline-flex items-center gap-2 text-sm text-white/75 md:text-base">
+                  <app-icon name="calendar-days" class="h-4 w-4 text-white/70"></app-icon>
+                  <span>{{ getUpcomingBookingDateTime(booking) }}</span>
+                </div>
+              </div>
+            </div>
+
+            <div class="flex flex-col gap-4 md:flex-row md:items-end md:justify-between">
+              <div class="flex items-center gap-4">
+                <img
+                  [src]="booking.mentorProfilePicture || 'assets/img/no_profile_avatar.png'"
+                  [alt]="booking.mentorName"
+                  class="h-16 w-16 rounded-2xl border border-white/15 object-cover shadow-lg"
+                />
+
+                <div>
+                  <p class="text-xl font-semibold text-white">{{ booking.mentorName }}</p>
+                  <p class="text-sm text-white/70">Approved mentoring session</p>
+                </div>
+              </div>
+
+              @if (booking.sessionLink) {
+                <button
+                  type="button"
+                  (click)="openSessionLink(booking.sessionLink)"
+                  class="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl bg-orange-400 px-6 py-3 text-base font-semibold text-slate-950 shadow-lg transition hover:bg-orange-300"
+                >
+                  <span>Join Call</span>
+                  <app-icon name="video-camera" class="h-5 w-5 text-slate-950"></app-icon>
+                </button>
+              } @else {
+                <button
+                  type="button"
+                  (click)="onViewDetails(booking)"
+                  class="inline-flex min-h-12 items-center justify-center gap-2 rounded-2xl border border-white/15 bg-white/10 px-6 py-3 text-base font-semibold text-white transition hover:bg-white/15"
+                >
+                  <span>View Details</span>
+                  <app-icon name="chevron-right" class="h-5 w-5 text-white"></app-icon>
+                </button>
+              }
+            </div>
+          </div>
+        </div>
+      } @else {
+        <div
+          class="mt-5 rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm"
+        >
+          <div
+            class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100"
+          >
+            <app-icon name="calendar-days" class="h-7 w-7 text-blue-900"></app-icon>
+          </div>
+
+          <h3 class="text-base font-semibold text-heading">No upcoming approved session</h3>
+          <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+            Once you have an approved booking scheduled ahead of the current time, it will show up
+            here.
+          </p>
+        </div>
+      }
+
+    <app-section-card>
+      <app-section-title
+        title="Manage Your Bookings"
+        subtitle="Stay organized with all your mentorship sessions."
+      />
+
+      @if (isBookingsLoading()) {
+        <div class="space-y-4">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-start">
+            <div class="flex flex-wrap items-center gap-3">
+              @for (chip of [1, 2, 3, 4, 5, 6]; track chip) {
+                <div class="h-11 w-24 rounded-base bg-slate-100 animate-pulse"></div>
+              }
+            </div>
+          </div>
+
+          @for (skeleton of [1, 2, 3]; track skeleton) {
+            <div class="rounded-2xl border border-slate-200 bg-white p-5">
+              <div class="animate-pulse">
+                <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+                  <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
+                    <div class="h-24 w-24 rounded-2xl bg-slate-200"></div>
+                    <div class="space-y-3">
+                      <div class="h-4 w-40 rounded bg-slate-200"></div>
+                      <div class="h-3 w-56 rounded bg-slate-100"></div>
+                      <div class="h-8 w-24 rounded-full bg-slate-100"></div>
+                    </div>
+                  </div>
+                  <div class="flex gap-3">
+                    <div class="h-11 w-28 rounded-xl bg-slate-100"></div>
+                    <div class="h-11 w-32 rounded-xl bg-slate-200"></div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+      } @else {
+        <div class="space-y-4">
+          <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-start">
+            <div class="flex flex-wrap items-center gap-3">
+              <app-filter-button
+                label="All"
+                value="ALL"
+                [count]="bookingCounts().ALL"
+                [selectedValue]="selectedFilter()"
+                (clicked)="setFilter($event)"
+              />
+
+              <app-filter-button
+                label="Upcoming"
+                [value]="bookingStatus.APPROVED"
+                [count]="bookingCounts().UPCOMING"
+                [selectedValue]="selectedFilter()"
+                (clicked)="setFilter($event)"
+              />
+
+              <app-filter-button
+                label="Pending"
+                [value]="bookingStatus.PENDING"
+                [count]="bookingCounts().PENDING"
+                [selectedValue]="selectedFilter()"
+                (clicked)="setFilter($event)"
+              />
+
+              <app-filter-button
+                label="Cancelled"
+                [value]="bookingStatus.CANCELLED"
+                [count]="bookingCounts().CANCELLED"
+                [selectedValue]="selectedFilter()"
+                (clicked)="setFilter($event)"
+              />
+
+              <app-filter-button
+                label="Rejected"
+                [value]="bookingStatus.REJECTED"
+                [count]="bookingCounts().REJECTED"
+                [selectedValue]="selectedFilter()"
+                (clicked)="setFilter($event)"
+              />
+
+              <app-filter-button
+                label="Completed"
+                [value]="bookingStatus.COMPLETED"
+                [count]="bookingCounts().COMPLETED"
+                [selectedValue]="selectedFilter()"
+                (clicked)="setFilter($event)"
+              />
+            </div>
+          </div>
+
+          <app-session-booking-card
+            [bookingList]="displayedBookings()"
+            (viewDetails)="onViewDetails($event)"
+            (cancelRequest)="onViewDetails($event)"
+            (addReview)="onViewDetails($event)"
+            [emptyTitle]="selectedFilter() === 'ALL' ? 'No bookings yet' : 'No bookings match this filter'"
+            [emptyMessage]="selectedFilter() === 'ALL'
+              ? 'You do not have any bookings at the moment. Once you schedule a mentoring session, it will appear here.'
+              : 'Try choosing another booking status or clearing the filter to see more sessions.'"
+          />
+        </div>
+      }
+    </app-section-card>
   </section>
-
 </div>

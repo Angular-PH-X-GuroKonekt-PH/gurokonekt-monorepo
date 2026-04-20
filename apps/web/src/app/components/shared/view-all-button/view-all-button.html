@@ -1,5 +1,7 @@
-<div class="flex items-center gap-3">
-  <a [routerLink]="link()" class="font-bold text-xl text-blue-900">
-    {{label()}} </a>
-  <app-icon name="chevron-right" class="h-6 w-6 text-blue-900"></app-icon>
-</div>
+<a
+  [routerLink]="link()"
+  class="inline-flex min-h-11 items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-heading shadow-xs transition-all duration-200 hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900 hover:ring-2 hover:ring-blue-100 focus:outline-none focus:ring-4 focus:ring-brand-subtle"
+>
+  <span>{{ label() }}</span>
+  <app-icon name="chevron-right" class="h-4 w-4 text-current"></app-icon>
+</a>

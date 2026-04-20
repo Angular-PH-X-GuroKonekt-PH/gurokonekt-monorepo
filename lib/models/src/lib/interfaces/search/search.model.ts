@@ -1,3 +1,5 @@
+import { UserAvailabilityInterface } from '../user/user.model';
+
 export interface MentorSearchItemInterface {
   id: string;
   firstName: string;
@@ -81,7 +83,7 @@ export interface FlatMentorCard {
   expertise: string[];
   rating: number;        // PENDING BACKEND
   reviewCount: number;        // PENDING BACKEND
-  availability: string;        // PENDING BACKEND
+  availability: UserAvailabilityInterface[];
   sessionRate: number | null;
   yearsOfExperience: number | null;
 }

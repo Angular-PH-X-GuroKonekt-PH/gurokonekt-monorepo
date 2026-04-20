@@ -7,8 +7,10 @@ import {
 } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
+import { Store } from '@ngxs/store';
 import { filter, map } from 'rxjs/operators';
 import { ToastContainerComponent } from './components/shared/toast/toast.component';
+import * as AuthActions from './store/auth/auth.actions';
 
 @Component({
   imports: [RouterModule, ToastContainerComponent],
@@ -18,6 +20,7 @@ import { ToastContainerComponent } from './components/shared/toast/toast.compone
 })
 export class App {
   private readonly router = inject(Router);
+  private readonly store = inject(Store);
 
   protected title = 'GuroKonekt';
   protected readonly showSidebar = signal(false);
@@ -31,6 +34,8 @@ export class App {
   );
 
   constructor() {
+    this.store.dispatch(new AuthActions.RestoreSession());
+
     afterNextRender(() => {
       import('flowbite').then(({ initFlowbite }) => initFlowbite());
     });

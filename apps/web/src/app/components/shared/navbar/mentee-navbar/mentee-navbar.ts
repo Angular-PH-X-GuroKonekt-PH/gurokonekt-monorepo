@@ -1,36 +1,46 @@
-import { Component, computed, inject, signal } from '@angular/core';
+import { CommonModule } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
 import { RouterLink } from '@angular/router';
-import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
+import { firstValueFrom } from 'rxjs';
+
+import {
+  NotificationInterface,
+  NotificationStatus,
+} from '@gurokonekt/models/interfaces/notification/notification.model';
 
 import * as AuthActions from '../../../../store/auth/auth.actions';
+import {
+  getNotificationIconClasses,
+  getNotificationIconName,
+  getNotificationTypeClasses,
+  getNotificationTypeLabel,
+} from '../../../../helpers/notification-display.helper';
 import { AuthState } from '../../../../store/auth/auth.state';
+import { NotificationService } from '../../../../services/notification.service';
 import { ProfileService } from '../../../../services/profile.service';
-
-type ProfileResponseShape = {
-  user?: {
-    avatarAttachments?: { publicUrl?: string } | { publicUrl?: string }[] | null;
-    email?: string;
-    firstName?: string;
-    lastName?: string;
-  } | null;
-};
+import { IconComponent } from '../../icon/icon.component';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-mentee-navbar',
-  imports: [RouterLink],
+  imports: [RouterLink, CommonModule, IconComponent],
   templateUrl: './mentee-navbar.html',
   styleUrl: './mentee-navbar.scss',
 })
 export class MenteeNavbar {
   private readonly store = inject(Store);
   private readonly profileService = inject(ProfileService);
+  private readonly notificationService = inject(NotificationService);
 
   protected readonly user = this.store.selectSignal(AuthState.user);
-  protected readonly isUserMenuOpen = signal(false);
-  protected readonly avatarUrl = signal<string | null>(null);
 
-  protected readonly displayName = computed(() => {
+  protected readonly getNotificationTypeLabel = getNotificationTypeLabel;
+  protected readonly getNotificationTypeClasses = getNotificationTypeClasses;
+  protected readonly getNotificationIconName = getNotificationIconName;
+  protected readonly getNotificationIconClasses = getNotificationIconClasses;
+
+  protected readonly userFullName = computed(() => {
     const currentUser = this.user();
     const fullName = currentUser?.['fullName'];
 
@@ -46,68 +56,57 @@ export class MenteeNavbar {
     return 'Mentee';
   });
 
-  protected readonly displayEmail = computed(() => {
+  protected readonly userEmail = computed(() => {
     const email = this.user()?.['email'];
-    return typeof email === 'string' && email.trim() ? email : 'No email available';
+    return typeof email === 'string' && email.trim()
+      ? email
+      : 'No email available';
   });
 
-  protected readonly initials = computed(() => {
-    const name = this.displayName().trim();
-    const parts = name.split(/\s+/).filter(Boolean);
+  //NOTIFICATIONS
 
-    if (parts.length >= 2) {
-      return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
+  protected readonly fetchNotifications = toSignal<NotificationInterface[] | null>(
+    this.notificationService.getMyNotifications(),
+    { initialValue: null }
+  );
+  protected readonly notifications = toSignal(
+    this.notificationService.notifications$,
+    { initialValue: [] as NotificationInterface[] }
+  );
+
+  protected readonly isNotificationsLoading = computed(
+    () => this.fetchNotifications() === null
+  );
+
+  protected readonly unreadCount = computed(
+    () =>
+      this.notifications()?.filter(
+        (notification) => notification.status === NotificationStatus.UNREAD
+      ).length ?? 0
+  );
+
+  protected markAsRead(notification: NotificationInterface): void {
+    if (notification.status === NotificationStatus.READ) {
+      return;
     }
 
-    if (parts.length === 1) {
-      return parts[0].slice(0, 2).toUpperCase();
-    }
-
-    return 'ME';
-  });
-
-  constructor() {
-    this.loadProfileAvatar();
+    void firstValueFrom(
+      this.notificationService.markAsRead(notification.id)
+    ).catch(() => undefined);
   }
-
 
   protected logout(): void {
     void this.store.dispatch(new AuthActions.Logout());
   }
 
- 
+  protected closeNotificationDropdown(): void {
+    const dropdown = document.getElementById('dropdownNotification');
+    const dropdownButton = document.getElementById(
+      'dropdownNotificationButton'
+    );
 
-  private loadProfileAvatar(): void {
-    const userId = this.user()?.['id'];
-    if (typeof userId !== 'string' || !userId.trim()) {
-      return;
-    }
-
-    this.profileService
-      .getUserProfile(userId)
-      .pipe(takeUntilDestroyed())
-      .subscribe({
-        next: (response) => {
-          const avatar = this.extractAvatarUrl(response.data as ProfileResponseShape | null);
-          this.avatarUrl.set(avatar);
-        },
-        error: () => {
-          this.avatarUrl.set(null);
-        },
-      });
-  }
-
-  private extractAvatarUrl(profile: ProfileResponseShape | null): string | null {
-    const avatarAttachments = profile?.user?.avatarAttachments;
-
-    if (Array.isArray(avatarAttachments)) {
-      return avatarAttachments[0]?.publicUrl ?? null;
-    }
-
-    if (avatarAttachments && typeof avatarAttachments === 'object') {
-      return avatarAttachments.publicUrl ?? null;
-    }
-
-    return null;
+    dropdown?.classList.add('hidden');
+    dropdown?.removeAttribute('style');
+    dropdownButton?.setAttribute('aria-expanded', 'false');
   }
 }

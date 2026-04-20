@@ -1,6 +1,6 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
-import { map, Observable, of } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 
 import { buildApiUrl } from '../helpers/api.helper';
 import { ApiResponse } from '../interfaces/api-response.interface';
@@ -8,25 +8,145 @@ import {
   BookingWithUsersInterface,
   BookingSessionCardInterface,
   BookingStatus,
+  BookingCardInterface,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
+import {
+  handleApiErrorWithFallback,
+  validateApiResponse,
+} from '../helpers/api-response.helper';
 
 @Injectable({
   providedIn: 'root',
 })
 export class BookingService {
   private readonly http = inject(HttpClient);
-  private readonly useMock = true;
 
-  getBookingsDetails(userId: string): Observable<BookingWithUsersInterface[]> {
-    if (this.useMock) {
-      return of(this.buildMockBookings(userId));
-    }
 
+
+
+
+  
+  getBookingsByUserId(userId: string): Observable<BookingCardInterface[]> {
+    return this.http
+      .get<ApiResponse<BookingCardInterface[]>>(
+        buildApiUrl(`/booking/user/${userId}`)
+      )
+      .pipe(
+        map((response) =>
+          validateApiResponse<BookingCardInterface[]>(
+            response,
+            'Failed to fetch bookings.'
+          )
+        ),
+        map((bookings) =>
+          bookings.filter(
+            (booking) =>
+              booking.status !== BookingStatus.DELETED && !booking.isDeleted
+          )
+        ),
+        map((bookings) =>
+          bookings.map((booking) => ({
+            ...booking,
+            sessionDateTime: new Date(booking.sessionDateTime),
+            createdAt: new Date(booking.createdAt),
+            updatedAt: new Date(booking.updatedAt),
+          }))
+        ),
+        catchError(handleApiErrorWithFallback([], 'Failed to fetch bookings'))
+      );
+  }
+
+  getBookingsByStatuses(userId: string, statuses: BookingStatus[]): Observable<BookingCardInterface[]> {
+    return this.getBookingsByUserId(userId).pipe(
+      map((booking) =>
+        booking.filter((booking) => statuses.includes(booking.status))
+      )
+    );
+  } 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  //---------------------------------------------------------------------
+  getUserBookings(userId: string): Observable<BookingWithUsersInterface[]> {
     return this.http
       .get<ApiResponse<BookingWithUsersInterface[]>>(
         buildApiUrl(`/booking/user/${userId}`)
       )
-      .pipe(map((response) => response.data ?? []));
+      .pipe(
+        map((response) => {
+          if (response.status !== 'success') {
+            throw new Error(
+              response.message || 'Failed to fetch user bookings.'
+            );
+          }
+
+          return response.data ?? [];
+        }),
+        map((bookings) =>
+          bookings.map((booking) => ({
+            ...booking,
+            sessionDateTime: new Date(booking.sessionDateTime),
+            createdAt: new Date(booking.createdAt),
+            updatedAt: new Date(booking.updatedAt),
+          }))
+        ),
+        catchError((error: HttpErrorResponse | Error) => {
+          const message =
+            error instanceof HttpErrorResponse
+              ? error.error?.message ||
+                error.message ||
+                'Booking API request failed.'
+              : error.message || 'Booking API request failed.';
+
+          console.error('Failed to fetch user bookings:', message, error);
+
+          return of([]);
+        })
+      );
+  }
+
+  getBookingsDetails(userId: string): Observable<BookingWithUsersInterface[]> {
+    return this.http
+      .get<ApiResponse<BookingWithUsersInterface[]>>(
+        buildApiUrl(`/booking/user/${userId}`)
+      )
+      .pipe(
+        map((response) => response.data ?? []),
+        map((bookings) =>
+          bookings.map((booking) => ({
+            ...booking,
+            sessionDateTime: new Date(booking.sessionDateTime),
+            createdAt: new Date(booking.createdAt),
+            updatedAt: new Date(booking.updatedAt),
+          }))
+        ),
+        catchError((error) => {
+          console.error('booking api request failed', error);
+          return of([]);
+        })
+      );
   }
 
   getSessionRequestDetails(
@@ -137,241 +257,4 @@ export class BookingService {
       })
     );
   }
-
-  private buildMockBookings(userId: string): BookingWithUsersInterface[] {
-    const now = new Date();
-
-    return [
-      {
-        id: 'book-mock-001',
-        menteeId: userId,
-        mentorId: 'mentor-user-001',
-        sessionDateTime: new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() + 2,
-          10,
-          0
-        ),
-        status: BookingStatus.APPROVED,
-        sessionLink: 'https://meet.google.com/mock-session-001',
-        notes:
-          'Discuss Angular dashboard architecture and booking overview UI.',
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
-        mentor: {
-          id: 'mentor-user-001',
-          firstName: 'Andrea',
-          lastName: 'Ramos',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=12',
-            },
-          ],
-        },
-        mentee: {
-          id: userId,
-          firstName: 'Daniel',
-          lastName: 'Mengote',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=15',
-            },
-          ],
-        },
-      },
-      {
-        id: 'book-mock-002',
-        menteeId: userId,
-        mentorId: 'mentor-user-002',
-        sessionDateTime: new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() + 4,
-          14,
-          30
-        ),
-        status: BookingStatus.PENDING,
-        sessionLink: undefined,
-        notes: 'Need help with API response mapping and RxJS streams.',
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
-        mentor: {
-          id: 'mentor-user-002',
-          firstName: 'Miguel',
-          lastName: 'Santos',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=33',
-            },
-          ],
-        },
-        mentee: {
-          id: userId,
-          firstName: 'Daniel',
-          lastName: 'Mengote',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=15',
-            },
-          ],
-        },
-      },
-      {
-        id: 'book-mock-003',
-        menteeId: userId,
-        mentorId: 'mentor-user-003',
-        sessionDateTime: new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() - 6,
-          9,
-          0
-        ),
-        status: BookingStatus.COMPLETED,
-        sessionLink: undefined,
-        notes: 'Completed frontend architecture review session.',
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
-        mentor: {
-          id: 'mentor-user-003',
-          firstName: 'Patricia',
-          lastName: 'Reyes',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=47',
-            },
-          ],
-        },
-        mentee: {
-          id: userId,
-          firstName: 'Daniel',
-          lastName: 'Mengote',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=15',
-            },
-          ],
-        },
-      },
-      {
-        id: 'book-mock-004',
-        menteeId: userId,
-        mentorId: 'mentor-user-001',
-        sessionDateTime: new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() - 8,
-          13,
-          0
-        ),
-        status: BookingStatus.CANCELLED,
-        sessionLink: undefined,
-        notes: 'Cancelled because of schedule conflict.',
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
-        mentor: {
-          id: 'mentor-user-001',
-          firstName: 'Andrea',
-          lastName: 'Ramos',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=12',
-            },
-          ],
-        },
-        mentee: {
-          id: userId,
-          firstName: 'Daniel',
-          lastName: 'Mengote',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=15',
-            },
-          ],
-        },
-      },
-      {
-        id: 'book-mock-005',
-        menteeId: userId,
-        mentorId: 'mentor-user-002',
-        sessionDateTime: new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() - 10,
-          15,
-          30
-        ),
-        status: BookingStatus.REJECTED,
-        sessionLink: undefined,
-        notes: 'Mentor was unavailable for the requested slot.',
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
-        mentor: {
-          id: 'mentor-user-002',
-          firstName: 'Miguel',
-          lastName: 'Santos',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=33',
-            },
-          ],
-        },
-        mentee: {
-          id: userId,
-          firstName: 'Daniel',
-          lastName: 'Mengote',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=15',
-            },
-          ],
-        },
-      },
-      {
-        id: 'book-mock-006',
-        menteeId: userId,
-        mentorId: 'mentor-user-003',
-        sessionDateTime: new Date(
-          now.getFullYear(),
-          now.getMonth(),
-          now.getDate() + 7,
-          8,
-          30
-        ),
-        status: BookingStatus.APPROVED,
-        sessionLink: 'https://zoom.us/j/mock-session-002',
-        notes: 'Follow-up session for dashboard filtering and booking flow.',
-        isDeleted: false,
-        createdAt: now,
-        updatedAt: now,
-        mentor: {
-          id: 'mentor-user-003',
-          firstName: 'Patricia',
-          lastName: 'Reyes',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=47',
-            },
-          ],
-        },
-        mentee: {
-          id: userId,
-          firstName: 'Daniel',
-          lastName: 'Mengote',
-          avatarAttachments: [
-            {
-              publicUrl: 'https://i.pravatar.cc/300?img=15',
-            },
-          ],
-        },
-      },
-    ];
-  }
-
 }

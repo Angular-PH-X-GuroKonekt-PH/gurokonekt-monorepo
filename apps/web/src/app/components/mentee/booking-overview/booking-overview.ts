@@ -1,19 +1,22 @@
 import { CommonModule } from '@angular/common';
-import { Component, inject } from '@angular/core';
+import { Component, computed, inject, signal } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { BehaviorSubject, combineLatest, map, of, switchMap } from 'rxjs';
+import { of, switchMap } from 'rxjs';
 
 import { BookingService } from '../../../services/booking.service';
 import { AuthState } from '../../../store/auth';
 import {
   BookingFilter,
+  BookingSessionCardInterface,
   BookingStatus,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { FilterButton } from '../../shared/filter-button/filter-button';
 import { SectionTitle } from '../../shared/section-title/section-title';
 import { SessionBookingCard } from '../../shared/session-booking-card/session-booking-card';
-
-type BookingSortOption = 'DATE_ASC' | 'NAME_ASC';
+import { SectionCard } from '../../shared/section-card/section-card';
+import { IconComponent } from '../../shared/icon/icon.component';
 
 @Component({
   selector: 'app-booking-overview',
@@ -22,6 +25,8 @@ type BookingSortOption = 'DATE_ASC' | 'NAME_ASC';
     CommonModule,
     SessionBookingCard,
     FilterButton,
+    SectionCard,
+    IconComponent
   ],
   templateUrl: './booking-overview.html',
   styleUrl: './booking-overview.scss',
@@ -29,116 +34,108 @@ type BookingSortOption = 'DATE_ASC' | 'NAME_ASC';
 export class BookingOverview {
   private readonly bookingService = inject(BookingService);
   private readonly store = inject(Store);
+  private readonly router = inject(Router);
 
   protected readonly authUser = this.store.selectSignal(AuthState.user);
+  protected readonly userId = computed(() => this.authUser()?.id);
+  protected readonly bookingStatus = BookingStatus;
+  protected readonly selectedFilter = signal<BookingFilter>('ALL');
 
-  bookingStatus = BookingStatus;
-  selectedFilter: BookingFilter = 'ALL';
-  selectedSort: BookingSortOption = 'DATE_ASC';
 
-  private readonly selectedFilterSubject = new BehaviorSubject<BookingFilter>(
-    'ALL'
-  );
-  private readonly selectedSortSubject = new BehaviorSubject<BookingSortOption>(
-    'DATE_ASC'
-  );
-
-  readonly selectedFilter$ = this.selectedFilterSubject.asObservable();
-  readonly selectedSort$ = this.selectedSortSubject.asObservable();
-
-  readonly bookings$ = of(this.authUser()).pipe(
-    switchMap((user) => {
-      const userId = user?.id;
-
-      if (!userId) {
-        return of([]);
-      }
-
-      return this.bookingService.getActiveBookings(userId);
-    })
-  );
-
-  readonly bookingOverviewData$ = combineLatest([
-    this.bookings$,
-    this.selectedFilter$,
-    this.selectedSort$,
-  ]).pipe(
-    map(([bookings, filter, sort]) => {
-      const now = Date.now();
-
-      const nearestApprovedSession = bookings
-        .filter(
-          (booking) =>
-            booking.status === BookingStatus.APPROVED &&
-            Boolean(booking.sessionLink?.trim()) &&
-            new Date(booking.sessionDateTime).getTime() >= now
-        )
-        .sort(
-          (a, b) =>
-            new Date(a.sessionDateTime).getTime() -
-            new Date(b.sessionDateTime).getTime()
-        )
-        .slice(0, 1);
-
-      const filteredBookings =
-        filter === 'ALL'
-          ? bookings
-          : filter === BookingStatus.APPROVED
-            ? bookings.filter(
-                (booking) =>
-                  booking.status === BookingStatus.APPROVED &&
-                  new Date(booking.sessionDateTime).getTime() >= now
-              )
-            : bookings.filter((booking) => booking.status === filter);
-
-      const sortedBookings = [...filteredBookings].sort((a, b) => {
-        if (sort === 'NAME_ASC') {
-          return a.mentorName.localeCompare(b.mentorName);
+  protected readonly fetchBookings = toSignal<BookingSessionCardInterface[] | null>(
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of([] as BookingSessionCardInterface[]);
         }
 
-        return (
-          new Date(a.sessionDateTime).getTime() -
-          new Date(b.sessionDateTime).getTime()
-        );
-      });
-
-      return {
-        nearestApprovedSession,
-        filteredBookings: sortedBookings,
-        counts: {
-          ALL: bookings.length,
-          UPCOMING: bookings.filter(
-            (booking) =>
-              booking.status === BookingStatus.APPROVED &&
-              new Date(booking.sessionDateTime).getTime() >= now
-          ).length,
-          PENDING: bookings.filter(
-            (booking) => booking.status === BookingStatus.PENDING
-          ).length,
-          CANCELLED: bookings.filter(
-            (booking) => booking.status === BookingStatus.CANCELLED
-          ).length,
-          REJECTED: bookings.filter(
-            (booking) => booking.status === BookingStatus.REJECTED
-          ).length,
-          COMPLETED: bookings.filter(
-            (booking) => booking.status === BookingStatus.COMPLETED
-          ).length,
-        },
-      };
-    })
+        return this.bookingService.getActiveBookings(userId);
+      })
+    ),
+    { initialValue: null }
   );
 
-  setFilter(filter: BookingFilter): void {
-    this.selectedFilter = filter;
-    this.selectedFilterSubject.next(filter);
+  protected readonly isBookingsLoading = computed(() => this.fetchBookings() === null);
+  protected readonly displayedBookings = computed(() => {
+    const bookings = this.fetchBookings() ?? [];
+    const filter = this.selectedFilter();
+
+    if (filter === 'ALL') {
+      return bookings;
+    }
+
+    return bookings.filter((booking) => booking.status === filter);
+  });
+  protected readonly upcomingBooking = computed(() => {
+    const now = Date.now();
+
+    return [...(this.fetchBookings() ?? [])]
+      .filter(
+        (booking) =>
+          booking.status === BookingStatus.APPROVED &&
+          new Date(booking.sessionDateTime).getTime() >= now
+      )
+      .sort(
+        (firstBooking, secondBooking) =>
+          new Date(firstBooking.sessionDateTime).getTime() -
+          new Date(secondBooking.sessionDateTime).getTime()
+      )[0] ?? null;
+  });
+
+  protected readonly bookingCounts = computed(() => {
+    const bookings = this.fetchBookings() ?? [];
+
+    return {
+      ALL: bookings.length,
+      UPCOMING: bookings.filter(
+        (booking) => booking.status === BookingStatus.APPROVED
+      ).length,
+      PENDING: bookings.filter(
+        (booking) => booking.status === BookingStatus.PENDING
+      ).length,
+      CANCELLED: bookings.filter(
+        (booking) => booking.status === BookingStatus.CANCELLED
+      ).length,
+      REJECTED: bookings.filter(
+        (booking) => booking.status === BookingStatus.REJECTED
+      ).length,
+      COMPLETED: bookings.filter(
+        (booking) => booking.status === BookingStatus.COMPLETED
+      ).length,
+    };
+  });
+
+  protected setFilter(filter: BookingFilter): void {
+    this.selectedFilter.set(filter);
   }
 
-  setSort(event: Event): void {
-    const target = event.target as HTMLSelectElement | null;
-    const sort = (target?.value ?? 'DATE_ASC') as BookingSortOption;
+  protected getUpcomingBookingTitle(booking: BookingSessionCardInterface): string {
+    if (booking.notes?.trim()) {
+      return booking.notes.trim();
+    }
 
-    this.selectedSort = sort;
-    this.selectedSortSubject.next(sort);
+    return 'Upcoming mentoring session';
+  }
+
+  protected getUpcomingBookingDateTime(booking: BookingSessionCardInterface): string {
+    const sessionDate = new Date(booking.sessionDateTime);
+
+    return new Intl.DateTimeFormat('en-US', {
+      weekday: 'short',
+      month: 'short',
+      day: 'numeric',
+      hour: 'numeric',
+      minute: '2-digit',
+    }).format(sessionDate);
+  }
+
+  protected openSessionLink(sessionLink: string): void {
+    window.open(sessionLink, '_blank', 'noopener,noreferrer');
+  }
+
+  protected onViewDetails(booking: BookingSessionCardInterface): void {
+    void this.router.navigate(['/mentee/booking-overview'], {
+      queryParams: { bookingId: booking.id },
+    });
   }
 }
