@@ -1,6 +1,7 @@
 import { Component, signal } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
+import { APP_ROUTES } from '../../constants/routes';
 import { IconComponent, IconName } from '../shared/icon/icon.component';
 
 interface NavItem {
@@ -11,6 +12,7 @@ interface NavItem {
 
 @Component({
   selector: 'app-sidebar',
+  standalone: true,
   imports: [RouterLink, RouterLinkActive, IconComponent],
   templateUrl: './sidebar.html',
   styleUrl: './sidebar.scss',
@@ -28,8 +30,7 @@ export class Sidebar {
   ];
 
   readonly bottomNavItems: NavItem[] = [
-    { label: 'Profile', route: '/profile', icon: 'user' },
-    { label: 'Settings', route: '/settings', icon: 'cog-6-tooth' },
+    { label: 'Profile Settings', route: APP_ROUTES.SETTINGS, icon: 'cog-6-tooth' },
   ];
 
   toggleSidebar(): void {

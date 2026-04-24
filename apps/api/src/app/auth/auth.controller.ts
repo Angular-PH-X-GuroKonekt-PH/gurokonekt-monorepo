@@ -14,6 +14,8 @@ import {
   Headers,
   UploadedFiles,
   UseInterceptors,
+  HttpException,
+  HttpStatus,
 } from '@nestjs/common';
 import {
   ForgotPasswordDto,
@@ -22,6 +24,7 @@ import {
   RegisterMentorDto,
   ResendConfirmationEmailDto,
   ResponseDto,
+  ResponseStatus,
   SignInWithOAthDto,
   SignInWithPasswordDto,
   SWAGGER_DOCUMENTATION,
@@ -72,7 +75,22 @@ export class AuthController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string
   ) {
-    return this.authService.registerMentee(input, ipAddress, userAgent);
+    const response = await this.authService.registerMentee(input, ipAddress, userAgent);
+    
+    // If service returns an error status, throw the appropriate HTTP exception
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 
   // ====================================================
@@ -112,7 +130,22 @@ export class AuthController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    return this.authService.registerMentor(input, files, ipAddress, userAgent);
+    const response = await this.authService.registerMentor(input, files, ipAddress, userAgent);
+    
+    // If service returns an error status, throw the appropriate HTTP exception
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 
   // ====================================================
@@ -152,7 +185,22 @@ export class AuthController {
     @Headers('user-agent') userAgent: string,
     @Headers('origin') origin: string
   ) {
-    return this.authService.signInWithPassword(input, ipAddress, userAgent, origin);
+    const response = await this.authService.signInWithPassword(input, ipAddress, userAgent, origin);
+    
+    // If service returns an error status, throw the appropriate HTTP exception
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 
   // ====================================================
@@ -188,7 +236,21 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'OAuth token validation failed.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async signInWithOAuth(@Body() input: SignInWithOAthDto) {
-    return this.authService.signInWithOAuth(input);
+    const response = await this.authService.signInWithOAuth(input);
+    
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 
   // ====================================================
@@ -227,7 +289,21 @@ export class AuthController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string
   ) {
-    return this.authService.resendEmailSignUpConfirmation(input, ipAddress, userAgent);
+    const response = await this.authService.resendEmailSignUpConfirmation(input, ipAddress, userAgent);
+    
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 
   // ====================================================
@@ -267,7 +343,21 @@ export class AuthController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string
   ) {
-    return this.authService.updatePassword(input, ipAddress, userAgent);
+    const response = await this.authService.updatePassword(input, ipAddress, userAgent);
+    
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 
   // ====================================================
@@ -306,7 +396,21 @@ export class AuthController {
     @Headers('user-agent') userAgent: string,
     @Headers('origin') origin: string
   ) {
-    return this.authService.forgotPassword(input, ipAddress, userAgent, origin);
+    const response = await this.authService.forgotPassword(input, ipAddress, userAgent, origin);
+    
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 
   // ====================================================
@@ -345,7 +449,21 @@ export class AuthController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string
   ) {
-    return this.authService.resetPassword(input, ipAddress, userAgent);
+    const response = await this.authService.resetPassword(input, ipAddress, userAgent);
+    
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 
   // ====================================================
@@ -383,6 +501,20 @@ export class AuthController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string
   ) {
-    return this.authService.verifyResetPin(input, ipAddress, userAgent);
+    const response = await this.authService.verifyResetPin(input, ipAddress, userAgent);
+    
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+    
+    return response;
   }
 }

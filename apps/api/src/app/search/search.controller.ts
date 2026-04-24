@@ -2,6 +2,8 @@ import {
   Controller,
   ForbiddenException,
   Get,
+  HttpException,
+  HttpStatus,
   Param,
   Query,
   Req,
@@ -21,6 +23,7 @@ import { SearchService } from './search.service';
 import {
   DaysInWeek,
   ResponseDto,
+  ResponseStatus,
   SearchMentorDto,
   SearchSortBy,
   SearchSortOrder,
@@ -80,7 +83,14 @@ export class SearchController {
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
   @ApiResponse({ status: 404, description: 'Mentor not found or not available (not approved / profile incomplete).' })
   async getMentorProfile(@Param('mentorId') mentorId: string) {
-    return this.searchService.getMentorProfileById(mentorId);
+    const response = await this.searchService.getMentorProfileById(mentorId);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
   }
 
   // ====================================================
@@ -159,6 +169,13 @@ export class SearchController {
   const userId = req.user?.id ?? '259f2a25-c180-4609-a603-6d60ba04e69a';
   const role = req.user?.role ?? 'authenticated';
 
-  return this.searchService.searchMentors(dto, userId, role);
-}
+    const response = await this.searchService.searchMentors(dto, userId, role);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
 }

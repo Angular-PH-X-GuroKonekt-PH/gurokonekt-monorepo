@@ -192,7 +192,7 @@ export class MentorRegister
         middleName: formData.middleName || undefined,
         lastName: formData.lastName,
         suffix: formData.suffix || undefined,
-        email: formData.email,
+        email: formData.email.toLowerCase().trim(),
         phoneNumber: formatPhoneToE164(
           formData.phoneNumber,
           formData.country || 'PH'

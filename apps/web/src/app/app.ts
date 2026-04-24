@@ -10,10 +10,11 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
 import { filter, map } from 'rxjs/operators';
 import { ToastContainerComponent } from './components/shared/toast/toast.component';
+import { Sidebar } from './components/sidebar/sidebar';
 import * as AuthActions from './store/auth/auth.actions';
 
 @Component({
-  imports: [RouterModule, ToastContainerComponent],
+  imports: [RouterModule, ToastContainerComponent, Sidebar],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',

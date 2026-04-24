@@ -24,6 +24,11 @@ export const appRoutes: Route[] = [
 		title: 'Complete Your Profile'
 	},
 	
+	{
+		path: APP_ROUTES.MENTOR_PROFILE_SETUP.replace('/', ''),
+		loadComponent: () => import('./components/mentor/post-login/post-login').then(m => m.MentorPostLogin),
+		title: 'Complete Your Mentor Profile'
+	},
 	{ 
 		path: 'mentee',
 		loadChildren: () => import('./routes/mentee.routes').then(m => m.MENTEE_ROUTES), 
@@ -31,6 +36,35 @@ export const appRoutes: Route[] = [
 		{ 
 		path: 'mentor', 
 		loadChildren: () => import('./routes/mentor.routes').then(m => m.MENTOR_ROUTES)
+	},
+	{
+		path: APP_ROUTES.MENTOR_DASHBOARD.replace('/', ''),
+		redirectTo: APP_ROUTES.DASHBOARD.replace('/', ''),
+		pathMatch: 'full',
+	},
+	{
+		path: APP_ROUTES.SETTINGS.replace('/', ''),
+		canActivate: [dashboardAccessGuard],
+		loadComponent: () => import('./components/settings/profile-settings/profile-settings').then(m => m.ProfileSettings),
+		title: 'Profile Settings',
+		children: [
+			{
+				path: '',
+				pathMatch: 'full',
+				redirectTo: 'overview',
+			},
+			{
+				path: 'overview',
+				loadComponent: () => import('./components/settings/overview-section/overview-section').then(m => m.OverviewSection),
+				title: 'Overview Section',
+			},
+		],
+	},
+	{ 
+		path: APP_ROUTES.SETTINGS_PROFILE.replace('/', ''), 
+		canActivate: [dashboardAccessGuard],
+		loadComponent: () => import('./components/mentee/profile-settings/profile-settings').then(m => m.ProfileSettingsComponent),
+		title: 'Profile Settings'
 	},
 	{ 
 		path: APP_ROUTES.ROOT, 

@@ -54,9 +54,14 @@ export class UserProfileValidator {
     }
   }
 
-  static buildUserUpdateData(dto: any, isProfileComplete: boolean) {
+  static buildUserUpdateData(dto: any, isProfileComplete: boolean, role: UserRole) {
     return !isProfileComplete
-      ? { isProfileComplete: true, updatedById: dto.updatedById }
+      ? {
+          ...(role === UserRole.Mentor
+            ? { isMentorProfileComplete: true }
+            : { isProfileComplete: true }),
+          updatedById: dto.updatedById,
+        }
       : {
           phoneNumber: dto.phoneNumber,
           country: dto.country,
