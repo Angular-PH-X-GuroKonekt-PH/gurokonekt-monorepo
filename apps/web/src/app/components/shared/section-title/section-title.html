@@ -1,5 +1,5 @@
 <div class="flex flex-col mb-2">
-  <h2 class="text-2xl flex gap-2 items-center font-bold text-blue-900">
+  <h2 class="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent">
     {{title()}}
 
     @if (count()) {
@@ -12,6 +12,7 @@
   </h2>
 
   @if(subtitle()){
-  <p class="mt-1 text-[0.95rem] text-slate-500">{{subtitle()}}</p>
+  <p class="mt-3 text-base text-gray-700">{{subtitle()}}</p>
   }
+
 </div>

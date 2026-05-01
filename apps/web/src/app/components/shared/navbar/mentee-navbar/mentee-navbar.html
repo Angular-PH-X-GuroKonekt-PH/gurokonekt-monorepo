@@ -47,7 +47,7 @@
           <div class="block rounded-t-base bg-neutral-secondary-medium px-4 py-2 text-center font-medium text-body">
             Notifications
           </div>
-          <div class="divide-y divide-default">
+            <div class="divide-y divide-default">
             @if (isNotificationsLoading()) {
             <div class="space-y-3 px-4 py-4">
               @for (_ of [1, 2, 3]; track $index) {
@@ -63,7 +63,7 @@
               </div>
               }
             </div>
-            }  @else if ((notifications()?.length ?? 0) === 0){
+            }  @else if (notifications().length === 0){
             <div class="px-5 py-6 text-center">
               <div
                 class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100">
@@ -76,46 +76,7 @@
             </div>
             } @else {
             @for (notif of notifications(); track notif.id) {
-            <button type="button" (click)="markAsRead(notif)"
-              class="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-neutral-secondary-medium"
-              [class.bg-orange-50/60]="notif.status === 'UNREAD'" [attr.aria-label]="notif.status === 'UNREAD'
-                ? 'Mark notification as read: ' + notif.title
-                : 'Notification: ' + notif.title">
-              <span class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1"
-                [ngClass]="getNotificationIconClasses(notif.type)">
-                <app-icon [name]="getNotificationIconName(notif.type)" [class]="'h-4 w-4'"></app-icon>
-              </span>
-
-              <div class="min-w-0 flex-1">
-                <div class="flex items-start justify-between gap-3">
-                  <div class="space-y-1">
-                    <div class="flex flex-wrap items-center gap-2">
-                      <span
-                        class="inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide"
-                        [class]="getNotificationTypeClasses(notif.type)">
-                        {{ getNotificationTypeLabel(notif.type) }}
-                      </span>
-
-                      @if (notif.status === 'UNREAD') {
-                      <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span>
-                      }
-                    </div>
-
-                    <p class="text-sm font-semibold text-heading">{{ notif.title }}</p>
-                    <p class="text-sm leading-5 text-body">{{ notif.message }}</p>
-                    @if (notif.status === 'UNREAD') {
-                    <p class="text-[11px] font-medium uppercase tracking-wide text-orange-600">
-                      Click to mark as read
-                    </p>
-                    }
-                  </div>
-
-                  <span class="shrink-0 text-xs text-body">
-                    {{ notif.createdAt | date: 'MMM d, h:mm a' }}
-                  </span>
-                </div>
-              </div>
-            </button>
+            <app-navbar-notification-item [notification]="notif" (markAsRead)="markAsRead($event)" />
             }
             }
           </div>
@@ -140,7 +101,7 @@
               class="flex rounded-full bg-gray-800 text-sm focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
               aria-expanded="false" data-dropdown-toggle="dropdown-user">
              
-              <img class="h-8 w-8 rounded-full object-cover" src="assets/img/no_profile_avatar.png"
+              <img class="h-8 w-8 rounded-full object-cover" [src]="userAvatarUrl()"
                 [alt]="userFullName()" />
             </button>
           </div>

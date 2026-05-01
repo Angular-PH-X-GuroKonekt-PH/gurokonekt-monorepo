@@ -3,6 +3,11 @@ import { dashboardAccessGuard } from '../guards/dashboard-access.guard';
 
 export const MENTOR_ROUTES: Route[] = [
   {
+    path: '',
+    pathMatch: 'full',
+    redirectTo: 'dashboard',
+  },
+  {
     path: 'dashboard',
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>

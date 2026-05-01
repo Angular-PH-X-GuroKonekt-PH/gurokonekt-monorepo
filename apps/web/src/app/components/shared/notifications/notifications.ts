@@ -1,5 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { firstValueFrom } from 'rxjs';
 
 import {
@@ -17,7 +18,6 @@ import {
 import { IconComponent } from '../icon/icon.component';
 import { SectionCard } from '../section-card/section-card';
 import { SectionTitle } from '../section-title/section-title';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-notifications',
@@ -28,20 +28,38 @@ import { toSignal } from '@angular/core/rxjs-interop';
 export class Notifications {
   private readonly notificationService = inject(NotificationService);
 
-  protected readonly notifications = toSignal<NotificationInterface[] | null>(
+
+
+
+
+
+
+
+
+
+
+
+  //NOTIFICATIONS 
+
+  protected readonly fetchNotifications = toSignal<NotificationInterface[] | null>(
     this.notificationService.getMyNotifications(),
-    { initialValue: null}
+    { initialValue: null }
+  );
+
+  protected readonly notifications = toSignal(
+    this.notificationService.notifications$,
+    { initialValue: [] as NotificationInterface[] }
   );
 
   protected readonly isNotificationsLoading = computed(
-    () => this.notifications() === null
+    () => this.fetchNotifications() === null
   );
 
   protected readonly unreadCount = computed(
     () =>
-      this.notifications()?.filter(
+      this.notifications().filter(
         (notification) => notification.status === NotificationStatus.UNREAD
-      ).length ?? 0
+      ).length
   );
 
   protected markAsRead(notification: NotificationInterface): void {
@@ -53,6 +71,8 @@ export class Notifications {
       () => undefined
     );
   }
+
+  
 
   protected readonly getNotificationTypeLabel = getNotificationTypeLabel;
   protected readonly getNotificationTypeClasses = getNotificationTypeClasses;

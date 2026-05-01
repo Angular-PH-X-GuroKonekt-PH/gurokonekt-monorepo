@@ -3,7 +3,7 @@
     <div class="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
       <app-section-title
         title="Notifications"
-        [count]="notifications()?.length ?? 0"
+        [count]="notifications().length"
         subtitle="Important updates about your bookings, sessions, and platform activity."
       />
 
@@ -27,7 +27,7 @@
           </div>
         }
       </div>
-    } @else if ((notifications()?.length ?? 0) === 0) {
+    } @else if (notifications().length === 0) {
       <div
         class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm"
       >

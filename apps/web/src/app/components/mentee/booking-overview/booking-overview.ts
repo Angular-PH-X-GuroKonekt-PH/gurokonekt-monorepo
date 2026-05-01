@@ -5,28 +5,31 @@ import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { of, switchMap } from 'rxjs';
 
-import { BookingService } from '../../../services/booking.service';
-import { AuthState } from '../../../store/auth';
 import {
+  BookingCardInterface,
   BookingFilter,
-  BookingSessionCardInterface,
   BookingStatus,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
+
+import { BookingService } from '../../../services/booking.service';
+import { AuthState } from '../../../store/auth';
+// import { FeaturedBookingCard } from '../../shared/featured-booking-card/featured-booking-card';
 import { FilterButton } from '../../shared/filter-button/filter-button';
+import { SectionCard } from '../../shared/section-card/section-card';
 import { SectionTitle } from '../../shared/section-title/section-title';
 import { SessionBookingCard } from '../../shared/session-booking-card/session-booking-card';
-import { SectionCard } from '../../shared/section-card/section-card';
-import { IconComponent } from '../../shared/icon/icon.component';
+import { LoadingCard } from '../../shared/loading-card/loading-card';
 
 @Component({
   selector: 'app-booking-overview',
   imports: [
-    SectionTitle,
     CommonModule,
-    SessionBookingCard,
+    LoadingCard,
+    // FeaturedBookingCard,
     FilterButton,
     SectionCard,
-    IconComponent
+    SectionTitle,
+    SessionBookingCard,
   ],
   templateUrl: './booking-overview.html',
   styleUrl: './booking-overview.scss',
@@ -41,23 +44,29 @@ export class BookingOverview {
   protected readonly bookingStatus = BookingStatus;
   protected readonly selectedFilter = signal<BookingFilter>('ALL');
 
-
-  protected readonly fetchBookings = toSignal<BookingSessionCardInterface[] | null>(
+  protected readonly fetchBookings = toSignal<BookingCardInterface[] | null>(
     toObservable(this.userId).pipe(
       switchMap((userId) => {
         if (!userId) {
-          return of([] as BookingSessionCardInterface[]);
+          return of([] as BookingCardInterface[]);
         }
 
-        return this.bookingService.getActiveBookings(userId);
+        return this.bookingService.getBookingsByUserId(userId);
       })
     ),
     { initialValue: null }
   );
 
-  protected readonly isBookingsLoading = computed(() => this.fetchBookings() === null);
-  protected readonly displayedBookings = computed(() => {
-    const bookings = this.fetchBookings() ?? [];
+  protected readonly isBookingsLoading = computed(
+    () => this.fetchBookings() === null
+  );
+
+  protected readonly bookings = computed<BookingCardInterface[]>(
+    () => this.fetchBookings() ?? []
+  );
+
+  protected readonly displayedBookings = computed<BookingCardInterface[]>(() => {
+    const bookings = this.bookings();
     const filter = this.selectedFilter();
 
     if (filter === 'ALL') {
@@ -66,24 +75,29 @@ export class BookingOverview {
 
     return bookings.filter((booking) => booking.status === filter);
   });
-  protected readonly upcomingBooking = computed(() => {
-    const now = Date.now();
 
-    return [...(this.fetchBookings() ?? [])]
-      .filter(
-        (booking) =>
-          booking.status === BookingStatus.APPROVED &&
-          new Date(booking.sessionDateTime).getTime() >= now
-      )
-      .sort(
-        (firstBooking, secondBooking) =>
-          new Date(firstBooking.sessionDateTime).getTime() -
-          new Date(secondBooking.sessionDateTime).getTime()
-      )[0] ?? null;
-  });
+  protected readonly upcomingBooking = computed<BookingCardInterface | null>(
+    () => {
+      const now = Date.now();
+
+      return (
+        [...this.bookings()]
+          .filter(
+            (booking) =>
+              booking.status === BookingStatus.APPROVED &&
+              new Date(booking.sessionDateTime).getTime() >= now
+          )
+          .sort(
+            (firstBooking, secondBooking) =>
+              new Date(firstBooking.sessionDateTime).getTime() -
+              new Date(secondBooking.sessionDateTime).getTime()
+          )[0] ?? null
+      );
+    }
+  );
 
   protected readonly bookingCounts = computed(() => {
-    const bookings = this.fetchBookings() ?? [];
+    const bookings = this.bookings();
 
     return {
       ALL: bookings.length,
@@ -109,33 +123,21 @@ export class BookingOverview {
     this.selectedFilter.set(filter);
   }
 
-  protected getUpcomingBookingTitle(booking: BookingSessionCardInterface): string {
-    if (booking.notes?.trim()) {
-      return booking.notes.trim();
-    }
-
-    return 'Upcoming mentoring session';
-  }
-
-  protected getUpcomingBookingDateTime(booking: BookingSessionCardInterface): string {
-    const sessionDate = new Date(booking.sessionDateTime);
-
-    return new Intl.DateTimeFormat('en-US', {
-      weekday: 'short',
-      month: 'short',
-      day: 'numeric',
-      hour: 'numeric',
-      minute: '2-digit',
-    }).format(sessionDate);
-  }
-
-  protected openSessionLink(sessionLink: string): void {
-    window.open(sessionLink, '_blank', 'noopener,noreferrer');
-  }
-
-  protected onViewDetails(booking: BookingSessionCardInterface): void {
+  protected onViewDetails(booking: BookingCardInterface): void {
     void this.router.navigate(['/mentee/booking-overview'], {
       queryParams: { bookingId: booking.id },
+    });
+  }
+
+  protected onCancelRequest(booking: BookingCardInterface): void {
+    void this.router.navigate(['/mentee/booking-overview'], {
+      queryParams: { bookingId: booking.id, action: 'cancel' },
+    });
+  }
+
+  protected onAddReview(booking: BookingCardInterface): void {
+    void this.router.navigate(['/mentee/booking-overview'], {
+      queryParams: { bookingId: booking.id, action: 'review' },
     });
   }
 }

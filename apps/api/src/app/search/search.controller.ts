@@ -167,7 +167,7 @@ export class SearchController {
   @Req() req: Request & { user?: { id?: string; role?: string } },
 ) {
   const userId = req.user?.id ?? '259f2a25-c180-4609-a603-6d60ba04e69a';
-  const role = req.user?.role ?? 'authenticated';
+  const role = req.user?.role ?? 'mentee';
 
     const response = await this.searchService.searchMentors(dto, userId, role);
     if (response.status === ResponseStatus.Error) {

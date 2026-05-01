@@ -23,8 +23,8 @@
       <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
         <div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
           <img
-            [src]="booking.mentorProfilePicture || 'assets/img/no_profile_avatar.png'"
-            [alt]="booking.mentorName"
+            [src]="booking.mentor?.avatarAttachments?.[0]?.publicUrl || 'assets/img/no_profile_avatar.png'"
+            [alt]="booking.mentor ? booking.mentor.firstName + ' ' + booking.mentor.lastName : 'Mentor'"
             class="h-full w-full object-cover"
           />
         </div>
@@ -33,7 +33,11 @@
           <div class="space-y-1">
             <div class="flex flex-wrap items-center gap-2">
               <p class="truncate text-lg font-semibold text-heading">
-                {{ booking.mentorName }}
+                @if (booking.mentor) {
+                  {{ booking.mentor.firstName }} {{ booking.mentor.lastName }}
+                } @else {
+                  Mentor
+                }
               </p>
               <!-- <span
                 class="inline-flex h-5 w-5 items-center justify-center rounded-full bg-blue-50 ring-1 ring-blue-100"

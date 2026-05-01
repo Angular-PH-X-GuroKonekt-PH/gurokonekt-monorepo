@@ -1,5 +1,6 @@
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 
 import { AuthState } from '../../../store/auth/auth.state';
@@ -20,11 +21,10 @@ import { SectionCard } from '../../shared/section-card/section-card';
 import { SectionTitle } from '../../shared/section-title/section-title';
 import { ViewAllButton } from '../../shared/view-all-button/view-all-button';
 // import { UserProfileCard } from '../../shared/user-profile-card/user-profile-card';
-import { MentorSearch } from '../../shared/mentor-search/mentor-search';
 import { IconComponent } from '../../shared/icon/icon.component';
 import { MentorCardSkeleton } from '../../shared/mentor-card-skeleton/mentor-card-skeleton';
-import { BookingCard } from '../../shared/booking-card/booking-card';
 import { CompletedBookingCard } from '../../completed-booking-card/completed-booking-card';
+import { SessionBookingCard } from '../../shared/session-booking-card/session-booking-card';
 
 @Component({
   selector: 'app-mentee-dashboard',
@@ -37,10 +37,9 @@ import { CompletedBookingCard } from '../../completed-booking-card/completed-boo
     RecommendedMentorCard,
     SectionTitle,
     ViewAllButton,
-    MentorSearch,
     IconComponent,
     MentorCardSkeleton,
-    BookingCard,
+    SessionBookingCard,
     CompletedBookingCard
   ],
   templateUrl: './mentee-dashboard.html',
@@ -48,6 +47,7 @@ import { CompletedBookingCard } from '../../completed-booking-card/completed-boo
 })
 export class MenteeDashboard {
   private readonly store = inject(Store);
+  private readonly router = inject(Router);
   protected readonly authUser = this.store.selectSignal(AuthState.user);
   protected readonly userId = computed(() => this.authUser()?.id);
 
@@ -89,7 +89,7 @@ export class MenteeDashboard {
 
   // FETCH COMPLETED SESSIONS
   protected readonly completedSessionsCount = computed(
-    () => this.completedSessions()?.length ?? 0
+    () => this.completedSessionHistory().length
   );
   protected readonly completedSessionLoading = computed(() => {
     return this.completedSessions() === null;
@@ -106,6 +106,14 @@ export class MenteeDashboard {
     }),
    ),
    { initialValue: null }
+  );
+  protected readonly completedSessionHistory = computed(() =>
+    [...(this.completedSessions() ?? [])]
+      .sort(
+        (a, b) =>
+          b.sessionDateTime.getTime() - a.sessionDateTime.getTime()
+      )
+      .slice(0, 5)
   );
 
 
@@ -162,6 +170,24 @@ export class MenteeDashboard {
       { length: this.getMaxMentorSlide(totalMentors) + 1 },
       (_, index) => index
     );
+  }
+
+  protected onViewDetails(booking: BookingCardInterface): void {
+    void this.router.navigate(['/mentee/booking-overview'], {
+      queryParams: { bookingId: booking.id },
+    });
+  }
+
+  protected onCancelRequest(booking: BookingCardInterface): void {
+    void this.router.navigate(['/mentee/booking-overview'], {
+      queryParams: { bookingId: booking.id, action: 'cancel' },
+    });
+  }
+
+  protected onAddReview(booking: BookingCardInterface): void {
+    void this.router.navigate(['/mentee/booking-overview'], {
+      queryParams: { bookingId: booking.id, action: 'review' },
+    });
   }
 
 }

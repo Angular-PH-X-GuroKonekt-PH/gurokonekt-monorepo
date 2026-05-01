@@ -1,0 +1,55 @@
+<button
+  type="button"
+  (click)="onMarkAsRead()"
+  class="flex w-full items-start gap-3 px-4 py-3 text-left transition hover:bg-neutral-secondary-medium"
+  [class.bg-orange-50/60]="notification().status === unreadStatus"
+  [attr.aria-label]="notification().status === unreadStatus
+    ? 'Mark notification as read: ' + notification().title
+    : 'Notification: ' + notification().title"
+>
+  <span
+    class="mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl ring-1"
+    [ngClass]="getNotificationIconClasses(notification().type)"
+  >
+    <app-icon
+      [name]="getNotificationIconName(notification().type)"
+      [class]="'h-4 w-4'"
+    ></app-icon>
+  </span>
+
+  <div class="min-w-0 flex-1">
+    <div class="flex items-start justify-between gap-3">
+      <div class="space-y-1">
+        <div class="flex flex-wrap items-center gap-2">
+          <span
+            class="inline-flex rounded-full border px-2.5 py-1 text-[11px] font-semibold uppercase tracking-wide"
+            [class]="getNotificationTypeClasses(notification().type)"
+          >
+            {{ getNotificationTypeLabel(notification().type) }}
+          </span>
+
+          @if (notification().status === unreadStatus) {
+            <span class="h-2.5 w-2.5 rounded-full bg-orange-500"></span>
+          }
+        </div>
+
+        <p class="text-sm font-semibold text-heading">
+          {{ notification().title }}
+        </p>
+        <p class="text-sm leading-5 text-body">
+          {{ notification().message }}
+        </p>
+
+        @if (notification().status === unreadStatus) {
+          <p class="text-[11px] font-medium uppercase tracking-wide text-orange-600">
+            Click to mark as read
+          </p>
+        }
+      </div>
+
+      <span class="shrink-0 text-xs text-body">
+        {{ notification().createdAt | date: 'MMM d, h:mm a' }}
+      </span>
+    </div>
+  </div>
+</button>

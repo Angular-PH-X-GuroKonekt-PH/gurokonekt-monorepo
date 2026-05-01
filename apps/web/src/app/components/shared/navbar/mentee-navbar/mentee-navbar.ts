@@ -1,30 +1,27 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { RouterLink } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
+import { catchError, map, switchMap } from 'rxjs/operators';
 
 import {
   NotificationInterface,
   NotificationStatus,
 } from '@gurokonekt/models/interfaces/notification/notification.model';
+import { UserInterface } from '@gurokonekt/models';
 
 import * as AuthActions from '../../../../store/auth/auth.actions';
-import {
-  getNotificationIconClasses,
-  getNotificationIconName,
-  getNotificationTypeClasses,
-  getNotificationTypeLabel,
-} from '../../../../helpers/notification-display.helper';
 import { AuthState } from '../../../../store/auth/auth.state';
 import { NotificationService } from '../../../../services/notification.service';
 import { ProfileService } from '../../../../services/profile.service';
 import { IconComponent } from '../../icon/icon.component';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { NavbarNotificationItem } from '../../navbar-notification-item/navbar-notification-item';
 
 @Component({
   selector: 'app-mentee-navbar',
-  imports: [RouterLink, CommonModule, IconComponent],
+  imports: [RouterLink, CommonModule, IconComponent, NavbarNotificationItem],
   templateUrl: './mentee-navbar.html',
   styleUrl: './mentee-navbar.scss',
 })
@@ -34,34 +31,51 @@ export class MenteeNavbar {
   private readonly notificationService = inject(NotificationService);
 
   protected readonly user = this.store.selectSignal(AuthState.user);
+  protected readonly userId = computed(() => this.user()?.id ?? null);
 
-  protected readonly getNotificationTypeLabel = getNotificationTypeLabel;
-  protected readonly getNotificationTypeClasses = getNotificationTypeClasses;
-  protected readonly getNotificationIconName = getNotificationIconName;
-  protected readonly getNotificationIconClasses = getNotificationIconClasses;
+  protected readonly profile = toSignal(
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of(null);
+        }
+
+        return this.profileService.getUserProfile(userId).pipe(
+          map((response) => response.data as UserInterface | null),
+          catchError(() => of(null))
+        );
+      })
+    ),
+    { initialValue: null as UserInterface | null }
+  );
 
   protected readonly userFullName = computed(() => {
-    const currentUser = this.user();
-    const fullName = currentUser?.['fullName'];
-
-    if (typeof fullName === 'string' && fullName.trim()) {
-      return fullName.trim();
-    }
-
-    const email = currentUser?.['email'];
-    if (typeof email === 'string' && email.includes('@')) {
-      return email.split('@')[0];
+    const profile = this.profile();
+    if (profile) {
+      const fullName = `${profile.firstName} ${profile.lastName}`.trim();
+      if (fullName) {
+        return fullName;
+      }
     }
 
     return 'Mentee';
   });
 
   protected readonly userEmail = computed(() => {
-    const email = this.user()?.['email'];
-    return typeof email === 'string' && email.trim()
-      ? email
-      : 'No email available';
+    return this.profile()?.email?.trim() || 'No email available';
   });
+
+  protected readonly userAvatarUrl = computed(
+    () => {
+      const avatarAttachments = this.profile()?.avatarAttachments as
+        | { publicUrl?: string }[]
+        | undefined;
+
+      return (
+        avatarAttachments?.[0]?.publicUrl || 'assets/img/no_profile_avatar.png'
+      );
+    }
+  );
 
   //NOTIFICATIONS
 
@@ -73,11 +87,9 @@ export class MenteeNavbar {
     this.notificationService.notifications$,
     { initialValue: [] as NotificationInterface[] }
   );
-
   protected readonly isNotificationsLoading = computed(
     () => this.fetchNotifications() === null
   );
-
   protected readonly unreadCount = computed(
     () =>
       this.notifications()?.filter(

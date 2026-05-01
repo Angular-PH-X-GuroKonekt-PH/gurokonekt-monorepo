@@ -228,7 +228,7 @@ export class BookingController {
     @Param('userId') userId: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.bookingService.findByUserId(userId, req.user.id);
+    const response = await this.bookingService.findByUserId(userId, req.user?.id ?? userId);
 
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(

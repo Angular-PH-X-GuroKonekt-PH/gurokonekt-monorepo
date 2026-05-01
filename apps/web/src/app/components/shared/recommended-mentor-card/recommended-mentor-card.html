@@ -72,8 +72,8 @@
       {{ profile?.bio || 'No bio available yet.' }}
     </p>
 
-    <div class="mt-auto flex items-end justify-between gap-4 border-t border-slate-100 pt-5">
-      <div class="flex flex-wrap items-center gap-2">
+    <div class="mt-auto flex flex-col gap-4 border-t border-slate-100 pt-5 sm:flex-row sm:items-end sm:justify-between">
+      <div class="flex min-w-0 flex-wrap items-center gap-2">
         <span
           class="inline-flex items-center gap-1 rounded-full bg-green-50 px-2.5 py-1 text-xs font-medium text-green-700"
         >
@@ -92,7 +92,7 @@
       </div>
 
       <button
-        class="inline-flex min-h-11 shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-900 bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-950 hover:ring-2 hover:ring-blue-200"
+        class="inline-flex min-h-11 w-full shrink-0 items-center justify-center gap-2 rounded-xl border border-blue-900 bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition-all duration-200 hover:-translate-y-0.5 hover:bg-blue-950 hover:ring-2 hover:ring-blue-200 sm:w-auto"
       >
         <app-icon name="calendar-days" class="h-4 w-4 text-white"></app-icon>
         Book Session

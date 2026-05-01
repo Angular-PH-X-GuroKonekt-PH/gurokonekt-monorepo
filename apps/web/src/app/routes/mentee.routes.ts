@@ -51,7 +51,7 @@ export const MENTEE_ROUTES: Route[] = [
         path: 'profile-settings',
         loadComponent: () =>
           import('../components/mentee/profile-settings/profile-settings').then(
-            (m) => m.ProfileSettings
+            (m) => m.ProfileSettingsComponent
           ),
         title: 'Profile Settings',
       },
