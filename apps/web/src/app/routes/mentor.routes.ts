@@ -6,7 +6,7 @@ export const MENTOR_ROUTES: Route[] = [
     path: '',
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>
-      import('../components/layouts/mentor-lyout/mentor-layout').then(
+      import('../components/layouts/mentor-layout/mentor-layout').then(
         (m) => m.MentorLayout
       ),
     children: [
