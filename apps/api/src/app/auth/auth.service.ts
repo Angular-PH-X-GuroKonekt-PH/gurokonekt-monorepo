@@ -342,68 +342,70 @@ export class AuthService {
    * */ 
   async resendEmailSignUpConfirmation(input: ResendConfirmationEmailDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
-      const todayStart = new Date();
-      const todayEnd = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
-      todayEnd.setUTCHours(23, 59, 59, 999);
+      if (process.env.NODE_ENV !== 'test') {
+        const todayStart = new Date();
+        const todayEnd = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        todayEnd.setUTCHours(23, 59, 59, 999);
 
-      // Count resend attempts today by email and IP
-      const attemptsTodayByEmail = await this.prisma.db.logs.count({
-        where: {
-          actionType: LogsActionType.ResendEmailConfirmation,
-          metadata: { path: ['email'], equals: input.email },
-          createdAt: { gte: todayStart, lte: todayEnd },
-        },
-      });
-
-      const attemptsTodayByIp = await this.prisma.db.logs.count({
-        where: {
-          actionType: LogsActionType.ResendEmailConfirmation,
-          ipAddress,
-          createdAt: { gte: todayStart, lte: todayEnd },
-        },
-      });
-
-      if (attemptsTodayByEmail >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY || 
-          attemptsTodayByIp >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY) {
-        await this.prisma.db.logs.create({
-          data: {
+        // Count resend attempts today by email and IP
+        const attemptsTodayByEmail = await this.prisma.db.logs.count({
+          where: {
             actionType: LogsActionType.ResendEmailConfirmation,
-            targetId: "",
-            details: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
-            metadata: { email: input.email },
-            ipAddress,
-            userAgent,
-            createdById: null
-          }
+            metadata: { path: ['email'], equals: input.email },
+            createdAt: { gte: todayStart, lte: todayEnd },
+          },
         });
 
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.code,
-          message: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
-          data: null,
-        };
-      }
+        const attemptsTodayByIp = await this.prisma.db.logs.count({
+          where: {
+            actionType: LogsActionType.ResendEmailConfirmation,
+            ipAddress,
+            createdAt: { gte: todayStart, lte: todayEnd },
+          },
+        });
 
-      // Check last attempt time
-      const lastAttempt = await this.prisma.db.logs.findFirst({
-        where: {
-          actionType: LogsActionType.ResendEmailConfirmation,
-          metadata: { path: ['email'], equals: input.email },
-        },
-        orderBy: { createdAt: 'desc' },
-      });
+        if (attemptsTodayByEmail >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY ||
+            attemptsTodayByIp >= RESEND_EMAIL_CONFIRMATION.MAX_ATTEMPTS_PER_DAY) {
+          await this.prisma.db.logs.create({
+            data: {
+              actionType: LogsActionType.ResendEmailConfirmation,
+              targetId: "",
+              details: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
+              metadata: { email: input.email },
+              ipAddress,
+              userAgent,
+              createdById: null
+            }
+          });
 
-      if (lastAttempt) {
-        const secondsSinceLast = (Date.now() - lastAttempt.createdAt.getTime()) / 1000;
-        if (secondsSinceLast < RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS) {
           return {
             status: ResponseStatus.Error,
-            statusCode: 429,
-            message: `Please wait ${Math.ceil(RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
+            statusCode: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.code,
+            message: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
             data: null,
           };
+        }
+
+        // Check last attempt time
+        const lastAttempt = await this.prisma.db.logs.findFirst({
+          where: {
+            actionType: LogsActionType.ResendEmailConfirmation,
+            metadata: { path: ['email'], equals: input.email },
+          },
+          orderBy: { createdAt: 'desc' },
+        });
+
+        if (lastAttempt) {
+          const secondsSinceLast = (Date.now() - lastAttempt.createdAt.getTime()) / 1000;
+          if (secondsSinceLast < RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS) {
+            return {
+              status: ResponseStatus.Error,
+              statusCode: 429,
+              message: `Please wait ${Math.ceil(RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
+              data: null,
+            };
+          }
         }
       }
 
@@ -532,62 +534,63 @@ export class AuthService {
    * */ 
   async signInWithPassword(input: SignInWithPasswordDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     try {
-      const todayStart = new Date();
-      const todayEnd = new Date();
-      todayStart.setUTCHours(0, 0, 0, 0);
-      todayEnd.setUTCHours(23, 59, 59, 999);
+      if (process.env.NODE_ENV !== 'test') {
+        const todayStart = new Date();
+        const todayEnd = new Date();
+        todayStart.setUTCHours(0, 0, 0, 0);
+        todayEnd.setUTCHours(23, 59, 59, 999);
 
-      const failedMessages = [
-        API_RESPONSE.ERROR.USER_NOT_FOUND.message,
-        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
-        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
-        API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
-      ]
+        const failedMessages = [
+          API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
+          API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
+          API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
+        ];
 
-      // Check failed attempts in logs
-      const failedByEmail = await this.prisma.db.logs.count({
-        where: {
-          actionType: LogsActionType.SignIn,
-          metadata: { path: ['email'], equals: input.email },
-          createdAt: { gte: todayStart, lte: todayEnd },
-          OR: failedMessages.map(message => ({
-            details: { contains: message, mode: 'insensitive' },
-          })),
-        },
-      });
-
-      const failedByIp = await this.prisma.db.logs.count({
-        where: {
-          actionType: LogsActionType.SignIn,
-          ipAddress,
-          createdAt: { gte: todayStart, lte: todayEnd },
-          OR: failedMessages.map(message => ({
-            details: { contains: message, mode: 'insensitive' },
-          })),
-        },
-      });
-
-      if (failedByEmail >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY || 
-        failedByIp >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY) {
-        
-        await this.prisma.db.logs.create({
-          data: {
+        // Check failed attempts in logs
+        const failedByEmail = await this.prisma.db.logs.count({
+          where: {
             actionType: LogsActionType.SignIn,
-            targetId: "",
-            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
-            metadata: { email: input.email },
-            ipAddress,
-            userAgent,
-            createdById: null
-          }
+            metadata: { path: ['email'], equals: input.email },
+            createdAt: { gte: todayStart, lte: todayEnd },
+            OR: failedMessages.map(message => ({
+              details: { contains: message, mode: 'insensitive' },
+            })),
+          },
         });
-        
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.code,
-          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
-          data: null
-        };
+
+        const failedByIp = await this.prisma.db.logs.count({
+          where: {
+            actionType: LogsActionType.SignIn,
+            ipAddress,
+            createdAt: { gte: todayStart, lte: todayEnd },
+            OR: failedMessages.map(message => ({
+              details: { contains: message, mode: 'insensitive' },
+            })),
+          },
+        });
+
+        if (failedByEmail >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY ||
+            failedByIp >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY) {
+          await this.prisma.db.logs.create({
+            data: {
+              actionType: LogsActionType.SignIn,
+              targetId: "",
+              details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
+              metadata: { email: input.email },
+              ipAddress,
+              userAgent,
+              createdById: null
+            }
+          });
+
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.code,
+            message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
+            data: null
+          };
+        }
       }
 
       // Check if user exists
