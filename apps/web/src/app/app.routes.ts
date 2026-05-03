@@ -29,16 +29,9 @@ export const appRoutes: Route[] = [
 		loadComponent: () => import('./components/mentor/post-login/post-login').then(m => m.MentorPostLogin),
 		title: 'Complete Your Mentor Profile'
 	},
-	{ 
-		path: APP_ROUTES.DASHBOARD.replace('/', ''), 
-		canActivate: [dashboardAccessGuard],
-		loadComponent: () => import('./components/dashboard/dashboard').then(m => m.Dashboard),
-		title: 'Dashboard'
-	},
 	{
-		path: APP_ROUTES.MENTOR_DASHBOARD.replace('/', ''),
-		redirectTo: APP_ROUTES.DASHBOARD.replace('/', ''),
-		pathMatch: 'full',
+		path: 'mentor',
+		loadChildren: () => import('./routes/mentor.routes').then(m => m.MENTOR_ROUTES),
 	},
 	{
 		path: APP_ROUTES.SETTINGS.replace('/', ''),
