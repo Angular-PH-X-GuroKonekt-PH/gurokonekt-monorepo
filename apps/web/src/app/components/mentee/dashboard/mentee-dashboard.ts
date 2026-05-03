@@ -4,7 +4,6 @@ import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 
 import { AuthState } from '../../../store/auth/auth.state';
-// import { SessionBookingCard } from '../../shared/session-booking-card/session-booking-card';
 import { BookingService } from '../../../services/booking.service';
 import {
   BookingCardInterface,
@@ -14,31 +13,29 @@ import { of, switchMap } from 'rxjs';
 import { MentorService } from '../../../services/mentor.service';
 import { CommonModule } from '@angular/common';
 import { MentorSearchItemInterface } from '@gurokonekt/models/interfaces/search/search.model';
-// import { SessionHistoryCard } from '../../shared/session-history-card/session-history-card';
 import { RecommendedMentorCard } from '../../shared/recommended-mentor-card/recommended-mentor-card';
 import { GreetingCard } from '../../shared/greeting-card/greeting-card';
 import { SectionCard } from '../../shared/section-card/section-card';
 import { SectionTitle } from '../../shared/section-title/section-title';
 import { ViewAllButton } from '../../shared/view-all-button/view-all-button';
-// import { UserProfileCard } from '../../shared/user-profile-card/user-profile-card';
 import { IconComponent } from '../../shared/icon/icon.component';
-import { MentorCardSkeleton } from '../../shared/mentor-card-skeleton/mentor-card-skeleton';
 import { CompletedBookingCard } from '../../completed-booking-card/completed-booking-card';
 import { SessionBookingCard } from '../../shared/session-booking-card/session-booking-card';
+import { MentorCardListSkeleton } from '../../shared/loaders/mentor-card-list-skeleton/mentor-card-list-skeleton';
+import { BookingCardListSkeleton } from '../../shared/loaders/booking-card-list-skeleton/booking-card-list-skeleton';
 
 @Component({
   selector: 'app-mentee-dashboard',
   imports: [
     SectionCard,
     GreetingCard,
-    // SessionBookingCard,
     CommonModule,
-    // SessionHistoryCard,
     RecommendedMentorCard,
     SectionTitle,
     ViewAllButton,
     IconComponent,
-    MentorCardSkeleton,
+    MentorCardListSkeleton,
+    BookingCardListSkeleton,
     SessionBookingCard,
     CompletedBookingCard
   ],

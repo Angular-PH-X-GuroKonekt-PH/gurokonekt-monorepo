@@ -1,11 +1,11 @@
 import { Component, computed, input } from '@angular/core';
 
 @Component({
-  selector: 'app-mentor-card-skeleton',
-  templateUrl: './mentor-card-skeleton.html',
-  styleUrl: './mentor-card-skeleton.scss',
+  selector: 'app-booking-card-list-skeleton',
+  standalone: true,
+  templateUrl: './booking-card-list-skeleton.html',
 })
-export class MentorCardSkeleton {
+export class BookingCardListSkeleton {
   count = input(3);
 
   protected readonly items = computed(() =>

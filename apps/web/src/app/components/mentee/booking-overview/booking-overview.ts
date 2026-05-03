@@ -13,19 +13,17 @@ import {
 
 import { BookingService } from '../../../services/booking.service';
 import { AuthState } from '../../../store/auth';
-// import { FeaturedBookingCard } from '../../shared/featured-booking-card/featured-booking-card';
 import { FilterButton } from '../../shared/filter-button/filter-button';
 import { SectionCard } from '../../shared/section-card/section-card';
 import { SectionTitle } from '../../shared/section-title/section-title';
 import { SessionBookingCard } from '../../shared/session-booking-card/session-booking-card';
-import { LoadingCard } from '../../shared/loading-card/loading-card';
+import { BookingCardListSkeleton } from '../../shared/loaders/booking-card-list-skeleton/booking-card-list-skeleton';
 
 @Component({
   selector: 'app-booking-overview',
   imports: [
     CommonModule,
-    LoadingCard,
-    // FeaturedBookingCard,
+    BookingCardListSkeleton,
     FilterButton,
     SectionCard,
     SectionTitle,
@@ -75,26 +73,6 @@ export class BookingOverview {
 
     return bookings.filter((booking) => booking.status === filter);
   });
-
-  protected readonly upcomingBooking = computed<BookingCardInterface | null>(
-    () => {
-      const now = Date.now();
-
-      return (
-        [...this.bookings()]
-          .filter(
-            (booking) =>
-              booking.status === BookingStatus.APPROVED &&
-              new Date(booking.sessionDateTime).getTime() >= now
-          )
-          .sort(
-            (firstBooking, secondBooking) =>
-              new Date(firstBooking.sessionDateTime).getTime() -
-              new Date(secondBooking.sessionDateTime).getTime()
-          )[0] ?? null
-      );
-    }
-  );
 
   protected readonly bookingCounts = computed(() => {
     const bookings = this.bookings();

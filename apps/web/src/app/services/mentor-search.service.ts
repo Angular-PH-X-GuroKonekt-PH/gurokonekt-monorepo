@@ -41,16 +41,8 @@ export class MentorSearchService {
       ...(filters.name?.trim() ? { name: filters.name.trim() } : {}),
       ...(filters.skills.length ? { skills: filters.skills.join(',') } : {}),
       ...(filters.expertise.length ? { expertise: filters.expertise.join(',') } : {}),
-      ...(filters.minSessionRate != null ? { minSessionRate: filters.minSessionRate } : {}),
-      ...(filters.maxSessionRate != null ? { maxSessionRate: filters.maxSessionRate } : {}),
-      ...(filters.minYearsExperience != null ? { minYearsExperience: filters.minYearsExperience } : {}),
-      ...(filters.sortBy != null ? { sortBy: filters.sortBy } : {}),
-      ...(filters.sortOrder != null ? { sortOrder: filters.sortOrder } : {}),
+      ...(filters.availabilityDay != null ? { availabilityDay: filters.availabilityDay } : {}),
     };
-
-    // TODO: uncomment once backend adds these to SearchMentorDto:
-    // if (filters.minRating    != null) dto.minRating    = filters.minRating;
-    // if (filters.availability != null) dto.availability = filters.availability;
 
     return Object.entries(dto).reduce((params, [key, value]) => {
       return value == null ? params : params.set(key, String(value));

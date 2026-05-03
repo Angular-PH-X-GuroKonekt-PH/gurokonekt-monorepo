@@ -18,10 +18,11 @@ import { NotificationService } from '../../../../services/notification.service';
 import { ProfileService } from '../../../../services/profile.service';
 import { IconComponent } from '../../icon/icon.component';
 import { NavbarNotificationItem } from '../../navbar-notification-item/navbar-notification-item';
+import { NotificationListSkeleton } from '../../loaders/notification-list-skeleton/notification-list-skeleton';
 
 @Component({
   selector: 'app-mentee-navbar',
-  imports: [RouterLink, CommonModule, IconComponent, NavbarNotificationItem],
+  imports: [RouterLink, CommonModule, IconComponent, NavbarNotificationItem, NotificationListSkeleton],
   templateUrl: './mentee-navbar.html',
   styleUrl: './mentee-navbar.scss',
 })
@@ -96,6 +97,8 @@ export class MenteeNavbar {
         (notification) => notification.status === NotificationStatus.UNREAD
       ).length ?? 0
   );
+
+
 
   protected markAsRead(notification: NotificationInterface): void {
     if (notification.status === NotificationStatus.READ) {

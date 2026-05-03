@@ -1,161 +1,78 @@
 <div class="flex flex-col gap-8">
   <section class="grid grid-cols-1 gap-6">
-    <!-- @if (isBookingsLoading()) {
-      <div class="mt-5 overflow-hidden rounded-4xl bg-slate-900/90 p-6 md:p-8">
-        <div class="animate-pulse space-y-6">
-          <div class="h-8 w-32 rounded-full bg-white/10"></div>
-          <div class="h-12 w-2/3 rounded-2xl bg-white/10"></div>
-          <div class="h-6 w-56 rounded-xl bg-white/10"></div>
-          <div class="flex flex-col gap-4 pt-8 md:flex-row md:items-end md:justify-between">
-            <div class="flex items-center gap-4">
-              <div class="h-16 w-16 rounded-2xl bg-white/10"></div>
-              <div class="space-y-3">
-                <div class="h-5 w-40 rounded bg-white/10"></div>
-                <div class="h-4 w-32 rounded bg-white/10"></div>
-              </div>
-            </div>
-            <div class="h-12 w-36 rounded-2xl bg-white/10"></div>
-          </div>
-        </div>
-      </div>
-    } @else if (upcomingBooking(); as booking) {
-      <app-featured-booking-card
-        [booking]="booking"
-        (viewDetails)="onViewDetails($event)"
-      />
-    } @else {
-      <div
-        class="mt-5 rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm"
-      >
-        <div
-          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100"
-        >
-          <div class="h-7 w-7 rounded-full bg-blue-900/10"></div>
-        </div>
-
-        <h3 class="text-base font-semibold text-heading">
-          No upcoming approved session
-        </h3>
-        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
-          Once you have an approved booking scheduled ahead of the current time,
-          it will show up here.
-        </p>
-      </div>
-    } -->
-
     <app-section-card>
-      @if (isBookingsLoading()) {
-        <div class="space-y-4">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <div class="space-y-1">
-              <div class="h-8 w-64 animate-pulse rounded bg-slate-200"></div>
-              <div class="h-5 w-72 animate-pulse rounded bg-slate-100"></div>
-            </div>
+      <div class="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <app-section-title
+          title="Manage Your Bookings"
+          subtitle="Stay organized with all your mentorship sessions."
+        />
 
-            <div class="flex flex-wrap items-center gap-3">
-              @for (chip of [1, 2, 3, 4, 5, 6]; track chip) {
-                <div class="h-11 w-24 animate-pulse rounded-base bg-slate-100"></div>
-              }
-            </div>
-          </div>
-
-          <!-- @for (skeleton of [1, 2, 3]; track skeleton) {
-            <div class="rounded-2xl border border-slate-200 bg-white p-5">
-              <div class="animate-pulse">
-                <div class="flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
-                  <div class="flex flex-col gap-4 lg:flex-row lg:items-start">
-                    <div class="h-24 w-24 rounded-2xl bg-slate-200"></div>
-                    <div class="space-y-3">
-                      <div class="h-4 w-40 rounded bg-slate-200"></div>
-                      <div class="h-3 w-56 rounded bg-slate-100"></div>
-                      <div class="h-8 w-24 rounded-full bg-slate-100"></div>
-                    </div>
-                  </div>
-                  <div class="flex gap-3">
-                    <div class="h-11 w-28 rounded-xl bg-slate-100"></div>
-                    <div class="h-11 w-32 rounded-xl bg-slate-200"></div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          } -->
-
-          <app-loading-card [message]="'Loading bookings...'"></app-loading-card>
-
-        </div>
-
-      } @else {
-        <div class="space-y-4">
-          <div class="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-            <app-section-title
-              title="Manage Your Bookings"
-              subtitle="Stay organized with all your mentorship sessions."
+        <div class="rounded-2xl bg-slate-100/80 p-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <app-filter-button
+              label="All"
+              value="ALL"
+              [count]="bookingCounts().ALL"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
             />
 
-            <div class="rounded-2xl bg-slate-100/80 p-1.5">
-              <div class="flex flex-wrap items-center gap-1.5">
-                <app-filter-button
-                  label="All"
-                  value="ALL"
-                  [count]="bookingCounts().ALL"
-                  [selectedValue]="selectedFilter()"
-                  (clicked)="setFilter($event)"
-                />
+            <app-filter-button
+              label="Upcoming"
+              [value]="bookingStatus.APPROVED"
+              [count]="bookingCounts().UPCOMING"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
 
-                <app-filter-button
-                  label="Upcoming"
-                  [value]="bookingStatus.APPROVED"
-                  [count]="bookingCounts().UPCOMING"
-                  [selectedValue]="selectedFilter()"
-                  (clicked)="setFilter($event)"
-                />
+            <app-filter-button
+              label="Pending"
+              [value]="bookingStatus.PENDING"
+              [count]="bookingCounts().PENDING"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
 
-                <app-filter-button
-                  label="Pending"
-                  [value]="bookingStatus.PENDING"
-                  [count]="bookingCounts().PENDING"
-                  [selectedValue]="selectedFilter()"
-                  (clicked)="setFilter($event)"
-                />
+            <app-filter-button
+              label="Cancelled"
+              [value]="bookingStatus.CANCELLED"
+              [count]="bookingCounts().CANCELLED"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
 
-                <app-filter-button
-                  label="Cancelled"
-                  [value]="bookingStatus.CANCELLED"
-                  [count]="bookingCounts().CANCELLED"
-                  [selectedValue]="selectedFilter()"
-                  (clicked)="setFilter($event)"
-                />
+            <app-filter-button
+              label="Rejected"
+              [value]="bookingStatus.REJECTED"
+              [count]="bookingCounts().REJECTED"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
 
-                <app-filter-button
-                  label="Rejected"
-                  [value]="bookingStatus.REJECTED"
-                  [count]="bookingCounts().REJECTED"
-                  [selectedValue]="selectedFilter()"
-                  (clicked)="setFilter($event)"
-                />
-
-                <app-filter-button
-                  label="Completed"
-                  [value]="bookingStatus.COMPLETED"
-                  [count]="bookingCounts().COMPLETED"
-                  [selectedValue]="selectedFilter()"
-                  (clicked)="setFilter($event)"
-                />
-              </div>
-            </div>
+            <app-filter-button
+              label="Completed"
+              [value]="bookingStatus.COMPLETED"
+              [count]="bookingCounts().COMPLETED"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
           </div>
-
-          <app-session-booking-card
-            [bookingList]="displayedBookings()"
-            (viewDetails)="onViewDetails($event)"
-            (cancelRequest)="onCancelRequest($event)"
-            (addReview)="onAddReview($event)"
-            [emptyTitle]="selectedFilter() === 'ALL' ? 'No bookings yet' : 'No bookings match this filter'"
-            [emptyMessage]="selectedFilter() === 'ALL'
-              ? 'You do not have any bookings at the moment. Once you schedule a mentoring session, it will appear here.'
-              : 'Try choosing another booking status or clearing the filter to see more sessions.'"
-          />
         </div>
+      </div>
+
+      @if (isBookingsLoading()) {
+        <app-booking-card-list-skeleton [count]="3" />
+      } @else {
+        <app-session-booking-card
+          [bookingList]="displayedBookings()"
+          (viewDetails)="onViewDetails($event)"
+          (cancelRequest)="onCancelRequest($event)"
+          (addReview)="onAddReview($event)"
+          [emptyTitle]="selectedFilter() === 'ALL' ? 'No bookings yet' : 'No bookings match this filter'"
+          [emptyMessage]="selectedFilter() === 'ALL'
+            ? 'You do not have any bookings at the moment. Once you schedule a mentoring session, it will appear here.'
+            : 'Try choosing another booking status or clearing the filter to see more sessions.'"
+        />
       }
     </app-section-card>
   </section>

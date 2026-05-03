@@ -14,7 +14,7 @@
     <ul class="space-y-2 px-4 font-medium">
 
 
-      <h4 class="text-gray-500 py-3">Main Menu</h4>
+      <!-- <h4 class="text-gray-500 py-3">Main Menu</h4> -->
 
       <li>
 
@@ -45,41 +45,9 @@
           [routerLinkActiveOptions]="{exact: false}"
           class="flex items-center gap-3 px-4 py-3 text-gray-600  font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
           <app-icon [name]="'book-open'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
-          <span class="truncate">Booking Overview</span>
+          <span class="truncate">Booking</span>
         </a>
       </li>
-
-
-      <li>
-
-        <a [routerLink]="'notifications'" routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
-          [routerLinkActiveOptions]="{exact: false}"
-          class="flex items-center gap-3 px-4 py-3 text-gray-600  font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
-          <app-icon [name]="'bell'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
-          <span class="truncate">Notifications</span>
-        </a>
-      </li>
-
-
-
-
-      <!-- Divider -->
-      <div class="my-4 border-t border-gray-200"></div>
-      <h4 class="text-gray-500 py-3">Settings</h4>
-
-        <li>
-
-          <a [routerLink]="'profile-settings'"
-            routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
-            [routerLinkActiveOptions]="{exact: false}"
-            class="flex items-center gap-3 px-4 py-3 text-gray-600  font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
-            <app-icon [name]="'user'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
-            <span class="truncate">Profile Settings</span>
-
-          </a>
-        </li>
-
-       
 
     </ul>
 

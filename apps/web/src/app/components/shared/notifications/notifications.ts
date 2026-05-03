@@ -18,10 +18,11 @@ import {
 import { IconComponent } from '../icon/icon.component';
 import { SectionCard } from '../section-card/section-card';
 import { SectionTitle } from '../section-title/section-title';
+import { NotificationListSkeleton } from '../loaders/notification-list-skeleton/notification-list-skeleton';
 
 @Component({
   selector: 'app-notifications',
-  imports: [CommonModule, SectionCard, SectionTitle, IconComponent],
+  imports: [CommonModule, SectionCard, SectionTitle, IconComponent, NotificationListSkeleton],
   templateUrl: './notifications.html',
   styleUrl: './notifications.scss',
 })

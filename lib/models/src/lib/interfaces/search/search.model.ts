@@ -1,4 +1,4 @@
-import { UserAvailabilityInterface } from '../user/user.model';
+import { DaysInWeek, UserAvailabilityInterface } from '../user/user.model';
 
 export interface MentorSearchItemInterface {
   id: string;
@@ -107,7 +107,7 @@ export enum SearchSortOrder {
   DESC = 'desc',
 }
 
-export type AvailabilityOption = 'today' | 'this_week' | 'this_month';
+export type AvailabilityOption = DaysInWeek;
 
 // Form state held by the MentorSearch component 
 export interface MentorSearchFilter {
@@ -115,17 +115,9 @@ export interface MentorSearchFilter {
   name: string | null;
   skills: string[];       // UI: chip array - API: comma-separated string
   expertise: string[];       // UI: chip array - API: comma-separated string
-  minSessionRate: number | null;
-  maxSessionRate: number | null;
-  minYearsExperience: number | null;
-  sortBy: SearchSortBy | null;
-  sortOrder: SearchSortOrder | null;
   page: number;
   limit: number;
-
-  // PENDING BACKEND — filtered locally in dummy mode only
-  minRating: number | null;
-  availability: AvailabilityOption | null;
+  availabilityDay: AvailabilityOption | null;
 }
 
 // Request DTO sent to GET /mentors/search
@@ -139,6 +131,7 @@ export interface MentorSearchRequest {
   minSessionRate?: number;
   maxSessionRate?: number;
   minYearsExperience?: number;
+  availabilityDay?: DaysInWeek;
   sortBy?: SearchSortBy;
   sortOrder?: SearchSortOrder;
   // TODO: uncomment once backend adds these to SearchMentorDto:
