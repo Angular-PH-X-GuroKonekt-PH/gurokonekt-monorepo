@@ -21,3 +21,9 @@ export interface VerifyResetPinInterface {
   newPassword: string;
   confirmPassword: string;
 }
+
+export interface VerifyPasswordChangeInterface {
+  userId: string;
+  pin: string;
+  newPassword: string;
+}

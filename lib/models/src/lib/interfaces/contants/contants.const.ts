@@ -35,6 +35,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Your password has been updated!',
     },
+    INITIATE_PASSWORD_CHANGE: {
+      code: 200,
+      message: 'A confirmation PIN has been sent to your email.',
+    },
     FORGOT_PASSWORD_EMAIL_SENT: {
       code: 200,
       message: 'Password reset link sent to your email',
@@ -273,6 +277,14 @@ export const API_RESPONSE = {
     UPDATE_PASSWORD: {
       code: 400,
       message: 'Failed to update password',
+    },
+    PASSWORD_CHANGE_TOKEN_INVALID: {
+      code: 400,
+      message: 'Invalid PIN code for password change.',
+    },
+    PASSWORD_CHANGE_TOKEN_EXPIRED: {
+      code: 400,
+      message: 'PIN has expired. Please restart the password change process.',
     },
     RESET_PIN_INVALID: {
       code: 400,
@@ -697,6 +709,26 @@ Changes the password for an already authenticated user who knows their current p
       currentPassword: 'OldPassword@123',
       newPassword: 'NewPassword@456',
       confirmPassword: 'NewPassword@456',
+    },
+  },
+
+  VERIFY_PASSWORD_CHANGE: {
+    summary: 'Confirm password change with email PIN (step 2 of 2)',
+    description: `
+Second step of the password change flow for authenticated users.
+
+**Step sequence:**
+1. \`POST /auth/update-password\` — verify current password, send PIN to email.
+2. **\`POST /auth/update-password/verify\`** ← you are here — submit PIN + new password to apply the change.
+
+**The PIN expires after 15 minutes.** If expired, restart from \`POST /auth/update-password\`.
+
+**\`newPassword\` must exactly match the password submitted in step 1** — it is re-verified against the stored hash to prevent tampering.
+`,
+    bodyExample: {
+      userId: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+      pin: '482910',
+      newPassword: 'NewPassword@456',
     },
   },
 
@@ -1204,6 +1236,7 @@ export const REDIRECT_LINKS  = {
   ADMIN_DASHBOARD: '/admin/dashboard',
   RESET_PASSWORD: '/reset-password',
   DEACTIVATE_ACCOUNT: '/deactivate',
+  PASSWORD_CHANGE_VERIFY: '/update-password/verify',
 }
 
 export const RESEND_EMAIL_CONFIRMATION = {
