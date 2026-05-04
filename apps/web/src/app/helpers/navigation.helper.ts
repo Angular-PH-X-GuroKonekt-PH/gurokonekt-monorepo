@@ -56,8 +56,12 @@ export class NavigationHelper {
 
       return this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
     }
-    
-    return this.router.navigate([APP_ROUTES.DASHBOARD]);
+
+    if (normalizeRole(role) === 'mentor') {
+      return this.router.navigate([APP_ROUTES.MENTOR_DASHBOARD]);
+    }
+
+    return this.router.navigate([APP_ROUTES.MENTEE_DASHBOARD]);
   }
 
   /**

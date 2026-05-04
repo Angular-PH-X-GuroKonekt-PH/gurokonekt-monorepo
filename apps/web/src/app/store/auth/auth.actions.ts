@@ -19,6 +19,10 @@ export class LoginFailure {
   constructor(public error: string) {}
 }
 
+export class RestoreSession {
+  static readonly type = '[Auth] Restore Session';
+}
+
 export class RegisterMentee {
   static readonly type = '[Auth] Register Mentee';
   constructor(public payload: RegisterMenteeRequest) {}
