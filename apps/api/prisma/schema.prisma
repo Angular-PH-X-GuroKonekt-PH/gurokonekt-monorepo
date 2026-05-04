@@ -110,6 +110,8 @@ model User {
   updatedById         String?                    @map("updated_by_id")
   deactivationToken          String?   @map("deactivation_token")
   deactivationTokenExpiresAt DateTime? @map("deactivation_token_expires_at")
+  pendingHashPassword          String?   @map("pending_hash_password")
+  pendingPasswordChangeAt      DateTime? @map("pending_password_change_at")
   createdAt           DateTime   @default(now()) @map("created_at")
   updatedAt           DateTime   @updatedAt      @map("updated_at")
 

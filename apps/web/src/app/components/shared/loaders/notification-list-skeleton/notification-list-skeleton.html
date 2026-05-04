@@ -1,0 +1,22 @@
+<div class="space-y-3">
+  @for (_ of items(); track $index) {
+    <div
+      class="animate-pulse rounded-2xl border border-slate-200 bg-white p-5"
+      [class.bg-white/70]="compact()"
+      [class.p-4]="compact()"
+    >
+      <div class="flex items-start gap-3">
+        <div class="h-10 w-10 rounded-2xl bg-slate-200"></div>
+
+        <div class="min-w-0 flex-1 space-y-2">
+          <div class="h-3 w-20 rounded bg-slate-200"></div>
+          <div class="h-4 w-44 rounded bg-slate-200"></div>
+          <div class="h-3 w-full rounded bg-slate-100"></div>
+          @if (!compact()) {
+            <div class="h-3 w-2/3 rounded bg-slate-100"></div>
+          }
+        </div>
+      </div>
+    </div>
+  }
+</div>

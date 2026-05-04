@@ -1,0 +1,111 @@
+<div
+  class="overflow-hidden rounded-3xl border border-slate-200 bg-white shadow-[0_14px_34px_rgba(15,23,42,0.06)] transition duration-300 hover:-translate-y-0.5 hover:border-blue-200 hover:shadow-[0_20px_44px_rgba(15,23,42,0.1)]"
+>
+  <div class="flex flex-col gap-5 p-5 lg:flex-row lg:items-center lg:justify-between">
+    <div class="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-center">
+      <div class="relative h-24 w-24 shrink-0 overflow-hidden rounded-2xl bg-slate-100 ring-1 ring-slate-200">
+        <img
+          [src]="booking().mentor?.avatarAttachments?.[0]?.publicUrl || 'assets/img/no_profile_avatar.png'"
+          [alt]="booking().mentor ? booking().mentor!.firstName + ' ' + booking().mentor!.lastName : 'Mentor'"
+          class="h-full w-full object-cover"
+        />
+      </div>
+
+      <div class="min-w-0 space-y-3">
+        <div class="space-y-1">
+          <div class="flex flex-wrap items-center gap-2">
+            <p class="truncate text-lg font-semibold text-heading">
+              @if (booking().mentor) {
+                {{ booking().mentor!.firstName }} {{ booking().mentor!.lastName }}
+              } @else {
+                Unknown Mentor
+              }
+            </p>
+          </div>
+
+          <p class="text-sm text-body">
+            Mentorship session
+          </p>
+        </div>
+
+        <div class="flex flex-wrap items-center gap-3">
+          <span
+            class="inline-flex items-center gap-2 rounded-full border border-orange-100 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-700"
+          >
+            <app-icon
+              name="calendar-days"
+              class="h-4 w-4 text-orange-500"
+            ></app-icon>
+            {{ booking().sessionDateTime | date: 'MMM d, y' }}
+          </span>
+
+          <span
+            class="inline-flex items-center gap-2 rounded-full border border-slate-200 bg-slate-50 px-3 py-1.5 text-sm font-medium text-slate-600"
+          >
+            <app-icon
+              name="clock"
+              class="h-4 w-4 text-slate-500"
+            ></app-icon>
+            {{ booking().sessionDateTime | date: 'h:mm a z' }}
+          </span>
+
+          <app-session-badge [status]="booking().status"></app-session-badge>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex shrink-0 flex-col gap-2 sm:flex-row lg:justify-end">
+      @if (canCancelRequest()) {
+        <button
+          type="button"
+          (click)="onCancelRequest()"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100 sm:w-auto"
+        >
+          <app-icon
+            name="alert-circle"
+            class="h-5 w-5 text-orange-500"
+          ></app-icon>
+          Cancel Request
+        </button>
+      }
+
+      @if (canJoinSession()) {
+        <a
+          [href]="booking().sessionLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-blue-900 bg-blue-900 px-4 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:-translate-y-0.5 hover:bg-blue-950 hover:ring-2 hover:ring-blue-100 sm:w-auto"
+        >
+          <app-icon
+            name="video-camera"
+            class="h-5 w-5 text-white"
+          ></app-icon>
+          Join Session
+        </a>
+      }
+
+      @if (canAddReview()) {
+        <button
+          type="button"
+          (click)="onAddReview()"
+          class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-orange-200 bg-orange-50 px-4 py-2.5 text-sm font-semibold text-orange-700 transition hover:border-orange-300 hover:bg-orange-100 sm:w-auto"
+        >
+          <app-icon
+            name="chat-bubble-left-right"
+            class="h-5 w-5 text-orange-500"
+          ></app-icon>
+          Add Review
+        </button>
+      }
+
+      <button
+        type="button"
+        (click)="onViewDetails()"
+        class="inline-flex min-h-11 w-full items-center justify-center gap-2 rounded-xl border border-slate-200 bg-white px-4 py-2.5 text-sm font-semibold text-slate-700 shadow-xs transition hover:-translate-y-0.5 hover:border-blue-200 hover:bg-blue-50 hover:text-blue-900 sm:w-auto"
+      >
+        <app-icon name="book-open" class="h-5 w-5 text-blue-900"></app-icon>
+        View Details
+      </button>
+    </div>
+  </div>
+</div>

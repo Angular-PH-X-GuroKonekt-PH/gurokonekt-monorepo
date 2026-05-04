@@ -1,4 +1,4 @@
-<section class="min-h-screen bg-gradient-to-br from-blue-50 via-orange-50 to-blue-50 py-8 sm:py-12">
+<section class="min-h-screen bg-linear-to-r from-blue-50 via-orange-50 to-blue-50 py-8 sm:py-12">
   <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
     <!-- Header Section -->
     <div class="mb-8">
@@ -6,7 +6,7 @@
         <span class="text-xl">←</span>
         <span>Back to Dashboard</span>
       </a>
-      <h1 class="text-3xl sm:text-4xl font-bold bg-gradient-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent">
+      <h1 class="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent">
         Profile Settings
       </h1>
       <p class="mt-3 text-base text-gray-700">
@@ -105,11 +105,11 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
               <!-- Bio -->
               <div class="md:col-span-2">
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <label for="bio" class="block text-sm font-semibold text-gray-700 mb-2">
                   Short Bio
                   <span class="text-red-500">*</span>
                 </label>
-                <textarea
+                <textarea id="bio"
                   formControlName="bio"
                   placeholder="Tell us about yourself (50-500 characters)"
                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors resize-none"
@@ -129,11 +129,12 @@
 
               <!-- Phone Number -->
               <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <label for="phoneNumber" class="block text-sm font-semibold text-gray-700 mb-2">
                   Phone Number (Optional)
                 </label>
                 <input
                   type="tel"
+                  id="phoneNumber"
                   formControlName="phoneNumber"
                   placeholder="e.g., +639171234567"
                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
@@ -147,10 +148,11 @@
 
               <!-- Country -->
               <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <label for="country" class="block text-sm font-semibold text-gray-700 mb-2">
                   Country <span class="text-red-500">*</span>
                 </label>
                 <select
+                  id="country"
                   formControlName="country"
                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
                 >
@@ -166,10 +168,11 @@
 
               <!-- Timezone -->
               <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <label for="timezone" class="block text-sm font-semibold text-gray-700 mb-2">
                   Timezone <span class="text-red-500">*</span>
                 </label>
                 <select
+                  id="timezone"
                   formControlName="timezone"
                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
                 >
@@ -185,10 +188,11 @@
 
               <!-- Preferred Language -->
               <div>
-                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                <label for="language" class="block text-sm font-semibold text-gray-700 mb-2">
                   Preferred Language <span class="text-red-500">*</span>
                 </label>
                 <select
+                  id="language"
                   formControlName="language"
                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
                 >
@@ -211,7 +215,7 @@
             <!-- Learning Goals -->
             <div class="mb-8">
               <div class="flex items-center justify-between mb-4">
-                <label class="block text-sm font-semibold text-gray-700">
+                <label for="learningGoals" class="block text-sm font-semibold text-gray-700">
                   Learning Goals (Optional)
                 </label>
                 <button
@@ -254,7 +258,7 @@
 
             <!-- Areas of Interest -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-4">
+              <label for="areasOfInterest" class="block text-sm font-semibold text-gray-700 mb-4">
                 Areas of Interest <span class="text-red-500">*</span>
                 <span class="text-gray-500 font-normal">(Select at least one)</span>
               </label>
@@ -286,7 +290,7 @@
 
             <!-- Preferred Session Type -->
             <div class="mb-8">
-              <label class="block text-sm font-semibold text-gray-700 mb-4">
+              <label for="preferredSessionType" class="block text-sm font-semibold text-gray-700 mb-4">
                 Preferred Session Type <span class="text-red-500">*</span>
               </label>
 
@@ -323,7 +327,7 @@
 
             <!-- Availability Schedule -->
             <div>
-              <label class="block text-sm font-semibold text-gray-700 mb-4">
+              <label for="availabilitySchedule" class="block text-sm font-semibold text-gray-700 mb-4">
                 Availability Schedule
               </label>
 

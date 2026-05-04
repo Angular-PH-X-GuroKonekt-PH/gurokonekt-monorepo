@@ -1,0 +1,186 @@
+<div class="relative mx-auto w-full max-w-7xl">
+  <form [formGroup]="filterForm" (ngSubmit)="findMentors()">
+    <div class="flex w-full flex-col gap-5">
+      <div class="mx-auto flex w-full max-w-6xl items-center gap-2 rounded-2xl bg-white p-2 shadow-[0_18px_45px_rgba(15,23,42,0.18)] lg:max-w-[72rem]">
+        <div class="relative min-w-0 flex-1">
+          <div class="pointer-events-none absolute inset-y-0 inset-s-0 flex items-center ps-4 text-slate-400">
+            <app-icon name="magnifying-glass" class="h-5 w-5" />
+          </div>
+
+          <input
+            type="text"
+            formControlName="name"
+            class="block w-full rounded-xl border-0 bg-slate-50 px-4 py-4 ps-12 text-sm text-slate-900 outline-none ring-0 placeholder:text-slate-400 focus:bg-white focus:ring-0"
+            placeholder="Search by name, expertise, or project type..."
+            autocomplete="off"
+          />
+        </div>
+
+        <button
+          type="button"
+          (click)="findMentors()"
+          [disabled]="isLoading()"
+          class="inline-flex min-h-12 shrink-0 items-center justify-center rounded-xl bg-orange-400 px-5 text-sm font-semibold  transition hover:bg-orange-300 disabled:cursor-not-allowed disabled:opacity-60 sm:px-7"
+        >
+          @if (isLoading()) {
+            <span class="h-5 w-5 animate-spin rounded-full border-2 border-slate-950/20 border-t-slate-950"></span>
+          } @else {
+            Search
+          }
+        </button>
+      </div>
+
+      <div class="relative mx-auto w-full max-w-7xl rounded-2xl bg-white p-4 text-left shadow-[0_24px_70px_rgba(15,23,42,0.16)] ring-1 ring-slate-200/80 md:-mb-32 lg:max-w-[84rem]">
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_3.5rem] md:items-end">
+          <div class="relative">
+            <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Expertise</p>
+            <button
+              type="button"
+              (click)="toggleFilterDropdown('expertise')"
+              class="flex min-h-12 w-full items-center justify-between rounded-xl bg-slate-100 px-4 text-sm font-semibold text-blue-950 transition hover:bg-slate-200"
+              [class.ring-2]="activeFilterDropdown() === 'expertise'"
+              [class.ring-orange-200]="activeFilterDropdown() === 'expertise'"
+            >
+              <span class="truncate">{{ selectedExpertise().length ? selectedExpertise()[0] : 'All Fields' }}</span>
+              <app-icon name="chevron-down" class="h-4 w-4 shrink-0 text-slate-500" />
+            </button>
+
+            @if (activeFilterDropdown() === 'expertise') {
+              <div class="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
+                <div class="flex max-h-72 flex-col gap-2 overflow-y-auto">
+                  @for (option of allExpertise(); track option) {
+                    <label
+                      class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition"
+                      [class.border-blue-300]="isExpertiseSelected(option)"
+                      [class.bg-blue-50]="isExpertiseSelected(option)"
+                      [class.text-blue-800]="isExpertiseSelected(option)"
+                      [class.border-gray-200]="!isExpertiseSelected(option)"
+                      [class.text-gray-700]="!isExpertiseSelected(option)"
+                    >
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
+                        [checked]="isExpertiseSelected(option)"
+                        (change)="toggleExpertise(option)"
+                      />
+                      {{ option }}
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <div class="relative">
+            <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Skills</p>
+            <button
+              type="button"
+              (click)="toggleFilterDropdown('skills')"
+              class="flex min-h-12 w-full items-center justify-between rounded-xl bg-slate-100 px-4 text-sm font-semibold text-blue-950 transition hover:bg-slate-200"
+              [class.ring-2]="activeFilterDropdown() === 'skills'"
+              [class.ring-orange-200]="activeFilterDropdown() === 'skills'"
+            >
+              <span class="truncate">{{ selectedSkills().length ? selectedSkills()[0] : 'Any Skill' }}</span>
+              <app-icon name="chevron-down" class="h-4 w-4 shrink-0 text-slate-500" />
+            </button>
+
+            @if (activeFilterDropdown() === 'skills') {
+              <div class="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl border border-gray-200 bg-white p-4 shadow-xl md:min-w-80">
+                <div class="min-h-11 rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 focus-within:border-blue-500 focus-within:ring-2 focus-within:ring-blue-500">
+                  <div class="flex flex-wrap items-center gap-2">
+                    @for (skill of selectedSkills(); track trackBySkill($index, skill)) {
+                      <span class="inline-flex items-center gap-1 rounded-full border border-blue-200 bg-blue-100 px-2.5 py-1 text-xs font-medium text-blue-800">
+                        {{ skill }}
+                        <button
+                          type="button"
+                          (click)="removeSkill(skill)"
+                          class="text-blue-500 transition hover:text-blue-900"
+                          [attr.aria-label]="'Remove ' + skill"
+                        >
+                          x
+                        </button>
+                      </span>
+                    }
+
+                    <input
+                      type="text"
+                      [value]="skillQuery()"
+                      (input)="skillQuery.set($any($event.target).value)"
+                      (keydown.enter)="$event.preventDefault(); addSkill(skillQuery())"
+                      placeholder="{{ selectedSkills().length === 0 ? 'Type to search skills...' : 'Add more...' }}"
+                      class="min-w-36 flex-1 border-none bg-transparent p-0 text-sm text-gray-900 outline-none placeholder:text-gray-400 focus:border-none focus:outline-none focus:ring-0"
+                      autocomplete="off"
+                    />
+                  </div>
+                </div>
+
+                <p class="mt-3 text-xs leading-5 text-slate-500">
+                  Type a skill and press Enter to add it to your search.
+                </p>
+              </div>
+            }
+          </div>
+
+          <div class="relative">
+            <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Availability</p>
+            <button
+              type="button"
+              (click)="toggleFilterDropdown('availability')"
+              class="flex min-h-12 w-full items-center justify-between rounded-xl bg-slate-100 px-4 text-sm font-semibold text-blue-950 transition hover:bg-slate-200"
+              [class.ring-2]="activeFilterDropdown() === 'availability'"
+              [class.ring-orange-200]="activeFilterDropdown() === 'availability'"
+            >
+              <span class="truncate">{{ getAvailabilityLabel(filterForm.get('availabilityDay')!.value) }}</span>
+              <app-icon name="chevron-down" class="h-4 w-4 shrink-0 text-slate-500" />
+            </button>
+
+            @if (activeFilterDropdown() === 'availability') {
+              <div class="absolute left-0 right-0 top-full z-50 mt-2 rounded-xl border border-gray-200 bg-white p-4 shadow-xl">
+                <div class="flex flex-col gap-2">
+                  @for (opt of availabilityOptions; track opt.label) {
+                    <label
+                      class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition"
+                      [class.border-blue-300]="filterForm.get('availabilityDay')!.value === opt.value"
+                      [class.bg-blue-50]="filterForm.get('availabilityDay')!.value === opt.value"
+                      [class.text-blue-800]="filterForm.get('availabilityDay')!.value === opt.value"
+                      [class.border-gray-200]="filterForm.get('availabilityDay')!.value !== opt.value"
+                      [class.text-gray-700]="filterForm.get('availabilityDay')!.value !== opt.value"
+                    >
+                      <input
+                        type="checkbox"
+                        class="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
+                        [checked]="filterForm.get('availabilityDay')!.value === opt.value"
+                        (change)="selectAvailabilityDay(opt.value)"
+                      />
+                      {{ opt.label }}
+                    </label>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+
+          <button
+            type="button"
+            (click)="resetFilters()"
+            [disabled]="activeFilterCount() === 0"
+            class="inline-flex min-h-12 items-center justify-center rounded-xl bg-slate-100 px-4 text-blue-950 transition hover:bg-slate-200 disabled:cursor-not-allowed disabled:text-slate-300 disabled:hover:bg-slate-100"
+            aria-label="Clear filters"
+            title="Clear filters"
+          >
+            <app-icon name="close" class="h-5 w-5" />
+          </button>
+        </div>
+      </div>
+    </div>
+
+    @if (errorMessage()) {
+      <div class="mt-2 flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <svg class="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+          <path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z" clip-rule="evenodd" />
+        </svg>
+        {{ errorMessage() }}
+      </div>
+    }
+  </form>
+</div>

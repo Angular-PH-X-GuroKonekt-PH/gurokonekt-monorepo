@@ -1,0 +1,79 @@
+<div class="flex flex-col gap-8">
+  <section class="grid grid-cols-1 gap-6">
+    <app-section-card>
+      <div class="mb-4 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <app-section-title
+          title="Manage Your Bookings"
+          subtitle="Stay organized with all your mentorship sessions."
+        />
+
+        <div class="rounded-2xl bg-slate-100/80 p-1.5">
+          <div class="flex flex-wrap items-center gap-1.5">
+            <app-filter-button
+              label="All"
+              value="ALL"
+              [count]="bookingCounts().ALL"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
+
+            <app-filter-button
+              label="Upcoming"
+              [value]="bookingStatus.APPROVED"
+              [count]="bookingCounts().UPCOMING"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
+
+            <app-filter-button
+              label="Pending"
+              [value]="bookingStatus.PENDING"
+              [count]="bookingCounts().PENDING"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
+
+            <app-filter-button
+              label="Cancelled"
+              [value]="bookingStatus.CANCELLED"
+              [count]="bookingCounts().CANCELLED"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
+
+            <app-filter-button
+              label="Rejected"
+              [value]="bookingStatus.REJECTED"
+              [count]="bookingCounts().REJECTED"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
+
+            <app-filter-button
+              label="Completed"
+              [value]="bookingStatus.COMPLETED"
+              [count]="bookingCounts().COMPLETED"
+              [selectedValue]="selectedFilter()"
+              (clicked)="setFilter($event)"
+            />
+          </div>
+        </div>
+      </div>
+
+      @if (isBookingsLoading()) {
+        <app-booking-card-list-skeleton [count]="3" />
+      } @else {
+        <app-session-booking-card
+          [bookingList]="displayedBookings()"
+          (viewDetails)="onViewDetails($event)"
+          (cancelRequest)="onCancelRequest($event)"
+          (addReview)="onAddReview($event)"
+          [emptyTitle]="selectedFilter() === 'ALL' ? 'No bookings yet' : 'No bookings match this filter'"
+          [emptyMessage]="selectedFilter() === 'ALL'
+            ? 'You do not have any bookings at the moment. Once you schedule a mentoring session, it will appear here.'
+            : 'Try choosing another booking status or clearing the filter to see more sessions.'"
+        />
+      }
+    </app-section-card>
+  </section>
+</div>

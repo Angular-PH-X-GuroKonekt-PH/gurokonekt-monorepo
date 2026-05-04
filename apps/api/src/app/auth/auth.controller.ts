@@ -31,6 +31,7 @@ import {
   UpdatePasswordDto,
   ResetPasswordDto,
   VerifyResetPinDto,
+  VerifyPasswordChangeDto,
 } from '@gurokonekt/models';
 
 
@@ -303,6 +304,58 @@ export class AuthController {
       );
     }
     
+    return response;
+  }
+
+  // ====================================================
+  // POST - Verify Password Change (step 2 of 2) — MUST be before update-password
+  // ====================================================
+
+  @Post('update-password/verify')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.VERIFY_PASSWORD_CHANGE.summary,
+    description: SWAGGER_DOCUMENTATION.VERIFY_PASSWORD_CHANGE.description,
+  })
+  @ApiBody({
+    type: VerifyPasswordChangeDto,
+    examples: {
+      default: { summary: 'Submit PIN to confirm password change', value: SWAGGER_DOCUMENTATION.VERIFY_PASSWORD_CHANGE.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Password updated successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Your password has been updated!',
+        data: null,
+      },
+    },
+  })
+  @ApiResponse({ status: 400, description: 'PIN is invalid, expired, or newPassword does not match the pending hash.' })
+  @ApiResponse({ status: 404, description: 'User not found.' })
+  async verifyPasswordChange(
+    @Body() input: VerifyPasswordChangeDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const response = await this.authService.verifyPasswordChange(input, ipAddress, userAgent);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
     return response;
   }
 

@@ -5,7 +5,7 @@ import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
 import { MenteePreferredSessionType, DaysInWeek } from '@gurokonekt/models/interfaces/user/user.model';
-import type { UpdateMenteeProfileInterface, MenteeProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
+import type { UpdateMenteeProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
 import type { DayAvailability, TimeFrame } from '../../../interfaces/post-login.interface';
 import { ToastService } from '../../../services/toast.service';
 import { ProfileService } from '../../../services/profile.service';

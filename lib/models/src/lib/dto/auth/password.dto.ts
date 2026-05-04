@@ -4,6 +4,7 @@ import {
   REGEX,
   ResetPasswordInterface,
   UpdatePasswordInterface,
+  VerifyPasswordChangeInterface,
   VerifyResetPinInterface,
 } from '@gurokonekt/models';
 
@@ -61,4 +62,18 @@ export class VerifyResetPinDto implements VerifyResetPinInterface {
   @IsString()
   @IsNotEmpty({ message: 'Confirm password cannot be empty' })
   confirmPassword!: string;
+}
+
+export class VerifyPasswordChangeDto implements VerifyPasswordChangeInterface {
+  @IsString()
+  @IsNotEmpty({ message: 'User ID cannot be empty' })
+  userId!: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'PIN cannot be empty' })
+  pin!: string;
+
+  @IsString()
+  @Matches(REGEX.PASSWORD, { message: PASSWORD_VALIDATION_MESSAGE })
+  newPassword!: string;
 }
