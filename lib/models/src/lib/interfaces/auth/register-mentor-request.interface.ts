@@ -14,4 +14,5 @@ export interface RegisterMentorRequest {
   linkedInUrl?: string;
   areasOfExpertise: string[];
   files: any[];
+  emailRedirectTo?: string;
 }

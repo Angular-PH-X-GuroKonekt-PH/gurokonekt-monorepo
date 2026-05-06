@@ -1,6 +1,6 @@
 import { API_RESPONSE, REGEX, RegisterMenteeRequest } from '@gurokonekt/models';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsOptional, IsString, Matches } from 'class-validator';
+import { IsEmail, IsOptional, IsString, IsUrl, Matches } from 'class-validator';
 import { CustomMatch } from '../decorators/custom-matches.decorator';
 
 export class RegisterMenteeDto implements RegisterMenteeRequest {
@@ -81,8 +81,17 @@ export class RegisterMenteeDto implements RegisterMenteeRequest {
   })
   @IsString()
   @Matches(
-    REGEX.PHONE, 
+    REGEX.PHONE,
     { message: API_RESPONSE.ERROR.INVALID_PHONE_FORMAT.message }
   )
   phoneNumber!: string;
-} 
+
+  @ApiProperty({
+    required: false,
+    example: 'https://app.gurokonekt.com/verify-email',
+    description: 'URL to redirect to after clicking the confirmation link. Defaults to the request origin + /verify-email.',
+  })
+  @IsOptional()
+  @IsUrl({}, { message: 'emailRedirectTo must be a valid URL' })
+  emailRedirectTo?: string;
+}

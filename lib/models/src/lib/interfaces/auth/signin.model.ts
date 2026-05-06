@@ -22,4 +22,5 @@ export interface SignInWithOAthInterface {
 export interface ResendConfirmationEmailInterface {
   type: ResendOTPTypes.SignUp;
   email: string;
+  emailRedirectTo?: string;
 }
