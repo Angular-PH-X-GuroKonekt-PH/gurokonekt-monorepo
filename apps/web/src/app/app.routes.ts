@@ -1,7 +1,8 @@
 import { Route } from '@angular/router';
 
-import { APP_ROUTES } from './constants/routes';
-import { dashboardAccessGuard } from './guards/dashboard-access.guard';
+
+import { APP_ROUTES } from './shared/constants/routes';
+import { dashboardAccessGuard } from './shared/guards/dashboard-access.guard';
 
 export const appRoutes: Route[] = [
   {

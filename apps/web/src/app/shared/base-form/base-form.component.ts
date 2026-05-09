@@ -1,5 +1,5 @@
 import { FormGroup } from '@angular/forms';
-import { FormValidationHelper } from '../../helpers/form-validation.helper';
+import { FormValidationHelper } from '../helpers/form-validation.helper';
 
 /**
  * Base class for form components providing common validation methods

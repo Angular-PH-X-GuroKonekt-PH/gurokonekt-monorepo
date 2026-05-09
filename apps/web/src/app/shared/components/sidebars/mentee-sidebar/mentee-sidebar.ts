@@ -2,8 +2,8 @@ import { Component, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 import { Store } from '@ngxs/store';
 
-import * as AuthActions from '../../../../store/auth/auth.actions';
-import { IconComponent } from "../../components/icon/icon.component";
+import * as AuthActions from '../../../../core/auth/store/auth.actions';
+import { IconComponent } from '../../icon/icon.component';
 
 @Component({
   selector: 'app-mentee-sidebar',

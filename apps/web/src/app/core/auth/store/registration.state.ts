@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import { State, Action, StateContext, Selector } from '@ngxs/store';
-import { RegistrationStateModel, initialRegistrationState, RegistrationStep } from './registration.state.model';
+import { RegistrationStateModel, initialRegistrationState, RegistrationStep } from '../models/registration.state.model';
 import * as RegistrationActions from '../pages/registration/registration.actions';
 
 @State<RegistrationStateModel>({

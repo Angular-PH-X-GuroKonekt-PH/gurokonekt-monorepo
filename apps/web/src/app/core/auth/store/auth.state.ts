@@ -6,9 +6,9 @@ import { AuthResponse } from '@gurokonekt/models';
 
 import { AuthService } from '../services/auth.service';
 import { ProfileService } from '../../../features/profile/profile.service';
-import { NavigationHelper } from '../../helpers';
-import { AuthStateModel, initialAuthState } from './auth.state.model';
+import { AuthStateModel, initialAuthState } from '../models/auth.state.model';
 import * as AuthActions from './auth.actions';
+import { NavigationHelper } from '../../../shared/helpers';
 
 @State<AuthStateModel>({
   name: 'auth',

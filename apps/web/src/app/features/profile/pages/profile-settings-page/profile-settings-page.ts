@@ -8,33 +8,36 @@ import { MenteePreferredSessionType, DaysInWeek } from '@gurokonekt/models/inter
 import type { UpdateMenteeProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
 import type { DayAvailability, TimeFrame } from '../../../../shared/interfaces/post-login.interface';
 import { ToastService } from '../../../../shared/services/toast.service';
+import { ProfileService } from '../../profile.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { AuthState } from '../../../../core/auth/store/auth.state';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 
 @Component({
-  selector: 'mentee-post-login-page',
+  selector: 'app-profile-settings-page',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent],
-  templateUrl: './mentee-post-login-page.html'
+  templateUrl: './profile-settings-page.html',
 })
-export class MenteePostLoginPage implements OnInit {
+export class ProfileSettingsComponent implements OnInit {
   private static readonly MAX_LEARNING_GOALS = 5;
   private static readonly MAX_AREAS_OF_INTEREST = 5;
   private static readonly MAX_TIME_FRAMES_PER_DAY = 3;
   private static readonly MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
   private static readonly ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+  private static readonly MAX_LEARNING_GOAL_LENGTH = 500;
 
   private readonly fb = inject(FormBuilder);
   private readonly toastService = inject(ToastService);
+  private readonly profileService = inject(ProfileService);
   private readonly router = inject(Router);
   private readonly store = inject(Store);
 
-  protected readonly currentStep = signal(1);
-  protected readonly totalSteps = 3;
   protected readonly isSubmitting = signal(false);
+  protected readonly isLoading = signal(true);
   
   protected avatarPreview = signal<string | null>(null);
+  protected currentAvatarUrl = signal<string | null>(null);
   protected selectedAvatarFile: File | null = null;
   protected avatarError = signal<string | null>(null);
   
@@ -61,24 +64,82 @@ export class MenteePostLoginPage implements OnInit {
     'Career Development',
   ];
 
+  protected readonly countryOptions = [
+    'Philippines',
+    'United States',
+    'Canada',
+    'United Kingdom',
+    'Australia',
+    'India',
+    'Singapore',
+    'Japan',
+    'Germany',
+    'France',
+    'Other',
+  ];
+
+  protected readonly timezoneOptions = [
+    'UTC-12:00',
+    'UTC-11:00',
+    'UTC-10:00',
+    'UTC-09:00',
+    'UTC-08:00',
+    'UTC-07:00',
+    'UTC-06:00',
+    'UTC-05:00',
+    'UTC-04:00',
+    'UTC-03:00',
+    'UTC-02:00',
+    'UTC-01:00',
+    'UTC+00:00',
+    'UTC+01:00',
+    'UTC+02:00',
+    'UTC+03:00',
+    'UTC+04:00',
+    'UTC+05:00',
+    'UTC+05:30',
+    'UTC+06:00',
+    'UTC+07:00',
+    'UTC+08:00',
+    'UTC+09:00',
+    'UTC+10:00',
+    'UTC+11:00',
+    'UTC+12:00',
+  ];
+
+  protected readonly languageOptions = [
+    'English',
+    'Filipino',
+    'Spanish',
+    'Mandarin',
+    'Japanese',
+    'German',
+    'French',
+    'Hindi',
+    'Portuguese',
+    'Korean',
+  ];
+
   protected profileForm!: FormGroup;
   protected availabilitySchedule = signal<DayAvailability[]>([]);
 
   ngOnInit(): void {
     this.initializeForm();
     this.initializeAvailability();
+    this.loadProfileData();
   }
 
   private initializeForm(): void {
     this.profileForm = this.fb.group({
-      bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
-      learningGoals: this.fb.array([], Validators.required),
+      bio: ['', [Validators.minLength(50), Validators.maxLength(500)]],
+      phoneNumber: ['', [Validators.pattern(/^\+\d{10,15}$/)]],
+      country: ['', Validators.required],
+      timezone: ['', Validators.required],
+      language: ['', Validators.required],
+      learningGoals: this.fb.array([]),
       areasOfInterest: this.fb.array([], Validators.required),
       preferredSessionType: [MenteePreferredSessionType.Online, Validators.required],
     });
-
-    // Add initial learning goal field
-    this.addLearningGoal();
   }
 
   private initializeAvailability(): void {
@@ -92,6 +153,89 @@ export class MenteePostLoginPage implements OnInit {
 
   private createDefaultTimeFrame(): TimeFrame {
     return { from: '09:00', to: '17:00' };
+  }
+
+  private async loadProfileData(): Promise<void> {
+    try {
+      const user = this.currentUser();
+      if (!user) {
+        this.toastService.error('User session not found');
+        return;
+      }
+
+      // Get current profile data
+      const profileResponse = await firstValueFrom(
+        this.profileService.getMenteeProfile(user.id)
+      );
+
+      if (profileResponse.data) {
+        this.populateForm(profileResponse.data);
+        // Get avatar URL from response data
+        const avatarUrl = (profileResponse.data as any)?.avatarAttachments?.[0]?.publicUrl || 
+                         (profileResponse.data as any)?.user?.avatarAttachments?.[0]?.publicUrl;
+        if (avatarUrl) {
+          this.currentAvatarUrl.set(avatarUrl);
+        }
+      }
+    } catch (error) {
+      console.error('Error loading profile:', error);
+      this.toastService.error('Failed to load profile data');
+    } finally {
+      this.isLoading.set(false);
+    }
+  }
+
+  private populateForm(profileData: any): void {
+    // Extract fields from profile data or nested user object
+    const bio = profileData.bio || '';
+    const phoneNumber = profileData.phoneNumber || profileData.user?.phoneNumber || '';
+    const country = profileData.country || profileData.user?.country || '';
+    const timezone = profileData.timezone || profileData.user?.timezone || '';
+    const language = profileData.language || profileData.user?.language || '';
+    const learningGoals = profileData.learningGoals || [];
+    const areasOfInterest = profileData.areasOfInterest || [];
+    const preferredSessionType = profileData.preferredSessionType || MenteePreferredSessionType.Online;
+    const availability = profileData.availability || [];
+
+    this.profileForm.patchValue({
+      bio,
+      phoneNumber,
+      country,
+      timezone,
+      language,
+      preferredSessionType,
+    });
+
+    // Populate learning goals
+    if (learningGoals && Array.isArray(learningGoals)) {
+      learningGoals.forEach(goal => {
+        this.learningGoals.push(this.fb.control(goal, [Validators.maxLength(ProfileSettingsComponent.MAX_LEARNING_GOAL_LENGTH)]));
+      });
+    }
+
+    // Populate areas of interest
+    if (areasOfInterest && Array.isArray(areasOfInterest)) {
+      areasOfInterest.forEach(area => {
+        this.areasOfInterest.push(this.fb.control(area));
+      });
+    }
+
+    // Populate availability
+    if (availability && Array.isArray(availability)) {
+      this.populateAvailabilitySchedule(availability);
+    }
+  }
+
+  private populateAvailabilitySchedule(availability: Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }>): void {
+    const schedule = this.availabilitySchedule();
+    availability.forEach(slot => {
+      const daySchedule = schedule.find(d => d.day === slot.day);
+      if (daySchedule) {
+        daySchedule.enabled = true;
+        daySchedule.timeFrames = slot.timeFrames || [this.createDefaultTimeFrame()];
+      }
+    });
+    this.availabilitySchedule.set([...schedule]);
   }
 
   private updateScheduleForDay(day: DaysInWeek, update: (daySchedule: DayAvailability) => void): void {
@@ -109,13 +253,13 @@ export class MenteePostLoginPage implements OnInit {
   }
 
   addLearningGoal(): void {
-    if (this.learningGoals.length < MenteePostLoginPage.MAX_LEARNING_GOALS) {
-      this.learningGoals.push(this.fb.control('', [Validators.required, Validators.minLength(2)]));
+    if (this.learningGoals.length < ProfileSettingsComponent.MAX_LEARNING_GOALS) {
+      this.learningGoals.push(this.fb.control('', [Validators.maxLength(ProfileSettingsComponent.MAX_LEARNING_GOAL_LENGTH)]));
     }
   }
 
   removeLearningGoal(index: number): void {
-    if (this.learningGoals.length > 1) {
+    if (this.learningGoals.length > 0) {
       this.learningGoals.removeAt(index);
     }
   }
@@ -133,7 +277,7 @@ export class MenteePostLoginPage implements OnInit {
     if (index >= 0) {
       this.areasOfInterest.removeAt(index);
     } else {
-      if (this.areasOfInterest.length < MenteePostLoginPage .MAX_AREAS_OF_INTEREST) {
+      if (this.areasOfInterest.length < ProfileSettingsComponent.MAX_AREAS_OF_INTEREST) {
         this.areasOfInterest.push(this.fb.control(area));
       }
     }
@@ -171,17 +315,21 @@ export class MenteePostLoginPage implements OnInit {
   }
 
   private isValidAvatarType(file: File): boolean {
-    return MenteePostLoginPage.ALLOWED_AVATAR_TYPES.includes(file.type);
+    return ProfileSettingsComponent.ALLOWED_AVATAR_TYPES.includes(file.type);
   }
 
   private isValidAvatarSize(file: File): boolean {
-    return file.size <= MenteePostLoginPage.MAX_AVATAR_SIZE_BYTES;
+    return file.size <= ProfileSettingsComponent.MAX_AVATAR_SIZE_BYTES;
   }
 
-  removeAvatar(): void {
+  removeAvatarPreview(): void {
     this.selectedAvatarFile = null;
     this.avatarPreview.set(null);
     this.avatarError.set(null);
+  }
+
+  removeCurrentAvatar(): void {
+    this.currentAvatarUrl.set(null);
   }
 
   // Availability Management
@@ -193,7 +341,7 @@ export class MenteePostLoginPage implements OnInit {
 
   addTimeFrame(day: DaysInWeek): void {
     this.updateScheduleForDay(day, (daySchedule) => {
-      if (daySchedule.timeFrames.length < MenteePostLoginPage.MAX_TIME_FRAMES_PER_DAY) {
+      if (daySchedule.timeFrames.length < ProfileSettingsComponent.MAX_TIME_FRAMES_PER_DAY) {
         daySchedule.timeFrames.push(this.createDefaultTimeFrame());
       }
     });
@@ -218,40 +366,6 @@ export class MenteePostLoginPage implements OnInit {
     return this.availabilitySchedule().find(d => d.day === day);
   }
 
-  // Step Navigation
-  nextStep(): void {
-    if (this.currentStep() < this.totalSteps) {
-      this.currentStep.update(step => step + 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }
-
-  previousStep(): void {
-    if (this.currentStep() > 1) {
-      this.currentStep.update(step => step - 1);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
-  }
-
-  canProceedToNextStep(): boolean {
-    switch (this.currentStep()) {
-      case 1:
-        return (this.profileForm.get('bio')?.valid ?? false) && this.selectedAvatarFile !== null;
-      case 2:
-        return this.learningGoals.valid && 
-               this.learningGoals.length > 0 &&
-               this.areasOfInterest.length > 0;
-      case 3:
-        return this.hasAtLeastOneAvailability();
-      default:
-        return false;
-    }
-  }
-
-  private hasAtLeastOneAvailability(): boolean {
-    return this.availabilitySchedule().some(day => day.enabled && day.timeFrames.length > 0);
-  }
-
   private buildAvailabilityPayload(): Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }> {
     return this.availabilitySchedule()
       .filter(day => day.enabled)
@@ -265,33 +379,23 @@ export class MenteePostLoginPage implements OnInit {
     const availability = this.buildAvailabilityPayload();
     return {
       bio: this.profileForm.value.bio,
-      learningGoals: this.learningGoals.value,
+      phoneNumber: this.profileForm.value.phoneNumber,
+      country: this.profileForm.value.country,
+      timezone: this.profileForm.value.timezone,
+      language: this.profileForm.value.language,
+      learningGoals: this.learningGoals.value.filter((g: string) => g.trim()),
       areasOfInterest: this.areasOfInterest.value,
       preferredSessionType: this.profileForm.value.preferredSessionType,
       ...(availability.length > 0 && { availability }),
     };
   }
 
-  private validateSubmissionPrerequisites(): boolean {
-    if (!this.selectedAvatarFile) {
-      this.toastService.error('Profile picture is required');
-      this.currentStep.set(1);
-      return false;
-    }
-
-    if (!this.hasAtLeastOneAvailability()) {
-      this.toastService.error('Please set at least one availability slot');
-      return false;
-    }
-
-    return true;
-  }
-
   // Form Submission
   async onSubmit(): Promise<void> {
     if (this.profileForm.invalid || this.isSubmitting()) return;
 
-    if (!this.validateSubmissionPrerequisites()) {
+    if (this.areasOfInterest.length === 0) {
+      this.toastService.error('Please select at least one area of interest');
       return;
     }
 
@@ -307,25 +411,27 @@ export class MenteePostLoginPage implements OnInit {
     try {
       const profileData = this.buildProfileData();
 
-      // Dispatch action to state - state handlers will manage the HTTP call and updates
+      // Dispatch action to state
       await firstValueFrom(
         this.store.dispatch(
           new AuthActions.UpdateMenteeProfile({
             userId: user.id,
             profileData,
-            avatarFile: this.selectedAvatarFile as File,
+            avatarFile: this.selectedAvatarFile || undefined,
           })
         )
       );
 
-      this.toastService.success('Profile setup completed successfully!', 'Welcome!');
-      this.router.navigate(['/dashboard']);
+      this.toastService.success('Profile updated successfully!');
+      this.selectedAvatarFile = null;
+      this.avatarPreview.set(null);
     } catch (error) {
       const message = (error as { message?: string })?.message;
       this.toastService.error(
-        message || 'Failed to setup profile. Please try again.',
+        message || 'Failed to update profile. Please try again.',
         'Error'
       );
+    } finally {
       this.isSubmitting.set(false);
     }
   }

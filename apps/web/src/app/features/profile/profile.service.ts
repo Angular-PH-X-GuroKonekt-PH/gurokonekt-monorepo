@@ -7,9 +7,9 @@ import type {
   UpdateMentorProfileInterface,
 } from '@gurokonekt/models/interfaces/user/user.model';
 
-import { buildApiUrl } from '../helpers/api-helpers/api.helper';
 import { HttpErrorHelper } from '../../shared/helpers/http-error.helper';
 import { ApiResponse } from '../../shared/interfaces/api-response.interface';
+import { buildApiUrl } from '../../shared/helpers/api.helper';
 
 @Injectable({
   providedIn: 'root',

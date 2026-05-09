@@ -3,9 +3,8 @@ import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http'
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs';
 import { MentorSearchFilter, MentorSearchRequest, MentorSearchResultInterface } from '@gurokonekt/models/interfaces/search/search.model';
-
-import { buildApiUrl } from '../../../shared/helpers/api-helpers/api.helper';
 import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
+import { buildApiUrl } from '../../../shared/helpers/api.helper';
 
 @Injectable({ providedIn: 'root' })
 export class MentorSearchService {

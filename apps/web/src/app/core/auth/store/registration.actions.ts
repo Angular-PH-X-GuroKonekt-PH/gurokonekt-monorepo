@@ -1,4 +1,4 @@
-import { RegistrationStep } from './registration.state.model';
+import { RegistrationStep } from '../models/registration.state.model';
 
 export class SetStep {
   static readonly type = '[Registration] Set Step';

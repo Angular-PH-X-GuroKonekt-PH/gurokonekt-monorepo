@@ -14,9 +14,9 @@ import {
 } from '@gurokonekt/models/interfaces/search/search.model';
 import { catchError, map, Observable, of, switchMap } from 'rxjs';
 
-import { buildApiUrl } from '../helpers/api-helpers/api.helper';
 import { ApiResponse } from '../interfaces/api-response.interface';
 import { ProfileService } from '../../features/profile/profile.service';
+import { buildApiUrl } from '../helpers/api.helper';
 
 @Injectable({
   providedIn: 'root',

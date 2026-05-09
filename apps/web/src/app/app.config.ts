@@ -9,12 +9,12 @@ import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideStore } from '@ngxs/store';
 import { withNgxsLoggerPlugin } from '@ngxs/logger-plugin';
 import { withNgxsReduxDevtoolsPlugin } from '@ngxs/devtools-plugin';
-import { authInterceptor } from './interceptors/auth.interceptor';
-
 import { appRoutes } from './app.routes';
-import { AuthState } from './store/auth';
-import { VerifyEmailState } from './store/verify-email';
-import { RegistrationState } from './store/registration';
+import { authInterceptor } from './core/auth/interceptors/auth.interceptor';
+import { AuthState } from './core/auth/store/auth.state';
+import { RegistrationState } from './core/auth/store/registration.state';
+import { VerifyEmailState } from './core/auth/store/verify-email.state';
+
 
 export const appConfig: ApplicationConfig = {
   providers: [

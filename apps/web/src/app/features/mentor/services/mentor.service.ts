@@ -13,13 +13,12 @@ import {
   MentorSearchResultInterface,
 } from '@gurokonekt/models/interfaces/search/search.model';
 import { catchError, map, Observable, of } from 'rxjs';
-
-import { buildApiUrl } from '../../../shared/helpers/api-helpers/api.helper';
 import {
   handleApiErrorWithFallback,
   validateApiResponse,
 } from '../../../shared/helpers/api-response.helper';
 import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
+import { buildApiUrl } from '../../../shared/helpers/api.helper';
 
 @Injectable({
   providedIn: 'root',

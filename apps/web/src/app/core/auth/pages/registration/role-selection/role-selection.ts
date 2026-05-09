@@ -1,6 +1,6 @@
 import { Component, signal, output } from '@angular/core';
 import { Role } from '@gurokonekt/models';
-import { IconComponent } from '../../../shared/components/icon/icon.component';
+import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';
 
 @Component({
   selector: 'app-role-selection',

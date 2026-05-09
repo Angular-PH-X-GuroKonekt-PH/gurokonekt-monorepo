@@ -7,7 +7,6 @@ import { UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/us
   selector: 'app-mentor-card',
   imports: [CommonModule],
   templateUrl: './mentor-card.html',
-  styleUrl: './mentor-card.scss',
 })
 export class MentorCard {
   uid          = input.required<string>();

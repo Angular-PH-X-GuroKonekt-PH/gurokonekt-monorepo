@@ -5,12 +5,12 @@ import { catchError, map, Observable, tap } from 'rxjs';
 
 import { NotificationInterface } from '@gurokonekt/models/interfaces/notification/notification.model';
 
-import { buildApiUrl } from '../helpers/api-helpers/api.helper';
 import {
   handleApiErrorWithFallback,
   validateApiResponse,
 } from '../helpers/api-response.helper';
 import { ApiResponse } from '../interfaces/api-response.interface';
+import { buildApiUrl } from '../helpers/api.helper';
 
 @Injectable({
   providedIn: 'root',

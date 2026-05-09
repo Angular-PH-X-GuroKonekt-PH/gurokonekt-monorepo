@@ -3,14 +3,14 @@ import { ReactiveFormsModule } from '@angular/forms';
 import { FormGroup } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMenteeRequest } from '@gurokonekt/models';
-import { AuthState } from '../../../store/auth';
-import { ClearAuthMessages, RegisterMentee } from '../../../store/auth.actions';
-import { IconComponent } from '../../../../../shared/components/icon/icon.component';
-import { BaseStepperRegistrationComponent } from '../../../../../shared/base-form/base-stepper-registration.component';
-import { FORM_FIELD_VALIDATORS } from '../../../constants/form-validation-configs.constants';
-import { CustomValidators } from '../../../../../shared/validators/custom-validators';
-import { formatPhoneToE164 } from '../../../helpers/phone.formatter';
 import { ToastService } from '../../../../../shared/services/toast.service';
+import { BaseStepperRegistrationComponent } from 'apps/web/src/app/shared/base-form/base-stepper-registration.component';
+import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';
+import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
+import { formatPhoneToE164 } from 'apps/web/src/app/shared/helpers/phone.formatter';
+import { CustomValidators } from 'apps/web/src/app/shared/validators/custom-validators';
+import { ClearAuthMessages, RegisterMentee } from '../../../store/auth.actions';
+import { AuthState } from '../../../store/auth.state';
 
 @Component({
   selector: 'app-register',

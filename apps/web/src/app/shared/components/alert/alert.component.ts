@@ -3,6 +3,7 @@ import { Component, input, output } from '@angular/core';
 import { IconComponent, IconName } from '../icon/icon.component';
 import { AlertType } from '../../types/alert.types';
 import { AlertHelper } from '../../helpers/alert.helper';
+import { IconHelper } from '../../helpers/icon.helper';
 
 @Component({
   selector: 'app-alert',

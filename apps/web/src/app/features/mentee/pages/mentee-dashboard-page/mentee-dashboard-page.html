@@ -18,7 +18,7 @@
       @if (upcomingSessionLoading()) {
       <app-booking-card-list-skeleton [count]="2" />
       } @else if (upcomingSessionsCount() > 0) {
-      <app-session-booking-card
+      <app-mentee-session-booking-card
         [bookingList]="upcomingSessions() ?? []"
         (viewDetails)="onViewDetails($event)"
         (cancelRequest)="onCancelRequest($event)"
@@ -55,7 +55,7 @@
       } @else if(completedSessionsCount() > 0) {
       <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
         @for (booking of completedSessionHistory(); track booking.id) {
-        <app-completed-booking-card [completedBooking]="booking" />
+        <app-mentee-completed-booking-card [completedBooking]="booking" />
         }
       </div>
       } @else {
@@ -116,7 +116,7 @@
             [style.transform]="'translateX(-' + (currentMentorSlide() * (100 / 3)) + '%)'">
             @for (mentor of mentors; track mentor.id) {
             <div class="w-[85%] shrink-0 snap-start md:w-[48%] lg:w-1/3 lg:px-3">
-              <app-recommended-mentor-card [mentor]="mentor" />
+              <app-mentor-recommended-card [mentor]="mentor" />
             </div>
             }
           </div>

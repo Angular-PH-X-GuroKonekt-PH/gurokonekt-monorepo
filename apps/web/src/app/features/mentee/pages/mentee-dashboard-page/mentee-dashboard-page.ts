@@ -20,9 +20,9 @@ import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.comp
 import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card';
 import { SectionTitle } from 'apps/web/src/app/shared/components/section-title/section-title';
 import { ViewAllButton } from 'apps/web/src/app/shared/components/view-all-button/view-all-button';
-import { RecommendedMentorCard } from '../../../mentor/components/recommended-mentor-card/recommended-mentor-card';
-import { CompletedBookingCard } from '../../components/completed-booking-card/completed-booking-card';
-import { SessionBookingCard } from '../../components/session-booking-card/session-booking-card';
+import { MentorRecommendedCard } from '../../../mentor/components/mentor-recommended-card/mentor-recommended-card';
+import { MenteeCompletedBookingCard } from '../../components/mentee-completed-booking-card/mentee-completed-booking-card';
+import { MenteeSessionBookingCard } from '../../components/mentee-session-booking-card/mentee-session-booking-card';
 
 @Component({
   selector: 'app-mentee-dashboard-page',
@@ -30,17 +30,16 @@ import { SessionBookingCard } from '../../components/session-booking-card/sessio
     SectionCard,
     GreetingCard,
     CommonModule,
-    RecommendedMentorCard,
+    MentorRecommendedCard,
     SectionTitle,
     ViewAllButton,
     IconComponent,
     MentorCardListSkeleton,
     BookingCardListSkeleton,
-    SessionBookingCard,
-    CompletedBookingCard
+    MenteeSessionBookingCard,
+    MenteeCompletedBookingCard
   ],
-  templateUrl: './mentee-dashboard.html',
-  styleUrl: './mentee-dashboard.scss',
+  templateUrl: './mentee-dashboard-page.html',
 })
 export class MenteeDashboardPage {
   private readonly store = inject(Store);

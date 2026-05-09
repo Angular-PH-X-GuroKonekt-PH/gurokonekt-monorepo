@@ -8,8 +8,8 @@ import {
 } from '@gurokonekt/models/interfaces/search/search.model';
 import { DaysInWeek } from '@gurokonekt/models/interfaces/user/user.model';
 
-import { EXPERTISE_OPTIONS } from '../../../constants/expertise.constants';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { EXPERTISE_OPTIONS } from 'apps/web/src/app/shared/constants';
 
 type FilterDropdown = 'expertise' | 'skills' | 'availability' | null;
 
@@ -18,7 +18,6 @@ type FilterDropdown = 'expertise' | 'skills' | 'availability' | null;
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent],
   templateUrl: './mentor-search.html',
-  styleUrl: './mentor-search.scss',
 })
 export class MentorSearch {
   private readonly fb = inject(FormBuilder);

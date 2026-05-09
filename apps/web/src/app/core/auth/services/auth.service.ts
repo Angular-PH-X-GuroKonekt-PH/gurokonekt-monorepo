@@ -3,11 +3,10 @@ import { HttpClient, HttpErrorResponse } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs/operators';
 import { RegisterMenteeRequest, RegisterMentorRequest, AuthResponse } from '@gurokonekt/models';
-
-import { API_CONFIG } from '../../temporary/config/api.config';
-import { buildApiUrl } from '../../../shared/helpers/api-helpers/api.helper';
 import { HttpErrorHelper } from '../../../shared/helpers/http-error.helper';
 import type { LoginApiResponse } from '../../../shared/interfaces/auth-api.interface';
+import { buildApiUrl } from '../../../shared/helpers/api.helper';
+import { API_CONFIG } from '../../config/api.config';
 
 @Injectable({
   providedIn: 'root',

@@ -9,9 +9,9 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
 import { filter, map } from 'rxjs/operators';
-import { ToastContainerComponent } from './components/shared/toast/toast.component';
-import { Sidebar } from './components/sidebar/sidebar';
-import * as AuthActions from './store/auth/auth.actions';
+import { Sidebar } from './shared/components/sidebar/sidebar';
+import { ToastContainerComponent } from './shared/components/toast/toast.component';
+import * as AuthActions from './core/auth/store/auth.actions';
 
 @Component({
   imports: [RouterModule, ToastContainerComponent, Sidebar],

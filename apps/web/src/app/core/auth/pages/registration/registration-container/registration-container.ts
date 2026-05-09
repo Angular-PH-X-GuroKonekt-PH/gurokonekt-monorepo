@@ -4,8 +4,9 @@ import { Store } from '@ngxs/store';
 import { RoleSelection } from '../role-selection/role-selection';
 import { Register } from '../register/register';
 import { MentorRegister } from '../mentor-register/register';
-import { RegistrationState, RegistrationStep } from '../../store/registration';
-import * as RegistrationActions from '../../store/registration/registration.actions';
+import { RegistrationStep } from '../../../models/registration.state.model';
+import { RegistrationState } from '../../../store/registration.state';
+import * as RegistrationActions from '../../../store/registration.actions';
 
 @Component({
 	selector: 'app-registration-container',

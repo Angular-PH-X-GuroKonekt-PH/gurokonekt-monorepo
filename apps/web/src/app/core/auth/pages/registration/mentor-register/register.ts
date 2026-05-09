@@ -2,17 +2,17 @@ import { Component, inject, OnInit, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMentorRequest } from '@gurokonekt/models';
-import { AuthState } from '../../../store/auth';
 import { ClearAuthMessages, RegisterMentor } from '../../../store/auth.actions';
 
 import { IconComponent } from '../../../../../shared/components/icon/icon.component';
 import { BaseStepperRegistrationComponent } from '../../../../../shared/base-form/base-stepper-registration.component';
-import { FORM_FIELD_VALIDATORS } from '../../../constants/form-validation-configs.constants';
 import { CustomValidators } from '../../../../../shared/validators/custom-validators';
-import { ExpertiseSelectionHelper } from '../../../helpers/expertise-selection.helper';
-import { LocationDataHelper } from '../../../helpers/location-data.helper';
-import { formatPhoneToE164 } from '../../../helpers/phone.formatter';
 import { ToastService } from '../../../../../shared/services/toast.service';
+import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
+import { LocationDataHelper } from 'apps/web/src/app/shared/helpers';
+import { ExpertiseSelectionHelper } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
+import { formatPhoneToE164 } from 'apps/web/src/app/shared/helpers/phone.formatter';
+import { AuthState } from '../../../store/auth.state';
 
 @Component({
   selector: 'app-mentor-register',

@@ -15,11 +15,11 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { MentorCardListSkeleton } from '../../../../shared/components/loaders/mentor-card-list-skeleton/mentor-card-list-skeleton';
 import { MentorSearchService } from '../../../mentor/services/mentor-search.service';
 import { MentorService } from '../../../mentor/services/mentor.service';
-import { RecommendedMentorCard } from '../../../mentor/components/recommended-mentor-card/recommended-mentor-card';
 import { SectionCard } from '../../../../shared/components/section-card/section-card';
 import { SectionTitle } from '../../../../shared/components/section-title/section-title';
 import { MentorInfoCard } from '../../../mentor/components/mentor-info-card/mentor-info-card';
 import { MentorSearch } from '../../../mentor/components/mentor-search/mentor-search';
+import { MentorRecommendedCard } from '../../../mentor/components/mentor-recommended-card/mentor-recommended-card';
 
 
 
@@ -43,12 +43,11 @@ type FindMentorsViewModel = {
     MentorSearch,
     Pagination,
     IconComponent,
-    RecommendedMentorCard,
+    MentorRecommendedCard,
     MentorCardListSkeleton,
     MentorInfoCard,
   ],
-  templateUrl: './find-mentors.html',
-  styleUrl: './find-mentors.scss',
+  templateUrl: './mentee-find-mentors-page.html',
 })
 export class MenteeFindMentorsPage {
   private readonly route = inject(ActivatedRoute);

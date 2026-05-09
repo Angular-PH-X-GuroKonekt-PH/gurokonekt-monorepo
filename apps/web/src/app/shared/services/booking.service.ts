@@ -2,7 +2,6 @@ import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable} from 'rxjs';
 
-import { buildApiUrl } from '../helpers/api-helpers/api.helper';
 import { ApiResponse } from '../interfaces/api-response.interface';
 import {
   BookingStatus,
@@ -12,6 +11,7 @@ import {
   handleApiErrorWithFallback,
   validateApiResponse,
 } from '../helpers/api-response.helper';
+import { buildApiUrl } from '../helpers/api.helper';
 
 @Injectable({
   providedIn: 'root',

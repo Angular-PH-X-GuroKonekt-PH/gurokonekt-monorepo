@@ -17,21 +17,21 @@ import { AuthState } from 'apps/web/src/app/core/auth/store/auth.state';
 import { FilterButton } from 'apps/web/src/app/shared/components/filter-button/filter-button';
 import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card';
 import { SectionTitle } from 'apps/web/src/app/shared/components/section-title/section-title';
-import { MenteeSessionBookingCard } from '../../components/mentee-session-booking-card/mentee-session-booking-card';
+import { SessionBookingCard } from '../../components/mentee-session-booking-card/mentee-session-booking-card';
 
 @Component({
-  selector: 'app-mentee-booking-overview-page',
+  selector: 'app-booking-overview',
   imports: [
     CommonModule,
     BookingCardListSkeleton,
     FilterButton,
     SectionCard,
     SectionTitle,
-    MenteeSessionBookingCard,
+    SessionBookingCard,
   ],
-  templateUrl: './mentee-booking-overview.page.html',
+  templateUrl: './booking-overview.html',
 })
-export class MenteeBookingOverviewPage {
+export class BookingOverview {
   private readonly bookingService = inject(BookingService);
   private readonly store = inject(Store);
   private readonly router = inject(Router);

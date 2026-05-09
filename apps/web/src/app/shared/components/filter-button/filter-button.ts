@@ -5,7 +5,6 @@ import { BookingFilter } from '@gurokonekt/models/interfaces/booking/booking.mod
   selector: 'app-filter-button',
   imports: [],
   templateUrl: './filter-button.html',
-  styleUrl: './filter-button.scss',
 })
 export class FilterButton {
 

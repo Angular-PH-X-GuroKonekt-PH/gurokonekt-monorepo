@@ -12,13 +12,13 @@ import {
 } from '@gurokonekt/models/interfaces/notification/notification.model';
 import { UserInterface } from '@gurokonekt/models';
 
-import * as AuthActions from '../../../../store/auth/auth.actions';
-import { AuthState } from '../../../../store/auth/auth.state';
-import { NotificationService } from '../../../../services/notification.service';
-import { ProfileService } from '../../../../services/profile.service';
-import { IconComponent } from '../../../../../shared/components/icon/icon.component';
+import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { NavbarNotificationItem } from '../../navbar-notification-item/navbar-notification-item';
 import { NotificationListSkeleton } from '../../loaders/notification-list-skeleton/notification-list-skeleton';
+import { IconComponent } from '../../icon/icon.component';
+import { AuthState } from 'apps/web/src/app/core/auth/store/auth.state';
+import { ProfileService } from 'apps/web/src/app/features/profile/profile.service';
+import { NotificationService } from '../../../services/notification.service';
 
 @Component({
   selector: 'app-mentee-navbar',

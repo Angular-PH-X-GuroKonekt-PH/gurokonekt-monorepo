@@ -16,10 +16,11 @@ import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import { UserInterface } from '@gurokonekt/models';
 
-import * as AuthActions from '../../../../store/auth/auth.actions';
-import { AuthState } from '../../../../store/auth/auth.state';
-import { ProfileService } from '../../../../services/profile.service';
-import { IconComponent } from '../../../../../shared/components/icon/icon.component';
+import * as AuthActions from '../../../../core/auth/store/auth.actions';
+import { IconComponent } from '../../icon/icon.component';
+import { ProfileService } from 'apps/web/src/app/features/profile/profile.service';
+import { AuthState } from 'apps/web/src/app/core/auth/store/auth.state';
+
 
 @Component({
   selector: 'app-mentor-navbar',

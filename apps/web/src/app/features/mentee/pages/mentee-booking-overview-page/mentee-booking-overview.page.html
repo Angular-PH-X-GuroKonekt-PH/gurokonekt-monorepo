@@ -63,7 +63,7 @@
       @if (isBookingsLoading()) {
         <app-booking-card-list-skeleton [count]="3" />
       } @else {
-        <app-session-booking-card
+        <app-mentee-session-booking-card
           [bookingList]="displayedBookings()"
           (viewDetails)="onViewDetails($event)"
           (cancelRequest)="onCancelRequest($event)"

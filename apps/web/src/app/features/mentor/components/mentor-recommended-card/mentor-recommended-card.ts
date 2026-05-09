@@ -9,12 +9,11 @@ import { UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/us
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 
 @Component({
-  selector: 'app-mentor-info-card',
-  standalone: true,
+  selector: 'app-mentor-recommended-card',
   imports: [RouterLink, IconComponent],
-  templateUrl: './mentor-info-card.html',
+  templateUrl: './mentor-recommended-card.html',
 })
-export class MentorInfoCard {
+export class MentorRecommendedCard {
   mentor = input<MentorSearchItemInterface | null>(null);
 
   getSubtitle(mentor: MentorSearchItemInterface): string {

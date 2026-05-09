@@ -1,8 +1,8 @@
 import { Component } from '@angular/core';
-import { MentorNavbar } from "../../shared/navbar/mentor-navbar/mentor-navbar";
 import { RouterOutlet } from "@angular/router";
 import { ToastContainerComponent } from "../../shared/components/toast/toast.component";
-import { MentorSidebar } from "../../shared/sidebars/mentor-sidebar/mentor-sidebar";
+import { MentorSidebar } from '../../shared/components/sidebars/mentor-sidebar/mentor-sidebar';
+import { MentorNavbar } from '../../shared/components/navbar/mentor-navbar/mentor-navbar';
 
 @Component({
   selector: 'app-mentor-layout',

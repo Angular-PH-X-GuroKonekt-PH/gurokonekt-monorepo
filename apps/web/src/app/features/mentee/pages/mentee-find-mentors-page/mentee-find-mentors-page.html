@@ -108,7 +108,7 @@
             [style.transform]="'translateX(-' + (currentMentorSlide() * (100 / 3)) + '%)'">
             @for (mentor of mentors; track mentor.id) {
             <div class="w-[85%] shrink-0 snap-start md:w-[48%] lg:w-1/3 lg:px-3">
-              <app-recommended-mentor-card [mentor]="mentor" />
+              <app-mentor-recommended-card [mentor]="mentor" />
             </div>
             }
           </div>

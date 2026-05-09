@@ -8,7 +8,6 @@ import { CommonModule } from '@angular/common';
   selector: 'app-breadcrumbs',
   imports: [RouterLink, IconComponent, CommonModule],
   templateUrl: './breadcrumbs.html',
-  styleUrl: './breadcrumbs.scss',
 })
 export class Breadcrumbs {
   private readonly router = inject(Router);

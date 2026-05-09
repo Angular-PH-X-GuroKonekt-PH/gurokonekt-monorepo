@@ -9,16 +9,12 @@ import {
 } from '@gurokonekt/models/interfaces/notification/notification.model';
 
 import { NotificationService } from '../../services/notification.service';
-import {
-  getNotificationIconClasses,
-  getNotificationIconName,
-  getNotificationTypeClasses,
-  getNotificationTypeLabel,
-} from '../../../helpers/notification-display.helper';
+
 import { IconComponent } from '../icon/icon.component';
 import { SectionCard } from '../section-card/section-card';
 import { SectionTitle } from '../section-title/section-title';
 import { NotificationListSkeleton } from '../loaders/notification-list-skeleton/notification-list-skeleton';
+import { getNotificationIconClasses, getNotificationIconName, getNotificationTypeClasses, getNotificationTypeLabel } from '../../helpers/notification-display.helper';
 
 @Component({
   selector: 'app-notifications',
