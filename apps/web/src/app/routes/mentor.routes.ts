@@ -1,12 +1,12 @@
 import { Route } from '@angular/router';
-import { dashboardAccessGuard } from '../guards/dashboard-access.guard';
+import { dashboardAccessGuard } from '../shared/guards/dashboard-access.guard';
 
 export const MENTOR_ROUTES: Route[] = [
   {
     path: '',
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>
-      import('../components/layouts/mentor-layout/mentor-layout').then(
+      import('../layouts/mentor-layout/mentor-layout').then(
         (m) => m.MentorLayout
       ),
     children: [
@@ -18,43 +18,19 @@ export const MENTOR_ROUTES: Route[] = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('../components/mentor/dashboard/mentor-dashboard').then(
-            (m) => m.MentorDashboard
+          import('../features/mentor/pages/mentor-dashboard-page/mentor-dashboard-page').then(
+            (m) => m.MentorDashboardPage
           ),
         title: 'Mentor Dashboard',
-      },      
+      },       
       {
-        path: 'my-booking',
+        path: 'post-login',
         loadComponent: () =>
-          import('../components/mentor/my-booking/my-booking').then(
-            (m) => m.MyBooking
+          import('../features/mentor/pages/mentor-post-login-page/mentor-post-login-page').then(
+            (m) => m.MentorPostLoginPage
           ),
-        title: 'My Booking',
-      },      
-      {
-        path: 'availability',
-        loadComponent: () =>
-          import('../components/mentor/availability/availability').then(
-            (m) => m.Availability
-          ),
-        title: 'Availability',
-      },
-      {
-        path: 'profile-settings',
-        loadComponent: () =>
-          import('../components/mentor/profile-settings/profile-settings').then(
-            (m) => m.ProfileSettingsComponent
-          ),
-        title: 'Profile Settings',
-      },
-      {
-        path: 'notifications',
-        loadComponent: () =>
-          import('../components/mentor/notifications/mentor-notifications').then(
-            (m) => m.MentorNotifications
-          ),
-        title: 'Notifications',
-      },      
+        title: 'Mentor Post Login',
+      } 
     ],
   },
 ];

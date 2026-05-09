@@ -1,12 +1,12 @@
 import { Route } from '@angular/router';
-import { dashboardAccessGuard } from '../guards/dashboard-access.guard';
+import { dashboardAccessGuard } from '../shared/guards/dashboard-access.guard';
 
 export const MENTEE_ROUTES: Route[] = [
   {
     path: '',
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>
-      import('../components/layouts/mentee-lyout/mentee-layout').then(
+      import('../layouts/mentee-layout/mentee-layout').then(
         (m) => m.MenteeLayout
       ),
     children: [
@@ -18,42 +18,26 @@ export const MENTEE_ROUTES: Route[] = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('../components/mentee/dashboard/mentee-dashboard').then(
-            (m) => m.MenteeDashboard
+          import('../features/mentee/pages/mentee-dashboard-page/mentee-dashboard-page').then(
+            (m) => m.MenteeDashboardPage
           ),
         title: 'Mentee Dashboard',
       },
       {
         path: 'find-mentors',
         loadComponent: () =>
-          import('../components/mentee/find-mentors/find-mentors').then(
-            (m) => m.FindMentors
+          import('../features/mentee/pages/mentee-find-mentors-page/mentee-find-mentors-page').then(
+            (m) => m.MenteeFindMentorsPage
           ),
         title: 'Find Mentors',
       },
       {
         path: 'booking-overview',
         loadComponent: () =>
-          import('../components/mentee/booking-overview/booking-overview').then(
-            (m) => m.BookingOverview
+          import('../features/mentee/pages/mentee-booking-overview-page/mentee-booking-overview.page').then(
+            (m) => m.MenteeBookingOverviewPage
           ),
         title: 'Booking Overview',
-      },
-      {
-        path: 'notifications',
-        loadComponent: () =>
-          import('../components/shared/notifications/notifications').then(
-            (m) => m.Notifications
-          ),
-        title: 'Notifications',
-      },
-      {
-        path: 'profile-settings',
-        loadComponent: () =>
-          import('../components/mentee/profile-settings/profile-settings').then(
-            (m) => m.ProfileSettingsComponent
-          ),
-        title: 'Profile Settings',
       },
     ],
   },

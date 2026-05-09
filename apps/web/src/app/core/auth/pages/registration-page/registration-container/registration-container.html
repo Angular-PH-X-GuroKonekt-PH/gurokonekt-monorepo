@@ -1,0 +1,11 @@
+@switch (currentStep()) {
+	@case ('choose-role') {
+		<app-registration-role-selection-page (roleSelected)="onRoleSelected($event)" />
+	}
+	@case ('mentee') {
+		<app-registration-mentee-page (backToRole)="onBackToRoleSelection()" />
+	}
+	@case ('mentor') {
+		<app-registration-mentor-page (backToRole)="onBackToRoleSelection()" />
+	}
+}
