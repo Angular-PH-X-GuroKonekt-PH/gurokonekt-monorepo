@@ -7,7 +7,6 @@ import { IconComponent } from '../icon/icon.component';
   selector: 'app-session-badge',
   imports: [IconComponent],
   templateUrl: './session-badge.html',
-  styleUrl: './session-badge.scss',
 })
 export class SessionBadge {
 

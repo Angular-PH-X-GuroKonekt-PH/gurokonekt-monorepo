@@ -13,14 +13,13 @@ import { NotificationService } from '../../services/notification.service';
 import { IconComponent } from '../icon/icon.component';
 import { SectionCard } from '../section-card/section-card';
 import { SectionTitle } from '../section-title/section-title';
-import { NotificationListSkeleton } from '../loaders/notification-list-skeleton/notification-list-skeleton';
+import { NotificationListSkeleton } from '../skeleton-loaders/notification-list-skeleton/notification-list-skeleton';
 import { getNotificationIconClasses, getNotificationIconName, getNotificationTypeClasses, getNotificationTypeLabel } from '../../helpers/notification-display.helper';
 
 @Component({
   selector: 'app-notifications',
   imports: [CommonModule, SectionCard, SectionTitle, IconComponent, NotificationListSkeleton],
   templateUrl: './notifications.html',
-  styleUrl: './notifications.scss',
 })
 export class Notifications {
   private readonly notificationService = inject(NotificationService);

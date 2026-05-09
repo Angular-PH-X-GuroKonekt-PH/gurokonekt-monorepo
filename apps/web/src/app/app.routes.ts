@@ -29,16 +29,16 @@ export const appRoutes: Route[] = [
   {
     path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
     loadComponent: () =>
-      import('./components/mentee/post-login/post-login').then(
-        (m) => m.PostLogin
+      import('./core/profile/pages/post-login-page/post-login-page').then(
+        (m) => m.PostLoginPage
       ),
     title: 'Complete Your Profile',
   },
   {
     path: APP_ROUTES.MENTOR_PROFILE_SETUP.replace('/', ''),
     loadComponent: () =>
-      import('./components/mentor/post-login/post-login').then(
-        (m) => m.MentorPostLogin
+      import('./features/mentor/pages/mentor-post-login-page/mentor-post-login-page').then(
+        (m) => m.MentorPostLoginPage
       ),
     title: 'Complete Your Mentor Profile',
   },
@@ -56,8 +56,8 @@ export const appRoutes: Route[] = [
     path: APP_ROUTES.SETTINGS.replace('/', ''),
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>
-      import('./components/settings/profile-settings/profile-settings').then(
-        (m) => m.ProfileSettings
+      import('./features/profile/pages/profile-settings-page/profile-settings-page').then(
+        (m) => m.ProfileSettingsPageComponent
       ),
     title: 'Profile Settings',
     children: [
@@ -69,8 +69,8 @@ export const appRoutes: Route[] = [
       {
         path: 'overview',
         loadComponent: () =>
-          import('./components/settings/overview-section/overview-section').then(
-            (m) => m.OverviewSection
+          import('./features/profile/pages/profile-overview-section-page/profile-overview-section-page').then(
+            (m) => m.ProfileOverviewSectionPage
           ),
         title: 'Overview Section',
       },
@@ -80,8 +80,8 @@ export const appRoutes: Route[] = [
     path: APP_ROUTES.SETTINGS_PROFILE.replace('/', ''),
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>
-      import('./components/mentee/profile-settings/profile-settings').then(
-        (m) => m.ProfileSettingsComponent
+      import('./features/profile/pages/profile-settings-page/profile-settings-page').then(
+        (m) => m.ProfileSettingsPageComponent
       ),
     title: 'Profile Settings',
   },

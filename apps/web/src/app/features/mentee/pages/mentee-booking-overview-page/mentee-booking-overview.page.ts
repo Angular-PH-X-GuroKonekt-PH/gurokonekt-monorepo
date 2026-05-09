@@ -12,7 +12,7 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { BookingService } from '../../../../shared/services/booking.service';
-import { BookingCardListSkeleton } from '../../../../shared/components/loaders/booking-card-list-skeleton/booking-card-list-skeleton';
+import { BookingCardListSkeleton } from '../../../../shared/components/skeleton-loaders/booking-card-list-skeleton/booking-card-list-skeleton';
 import { AuthState } from 'apps/web/src/app/core/auth/store/auth.state';
 import { FilterButton } from 'apps/web/src/app/shared/components/filter-button/filter-button';
 import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card';

@@ -30,7 +30,7 @@ interface OverviewData {
     `,
   ],
 })
-export class OverviewSection {
+export class ProfileOverviewSectionPage {
   private readonly store = inject(Store);
   private readonly profileService = inject(ProfileService);
 

@@ -2,8 +2,8 @@ import { Component } from '@angular/core';
 import { ToastContainerComponent } from "../../shared/components/toast/toast.component";
 import {RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
-import { MenteeNavbar } from '../../shared/components/navbar/mentee-navbar/mentee-navbar';
-import { MenteeSidebar } from '../../shared/components/sidebars/mentee-sidebar/mentee-sidebar';
+import { MenteeNavbar } from '../components/navbar/mentee-navbar/mentee-navbar';
+import { MenteeSidebar } from '../components/sidebars/mentee-sidebar/mentee-sidebar';
 
 @Component({
   selector: 'app-mentee-layout',

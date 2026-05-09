@@ -12,7 +12,7 @@ import {
   MentorSearchResultInterface,
 } from '@gurokonekt/models/interfaces/search/search.model';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { MentorCardListSkeleton } from '../../../../shared/components/loaders/mentor-card-list-skeleton/mentor-card-list-skeleton';
+import { MentorCardListSkeleton } from '../../../../shared/components/skeleton-loaders/mentor-card-list-skeleton/mentor-card-list-skeleton';
 import { MentorSearchService } from '../../../mentor/services/mentor-search.service';
 import { MentorService } from '../../../mentor/services/mentor.service';
 import { SectionCard } from '../../../../shared/components/section-card/section-card';

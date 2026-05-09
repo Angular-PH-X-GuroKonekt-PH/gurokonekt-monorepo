@@ -1,17 +1,17 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { RoleSelection } from '../role-selection/role-selection';
-import { Register } from '../register/register';
-import { MentorRegister } from '../mentor-register/register';
+import { RegistrationRoleSelectionPage } from '../registration-role-selection-page/registration-role-selection-page';
 import { RegistrationStep } from '../../../models/registration.state.model';
 import { RegistrationState } from '../../../store/registration.state';
 import * as RegistrationActions from '../../../store/registration.actions';
+import { RegistrationMenteePage } from '../registration-mentee-page/registration-mentee-page';
+import { RegistrationMentorPage } from '../registration-mentor-page/registration-mentor-page';
 
 @Component({
 	selector: 'app-registration-container',
 	standalone: true,
-	imports: [RoleSelection, Register, MentorRegister],
+	imports: [RegistrationRoleSelectionPage, RegistrationMenteePage, RegistrationMentorPage],
 	templateUrl: './registration-container.html',
 	styleUrl: './registration-container.scss'
 })

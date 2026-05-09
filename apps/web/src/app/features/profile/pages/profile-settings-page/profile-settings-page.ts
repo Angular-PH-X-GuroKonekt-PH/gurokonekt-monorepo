@@ -19,7 +19,7 @@ import * as AuthActions from '../../../../core/auth/store/auth.actions';
   imports: [CommonModule, ReactiveFormsModule, IconComponent],
   templateUrl: './profile-settings-page.html',
 })
-export class ProfileSettingsComponent implements OnInit {
+export class ProfileSettingsPageComponent implements OnInit {
   private static readonly MAX_LEARNING_GOALS = 5;
   private static readonly MAX_AREAS_OF_INTEREST = 5;
   private static readonly MAX_TIME_FRAMES_PER_DAY = 3;

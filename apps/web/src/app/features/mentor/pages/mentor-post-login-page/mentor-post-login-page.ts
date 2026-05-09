@@ -19,10 +19,9 @@ import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
   selector: 'app-mentor-post-login',
   standalone: true,
   imports: [CommonModule, ReactiveFormsModule, IconComponent],
-  templateUrl: './post-login.html',
-  styleUrl: './post-login.scss',
+  templateUrl: './mentor-post-login-page.html',
 })
-export class MentorPostLogin implements OnInit {
+export class MentorPostLoginPage implements OnInit {
   private static readonly MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
   private static readonly ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
   private static readonly MAX_TIME_FRAMES_PER_DAY = 3;

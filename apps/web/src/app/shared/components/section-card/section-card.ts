@@ -4,6 +4,5 @@ import { Component } from '@angular/core';
   selector: 'app-section-card',
   imports: [],
   templateUrl: './section-card.html',
-  styleUrl: './section-card.scss',
 })
 export class SectionCard {}
