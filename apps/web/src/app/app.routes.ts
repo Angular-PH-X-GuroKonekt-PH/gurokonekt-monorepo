@@ -9,14 +9,14 @@ export const appRoutes: Route[] = [
   {
     path: APP_ROUTES.REGISTER.replace('/', ''),
     loadComponent: () =>
-      import('./core/auth/pages/registration/registration-container/registration-container').then(
+      import('./core/auth/pages/registration-page/registration-container/registration-container').then(
         (m) => m.RegistrationContainer
       ),
     title: 'Register',
   },
   {
     path: APP_ROUTES.LOGIN.replace('/', ''),
-    loadComponent: () => import('./core/auth/pages/login-page/login').then((m) => m.LoginPage),
+    loadComponent: () => import('./core/auth/pages/login-page/login-page').then((m) => m.LoginPage),
     title: 'Login',
   },
   // {

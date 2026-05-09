@@ -209,7 +209,7 @@ export class ProfileSettingsPageComponent implements OnInit {
     // Populate learning goals
     if (learningGoals && Array.isArray(learningGoals)) {
       learningGoals.forEach(goal => {
-        this.learningGoals.push(this.fb.control(goal, [Validators.maxLength(ProfileSettingsComponent.MAX_LEARNING_GOAL_LENGTH)]));
+        this.learningGoals.push(this.fb.control(goal, [Validators.maxLength(ProfileSettingsPageComponent.MAX_LEARNING_GOAL_LENGTH)]));
       });
     }
 
@@ -253,8 +253,8 @@ export class ProfileSettingsPageComponent implements OnInit {
   }
 
   addLearningGoal(): void {
-    if (this.learningGoals.length < ProfileSettingsComponent.MAX_LEARNING_GOALS) {
-      this.learningGoals.push(this.fb.control('', [Validators.maxLength(ProfileSettingsComponent.MAX_LEARNING_GOAL_LENGTH)]));
+    if (this.learningGoals.length < ProfileSettingsPageComponent.MAX_LEARNING_GOALS) {
+      this.learningGoals.push(this.fb.control('', [Validators.maxLength(ProfileSettingsPageComponent.MAX_LEARNING_GOAL_LENGTH)]));
     }
   }
 
@@ -277,7 +277,7 @@ export class ProfileSettingsPageComponent implements OnInit {
     if (index >= 0) {
       this.areasOfInterest.removeAt(index);
     } else {
-      if (this.areasOfInterest.length < ProfileSettingsComponent.MAX_AREAS_OF_INTEREST) {
+      if (this.areasOfInterest.length < ProfileSettingsPageComponent.MAX_AREAS_OF_INTEREST) {
         this.areasOfInterest.push(this.fb.control(area));
       }
     }
@@ -315,11 +315,11 @@ export class ProfileSettingsPageComponent implements OnInit {
   }
 
   private isValidAvatarType(file: File): boolean {
-    return ProfileSettingsComponent.ALLOWED_AVATAR_TYPES.includes(file.type);
+    return ProfileSettingsPageComponent.ALLOWED_AVATAR_TYPES.includes(file.type);
   }
 
   private isValidAvatarSize(file: File): boolean {
-    return file.size <= ProfileSettingsComponent.MAX_AVATAR_SIZE_BYTES;
+    return file.size <= ProfileSettingsPageComponent.MAX_AVATAR_SIZE_BYTES;
   }
 
   removeAvatarPreview(): void {
@@ -341,7 +341,7 @@ export class ProfileSettingsPageComponent implements OnInit {
 
   addTimeFrame(day: DaysInWeek): void {
     this.updateScheduleForDay(day, (daySchedule) => {
-      if (daySchedule.timeFrames.length < ProfileSettingsComponent.MAX_TIME_FRAMES_PER_DAY) {
+      if (daySchedule.timeFrames.length < ProfileSettingsPageComponent.MAX_TIME_FRAMES_PER_DAY) {
         daySchedule.timeFrames.push(this.createDefaultTimeFrame());
       }
     });

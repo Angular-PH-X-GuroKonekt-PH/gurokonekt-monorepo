@@ -95,7 +95,7 @@ export class MentorPostLoginPage implements OnInit {
   }
 
   addSkill(): void {
-    if (this.skills.length >= MentorPostLogin.MAX_SKILLS) {
+    if (this.skills.length >= MentorPostLoginPage.MAX_SKILLS) {
       return;
     }
 
@@ -133,12 +133,12 @@ export class MentorPostLoginPage implements OnInit {
     const file = input.files[0];
     this.avatarError.set(null);
 
-    if (!MentorPostLogin.ALLOWED_AVATAR_TYPES.includes(file.type)) {
+    if (!MentorPostLoginPage.ALLOWED_AVATAR_TYPES.includes(file.type)) {
       this.avatarError.set('Only JPG, JPEG, and PNG formats are allowed');
       return;
     }
 
-    if (file.size > MentorPostLogin.MAX_AVATAR_SIZE_BYTES) {
+    if (file.size > MentorPostLoginPage.MAX_AVATAR_SIZE_BYTES) {
       this.avatarError.set('File size must be less than 5MB');
       return;
     }
@@ -165,7 +165,7 @@ export class MentorPostLoginPage implements OnInit {
 
   addTimeFrame(day: DaysInWeek): void {
     this.updateScheduleForDay(day, (daySchedule) => {
-      if (daySchedule.timeFrames.length < MentorPostLogin.MAX_TIME_FRAMES_PER_DAY) {
+      if (daySchedule.timeFrames.length < MentorPostLoginPage.MAX_TIME_FRAMES_PER_DAY) {
         daySchedule.timeFrames.push(this.createDefaultTimeFrame());
       }
     });
