@@ -1,0 +1,123 @@
+import { Injectable, inject } from '@angular/core';
+import { HttpClient, HttpErrorResponse } from '@angular/common/http';
+import { Observable, throwError } from 'rxjs';
+import { catchError, map } from 'rxjs/operators';
+import { RegisterMenteeRequest, RegisterMentorRequest, AuthResponse } from '@gurokonekt/models';
+
+import { API_CONFIG } from '../../temporary/config/api.config';
+import { buildApiUrl } from '../../../shared/helpers/api-helpers/api.helper';
+import { HttpErrorHelper } from '../../../shared/helpers/http-error.helper';
+import type { LoginApiResponse } from '../../../shared/interfaces/auth-api.interface';
+
+@Injectable({
+  providedIn: 'root',
+})
+export class AuthService {
+  private readonly http = inject(HttpClient);
+
+  /**
+   * Register a new mentee account
+   */
+  registerMentee(data: RegisterMenteeRequest): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.registerMentee),
+      data
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Register a new mentor account
+   */
+  registerMentor(data: RegisterMentorRequest): Observable<AuthResponse> {
+    // Create FormData to handle file uploads
+    const formData = new FormData();
+    
+    // Append all text fields
+    formData.append('firstName', data.firstName);
+    formData.append('lastName', data.lastName);
+    if (data.middleName) formData.append('middleName', data.middleName);
+    if (data.suffix) formData.append('suffix', data.suffix);
+    formData.append('email', data.email);
+    formData.append('password', data.password);
+    formData.append('confirmPassword', data.confirmPassword);
+    formData.append('country', data.country);
+    formData.append('timezone', data.timezone);
+    formData.append('language', data.language);
+    formData.append('phoneNumber', data.phoneNumber);
+    formData.append('yearsOfExperience', data.yearsOfExperience.toString());
+    if (data.linkedInUrl) formData.append('linkedInUrl', data.linkedInUrl);
+    
+    // Append areasOfExpertise as JSON string (backend will parse it)
+    formData.append('areasOfExpertise', JSON.stringify(data.areasOfExpertise));
+    
+    // Append files
+    if (data.files && data.files.length > 0) {
+      data.files.forEach((file) => {
+        formData.append('files', file);
+      });
+    }
+    
+    return this.http.post<AuthResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.registerMentor),
+      formData
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Login with email and password
+   */
+  login(credentials: { email: string; password: string }): Observable<AuthResponse> {
+    return this.http.post<LoginApiResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.login),
+      credentials
+    ).pipe(
+      map((response) => {
+        // Transform ResponseDto to AuthResponse
+        if (!response.data || !response.data.user || !response.data.session) {
+          throw new Error(response.message || 'Login failed');
+        }
+
+        return {
+          user: {
+            id: response.data.user.id,
+            email: response.data.user.email,
+            fullName: `${response.data.user.firstName} ${response.data.user.lastName}`,
+            role: response.data.user.role,
+            isProfileComplete: response.data.user.isProfileComplete,
+          },
+          accessToken: response.data.session.access_token,
+          token: response.data.session.access_token,
+          message: response.message
+        } as AuthResponse;
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Resend verification email
+   */
+  resendVerificationEmail(email: string): Observable<AuthResponse> {
+    return this.http.post<AuthResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.resendConfirmation),
+      { type: 'signup', email }
+    ).pipe(
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Handle HTTP errors with user-friendly messages
+   */
+  private handleError = (error: HttpErrorResponse): Observable<never> => {
+    const errorMessage = HttpErrorHelper.getAuthErrorMessage(error);
+    
+    HttpErrorHelper.logError('Auth API Error', error);
+
+    return throwError(() => ({ message: errorMessage, originalError: error }));
+  };
+}

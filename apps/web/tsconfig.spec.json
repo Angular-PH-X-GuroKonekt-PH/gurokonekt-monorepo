@@ -24,6 +24,6 @@
     "src/**/*.test.jsx",
     "src/**/*.spec.jsx",
     "src/**/*.d.ts"
-  ],
+, "src/app/features/mentee/pages/mentee-booking-overview-page/mentee-booking-overview.page.ts.ts"  ],
   "files": ["src/test-setup.ts"]
 }
