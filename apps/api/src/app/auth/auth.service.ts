@@ -31,7 +31,7 @@ export class AuthService {
    * 8. confirmation email will be sent automatically after signup as per the 
    *    configuration in the supabase authentication
    * */ 
-  async registerMentee(dto: RegisterMenteeDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+  async registerMentee(dto: RegisterMenteeDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     // Normalize email to lowercase and trim whitespace
     const normalizedEmail = dto.email.toLowerCase().trim();
 
@@ -52,10 +52,12 @@ export class AuthService {
       }
 
       // Create user in Supabase Auth
+      const emailRedirectTo = dto.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`;
       const { data, error } = await this.supabase.client.auth.signUp({
         email: normalizedEmail,
-        password: dto.password
-      });   
+        password: dto.password,
+        options: { emailRedirectTo },
+      });
 
       if (error) {
         this.logger.error(error.message, error.stack);
@@ -179,7 +181,7 @@ export class AuthService {
    * 9. save the data to the DocumentAttachment table 
    * 10. if error occured, return error else return success with status 200
    * */ 
-  async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string): Promise<ResponseDto> {
+  async registerMentor(dto: RegisterMentorDto, files: Express.Multer.File[], ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     // Normalize email to lowercase and trim whitespace
     const normalizedEmail = dto.email.toLowerCase().trim();
 
@@ -198,10 +200,12 @@ export class AuthService {
         };
       }
 
+      const emailRedirectTo = dto.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`;
       const { data, error } = await this.supabase.client.auth.signUp({
         email: normalizedEmail,
-        password: dto.password
-      });   
+        password: dto.password,
+        options: { emailRedirectTo },
+      });
 
       if (error) {
         this.logger.error(error.message, error.stack);
@@ -235,7 +239,7 @@ export class AuthService {
 
       const authId = data.user.id;
       const hashPassword = await bcrypt.hash(dto.password, 10);
-      const transaction = await this.prisma.db.$transaction(async (tx) => { 
+      const transaction = await this.prisma.db.$transaction(async (tx) => {
         const mentor = await tx.user.create({
           data: {
             id: authId,
@@ -340,7 +344,7 @@ export class AuthService {
    * 8. if confirmed return error else send confirmation email
    * 9. save the activity to logs
    * */ 
-  async resendEmailSignUpConfirmation(input: ResendConfirmationEmailDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+  async resendEmailSignUpConfirmation(input: ResendConfirmationEmailDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     try {
       if (process.env.NODE_ENV !== 'test') {
         const todayStart = new Date();
@@ -445,9 +449,11 @@ export class AuthService {
       }
 
       // Resend email via Supabase
+      const emailRedirectTo = input.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`;
       const { data, error } = await this.supabase.client.auth.resend({
         type: ResendOTPTypes.SignUp,
-        email: input.email
+        email: input.email,
+        options: { emailRedirectTo },
       });
 
       // Log the attempt

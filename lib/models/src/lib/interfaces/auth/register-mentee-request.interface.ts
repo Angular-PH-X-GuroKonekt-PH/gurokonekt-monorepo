@@ -10,4 +10,5 @@ export interface RegisterMenteeRequest {
   language: string;
   timezone: string;
   phoneNumber: string;
+  emailRedirectTo?: string;
 }

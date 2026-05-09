@@ -1,8 +1,10 @@
-import { 
-  IsEmail, 
-  IsEnum, 
-  IsNotEmpty, 
-  IsString 
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
 } from 'class-validator';
 import { 
   ResendConfirmationEmailInterface, 
@@ -32,4 +34,8 @@ export class ResendConfirmationEmailDto implements ResendConfirmationEmailInterf
 
   @IsEmail({}, { message: 'Email must be a valid email address' })
   email!: string;
+
+  @IsOptional()
+  @IsUrl({}, { message: 'emailRedirectTo must be a valid URL' })
+  emailRedirectTo?: string;
 }

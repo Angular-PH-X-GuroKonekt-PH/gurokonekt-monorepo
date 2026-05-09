@@ -122,3 +122,67 @@
 [debug] [2026-05-02T09:43:26.191Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
 [debug] [2026-05-02T09:43:26.206Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
 [debug] [2026-05-02T09:43:27.682Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo 403
+[debug] [2026-05-06T21:29:13.863Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-06T21:29:13.877Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-05-06T21:29:13.878Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-06T21:29:13.878Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-05-06T21:29:13.882Z] Checked if tokens are valid: false, expires at: 1778103418453
+[debug] [2026-05-06T21:29:13.883Z] Checked if tokens are valid: false, expires at: 1778103418453
+[debug] [2026-05-06T21:29:13.884Z] > refreshing access token with scopes: []
+[debug] [2026-05-06T21:29:13.891Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-06T21:29:13.892Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T21:29:13.902Z] Checked if tokens are valid: false, expires at: 1778103418453
+[debug] [2026-05-06T21:29:13.903Z] Checked if tokens are valid: false, expires at: 1778103418453
+[debug] [2026-05-06T21:29:13.903Z] > refreshing access token with scopes: []
+[debug] [2026-05-06T21:29:13.905Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-06T21:29:13.906Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T21:29:13.910Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-06T21:29:13.910Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-05-06T21:29:13.911Z] Checked if tokens are valid: false, expires at: 1778103418453
+[debug] [2026-05-06T21:29:13.911Z] Checked if tokens are valid: false, expires at: 1778103418453
+[debug] [2026-05-06T21:29:13.912Z] > refreshing access token with scopes: []
+[debug] [2026-05-06T21:29:13.913Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-06T21:29:13.913Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T21:29:14.148Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-06T21:29:14.148Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T21:29:14.183Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-05-06T21:29:14.194Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-06T21:29:14.195Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T21:29:14.209Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-05-06T21:29:14.215Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-06T21:29:14.215Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T21:29:14.229Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-05-06T21:29:15.747Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo 403
+[debug] [2026-05-06T21:29:15.748Z] <<< [apiv2][body] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo {"error":{"code":403,"message":"The caller does not have permission","status":"PERMISSION_DENIED"}}
+[debug] [2026-05-06T21:29:15.895Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo 403
+[debug] [2026-05-06T22:21:46.615Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-06T22:21:46.636Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-05-06T22:21:46.643Z] Checked if tokens are valid: false, expires at: 1778106553216
+[debug] [2026-05-06T22:21:46.644Z] Checked if tokens are valid: false, expires at: 1778106553216
+[debug] [2026-05-06T22:21:46.647Z] > refreshing access token with scopes: []
+[debug] [2026-05-06T22:21:46.662Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-06T22:21:46.664Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T22:21:46.802Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-06T22:21:46.803Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-05-06T22:21:46.804Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-06T22:21:46.804Z] > authorizing via signed-in user (arw.oloroso@gmail.com)
+[debug] [2026-05-06T22:21:46.806Z] Checked if tokens are valid: false, expires at: 1778106553216
+[debug] [2026-05-06T22:21:46.807Z] Checked if tokens are valid: false, expires at: 1778106553216
+[debug] [2026-05-06T22:21:46.807Z] > refreshing access token with scopes: []
+[debug] [2026-05-06T22:21:46.809Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-06T22:21:46.809Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T22:21:46.816Z] Checked if tokens are valid: false, expires at: 1778106553216
+[debug] [2026-05-06T22:21:46.816Z] Checked if tokens are valid: false, expires at: 1778106553216
+[debug] [2026-05-06T22:21:46.817Z] > refreshing access token with scopes: []
+[debug] [2026-05-06T22:21:46.818Z] >>> [apiv2][query] POST https://www.googleapis.com/oauth2/v3/token [none]
+[debug] [2026-05-06T22:21:46.818Z] >>> [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T22:21:47.059Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-06T22:21:47.060Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T22:21:47.630Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-05-06T22:21:47.646Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-06T22:21:47.647Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T22:21:47.803Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-05-06T22:21:47.810Z] <<< [apiv2][status] POST https://www.googleapis.com/oauth2/v3/token 200
+[debug] [2026-05-06T22:21:47.810Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
+[debug] [2026-05-06T22:21:47.826Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
+[debug] [2026-05-06T22:21:49.459Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo 403

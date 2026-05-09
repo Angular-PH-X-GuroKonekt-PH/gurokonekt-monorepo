@@ -74,9 +74,10 @@ export class AuthController {
   async registerMentee(
     @Body() input: RegisterMenteeDto,
     @Ip() ipAddress: string,
-    @Headers('user-agent') userAgent: string
+    @Headers('user-agent') userAgent: string,
+    @Headers('origin') origin: string,
   ) {
-    const response = await this.authService.registerMentee(input, ipAddress, userAgent);
+    const response = await this.authService.registerMentee(input, ipAddress, userAgent, origin);
     
     // If service returns an error status, throw the appropriate HTTP exception
     if (response.status === ResponseStatus.Error) {
@@ -130,8 +131,9 @@ export class AuthController {
     @UploadedFiles() files: Express.Multer.File[],
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
+    @Headers('origin') origin: string,
   ) {
-    const response = await this.authService.registerMentor(input, files, ipAddress, userAgent);
+    const response = await this.authService.registerMentor(input, files, ipAddress, userAgent, origin);
     
     // If service returns an error status, throw the appropriate HTTP exception
     if (response.status === ResponseStatus.Error) {
@@ -288,9 +290,10 @@ export class AuthController {
   async resendSignUp(
     @Body() input: ResendConfirmationEmailDto,
     @Ip() ipAddress: string,
-    @Headers('user-agent') userAgent: string
+    @Headers('user-agent') userAgent: string,
+    @Headers('origin') origin: string,
   ) {
-    const response = await this.authService.resendEmailSignUpConfirmation(input, ipAddress, userAgent);
+    const response = await this.authService.resendEmailSignUpConfirmation(input, ipAddress, userAgent, origin);
     
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(

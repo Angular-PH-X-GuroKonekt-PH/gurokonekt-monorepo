@@ -135,4 +135,13 @@ export class RegisterMentorDto implements RegisterMentorRequest {
     description: 'Array of files uploaded by the mentor (e.g., resume, portfolio). Each file should include necessary metadata such as filename, file type, and file size.',
   })
     files!: any[];
+
+  @ApiProperty({
+    required: false,
+    example: 'https://app.gurokonekt.com/verify-email',
+    description: 'URL to redirect to after clicking the confirmation link. Defaults to the request origin + /verify-email.',
+  })
+  @IsOptional()
+  @IsUrl({}, { message: 'emailRedirectTo must be a valid URL' })
+  emailRedirectTo?: string;
 }

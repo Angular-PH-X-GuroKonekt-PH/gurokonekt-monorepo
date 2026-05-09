@@ -1237,6 +1237,7 @@ export const REDIRECT_LINKS  = {
   RESET_PASSWORD: '/reset-password',
   DEACTIVATE_ACCOUNT: '/deactivate',
   PASSWORD_CHANGE_VERIFY: '/update-password/verify',
+  VERIFY_EMAIL: '/verify-email',
 }
 
 export const RESEND_EMAIL_CONFIRMATION = {
