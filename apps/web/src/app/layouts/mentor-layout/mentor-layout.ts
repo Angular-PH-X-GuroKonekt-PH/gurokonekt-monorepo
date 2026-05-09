@@ -8,6 +8,5 @@ import { MentorNavbar } from '../components/navbar/mentor-navbar/mentor-navbar';
   selector: 'app-mentor-layout',
   imports: [MentorNavbar, RouterOutlet, ToastContainerComponent, MentorSidebar],
   templateUrl: './mentor-layout.html',
-  styleUrl: './mentor-layout.scss',
 })
 export class MentorLayout {}

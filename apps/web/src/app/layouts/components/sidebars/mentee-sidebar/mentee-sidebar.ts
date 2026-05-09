@@ -9,7 +9,6 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
   selector: 'app-mentee-sidebar',
   imports: [RouterLink, RouterLinkActive, IconComponent],
   templateUrl: './mentee-sidebar.html',
-  styleUrl: './mentee-sidebar.scss',
 })
 export class MenteeSidebar {
   private readonly store = inject(Store);

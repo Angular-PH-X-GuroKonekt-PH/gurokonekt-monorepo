@@ -13,7 +13,6 @@ import { RegistrationMentorPage } from '../registration-mentor-page/registration
 	standalone: true,
 	imports: [RegistrationRoleSelectionPage, RegistrationMenteePage, RegistrationMentorPage],
 	templateUrl: './registration-container.html',
-	styleUrl: './registration-container.scss'
 })
 export class RegistrationContainer implements OnInit {
 	private store = inject(Store);
