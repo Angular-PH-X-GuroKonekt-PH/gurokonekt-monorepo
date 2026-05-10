@@ -7,6 +7,7 @@
     "start:api": "node dist/apps/api/main.js",
     "start:local:api": "set -a && source apps/api/.env && set +a && NODE_ENV=development node dist/apps/api/main.js",
     "build:api": "npx nx run api:build",
+    "start:web": "node apps/web/server.js",
     "start:landing-page": "node dist/apps/landing-page/server/server.mjs"
   },
   "private": true,
