@@ -9,6 +9,7 @@ export const APP_ROUTES = {
   SETTINGS: 'settings',
   SETTINGS_OVERVIEW: 'settings/overview',
   NOTIFICATIONS: 'notifications',
+  MANAGE_AVAILABILITY: 'manage-availability',
 } as const;
 
 export const SIDEBAR_PREFIX_ROUTES: readonly string[] = [

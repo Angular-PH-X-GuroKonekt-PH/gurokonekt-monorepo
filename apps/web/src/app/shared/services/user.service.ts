@@ -16,7 +16,7 @@ import { catchError, map, Observable, of, switchMap } from 'rxjs';
 
 import { ApiResponse } from '../interfaces/api-response.interface';
 import { ProfileService } from '../../core/profile/profile.service';
-import { buildApiUrl } from '../helpers/api.helper';
+import { buildApiUrl } from '../utils/api.util';
 
 @Injectable({
   providedIn: 'root',

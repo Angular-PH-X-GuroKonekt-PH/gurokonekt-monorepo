@@ -1,6 +1,6 @@
 import { AbstractControl, FormGroup, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { VALIDATION_PATTERNS } from '../constants/validation-patterns.constants';
-import { isValidPhoneLengthForCountry } from '../helpers/phone.formatter';
+import { isValidPhoneLengthForCountry } from '../utils/phone.util';
 
 /**
  * Custom validators for reactive forms

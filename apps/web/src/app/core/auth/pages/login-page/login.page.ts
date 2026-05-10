@@ -1,18 +1,19 @@
 import { Component, inject, effect } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
-import { Store } from '@ngxs/store';
+import { createSelectMap, Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { PasswordVisibilityHelper } from '../../../../shared/helpers';
+import { createPasswordVisibilityState } from '../../../../shared/utils';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BaseFormComponent } from '../../../../shared/base-form/base-form.component';
 import { AuthState } from '../../store/auth.state';
 import * as AuthActions from '../../store/auth.actions';
-import { FormSubmissionHelper } from '../../../../shared/helpers/form-submission.helper';
+import { preSubmissionValidation } from '../../../../shared/helpers/form-submission.helper';
 import { Router } from '@angular/router'; 
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
-import { requiresProfileSetup } from 'apps/web/src/app/shared/helpers/profile-completion.helper';
+import { requiresProfileSetup } from 'apps/web/src/app/shared/utils/profile-completion.util';
+import { AuthSelectors } from '../../store/auth.selectors';
 
 @Component({
   selector: 'app-login-page',
@@ -25,12 +26,15 @@ export class LoginPage extends BaseFormComponent {
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
-  private readonly passwordHelper = new PasswordVisibilityHelper();
+  private readonly passwordHelper = createPasswordVisibilityState();
 
   protected readonly showPassword = this.passwordHelper.showPassword;
-  protected readonly isLoading = this.store.selectSignal(AuthState.isLoginLoading);
-  protected readonly errorMessage = this.store.selectSignal(AuthState.errorMessage);
-  protected readonly successMessage = this.store.selectSignal(AuthState.successMessage);
+
+  protected readonly selectSignal = createSelectMap({
+    isLoginLoading: AuthSelectors.isLoginLoading,
+    errorMessage: AuthSelectors.errorMessage,
+    successMessage: AuthSelectors.successMessage,
+  })
 
   protected readonly loginForm: FormGroup = this.fb.group({
     email: ['', [Validators.required, Validators.email]],
@@ -42,7 +46,7 @@ export class LoginPage extends BaseFormComponent {
     super();
 
     effect(() => {
-      const errorMsg = this.errorMessage();
+      const errorMsg = this.selectSignal.errorMessage();
       if (errorMsg) {
         this.toastService.error(errorMsg);
       }
@@ -54,7 +58,7 @@ export class LoginPage extends BaseFormComponent {
   }
 
   protected async onSubmit(): Promise<void> {
-    if (!FormSubmissionHelper.preSubmissionValidation(this.loginForm, this.isLoading)) {
+    if (!preSubmissionValidation(this.loginForm, this.selectSignal.isLoginLoading())) {
       return;
     }
 
@@ -66,7 +70,7 @@ export class LoginPage extends BaseFormComponent {
         }))
       );
 
-      const user = this.store.selectSnapshot(AuthState.user);
+      const user = this.store.selectSnapshot(AuthSelectors.user);
       if (user) {
         if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
             this.router.navigate([APP_ROUTES.PROFILE_SETUP]);

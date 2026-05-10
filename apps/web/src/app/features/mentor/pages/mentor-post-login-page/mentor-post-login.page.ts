@@ -12,8 +12,9 @@ import { ToastService } from '../../../../shared/services/toast.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { AuthState } from '../../../../core/auth/store/auth.state';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
-import { ExpertiseSelectionHelper } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
+import { expertiseOptions } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
+import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
 
 @Component({
   selector: 'app-mentor-post-login',
@@ -37,9 +38,9 @@ export class MentorPostLoginPage implements OnInit {
   protected readonly isSubmitting = signal(false);
 
   protected readonly daysOfWeek = Object.values(DaysInWeek);
-  protected readonly expertiseOptions = ExpertiseSelectionHelper.EXPERTISE_OPTIONS;
+  protected readonly expertiseOptions = expertiseOptions;
 
-  protected readonly currentUser = this.store.selectSignal(AuthState.user);
+  protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly avatarPreview = signal<string | null>(null);
   protected readonly avatarError = signal<string | null>(null);
 

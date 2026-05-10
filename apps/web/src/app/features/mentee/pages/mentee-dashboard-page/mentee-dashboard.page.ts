@@ -24,6 +24,7 @@ import { ViewAllButton } from 'apps/web/src/app/shared/components/view-all-butto
 import { MentorRecommendedCard } from '../../../mentor/components/mentor-recommended-card/mentor-recommended-card';
 import { MenteeCompletedBookingCard } from '../../components/mentee-completed-booking-card/mentee-completed-booking-card';
 import { MenteeSessionBookingCard } from '../../components/mentee-session-booking-card/mentee-session-booking-card';
+import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
 
 @Component({
   selector: 'app-mentee-dashboard-page',
@@ -45,7 +46,7 @@ import { MenteeSessionBookingCard } from '../../components/mentee-session-bookin
 export class MenteeDashboardPage {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
-  protected readonly authUser = this.store.selectSignal(AuthState.user);
+  protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
 
   private readonly bookingService = inject(BookingService);

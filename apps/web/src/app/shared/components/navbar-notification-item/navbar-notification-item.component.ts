@@ -8,7 +8,7 @@ import {
 
 
 import { IconComponent } from '../icon/icon.component';
-import { getNotificationTypeLabel, getNotificationTypeClasses, getNotificationIconName, getNotificationIconClasses } from '../../helpers/notification-display.helper';
+import { getNotificationTypeLabel, getNotificationTypeClasses, getNotificationIconName, getNotificationIconClasses } from '../../utils/notification-display.util';
 
 @Component({
   selector: 'app-navbar-notification-item',

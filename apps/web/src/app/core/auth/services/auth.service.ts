@@ -5,9 +5,9 @@ import { catchError, map } from 'rxjs/operators';
 import { AuthResponse } from '@gurokonekt/models/interfaces/auth/auth-response.interface';
 import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
-import { HttpErrorHelper } from '../../../shared/helpers/http-error.helper';
+import { getAuthErrorMessage, logError } from '../../../shared/utils/http-error.util';
 import type { LoginApiResponse } from '../../../shared/interfaces/auth-api.interface';
-import { buildApiUrl } from '../../../shared/helpers/api.helper';
+import { buildApiUrl } from '../../../shared/utils/api.util';
 import { API_CONFIG } from '../../config/api.config';
 
 @Injectable({
@@ -115,9 +115,9 @@ export class AuthService {
    * Handle HTTP errors with user-friendly messages
    */
   private handleError = (error: HttpErrorResponse): Observable<never> => {
-    const errorMessage = HttpErrorHelper.getAuthErrorMessage(error);
+    const errorMessage = getAuthErrorMessage(error);
     
-    HttpErrorHelper.logError('Auth API Error', error);
+    logError('Auth API Error', error);
 
     return throwError(() => ({ message: errorMessage, originalError: error }));
   };

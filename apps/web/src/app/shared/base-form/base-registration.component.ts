@@ -2,11 +2,24 @@ import { inject, signal, effect, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup } from '@angular/forms';
 import { of } from 'rxjs';
-import { PasswordVisibilityHelper, LocationDataHelper } from '../helpers';
-import { FormSubmissionHelper } from '../helpers/form-submission.helper';
-import { detectCountryFromPhone } from '../helpers/phone.formatter';
-import { SignalStateHelper } from '../helpers/signal-state.helper';
-import { getTimezoneForCountry } from '../helpers/timezone.helper';
+import {
+  createPasswordVisibilityState,
+  getCountries,
+  getLanguages,
+  getTimezones,
+  getCountryDisplayName,
+  getTimezoneDisplayName,
+  getLanguageDisplayName,
+} from '../utils';
+import {
+  handleSubmissionError,
+  handleSubmissionSuccess,
+  preSubmissionValidation,
+  startSubmission,
+} from '../helpers/form-submission.helper';
+import { detectCountryFromPhone } from '../utils/phone.util';
+import { createSubmissionState } from '../utils/signal-state.util';
+import { getTimezoneForCountry } from '../utils/timezone.util';
 import { BaseFormComponent } from './base-form.component';
 import { getSelectedPhoneCountry, getPhoneFormatPlaceholder, getPhoneErrorMessage } from '@gurokonekt/utils';
 import { Router } from '@angular/router';
@@ -17,20 +30,20 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
   protected readonly fb = inject(FormBuilder);
   protected readonly router = inject(Router);
   
-  protected readonly passwordHelper = new PasswordVisibilityHelper();
-  protected readonly confirmPasswordHelper = new PasswordVisibilityHelper();
+  protected readonly passwordHelper = createPasswordVisibilityState();
+  protected readonly confirmPasswordHelper = createPasswordVisibilityState();
   
   protected readonly showPassword = this.passwordHelper.showPassword;
   protected readonly showConfirmPassword = this.confirmPasswordHelper.showPassword;
   
-  protected readonly submissionState = SignalStateHelper.createSubmissionState();
+  protected readonly submissionState = createSubmissionState();
   
   protected readonly showPhoneCountryDropdown = signal(false);
   protected readonly selectedPhoneCountry = signal('PH');
   
-  protected readonly countries = LocationDataHelper.getCountries();
-  protected readonly timezones = signal(LocationDataHelper.getTimezones());
-  protected readonly languages = LocationDataHelper.getLanguages();
+  protected readonly countries = getCountries();
+  protected readonly timezones = signal(getTimezones());
+  protected readonly languages = getLanguages();
   
   protected abstract readonly registerForm: FormGroup;
   
@@ -120,15 +133,15 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
   }
   
   protected getCountryDisplayName(countryCode: string): string {
-    return LocationDataHelper.getCountryDisplayName(countryCode);
+    return getCountryDisplayName(countryCode);
   }
   
   protected getTimezoneDisplayName(timezoneValue: string): string {
-    return LocationDataHelper.getTimezoneDisplayName(timezoneValue);
+    return getTimezoneDisplayName(timezoneValue);
   }
   
   protected getLanguageDisplayName(langValue: string): string {
-    return LocationDataHelper.getLanguageDisplayName(langValue);
+    return getLanguageDisplayName(langValue);
   }
   
 
@@ -137,22 +150,22 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
   }
   
   protected preSubmissionValidation(): boolean {
-    return FormSubmissionHelper.preSubmissionValidation(
+    return preSubmissionValidation(
       this.registerForm, 
-      this.submissionState.isLoading
+      this.submissionState.isLoading()
     );
   }
   
   protected startSubmission(): void {
-    FormSubmissionHelper.startSubmission(this.submissionState);
+    startSubmission(this.submissionState);
   }
   
   protected handleSubmissionSuccess(): void {
-    FormSubmissionHelper.handleSubmissionSuccess(this.submissionState);
+    handleSubmissionSuccess(this.submissionState);
   }
   
   protected handleSubmissionError(message: string): void {
-    FormSubmissionHelper.handleSubmissionError(this.submissionState, message);
+    handleSubmissionError(this.submissionState, message);
   }
   
   protected scrollToTop(): void {

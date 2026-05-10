@@ -10,7 +10,7 @@ import {
   validateApiResponse,
 } from '../helpers/api-response.helper';
 import { ApiResponse } from '../interfaces/api-response.interface';
-import { buildApiUrl } from '../helpers/api.helper';
+import { buildApiUrl } from '../utils/api.util';
 
 @Injectable({
   providedIn: 'root',

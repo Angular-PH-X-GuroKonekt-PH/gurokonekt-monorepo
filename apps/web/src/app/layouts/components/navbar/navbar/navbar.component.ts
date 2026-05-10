@@ -27,6 +27,7 @@ import { NotificationListSkeleton } from '../../../../shared/components/skeleton
 import { ProfileService } from '../../../../core/profile/profile.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthState } from '../../../../core/auth/store/auth.state';
+import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
 
 @Component({
   selector: 'app-navbar',
@@ -51,7 +52,7 @@ export class NavbarComponent implements OnInit {
   protected readonly isUserMenuOpen = signal(false);
 
   // User data
-  protected readonly user = this.store.selectSignal(AuthState.user);
+  protected readonly user = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.user()?.id ?? null);
   protected readonly userRole = computed(() => this.user()?.role ?? null);
 
