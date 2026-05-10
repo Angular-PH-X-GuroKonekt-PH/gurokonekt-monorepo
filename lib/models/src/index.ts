@@ -1,5 +1,6 @@
 export * from './lib/models';
 export * from './lib/interfaces/auth/auth-response.interface';
+export * from './lib/interfaces/auth/auth-user.interface';
 export * from './lib/interfaces/auth/signup.model';
 export * from './lib/interfaces/auth/signin.model';
 export * from './lib/interfaces/auth/password.model';

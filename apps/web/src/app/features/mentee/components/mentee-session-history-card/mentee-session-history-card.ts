@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, input } from '@angular/core';
 import { BookingSessionCardInterface } from '@gurokonekt/models';
-import { StarRating } from '../../../../shared/components/star-rating/star-rating';
+import { StarRating } from '../../../../shared/components/star-rating/star-rating.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/session-badge';
+import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/session-badge.component';
 
 
 @Component({

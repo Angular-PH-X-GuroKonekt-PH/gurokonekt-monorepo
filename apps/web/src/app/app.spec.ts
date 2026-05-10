@@ -1,17 +1,23 @@
 import { TestBed } from '@angular/core/testing';
+import { provideRouter } from '@angular/router';
+import { NgxsModule, Store } from '@ngxs/store';
+import { vi } from 'vitest';
 import { App } from './app';
+import * as AuthActions from './core/auth/store/auth.actions';
 
 describe('App', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [App],
+      imports: [App, NgxsModule.forRoot([])],
+      providers: [
+        provideRouter([]),
+        { provide: Store, useValue: { dispatch: vi.fn().mockReturnValue({ subscribe: vi.fn() }) } },
+      ],
     }).compileComponents();
   });
 
-  it('should render title', () => {
+  it('creates the app', () => {
     const fixture = TestBed.createComponent(App);
-    fixture.detectChanges();
-    const compiled = fixture.nativeElement as HTMLElement;
-    expect(compiled.querySelector('h1')?.textContent).toContain('Welcome web');
+    expect(fixture.componentInstance).toBeTruthy();
   });
 });

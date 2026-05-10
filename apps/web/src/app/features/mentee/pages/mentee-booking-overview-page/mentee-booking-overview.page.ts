@@ -12,12 +12,12 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { BookingService } from '../../../../shared/services/booking.service';
-import { BookingCardListSkeleton } from '../../../../shared/components/skeleton-loaders/booking-card-list-skeleton/booking-card-list-skeleton';
+import { BookingCardListSkeleton } from '../../../../shared/components/skeleton-loaders/booking-card-list-skeleton/booking-card-list-skeleton.component';
 import { AuthState } from 'apps/web/src/app/core/auth/store/auth.state';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
-import { FilterButton } from 'apps/web/src/app/shared/components/filter-button/filter-button';
-import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card';
-import { SectionTitle } from 'apps/web/src/app/shared/components/section-title/section-title';
+import { FilterButton } from 'apps/web/src/app/shared/components/filter-button/filter-button.component';
+import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card.component';
+import { SectionTitle } from 'apps/web/src/app/shared/components/section-title/section-title.component';
 import { MenteeSessionBookingCard } from '../../components/mentee-session-booking-card/mentee-session-booking-card';
 
 @Component({

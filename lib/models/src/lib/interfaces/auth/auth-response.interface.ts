@@ -1,13 +1,8 @@
-import { Role } from './user.types';
+import { AuthUser } from './auth-user.interface';
 
 export interface AuthResponse {
-  user: {
-    id: string;
-    email: string;
-    fullName: string;
-    role: Role;
-  };
+  user: AuthUser;
   accessToken: string;
-  token?: string; 
+  token?: string;
   message: string;
 }

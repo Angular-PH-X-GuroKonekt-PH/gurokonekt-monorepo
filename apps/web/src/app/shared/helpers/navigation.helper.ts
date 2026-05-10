@@ -1,12 +1,10 @@
-import { inject } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { Role } from '@gurokonekt/models';
 import { APP_ROUTES } from '../constants/routes';
 import { normalizeRole, requiresProfileSetup } from './profile-completion.helper';
 
-/**
- * Navigation helper for common routing operations
- */
+@Injectable({ providedIn: 'root' })
 export class NavigationHelper {
   
   private router = inject(Router);

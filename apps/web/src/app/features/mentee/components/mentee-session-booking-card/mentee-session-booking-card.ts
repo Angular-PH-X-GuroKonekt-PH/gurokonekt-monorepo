@@ -7,7 +7,7 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { IconComponent, IconName } from '../../../../shared/components/icon/icon.component';
-import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/session-badge';
+import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/session-badge.component';
 
 @Component({
   selector: 'app-mentee-session-booking-card',

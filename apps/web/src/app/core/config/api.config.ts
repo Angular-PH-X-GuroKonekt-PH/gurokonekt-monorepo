@@ -1,4 +1,4 @@
-import { environment } from "apps/web/src/environments/environment";
+import { environment } from "../../../environments/environment";
 import { API_ENDPOINTS } from "../../shared/constants/api-endpoints.constants";
 
 

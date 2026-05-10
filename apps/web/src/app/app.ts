@@ -1,6 +1,5 @@
 import {
   Component,
-  signal,
   inject,
   effect,
   afterNextRender,
@@ -9,12 +8,11 @@ import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
 import { filter, map } from 'rxjs/operators';
-import { Sidebar } from './layouts/components/sidebar/sidebar';
 import { ToastContainerComponent } from './shared/components/toast/toast.component';
 import * as AuthActions from './core/auth/store/auth.actions';
 
 @Component({
-  imports: [RouterModule, ToastContainerComponent, Sidebar],
+  imports: [RouterModule, ToastContainerComponent],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',
@@ -24,8 +22,6 @@ export class App {
   private readonly store = inject(Store);
 
   protected title = 'GuroKonekt';
-  protected readonly showSidebar = signal(false);
-  protected readonly menteeName = 'John Doe';
 
   private readonly navigationEnd = toSignal(
     this.router.events.pipe(

@@ -3,7 +3,7 @@ import { Component, input, output } from '@angular/core';
 import { BookingCardInterface, BookingStatus } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/session-badge';
+import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/session-badge.component';
 
 @Component({
   selector: 'app-mentee-booking-card',

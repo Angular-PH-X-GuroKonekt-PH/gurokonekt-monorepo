@@ -5,10 +5,11 @@ import { throwError } from 'rxjs';
 import { AuthResponse } from '@gurokonekt/models';
 
 import { AuthService } from '../services/auth.service';
-import { ProfileService } from '../../../features/profile/profile.service';
+import { ProfileService } from '../../../core/profile/profile.service';
 import { AuthStateModel, initialAuthState } from '../models/auth.state.model';
-import * as AuthActions from './auth.actions';
+import { AuthStorageService } from '../../storage/auth-storage.service';
 import { NavigationHelper } from '../../../shared/helpers';
+import * as AuthActions from './auth.actions';
 
 @State<AuthStateModel>({
   name: 'auth',
@@ -18,7 +19,8 @@ import { NavigationHelper } from '../../../shared/helpers';
 export class AuthState {
   private readonly authService = inject(AuthService);
   private readonly profileService = inject(ProfileService);
-  private readonly navigationHelper = new NavigationHelper();
+  private readonly storage = inject(AuthStorageService);
+  private readonly navigationHelper = inject(NavigationHelper);
 
   @Selector()
   static user(state: AuthStateModel) {
@@ -91,39 +93,29 @@ export class AuthState {
 
   @Action(AuthActions.RestoreSession)
   restoreSession(ctx: StateContext<AuthStateModel>) {
-    const token = localStorage.getItem('auth_token');
-    const rawUser = localStorage.getItem('auth_user');
+    const token = this.storage.getToken();
+    const user = this.storage.getUser();
 
-    if (!token || !rawUser) {
+    if (!token || !user) {
       return;
     }
 
-    try {
-      const user = JSON.parse(rawUser) as AuthStateModel['user'];
-
-      if (!user?.id || !user?.email || !user?.role) {
-        throw new Error('Stored auth user is incomplete');
-      }
-
-      ctx.patchState({
-        user,
-        token,
-        isAuthenticated: true,
-      });
-    } catch {
-      localStorage.removeItem('auth_token');
-      localStorage.removeItem('auth_user');
+    if (!user.id || !user.email || !user.role) {
+      this.storage.clear();
       ctx.setState(initialAuthState);
+      return;
     }
+
+    ctx.patchState({ user, token, isAuthenticated: true });
   }
 
   @Action(AuthActions.LoginSuccess)
   loginSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.LoginSuccess) {
     const { user, token, message } = action.payload;
-    
+
     if (token) {
-      localStorage.setItem('auth_token', token);
-      localStorage.setItem('auth_user', JSON.stringify(user));
+      this.storage.setToken(token);
+      this.storage.setUser(user);
     }
 
     ctx.patchState({
@@ -136,14 +128,8 @@ export class AuthState {
       errorMessage: null
     });
 
-    // Check if user profile is complete before navigating
-    const isProfileComplete = user['isProfileComplete'] === true;
-    const isMentorProfileComplete = user['isMentorProfileComplete'] === true;
-    this.navigationHelper.navigateToDashboard(
-      user.role,
-      isProfileComplete,
-      isMentorProfileComplete
-    );
+    // Navigation is handled by the calling component (login-page.ts)
+    // via the navigateAfterLogin selector so action handlers stay pure.
   }
 
   @Action(AuthActions.LoginFailure)
@@ -253,11 +239,7 @@ export class AuthState {
 
   @Action(AuthActions.UpdateMenteeProfile)
   updateMenteeProfile(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMenteeProfile) {
-    ctx.patchState({
-      isLoading: true,
-      errorMessage: null,
-      successMessage: null
-    });
+    ctx.patchState({ isLoading: true, errorMessage: null, successMessage: null });
 
     return this.profileService.updateMenteeProfile(
       action.payload.userId,
@@ -279,12 +261,8 @@ export class AuthState {
     const state = ctx.getState();
     if (!state.user) return;
 
-    const updatedUser = {
-      ...state.user,
-      isProfileComplete: true,
-    };
-
-    localStorage.setItem('auth_user', JSON.stringify(updatedUser));
+    const updatedUser = { ...state.user, isProfileComplete: true };
+    this.storage.setUser(updatedUser);
 
     ctx.patchState({
       user: updatedUser,
@@ -296,20 +274,12 @@ export class AuthState {
 
   @Action(AuthActions.UpdateMenteeProfileFailure)
   updateMenteeProfileFailure(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMenteeProfileFailure) {
-    ctx.patchState({
-      isLoading: false,
-      errorMessage: action.error,
-      successMessage: null
-    });
+    ctx.patchState({ isLoading: false, errorMessage: action.error, successMessage: null });
   }
 
   @Action(AuthActions.UpdateMentorProfile)
   updateMentorProfile(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMentorProfile) {
-    ctx.patchState({
-      isLoading: true,
-      errorMessage: null,
-      successMessage: null
-    });
+    ctx.patchState({ isLoading: true, errorMessage: null, successMessage: null });
 
     return this.profileService.updateMentorProfile(
       action.payload.userId,
@@ -331,11 +301,11 @@ export class AuthState {
     const state = ctx.getState();
     if (!state.user) return;
 
+    const updatedUser = { ...state.user, isMentorProfileComplete: true };
+    this.storage.setUser(updatedUser);
+
     ctx.patchState({
-      user: {
-        ...state.user,
-        isMentorProfileComplete: true,
-      },
+      user: updatedUser,
       isLoading: false,
       successMessage: action.message || 'Mentor profile updated successfully!',
       errorMessage: null
@@ -344,35 +314,24 @@ export class AuthState {
 
   @Action(AuthActions.UpdateMentorProfileFailure)
   updateMentorProfileFailure(ctx: StateContext<AuthStateModel>, action: AuthActions.UpdateMentorProfileFailure) {
-    ctx.patchState({
-      isLoading: false,
-      errorMessage: action.error,
-      successMessage: null
-    });
+    ctx.patchState({ isLoading: false, errorMessage: action.error, successMessage: null });
   }
 
   @Action(AuthActions.Logout)
   logout(ctx: StateContext<AuthStateModel>) {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
-    
+    this.storage.clear();
     ctx.patchState(initialAuthState);
-    
     this.navigationHelper.navigateToLogin();
   }
 
   @Action(AuthActions.ClearAuthMessages)
   clearMessages(ctx: StateContext<AuthStateModel>) {
-    ctx.patchState({
-      successMessage: null,
-      errorMessage: null
-    });
+    ctx.patchState({ successMessage: null, errorMessage: null });
   }
 
   @Action(AuthActions.ResetAuthState)
   resetState(ctx: StateContext<AuthStateModel>) {
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
+    this.storage.clear();
     ctx.setState(initialAuthState);
   }
 
@@ -385,21 +344,13 @@ export class AuthState {
       payloadError?.message ||
       error?.message;
 
-    if (status === 400) {
-      return serverMessage || 'Please check your information and try again.';
-    } else if (status === 401) {
-      return 'Invalid email or password. Please try again.';
-    } else if (status === 403) {
-      return 'Please verify your email before logging in.';
-    } else if (status === 409) {
-      return 'An account with this email already exists. Please try logging in instead.';
-    } else if (status === 429) {
-      return serverMessage || 'Too many login attempts. Please try again later.';
-    } else if (status === 500) {
-      return 'Server error. Please try again in a few moments.';
-    } else if (serverMessage) {
-      return serverMessage;
-    }
+    if (status === 400) return serverMessage || 'Please check your information and try again.';
+    if (status === 401) return 'Invalid email or password. Please try again.';
+    if (status === 403) return 'Please verify your email before logging in.';
+    if (status === 409) return 'An account with this email already exists. Please try logging in instead.';
+    if (status === 429) return serverMessage || 'Too many login attempts. Please try again later.';
+    if (status === 500) return 'Server error. Please try again in a few moments.';
+    if (serverMessage) return serverMessage;
 
     return 'An unexpected error occurred. Please try again.';
   }

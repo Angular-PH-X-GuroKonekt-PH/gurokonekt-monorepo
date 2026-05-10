@@ -6,7 +6,7 @@ export const MENTEE_ROUTES: Route[] = [
     path: '',
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>
-      import('../layouts/mentee-layout/mentee-layout').then(
+      import('../layouts/mentee-layout/mentee.layout').then(
         (m) => m.MenteeLayout
       ),
     children: [
@@ -18,7 +18,7 @@ export const MENTEE_ROUTES: Route[] = [
       {
         path: 'dashboard',
         loadComponent: () =>
-          import('../features/mentee/pages/mentee-dashboard-page/mentee-dashboard-page').then(
+          import('../features/mentee/pages/mentee-dashboard-page/mentee-dashboard.page').then(
             (m) => m.MenteeDashboardPage
           ),
         title: 'Mentee Dashboard',
@@ -26,7 +26,7 @@ export const MENTEE_ROUTES: Route[] = [
       {
         path: 'find-mentors',
         loadComponent: () =>
-          import('../features/mentee/pages/mentee-find-mentors-page/mentee-find-mentors-page').then(
+          import('../features/mentee/pages/mentee-find-mentors-page/mentee-find-mentors.page').then(
             (m) => m.MenteeFindMentorsPage
           ),
         title: 'Find Mentors',

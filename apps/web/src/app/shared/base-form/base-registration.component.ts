@@ -1,12 +1,11 @@
 import { inject, signal, effect, untracked } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { FormBuilder, FormGroup } from '@angular/forms';
-import { Router } from '@angular/router';
 import { of } from 'rxjs';
 import { PasswordVisibilityHelper, LocationDataHelper } from '../helpers';
 import { FormSubmissionHelper } from '../helpers/form-submission.helper';
 import { detectCountryFromPhone } from '../helpers/phone.formatter';
-import { RouterNavigationHelper } from '../helpers/router-navigation.helper';
+import { NavigationHelper } from '../helpers';
 import { SignalStateHelper } from '../helpers/signal-state.helper';
 import { getTimezoneForCountry } from '../helpers/timezone.helper';
 import { BaseFormComponent } from './base-form.component';
@@ -14,7 +13,6 @@ import { getSelectedPhoneCountry, getPhoneFormatPlaceholder, getPhoneErrorMessag
 
 
 export abstract class BaseRegistrationComponent extends BaseFormComponent {
-  protected readonly router = inject(Router);
   protected readonly fb = inject(FormBuilder);
   
   protected readonly passwordHelper = new PasswordVisibilityHelper();
@@ -131,8 +129,10 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
     return LocationDataHelper.getLanguageDisplayName(langValue);
   }
   
+  private readonly navigationHelper = inject(NavigationHelper);
+
   protected navigateToLogin(): void {
-    RouterNavigationHelper.navigateToLogin(this.router);
+    this.navigationHelper.navigateToLogin();
   }
   
   protected preSubmissionValidation(): boolean {
