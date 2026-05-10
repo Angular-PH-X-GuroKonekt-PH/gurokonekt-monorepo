@@ -15,7 +15,7 @@ import {
 import { catchError, map, Observable, of, switchMap } from 'rxjs';
 
 import { ApiResponse } from '../interfaces/api-response.interface';
-import { ProfileService } from '../../features/profile/profile.service';
+import { ProfileService } from '../../core/profile/profile.service';
 import { buildApiUrl } from '../helpers/api.helper';
 
 @Injectable({

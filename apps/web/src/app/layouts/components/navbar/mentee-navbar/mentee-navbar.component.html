@@ -1,0 +1,122 @@
+<nav class="fixed top-0 z-50 w-full border-b border-default bg-neutral-primary-soft">
+  <div class="px-3 py-3 lg:px-5 lg:pl-3">
+    <div class="flex items-center justify-between">
+      <div class="flex items-center justify-start rtl:justify-end">
+        <button data-drawer-target="top-bar-sidebar" data-drawer-toggle="top-bar-sidebar"
+          aria-controls="top-bar-sidebar" type="button"
+          class="box-border rounded-base border border-transparent bg-transparent p-2 text-sm font-medium leading-5 text-heading hover:bg-neutral-secondary-medium focus:outline-none focus:ring-4 focus:ring-neutral-tertiary sm:hidden">
+          <span class="sr-only">Open sidebar</span>
+          <svg class="h-6 w-6" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none"
+            viewBox="0 0 24 24">
+            <path stroke="currentColor" stroke-linecap="round" stroke-width="2" d="M5 7h14M5 12h14M5 17h10" />
+          </svg>
+        </button>
+
+        <a [routerLink]="'/dashboard'" class="flex items-center gap-3 ms-2 md:me-24">
+          <img src="assets/logos/logo-light.svg" class="h-12 me-1" alt="Flowbite Logo" />
+
+          <div class="flex items-center justify-center gap-1">
+            <span class="text-xl font-bold text-blue-900">Guro</span>
+            <span class="text-xl font-bold text-orange-500">Konekt</span>
+          </div>
+        </a>
+      </div>
+
+      <div class="flex items-center justify-center gap-3">
+        <button id="dropdownNotificationButton" data-dropdown-toggle="dropdownNotification"
+          class="relative inline-flex items-center text-sm font-medium text-body hover:text-heading focus:outline-none"
+          type="button">
+          <svg class="h-6 w-6" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+              d="M12 5.365V3m0 2.365a5.338 5.338 0 0 1 5.133 5.368v1.8c0 2.386 1.867 2.982 1.867 4.175 0 .593 0 1.292-.538 1.292H5.538C5 18 5 17.301 5 16.708c0-1.193 1.867-1.789 1.867-4.175v-1.8A5.338 5.338 0 0 1 12 5.365ZM8.733 18c.094.852.306 1.54.944 2.112a3.48 3.48 0 0 0 4.646 0c.638-.572 1.236-1.26 1.33-2.112h-6.92Z" />
+          </svg>
+
+          @if (unreadCount() > 0) {
+          <span
+            class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-orange-500 px-1 text-[11px] font-semibold text-white">
+            {{ unreadCount() }}
+          </span>
+          }
+        </button>
+
+        <div id="dropdownNotification"
+          class="z-20 hidden w-full max-w-sm divide-y divide-default-medium rounded-base border border-blue-200 bg-neutral-primary-soft shadow"
+          aria-labelledby="dropdownNotificationButton">
+          <div class="block rounded-t-base bg-neutral-secondary-medium px-4 py-2 text-center font-medium text-body">
+            Notifications
+          </div>
+          <div class="divide-y divide-default">
+            @if (isNotificationsLoading()) {
+            <div class="space-y-3 px-4 py-4">
+              <app-notification-list-skeleton [count]="3" [compact]="true" />
+            </div>
+            } @else if (notifications().length === 0){
+            <div class="px-5 py-6 text-center">
+              <div
+                class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100">
+                <app-icon name="bell" class="h-5 w-5 text-orange-500"></app-icon>
+              </div>
+              <p class="text-sm font-semibold text-heading">No notifications yet</p>
+              <p class="mt-1 text-xs leading-5 text-body">
+                Updates about your bookings and sessions will appear here.
+              </p>
+            </div>
+            } @else {
+            @for (notif of notifications(); track notif.id) {
+            <app-navbar-notification-item [notification]="notif" (markAsRead)="markAsRead($event)" />
+            }
+            }
+          </div>
+
+          <a [routerLink]="'/notifications'" (click)="closeNotificationDropdown()"
+            class="block rounded-b-base bg-neutral-secondary-medium py-2 text-center font-medium text-body hover:bg-neutral-tertiary-medium">
+            <div class="inline-flex items-center">
+              <svg class="me-1.5 h-5 w-5 text-body" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24"
+                height="24" fill="none" viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-width="2"
+                  d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z" />
+                <path stroke="currentColor" stroke-width="2" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+              View all
+            </div>
+          </a>
+        </div>
+
+        <div class="ms-3 flex items-center">
+          <div>
+            <button type="button"
+              class="flex rounded-full bg-gray-800 text-sm focus:ring-4 focus:ring-gray-300 dark:focus:ring-gray-600"
+              aria-expanded="false" data-dropdown-toggle="dropdown-user">
+
+              <img class="h-8 w-8 rounded-full object-cover" [src]="userAvatarUrl()" [alt]="userFullName()" />
+            </button>
+          </div>
+
+          <div class="z-50 hidden w-56 rounded-base border border-default-medium bg-neutral-primary-medium shadow-lg"
+            id="dropdown-user">
+            <div class="border-b border-default-medium px-4 py-3" role="none">
+              <p class="text-sm font-medium text-heading" role="none">
+                {{ userFullName() }}
+              </p>
+              <p class="truncate text-sm text-body" role="none">
+                {{ userEmail() }}
+              </p>
+            </div>
+
+            <ul class="p-2 text-sm font-medium text-body" role="none">
+
+              <li>
+                <button (click)="logout()" type="button"
+                  class="inline-flex w-full items-center rounded p-2 hover:bg-neutral-tertiary-medium hover:text-heading"
+                  role="menuitem">
+                  Sign out
+                </button>
+              </li>
+
+            </ul>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</nav>

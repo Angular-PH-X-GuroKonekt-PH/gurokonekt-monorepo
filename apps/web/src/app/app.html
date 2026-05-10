@@ -1,54 +1,9 @@
 <div class="min-h-screen bg-gray-50">
-  <!-- Sidebar -->
-  @if (showSidebar()) {
-		<app-sidebar></app-sidebar>
-  }
-
-  <!-- Top bar -->
-  @if (showSidebar()) {
-  <header class="border-b border-gray-200 bg-white shadow-sm sticky top-0 z-50">
-		<div class="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
-			<div class="flex h-20 items-center justify-between">
-				<!-- Logo and Branding -->
-				<div class="flex items-center gap-3">
-					<!-- Logo from centralized assets -->
-					<img src="assets/logos/logo-light.svg" alt="GuroKonekt Logo" class="h-12 w-12" />
-					<!-- Brand Text -->
-					<div class="flex items-baseline">
-						<span class="text-2xl font-bold text-blue-900">Guro</span>
-						<span class="text-2xl font-bold text-orange-500">Konekt</span>
-					</div>
-				</div>
-
-				<!-- Right side: Notifications & Profile -->
-				<div class="flex items-center gap-4">
-					<!-- Notification Bell -->
-					<button class="relative rounded-lg p-2 text-gray-600 hover:bg-gray-100 transition-colors">
-						<img src="assets/icons/notification-bell.svg" alt="Notifications" class="h-6 w-6" />
-						<span class="absolute top-1.5 right-1.5 flex h-2 w-2">
-							<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-							<span class="relative inline-flex rounded-full h-2 w-2 bg-red-500"></span>
-						</span>
-					</button>
-
-					<!-- Profile Menu -->
-					<button class="flex items-center gap-2 rounded-lg px-2 py-1.5 hover:bg-gray-100 transition-colors">
-						<div class="h-9 w-9 rounded-full bg-gradient-to-br from-blue-500 to-blue-600 flex items-center justify-center text-white font-semibold text-sm">
-							{{ menteeName.charAt(0) }}
-						</div>
-						<img src="assets/icons/chevron-down.svg" alt="Menu" class="h-5 w-5" />
-					</button>
-				</div>
-			</div>
-		</div>
-	</header>
-  }
-  
-  <!-- Routed pages -->
-  <main [class.pt-0]="!showSidebar()" [class.pl-20]="showSidebar()" [class.lg:pl-64]="showSidebar()" class="pt-0 transition-all duration-300">
+  <!-- Routed pages (layouts handle their own sidebars) -->
+  <main class="pt-0 transition-all duration-300">
     <router-outlet></router-outlet>
   </main>
-  
+
   <!-- Toast Notifications -->
   <app-toast-container></app-toast-container>
 </div>

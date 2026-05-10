@@ -1,4 +1,4 @@
-import { RegisterMenteeRequest, RegisterMentorRequest } from '@gurokonekt/models';
+import { AuthUser, RegisterMenteeRequest, RegisterMentorRequest } from '@gurokonekt/models';
 import type {
   UpdateMenteeProfileInterface,
   UpdateMentorProfileInterface,
@@ -11,7 +11,7 @@ export class Login {
 
 export class LoginSuccess {
   static readonly type = '[Auth] Login Success';
-  constructor(public payload: { user: { id: string; email: string; role: string; [key: string]: unknown }; token?: string; message?: string }) {}
+  constructor(public payload: { user: AuthUser; token?: string; message?: string }) {}
 }
 
 export class LoginFailure {

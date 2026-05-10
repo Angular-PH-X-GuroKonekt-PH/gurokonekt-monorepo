@@ -10,6 +10,7 @@ import { DaysInWeek } from '@gurokonekt/models/interfaces/user/user.model';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { EXPERTISE_OPTIONS } from 'apps/web/src/app/shared/constants';
+import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 
 type FilterDropdown = 'expertise' | 'skills' | 'availability' | null;
 
@@ -130,7 +131,7 @@ export class MentorSearch {
     const filters = this.buildFilters();
     this.activeFilterDropdown.set(null);
 
-    this.router.navigate(['/mentee/find-mentors'], {
+    this.router.navigate([APP_ROUTES.FIND_MENTORS], {
       queryParams: {
         name: filters.name || null,
         skills: filters.skills.length ? filters.skills.join(',') : null,
