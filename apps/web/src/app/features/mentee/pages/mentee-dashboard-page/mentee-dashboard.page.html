@@ -12,7 +12,7 @@
       <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <app-section-title title="Upcoming Sessions" [count]="upcomingSessionsCount()"
           subtitle="Stay on top of your scheduled mentoring sessions."></app-section-title>
-        <app-view-all-button link="/mentee/booking-overview" label="View all sessions"></app-view-all-button>
+        <app-view-all-button link="/booking-overview" label="View all sessions"></app-view-all-button>
       </div>
 
       @if (upcomingSessionLoading()) {
@@ -47,7 +47,7 @@
       <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
         <app-section-title title="Sessions history" [count]="completedSessionsCount()"
           subtitle="Your last 5 completed mentoring sessions."></app-section-title>
-        <app-view-all-button link="/mentee/booking-overview" label="View session history"></app-view-all-button>
+        <app-view-all-button link="/booking-overview" label="View session history"></app-view-all-button>
       </div>
      
       @if (completedSessionLoading()) {
@@ -87,7 +87,7 @@
 
         <app-section-title title="Recommended Mentor"
           subtitle="Mentors that matches your interest."></app-section-title>
-        <app-view-all-button link="/mentee/find-mentors" label="View all mentors"></app-view-all-button>
+        <app-view-all-button link="/find-mentors" label="View all mentors"></app-view-all-button>
 
       </div>
 

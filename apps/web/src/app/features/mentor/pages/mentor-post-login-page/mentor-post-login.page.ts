@@ -288,7 +288,7 @@ export class MentorPostLoginPage implements OnInit {
       );
 
       this.toastService.success('Mentor profile setup completed successfully!', 'Welcome!');
-      await this.router.navigate([APP_ROUTES.MENTOR_DASHBOARD]);
+      await this.router.navigate([APP_ROUTES.DASHBOARD]);
     } catch (error) {
       const message = (error as { message?: string })?.message;
       this.toastService.error(message || 'Failed to setup mentor profile. Please try again.', 'Error');

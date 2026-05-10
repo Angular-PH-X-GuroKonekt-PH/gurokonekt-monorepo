@@ -3,6 +3,10 @@ import { Route } from '@angular/router';
 import { APP_ROUTES } from './shared/constants/routes';
 import { dashboardAccessGuard } from './shared/guards/dashboard-access.guard';
 import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
+import { menteeCanMatch } from './shared/guards/mentee-can-match.guard';
+import { mentorCanMatch } from './shared/guards/mentor-can-match.guard';
+import { MenteeLayout } from './layouts/mentee-layout/mentee.layout';
+import { MentorLayout } from './layouts/mentor-layout/mentor.layout';
 
 export const appRoutes: Route[] = [
   {
@@ -20,8 +24,11 @@ export const appRoutes: Route[] = [
     loadComponent: () => import('./core/auth/pages/login-page/login.page').then((m) => m.LoginPage),
     title: 'Login',
   },
+
+  // /profile-setup — mentee sees MenteePostLoginPage, mentor sees MentorPostLoginPage
   {
     path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
+    canMatch: [menteeCanMatch],
     loadComponent: () =>
       import('./features/mentee/pages/mentee-post-login-page/mentee-post-login.page').then(
         (m) => m.MenteePostLoginPage
@@ -29,23 +36,101 @@ export const appRoutes: Route[] = [
     title: 'Complete Your Profile',
   },
   {
-    path: APP_ROUTES.MENTOR_PROFILE_SETUP.replace('/', ''),
+    path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
+    canMatch: [mentorCanMatch],
     loadComponent: () =>
       import('./features/mentor/pages/mentor-post-login-page/mentor-post-login.page').then(
         (m) => m.MentorPostLoginPage
       ),
     title: 'Complete Your Mentor Profile',
   },
+
+  // /dashboard — mentee role uses MenteeLayout
   {
-    path: 'mentee',
-    loadChildren: () =>
-      import('./routes/mentee.routes').then((m) => m.MENTEE_ROUTES),
+    path: APP_ROUTES.DASHBOARD.replace('/', ''),
+    canMatch: [menteeCanMatch],
+    canActivate: [dashboardAccessGuard],
+    component: MenteeLayout,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/mentee/pages/mentee-dashboard-page/mentee-dashboard.page').then(
+            (m) => m.MenteeDashboardPage
+          ),
+        title: 'Dashboard',
+      },
+    ],
   },
+  // /dashboard — mentor role uses MentorLayout
   {
-    path: 'mentor',
-    loadChildren: () =>
-      import('./routes/mentor.routes').then((m) => m.MENTOR_ROUTES),
+    path: APP_ROUTES.DASHBOARD.replace('/', ''),
+    canMatch: [mentorCanMatch],
+    canActivate: [dashboardAccessGuard],
+    component: MentorLayout,
+    children: [
+      {
+        path: '',
+        loadComponent: () =>
+          import('./features/mentor/pages/mentor-dashboard-page/mentor-dashboard.page').then(
+            (m) => m.MentorDashboardPage
+          ),
+        title: 'Dashboard',
+      },
+    ],
   },
+
+  // Mentee-only sub-pages — no /mentee/ prefix
+  {
+    path: '',
+    canMatch: [menteeCanMatch],
+    canActivate: [dashboardAccessGuard],
+    component: MenteeLayout,
+    children: [
+      {
+        path: APP_ROUTES.FIND_MENTORS.replace('/', ''),
+        loadComponent: () =>
+          import('./features/mentee/pages/mentee-find-mentors-page/mentee-find-mentors.page').then(
+            (m) => m.MenteeFindMentorsPage
+          ),
+        title: 'Find Mentors',
+      },
+      {
+        path: APP_ROUTES.BOOKING_OVERVIEW.replace('/', ''),
+        loadComponent: () =>
+          import('./features/mentee/pages/mentee-booking-overview-page/mentee-booking-overview.page').then(
+            (m) => m.MenteeBookingOverviewPage
+          ),
+        title: 'Booking Overview',
+      },
+      {
+        path: APP_ROUTES.NOTIFICATIONS.replace('/', ''),
+        loadComponent: () =>
+          import('./shared/components/notifications/notifications.component').then(
+            (m) => m.Notifications
+          ),
+        title: 'Notifications',
+      },
+    ],
+  },
+  // Mentor-only sub-pages
+  {
+    path: '',
+    canMatch: [mentorCanMatch],
+    canActivate: [dashboardAccessGuard],
+    component: MentorLayout,
+    children: [
+      {
+        path: APP_ROUTES.NOTIFICATIONS.replace('/', ''),
+        loadComponent: () =>
+          import('./shared/components/notifications/notifications.component').then(
+            (m) => m.Notifications
+          ),
+        title: 'Notifications',
+      },
+    ],
+  },
+
   {
     path: APP_ROUTES.SETTINGS.replace('/', ''),
     canActivate: [dashboardAccessGuard],

@@ -320,7 +320,7 @@ export class MenteePostLoginPage implements OnInit {
       );
 
       this.toastService.success('Profile setup completed successfully!', 'Welcome!');
-      this.router.navigate([APP_ROUTES.MENTEE_DASHBOARD]);
+      this.router.navigate([APP_ROUTES.DASHBOARD]);
     } catch (error) {
       const message = (error as { message?: string })?.message;
       this.toastService.error(

@@ -48,9 +48,9 @@ describe('dashboardAccessGuard', () => {
     expect(runGuard()).toEqual([APP_ROUTES.PROFILE_SETUP]);
   });
 
-  it('redirects mentor with incomplete profile to MENTOR_PROFILE_SETUP', () => {
+  it('redirects mentor with incomplete profile to PROFILE_SETUP', () => {
     mockSnapshot({ id: '2', email: 'b@c.com', fullName: 'B', role: 'mentor', isProfileComplete: false, isMentorProfileComplete: false });
-    expect(runGuard()).toEqual([APP_ROUTES.MENTOR_PROFILE_SETUP]);
+    expect(runGuard()).toEqual([APP_ROUTES.PROFILE_SETUP]);
   });
 
   it('returns true when mentor profile is complete', () => {

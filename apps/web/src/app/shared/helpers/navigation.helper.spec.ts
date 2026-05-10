@@ -29,15 +29,14 @@ describe('NavigationHelper', () => {
     expect(navigate).toHaveBeenCalledWith([APP_ROUTES.REGISTER]);
   });
 
-  it('navigateToDashboard() sends complete mentee to PROFILE_SETUP (current intentional revert)', async () => {
+  it('navigateToDashboard() sends complete mentee to DASHBOARD', async () => {
     await helper.navigateToDashboard('mentee', true, false);
-    // navigateToDashboard for mentee always goes to PROFILE_SETUP (see navigation.helper.ts:55)
-    expect(navigate).toHaveBeenCalledWith([APP_ROUTES.PROFILE_SETUP]);
+    expect(navigate).toHaveBeenCalledWith([APP_ROUTES.DASHBOARD]);
   });
 
-  it('navigateToDashboard() sends complete mentor to MENTOR_DASHBOARD', async () => {
+  it('navigateToDashboard() sends complete mentor to DASHBOARD', async () => {
     await helper.navigateToDashboard('mentor', false, true);
-    expect(navigate).toHaveBeenCalledWith([APP_ROUTES.MENTOR_DASHBOARD]);
+    expect(navigate).toHaveBeenCalledWith([APP_ROUTES.DASHBOARD]);
   });
 
   it('navigateToDashboard() sends incomplete mentee to PROFILE_SETUP', async () => {
@@ -45,8 +44,8 @@ describe('NavigationHelper', () => {
     expect(navigate).toHaveBeenCalledWith([APP_ROUTES.PROFILE_SETUP]);
   });
 
-  it('navigateToDashboard() sends incomplete mentor to MENTOR_PROFILE_SETUP', async () => {
+  it('navigateToDashboard() sends incomplete mentor to PROFILE_SETUP', async () => {
     await helper.navigateToDashboard('mentor', false, false);
-    expect(navigate).toHaveBeenCalledWith([APP_ROUTES.MENTOR_PROFILE_SETUP]);
+    expect(navigate).toHaveBeenCalledWith([APP_ROUTES.PROFILE_SETUP]);
   });
 });

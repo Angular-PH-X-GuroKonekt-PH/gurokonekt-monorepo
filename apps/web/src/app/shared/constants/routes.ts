@@ -3,18 +3,16 @@ export const APP_ROUTES = {
   LOGIN: '/login',
   REGISTER: '/register',
   PROFILE_SETUP: '/profile-setup',
-  MENTOR_PROFILE_SETUP: '/mentor/profile-setup',
-  MENTEE_DASHBOARD: '/mentee/dashboard',
-  FIND_MENTORS: '/mentee/find-mentors',
-  BOOKING_OVERVIEW: '/mentee/booking-overview',
-  MENTOR_DASHBOARD: '/mentor/dashboard',
+  DASHBOARD: '/dashboard',
+  FIND_MENTORS: '/find-mentors',
+  BOOKING_OVERVIEW: '/booking-overview',
   SETTINGS: '/settings',
   SETTINGS_OVERVIEW: '/settings/overview',
+  NOTIFICATIONS: '/notifications',
 } as const;
 
 export const SIDEBAR_PREFIX_ROUTES: readonly string[] = [
-  APP_ROUTES.MENTEE_DASHBOARD,
-  APP_ROUTES.MENTOR_DASHBOARD,
+  APP_ROUTES.DASHBOARD,
   '/profile/',
   APP_ROUTES.SETTINGS,
   '/mentoring',
