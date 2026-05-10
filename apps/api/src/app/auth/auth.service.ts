@@ -1,54 +1,46 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto } from '@gurokonekt/models';
-import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION,
-  SIGN_IN_WITH_PASSWORD, UPDATE_PASSWORD, UserRole, UserStatus, LogsActionType,
+import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, UserRole, UserStatus, LogsActionType,
   ResendOTPTypes, REDIRECT_LINKS
 } from '@gurokonekt/models';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
-import bcrypt from "bcrypt";
+import {
+  AuthResponseFactory,
+  AuthValidationService,
+  AuthLoggingService,
+  AuthRateLimiterService,
+  AuthErrorHandlerService,
+  AUTH_RATE_LIMITS,
+} from './helpers';
+import bcrypt from 'bcrypt';
 
 @Injectable()
 export class AuthService {
   private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly supabase: SupabaseService,
     private readonly storage: StorageService,
+    private readonly validation: AuthValidationService,
+    private readonly logging: AuthLoggingService,
+    private readonly rateLimiter: AuthRateLimiterService,
+    private readonly errorHandler: AuthErrorHandlerService,
   ) {}
 
-  // register mentee
   /**
-   * Flow:
-   * 1. check if user exist in db
-   * 2. if exist return error else continue
-   * 3. check if required fields are present (check in dto)
-   * 4. if missing return error else continue
-   * 5. create user in users table
-   * 6. if error occured, return error else return success with status 201
-   * 7. save the activity to logs
-   * 8. confirmation email will be sent automatically after signup as per the 
-   *    configuration in the supabase authentication
-   * */ 
+   * Register Mentee - Simplified with helper services
+   * Uses enterprise patterns: Factory, Validation, Logging, Error Handling
+   */
   async registerMentee(dto: RegisterMenteeDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
-    // Normalize email to lowercase and trim whitespace
-    const normalizedEmail = dto.email.toLowerCase().trim();
-
     try {
-      // Check if user already exists in DB
-      const existingUser = await this.prisma.db.user.findUnique({
-        where: { email: normalizedEmail }
-      });
+      const normalizedEmail = this.validation.normalizeEmail(dto.email);
 
-      if (existingUser) {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail})`);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
-          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
-          data: null
-        };
+      // Check if user already exists
+      if (await this.validation.userExists(normalizedEmail)) {
+        return AuthResponseFactory.errorByKey('USER_ALREADY_EXISTS');
       }
 
       // Create user in Supabase Auth
@@ -59,38 +51,16 @@ export class AuthService {
         options: { emailRedirectTo },
       });
 
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
-          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
-          data: error
-        }
+      if (error || !data?.user?.id || !data.user.identities?.length) {
+        return error
+          ? this.errorHandler.handleSupabaseError(error)
+          : AuthResponseFactory.errorByKey('NO_DATA_RETURNED_ON_AUTH');
       }
 
-      if (!data?.user?.id) {
-        this.logger.error(API_RESPONSE.ERROR.NO_DATA_RETURNED_ON_AUTH.message);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
-          message: API_RESPONSE.ERROR.NO_DATA_RETURNED_ON_AUTH.message,
-          data: null,
-        };
-      }
-
-      if (!data.user.identities || data.user.identities.length === 0) {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail}) — Supabase identity empty`);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
-          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
-          data: null,
-        };
-      }
-
+      // Create mentee in DB
       const authId = data.user.id;
-      const hashPassword = await bcrypt.hash(dto.password, 10);
+      const hashPassword = await this.validation.hashPassword(dto.password);
+
       const mentee = await this.prisma.db.user.create({
         data: {
           id: authId,
@@ -103,55 +73,29 @@ export class AuthService {
           language: dto.language,
           timezone: dto.timezone,
           phoneNumber: dto.phoneNumber ?? null,
-          hashPassword: hashPassword,
-          isProfileComplete: false,
+          hashPassword,
           role: UserRole.Mentee,
           status: UserStatus.Active,
           createdById: authId,
-          updatedById: authId
+          updatedById: authId,
         },
-        select: SelectFields.getUserCredentialsSelect()
+        select: SelectFields.getUserCredentialsSelect(),
       });
 
-      // save activity to logs
-      await this.prisma.db.logs.create({
-        data: {
-          actionType: LogsActionType.SignUp,
-          targetId: mentee.id, 
-          details: `Mentee account registered with email: ${mentee.email}`,
-          metadata: { role: mentee.role },
-          ipAddress: ipAddress ?? '',  
-          userAgent: userAgent ?? '',
-          createdById: mentee.id        
-        }
+      // Log signup activity
+      await this.logging.log({
+        actionType: LogsActionType.SignUp,
+        targetId: mentee.id,
+        details: `Mentee account registered with email: ${mentee.email}`,
+        metadata: { role: mentee.role },
+        ipAddress,
+        userAgent,
+        createdById: mentee.id,
       });
 
-      return {
-        status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.REGISTER_MENTEE.code,
-        message: API_RESPONSE.SUCCESS.REGISTER_MENTEE.message,
-        data: {
-          auth: data,
-          user: mentee
-        }
-      }
+      return AuthResponseFactory.successByKey('REGISTER_MENTEE', { auth: data, user: mentee });
     } catch (error) {
-      if (error?.code === 'P2002') {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail}) — DB constraint`);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
-          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
-          data: null,
-        };
-      }
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: API_RESPONSE.ERROR.REGISTER_MENTEE.code,
-        message: API_RESPONSE.ERROR.REGISTER_MENTEE.message,
-        data: error
-      }
+      return this.errorHandler.handleDatabaseError(error);
     }
   }
 
@@ -312,7 +256,7 @@ export class AuthService {
           documents: uploadResult?.data ?? []
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error?.code === 'P2002') {
         this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail}) — DB constraint`);
         return {
@@ -486,7 +430,7 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.message,
         data: data || true,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
@@ -519,7 +463,7 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.SIGN_WITH_OATH.message,
         data: data
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
@@ -531,369 +475,189 @@ export class AuthService {
   }
 
   /**
-   * Flow:
-   * 1. check if failed attempts > 3 then return 429
-   * 2. check user if exist in db if false return 401
-   * 3. check if user credentials are valid if false return 401
-   * 4. check if user email is verified if false then return 403
-   * 5. if all checks passed return success with status 200
-   * */ 
+   * Sign In with Password - Simplified with enterprise services
+   * Uses rate limiting, validation, and logging helpers
+   */
   async signInWithPassword(input: SignInWithPasswordDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     try {
+      // Rate limit check
       if (process.env.NODE_ENV !== 'test') {
-        const todayStart = new Date();
-        const todayEnd = new Date();
-        todayStart.setUTCHours(0, 0, 0, 0);
-        todayEnd.setUTCHours(23, 59, 59, 999);
-
-        const failedMessages = [
-          API_RESPONSE.ERROR.USER_NOT_FOUND.message,
-          API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
-          API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
-          API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
-        ];
-
-        // Check failed attempts in logs
-        const failedByEmail = await this.prisma.db.logs.count({
-          where: {
+        const rateLimitError = await this.rateLimiter.checkRateLimit(
+          {
             actionType: LogsActionType.SignIn,
-            metadata: { path: ['email'], equals: input.email },
-            createdAt: { gte: todayStart, lte: todayEnd },
-            OR: failedMessages.map(message => ({
-              details: { contains: message, mode: 'insensitive' },
-            })),
+            maxAttempts: AUTH_RATE_LIMITS.SIGN_IN.maxAttemptsPerDay,
+            timeWindowMs: AUTH_RATE_LIMITS.SIGN_IN.timeWindowMs,
+            errorKey: 'SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS',
           },
-        });
-
-        const failedByIp = await this.prisma.db.logs.count({
-          where: {
-            actionType: LogsActionType.SignIn,
-            ipAddress,
-            createdAt: { gte: todayStart, lte: todayEnd },
-            OR: failedMessages.map(message => ({
-              details: { contains: message, mode: 'insensitive' },
-            })),
-          },
-        });
-
-        if (failedByEmail >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY ||
-            failedByIp >= SIGN_IN_WITH_PASSWORD.MAX_ATTEMPTS_PER_DAY) {
-          await this.prisma.db.logs.create({
-            data: {
-              actionType: LogsActionType.SignIn,
-              targetId: "",
-              details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
-              metadata: { email: input.email },
-              ipAddress,
-              userAgent,
-              createdById: null
-            }
-          });
-
-          return {
-            status: ResponseStatus.Error,
-            statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.code,
-            message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS.message,
-            data: null
-          };
-        }
+          input.email
+        );
+        if (rateLimitError) return rateLimitError;
       }
 
-      // Check if user exists
-      const user = await this.prisma.db.user.findUnique({
-        where: { email: input.email }
-      });
-
+      // Validate user exists
+      const user = await this.validation.getUserByEmail(input.email);
       if (!user) {
-        // log failed attempt
-        await this.prisma.db.logs.create({
-          data: {
-            actionType: LogsActionType.SignIn,
-            targetId: "",
-            details: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
-            metadata: { email: input.email },
-            ipAddress,
-            userAgent
-          }
-        });
-
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.code,
-          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
-          data: null
-        };
-      }
-
-      // Attempt login via Supabase
-      const { data, error } = await this.supabase.client.auth.signInWithPassword({
-        email: input.email,
-        password: input.password
-      });
-
-      if (error || !data.user) {
-        // Check if email verified
-        if (error && error.code === 'email_not_confirmed') {
-          await this.prisma.db.logs.create({
-            data: {
-              actionType: LogsActionType.SignIn,
-              targetId: user.id,
-              details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
-              metadata: { email: input.email },
-              ipAddress,
-              userAgent,
-              createdById: user.id
-            }
-          });
-        
-          return {
-            status: ResponseStatus.Error,
-            statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.code,
-            message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
-            data: null
-          };
-        }
-
-        // log failed attempt
-        await this.prisma.db.logs.create({
-          data: {
-            actionType: LogsActionType.SignIn,
-            targetId: user.id,
-            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
-            metadata: { email: input.email },
-            ipAddress,
-            userAgent,
-            createdById: user.id
-          }
-        });
-
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.code,
-          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
-          data: null
-        };
-      }
-
-      // Check if email verified
-      if (!data.user.email_confirmed_at) {
-        await this.prisma.db.logs.create({
-          data: {
-            actionType: LogsActionType.SignIn,
-            targetId: user.id,
-            details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
-            metadata: { email: input.email },
-            ipAddress,
-            userAgent,
-            createdById: user.id
-          }
-        });
-
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.code,
-          message: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
-          data: null
-        };
-      }
-
-      // Log successful login
-      await this.prisma.db.logs.create({
-        data: {
+        await this.logging.log({
           actionType: LogsActionType.SignIn,
-          targetId: user.id,
-          details: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
+          targetId: '',
+          details: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
           metadata: { email: input.email },
           ipAddress,
           userAgent,
-          createdById: user.id
-        }
+        });
+        return AuthResponseFactory.errorByKey('SIGNIN_ATTEMPT_INVALID_CREDENTIALS');
+      }
+
+      // Attempt Supabase login
+      const { data, error } = await this.supabase.client.auth.signInWithPassword({
+        email: input.email,
+        password: input.password,
       });
 
-      // After successful signin return the user data without sensitive info
+      if (error?.code === 'email_not_confirmed' || !data?.user?.email_confirmed_at) {
+        await this.logging.log({
+          actionType: LogsActionType.SignIn,
+          targetId: user.id,
+          details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
+          metadata: { email: input.email },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
+        });
+        return AuthResponseFactory.errorByKey('SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED');
+      }
+
+      if (error || !data?.user) {
+        await this.logging.log({
+          actionType: LogsActionType.SignIn,
+          targetId: user.id,
+          details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
+          metadata: { email: input.email },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
+        });
+        return AuthResponseFactory.errorByKey('SIGNIN_ATTEMPT_INVALID_CREDENTIALS');
+      }
+
+      // Sync mentee profile completion state
       let userData = await this.prisma.db.user.findUnique({
         where: { id: data.user.id },
-        select: SelectFields.getUserCredentialsSelect()
+        select: SelectFields.getUserCredentialsSelect(),
       });
 
-      // Mentee profile is created on profile setup submit. If no profile row exists,
-      // force profile completion flag to false to keep onboarding flow consistent.
       if (userData?.role === UserRole.Mentee) {
         const menteeProfile = await this.prisma.db.menteeProfile.findUnique({
           where: { userId: userData.id },
           select: { id: true },
         });
-
         const effectiveIsProfileComplete = userData.isProfileComplete === true && !!menteeProfile;
-
         if (userData.isProfileComplete !== effectiveIsProfileComplete) {
           await this.prisma.db.user.update({
             where: { id: userData.id },
             data: { isProfileComplete: effectiveIsProfileComplete },
           });
+          userData = { ...userData, isProfileComplete: effectiveIsProfileComplete };
         }
-
-        userData = {
-          ...userData,
-          isProfileComplete: effectiveIsProfileComplete,
-        };
       }
 
+      // Log successful login
+      await this.logging.log({
+        actionType: LogsActionType.SignIn,
+        targetId: user.id,
+        details: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
+        metadata: { email: input.email },
+        ipAddress,
+        userAgent,
+        createdById: user.id,
+      });
+
       const redirectUrl =
-        userData?.role === UserRole.Admin && userData?.isProfileComplete === false
+        userData?.role === UserRole.Admin && !userData?.isProfileComplete
           ? `${origin ?? ''}${REDIRECT_LINKS.ADMIN_DASHBOARD}`
           : null;
 
-      return {
-        status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.code,
-        message: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
-        data: {
-          user: userData,
-          session: data.session,
-          redirectUrl
-        }
-      };
+      return AuthResponseFactory.successByKey('SIGN_WITH_PASSWORD', {
+        user: userData,
+        session: data.session,
+        redirectUrl,
+      });
     } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
-        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
-        data: error
-      };
+      return this.errorHandler.handleUnexpectedError(error, 'INTERNAL_SERVER_ERROR');
     }
   }
 
   /**
-   * Update Password (authenticated Mentee/Mentor)
-   * Flow:
-   * 1. Check failed attempts (max 3/day) per user
-   * 2. Verify user exists
-   * 3. Compare currentPassword against stored hash
-   * 4. Validate confirmPassword matches newPassword
-   * 5. Hash newPassword, update Supabase + DB
+   * Update Password (authenticated Mentee/Mentor) - Simplified
+   * Uses rate limiting and validation helpers
    */
   async updatePassword(dto: UpdatePasswordDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
+      // Rate limit incorrect password attempts
       if (process.env.NODE_ENV !== 'test') {
-        const todayStart = new Date();
-        const todayEnd = new Date();
-        todayStart.setUTCHours(0, 0, 0, 0);
-        todayEnd.setUTCHours(23, 59, 59, 999);
-
-        // Rate-limit incorrect current password attempts
-        const failedAttempts = await this.prisma.db.logs.count({
-          where: {
+        const rateLimitError = await this.rateLimiter.checkRateLimit(
+          {
             actionType: LogsActionType.UpdatePassword,
-            metadata: { path: ['userId'], equals: dto.userId },
-            details: { contains: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message, mode: 'insensitive' },
-            createdAt: { gte: todayStart, lte: todayEnd },
+            maxAttempts: AUTH_RATE_LIMITS.UPDATE_PASSWORD.maxIncorrectAttemptsPerDay,
+            timeWindowMs: 86400000,
+            errorKey: 'UPDATE_PASSWORD_TOO_MANY_ATTEMPTS',
           },
-        });
-
-        if (failedAttempts >= UPDATE_PASSWORD.MAX_INCORRECT_ATTEMPTS_PER_DAY) {
-          return {
-            status: ResponseStatus.Error,
-            statusCode: API_RESPONSE.ERROR.UPDATE_PASSWORD_TOO_MANY_ATTEMPTS.code,
-            message: API_RESPONSE.ERROR.UPDATE_PASSWORD_TOO_MANY_ATTEMPTS.message,
-            data: null,
-          };
-        }
+          dto.userId,
+          'userId'
+        );
+        if (rateLimitError) return rateLimitError;
       }
 
+      // Validate user exists
       const user = await this.prisma.db.user.findUnique({
         where: { id: dto.userId },
         select: { id: true, email: true, hashPassword: true },
       });
-
-      if (!user) {
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
-          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
-          data: null,
-        };
-      }
+      if (!user) return AuthResponseFactory.errorByKey('USER_NOT_FOUND');
 
       // Verify current password
-      const isCurrentPasswordValid = await bcrypt.compare(dto.currentPassword, user.hashPassword);
-
-      if (!isCurrentPasswordValid) {
-        await this.prisma.db.logs.create({
-          data: {
-            actionType: LogsActionType.UpdatePassword,
-            targetId: user.id,
-            details: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
-            metadata: { userId: dto.userId },
-            ipAddress,
-            userAgent,
-            createdById: user.id,
-          },
+      const isValid = await this.validation.validatePassword(dto.currentPassword, user.hashPassword);
+      if (!isValid) {
+        await this.logging.log({
+          actionType: LogsActionType.UpdatePassword,
+          targetId: user.id,
+          details: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
+          metadata: { userId: dto.userId },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
         });
-
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.PASSWORD_INCORRECT.code,
-          message: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
-          data: null,
-        };
+        return AuthResponseFactory.errorByKey('PASSWORD_INCORRECT');
       }
 
-      // Validate confirmPassword matches newPassword
-      if (dto.newPassword !== dto.confirmPassword) {
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.PASSWORD_MISMATCH.code,
-          message: API_RESPONSE.ERROR.PASSWORD_MISMATCH.message,
-          data: null,
-        };
+      // Validate passwords match
+      if (!this.validation.validatePasswordMatch(dto.newPassword, dto.confirmPassword)) {
+        return AuthResponseFactory.errorByKey('PASSWORD_MISMATCH');
       }
 
-      const pendingHashPassword = await bcrypt.hash(dto.newPassword, 10);
-
+      const pendingHashPassword = await this.validation.hashPassword(dto.newPassword);
       await this.prisma.db.user.update({
         where: { id: user.id },
-        data: {
-          pendingHashPassword,
-          pendingPasswordChangeAt: new Date(),
-        },
+        data: { pendingHashPassword, pendingPasswordChangeAt: new Date() },
       });
 
-      // Send 6-digit OTP to user's email via Supabase
+      // Send OTP via Supabase
       const { error: otpError } = await this.supabase.client.auth.signInWithOtp({
         email: user.email,
         options: { shouldCreateUser: false },
       });
 
       if (otpError) {
-        this.logger.error(otpError.message, otpError.stack);
         await this.prisma.db.user.update({
           where: { id: user.id },
           data: { pendingHashPassword: null, pendingPasswordChangeAt: null },
         });
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
-          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
-          data: otpError,
-        };
+        return this.errorHandler.handleSupabaseError(otpError);
       }
 
-      return {
-        status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.INITIATE_PASSWORD_CHANGE.code,
-        message: API_RESPONSE.SUCCESS.INITIATE_PASSWORD_CHANGE.message,
-        data: null,
-      };
+      return AuthResponseFactory.successByKey('INITIATE_PASSWORD_CHANGE');
     } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: API_RESPONSE.ERROR.UPDATE_PASSWORD.code,
-        message: API_RESPONSE.ERROR.UPDATE_PASSWORD.message,
-        data: error,
-      };
+      return this.errorHandler.handleUnexpectedError(error, 'UPDATE_PASSWORD');
     }
   }
 
@@ -1008,7 +772,7 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
         data: null,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
@@ -1074,7 +838,7 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.FORGOT_PASSWORD_EMAIL_SENT.message,
         data: null,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
@@ -1151,7 +915,7 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.RESET_PASSWORD_PIN_SENT.message,
         data: null,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
@@ -1259,7 +1023,7 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
         data: null,
       };
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,
@@ -1288,7 +1052,7 @@ export class AuthService {
         message: API_RESPONSE.SUCCESS.SIGN_OUT.message,
         data: true
       }
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(error.message, error.stack);
       return {
         status: ResponseStatus.Error,

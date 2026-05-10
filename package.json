@@ -5,6 +5,7 @@
   "scripts": {
     "prepare": "husky",
     "start:api": "node dist/apps/api/main.js",
+    "start:local:api": "set -a && source apps/api/.env && set +a && NODE_ENV=development node dist/apps/api/main.js",
     "build:api": "npx nx run api:build",
     "start:landing-page": "node dist/apps/landing-page/server/server.mjs"
   },
@@ -44,6 +45,7 @@
     "@swc/core": "^1.13.3",
     "@swc/helpers": "~0.5.11",
     "@tailwindcss/postcss": "^4.2.1",
+    "@types/bcrypt": "^6.0.0",
     "@types/express": "^4.17.21",
     "@types/jest": "^30.0.0",
     "@types/multer": "^2.0.0",
