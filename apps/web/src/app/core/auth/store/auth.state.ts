@@ -1,14 +1,15 @@
 import { Injectable, inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { State, Action, StateContext, Selector } from '@ngxs/store';
 import { catchError, tap } from 'rxjs/operators';
 import { throwError } from 'rxjs';
-import { AuthResponse } from '@gurokonekt/models';
+import { AuthResponse } from '@gurokonekt/models/interfaces/auth/auth-response.interface';
 
 import { AuthService } from '../services/auth.service';
 import { ProfileService } from '../../../core/profile/profile.service';
 import { AuthStateModel, initialAuthState } from '../models/auth.state.model';
 import { AuthStorageService } from '../../storage/auth-storage.service';
-import { NavigationHelper } from '../../../shared/helpers';
+import { APP_ROUTES } from '../../../shared/constants/routes';
 import * as AuthActions from './auth.actions';
 
 @State<AuthStateModel>({
@@ -20,7 +21,7 @@ export class AuthState {
   private readonly authService = inject(AuthService);
   private readonly profileService = inject(ProfileService);
   private readonly storage = inject(AuthStorageService);
-  private readonly navigationHelper = inject(NavigationHelper);
+  private readonly router = inject(Router);
 
   @Selector()
   static user(state: AuthStateModel) {
@@ -321,7 +322,7 @@ export class AuthState {
   logout(ctx: StateContext<AuthStateModel>) {
     this.storage.clear();
     ctx.patchState(initialAuthState);
-    this.navigationHelper.navigateToLogin();
+    this.router.navigate([APP_ROUTES.LOGIN]);
   }
 
   @Action(AuthActions.ClearAuthMessages)

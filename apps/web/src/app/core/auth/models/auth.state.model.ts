@@ -1,4 +1,4 @@
-import { AuthUser } from '@gurokonekt/models';
+import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
 
 export interface AuthStateModel {
   user: AuthUser | null;

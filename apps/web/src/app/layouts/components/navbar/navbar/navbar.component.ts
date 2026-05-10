@@ -11,33 +11,49 @@ import {
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationStart, Router, RouterLink } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { of } from 'rxjs';
+import { firstValueFrom, of } from 'rxjs';
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
-import { UserInterface } from '@gurokonekt/models';
+import {
+  NotificationInterface,
+  NotificationStatus,
+} from '@gurokonekt/models/interfaces/notification/notification.model';
+import { UserInterface } from '@gurokonekt/models/interfaces/user/user.model';
 
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { NavbarNotificationItem } from '../../../../shared/components/navbar-notification-item/navbar-notification-item.component';
+import { NotificationListSkeleton } from '../../../../shared/components/skeleton-loaders/notification-list-skeleton/notification-list-skeleton.component';
 import { ProfileService } from '../../../../core/profile/profile.service';
+import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthState } from '../../../../core/auth/store/auth.state';
 
-
 @Component({
-  selector: 'app-mentor-navbar',
-  imports: [RouterLink, CommonModule, IconComponent],
-  templateUrl: './mentor-navbar.component.html',
+  selector: 'app-navbar',
+  imports: [
+    RouterLink,
+    CommonModule,
+    IconComponent,
+    NavbarNotificationItem,
+    NotificationListSkeleton,
+  ],
+  templateUrl: './navbar.component.html',
 })
-export class MentorNavbar implements OnInit {
+export class NavbarComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly profileService = inject(ProfileService);
+  private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
   private readonly elementRef = inject(ElementRef<HTMLElement>);
 
+  // Dropdown states
   protected readonly isNotificationOpen = signal(false);
   protected readonly isUserMenuOpen = signal(false);
 
+  // User data
   protected readonly user = this.store.selectSignal(AuthState.user);
   protected readonly userId = computed(() => this.user()?.id ?? null);
+  protected readonly userRole = computed(() => this.user()?.role ?? null);
 
   protected readonly profile = toSignal(
     toObservable(this.userId).pipe(
@@ -55,13 +71,13 @@ export class MentorNavbar implements OnInit {
 
   protected readonly userFullName = computed(() => {
     const profile = this.profile();
-
     if (profile) {
       const fullName = `${profile.firstName} ${profile.lastName}`.trim();
       if (fullName) return fullName;
     }
 
-    return 'Mentor';
+    const role = this.userRole();
+    return role === 'mentor' ? 'Mentor' : 'Mentee';
   });
 
   protected readonly userEmail = computed(() => {
@@ -69,10 +85,38 @@ export class MentorNavbar implements OnInit {
   });
 
   protected readonly userAvatarUrl = computed(() => {
-    const avatarAttachments = this.profile()?.avatarAttachments as | { publicUrl?: string }[] | undefined;
+    const avatarAttachments = this.profile()?.avatarAttachments as
+      | { publicUrl?: string }[]
+      | undefined;
 
-    return avatarAttachments?.[0]?.publicUrl || 'assets/img/no_profile_avatar.png';
+    return (
+      avatarAttachments?.[0]?.publicUrl ||
+      'assets/img/no_profile_avatar.png'
+    );
   });
+
+  // Notification data
+  protected readonly fetchNotifications = toSignal<
+    NotificationInterface[] | null
+  >(this.notificationService.getMyNotifications(), {
+    initialValue: null,
+  });
+
+  protected readonly notifications = toSignal(
+    this.notificationService.notifications$,
+    { initialValue: [] as NotificationInterface[] }
+  );
+
+  protected readonly isNotificationsLoading = computed(
+    () => this.fetchNotifications() === null
+  );
+
+  protected readonly unreadCount = computed(
+    () =>
+      this.notifications()?.filter(
+        (notification) => notification.status === NotificationStatus.UNREAD
+      ).length ?? 0
+  );
 
   ngOnInit(): void {
     this.router.events
@@ -99,12 +143,22 @@ export class MentorNavbar implements OnInit {
     }
   }
 
-  private closeAllDropdowns(): void {
-    this.isNotificationOpen.set(false);
-    this.isUserMenuOpen.set(false);
+  protected markAsRead(notification: NotificationInterface): void {
+    if (notification.status === NotificationStatus.READ) {
+      return;
+    }
+
+    void firstValueFrom(
+      this.notificationService.markAsRead(notification.id)
+    ).catch(() => undefined);
   }
 
   protected logout(): void {
     void this.store.dispatch(new AuthActions.Logout());
+  }
+
+  private closeAllDropdowns(): void {
+    this.isNotificationOpen.set(false);
+    this.isUserMenuOpen.set(false);
   }
 }

@@ -2,7 +2,7 @@ import { Component, inject, OnInit, effect } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormGroup } from '@angular/forms';
 import { Store } from '@ngxs/store';
-import { RegisterMenteeRequest } from '@gurokonekt/models';
+import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
 import { ToastService } from '../../../../../shared/services/toast.service';
 import { BaseStepperRegistrationComponent } from 'apps/web/src/app/shared/base-form/base-stepper-registration.component';
 import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';

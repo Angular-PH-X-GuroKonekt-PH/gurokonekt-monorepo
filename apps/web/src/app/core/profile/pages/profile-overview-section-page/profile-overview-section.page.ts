@@ -1,7 +1,7 @@
 import { Component, computed, effect, inject, signal } from '@angular/core';
 import { Store } from '@ngxs/store';
 
-import { AuthUser } from '@gurokonekt/models';
+import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
 import { ProfileService } from '../../profile.service';
 import { AuthState } from '../../../../core/auth/store/auth.state';
 

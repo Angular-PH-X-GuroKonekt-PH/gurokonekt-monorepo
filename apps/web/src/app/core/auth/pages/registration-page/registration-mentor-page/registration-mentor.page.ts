@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
-import { RegisterMentorRequest } from '@gurokonekt/models';
+import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
 import { ClearAuthMessages, RegisterMentor } from '../../../store/auth.actions';
 
 import { IconComponent } from '../../../../../shared/components/icon/icon.component';

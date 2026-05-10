@@ -1,5 +1,6 @@
 import { AbstractControl, FormGroup, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { VALIDATION_PATTERNS } from '../constants/validation-patterns.constants';
+import { isValidPhoneLengthForCountry } from '../helpers/phone.formatter';
 
 /**
  * Custom validators for reactive forms
@@ -198,20 +199,13 @@ export class CustomValidators {
         return null; // Skip validation if country not selected
       }
 
-      try {
-        const { isValidPhoneLengthForCountry } = require('../helpers/phone.formatter');
-        
-        const isValid = isValidPhoneLengthForCountry(control.value, countryCode);
-        return isValid ? null : { 
-          phoneNumberByCountry: { 
-            country: countryCode,
-            value: control.value 
-          } 
-        };
-      } catch (error) {
-        // If helper is not available, skip validation
-        return null;
-      }
+      const isValid = isValidPhoneLengthForCountry(control.value, countryCode);
+      return isValid ? null : {
+        phoneNumberByCountry: {
+          country: countryCode,
+          value: control.value
+        }
+      };
     };
   }
 }
