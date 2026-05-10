@@ -234,7 +234,7 @@
                   <div class="flex gap-2">
                     <input
                       [value]="goal"
-                      (change)="learningGoals.at($index)?.setValue($event.target?.value || '')"
+                      (change)="learningGoals.at($index).setValue($any($event.target).value || '')"
                       type="text"
                       placeholder="e.g., Master TypeScript and Angular"
                       maxlength="500"
@@ -249,7 +249,7 @@
                       <span class="text-lg">🗑️</span>
                     </button>
                   </div>
-                  @if (learningGoals.at($index)?.getError('maxlength')) {
+                  @if (learningGoals.at($index).getError('maxlength')) {
                     <p class="text-red-600 text-sm">Each goal cannot exceed 500 characters</p>
                   }
                 }
