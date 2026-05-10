@@ -11,6 +11,7 @@ import { ToastService } from '../../../../shared/services/toast.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { AuthState } from '../../../../core/auth/store/auth.state';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
+import { APP_ROUTES } from '../../../../shared/constants/routes';
 
 @Component({
   selector: 'mentee-post-login-page',
@@ -298,7 +299,7 @@ export class MenteePostLoginPage implements OnInit {
     const user = this.currentUser();
     if (!user) {
       this.toastService.error('User session not found. Please login again.');
-      this.router.navigate(['/login']);
+      this.router.navigate([APP_ROUTES.LOGIN]);
       return;
     }
 
@@ -319,7 +320,7 @@ export class MenteePostLoginPage implements OnInit {
       );
 
       this.toastService.success('Profile setup completed successfully!', 'Welcome!');
-      this.router.navigate(['/dashboard']);
+      this.router.navigate([APP_ROUTES.MENTEE_DASHBOARD]);
     } catch (error) {
       const message = (error as { message?: string })?.message;
       this.toastService.error(

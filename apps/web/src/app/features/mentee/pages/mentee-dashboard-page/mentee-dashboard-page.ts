@@ -4,6 +4,7 @@ import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 
 import { AuthState } from '../../../../core/auth/store/auth.state';
+import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { BookingService } from '../../../../shared/services/booking.service';
 import {
   BookingCardInterface,
@@ -169,19 +170,19 @@ export class MenteeDashboardPage {
   }
 
   protected onViewDetails(booking: BookingCardInterface): void {
-    void this.router.navigate(['/mentee/booking-overview'], {
+    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
       queryParams: { bookingId: booking.id },
     });
   }
 
   protected onCancelRequest(booking: BookingCardInterface): void {
-    void this.router.navigate(['/mentee/booking-overview'], {
+    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
       queryParams: { bookingId: booking.id, action: 'cancel' },
     });
   }
 
   protected onAddReview(booking: BookingCardInterface): void {
-    void this.router.navigate(['/mentee/booking-overview'], {
+    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
       queryParams: { bookingId: booking.id, action: 'review' },
     });
   }

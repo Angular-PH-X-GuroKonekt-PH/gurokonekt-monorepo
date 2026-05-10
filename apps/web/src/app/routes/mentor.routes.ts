@@ -22,15 +22,7 @@ export const MENTOR_ROUTES: Route[] = [
             (m) => m.MentorDashboardPage
           ),
         title: 'Mentor Dashboard',
-      },       
-      {
-        path: 'post-login',
-        loadComponent: () =>
-          import('../features/mentor/pages/mentor-post-login-page/mentor-post-login-page').then(
-            (m) => m.MentorPostLoginPage
-          ),
-        title: 'Mentor Post Login',
-      } 
+      },
     ],
   },
 ];

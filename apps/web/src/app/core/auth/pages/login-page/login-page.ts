@@ -87,6 +87,6 @@ export class LoginPage extends BaseFormComponent {
   }
 
   protected navigateToForgotPassword(): void {
-    RouterNavigationHelper.navigateWithFallback(this.router, ['/forgot-password'], ['/login']);
+    this.toastService.info('Forgot password is not available yet.');
   }
 }

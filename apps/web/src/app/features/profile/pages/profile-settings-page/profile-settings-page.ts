@@ -12,6 +12,7 @@ import { ProfileService } from '../../profile.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { AuthState } from '../../../../core/auth/store/auth.state';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
+import { APP_ROUTES } from '../../../../shared/constants/routes';
 
 @Component({
   selector: 'app-profile-settings-page',
@@ -402,7 +403,7 @@ export class ProfileSettingsPageComponent implements OnInit {
     const user = this.currentUser();
     if (!user) {
       this.toastService.error('User session not found. Please login again.');
-      this.router.navigate(['/login']);
+      this.router.navigate([APP_ROUTES.LOGIN]);
       return;
     }
 

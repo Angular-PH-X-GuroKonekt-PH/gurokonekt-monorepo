@@ -185,7 +185,7 @@ export class AuthState {
   @Action(AuthActions.RegisterMenteeSuccess)
   registerMenteeSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.RegisterMenteeSuccess) {
     const { message, email } = action.payload;
-    
+
     ctx.patchState({
       isMenteeRegisterLoading: false,
       isLoading: false,
@@ -193,15 +193,6 @@ export class AuthState {
       errorMessage: null,
       lastRegisteredEmail: email
     });
-
-    // Navigate to verification page after showing success message
-    setTimeout(() => {
-      this.navigationHelper.navigateToVerifyEmail({
-        email,
-        role: 'mentee',
-        message
-      });
-    }, 3000); // 3 second delay
   }
 
   @Action(AuthActions.RegisterMenteeFailure)
@@ -240,7 +231,7 @@ export class AuthState {
   @Action(AuthActions.RegisterMentorSuccess)
   registerMentorSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.RegisterMentorSuccess) {
     const { message, email } = action.payload;
-    
+
     ctx.patchState({
       isMentorRegisterLoading: false,
       isLoading: false,
@@ -248,14 +239,6 @@ export class AuthState {
       errorMessage: null,
       lastRegisteredEmail: email
     });
-
-    setTimeout(() => {
-      this.navigationHelper.navigateToVerifyEmail({
-        email,
-        role: 'mentor',
-        message
-      });
-    }, 3000);
   }
 
   @Action(AuthActions.RegisterMentorFailure)

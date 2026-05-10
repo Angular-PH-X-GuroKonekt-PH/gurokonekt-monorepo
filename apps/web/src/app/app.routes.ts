@@ -1,13 +1,13 @@
 import { Route } from '@angular/router';
 
-
 import { APP_ROUTES } from './shared/constants/routes';
 import { dashboardAccessGuard } from './shared/guards/dashboard-access.guard';
-
+import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
 
 export const appRoutes: Route[] = [
   {
     path: APP_ROUTES.REGISTER.replace('/', ''),
+    canActivate: [unauthenticatedGuard],
     loadComponent: () =>
       import('./core/auth/pages/registration-page/registration-container/registration-container').then(
         (m) => m.RegistrationContainer
@@ -16,25 +16,18 @@ export const appRoutes: Route[] = [
   },
   {
     path: APP_ROUTES.LOGIN.replace('/', ''),
+    canActivate: [unauthenticatedGuard],
     loadComponent: () => import('./core/auth/pages/login-page/login-page').then((m) => m.LoginPage),
     title: 'Login',
   },
-  // {
-  //   path: APP_ROUTES.VERIFY_EMAIL.replace('/', ''),
-  //   loadComponent: () =>
-  //     import('./components/verify-email/verify-email').then(
-  //       (m) => m.VerifyEmail
-  //     ),
-  //   title: 'Verify Email',
-  // },
-  // {
-  //   path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
-  //   loadComponent: () =>
-  //     import('./core/profile/pages/post-login-page/post-login-page').then(
-  //       (m) => m.PostLoginPage
-  //     ),
-  //   title: 'Complete Your Profile',
-  // },
+  {
+    path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
+    loadComponent: () =>
+      import('./features/mentee/pages/mentee-post-login-page/mentee-post-login-page').then(
+        (m) => m.MenteePostLoginPage
+      ),
+    title: 'Complete Your Profile',
+  },
   {
     path: APP_ROUTES.MENTOR_PROFILE_SETUP.replace('/', ''),
     loadComponent: () =>
@@ -76,15 +69,6 @@ export const appRoutes: Route[] = [
         title: 'Overview Section',
       },
     ],
-  },
-  {
-    path: APP_ROUTES.SETTINGS_PROFILE.replace('/', ''),
-    canActivate: [dashboardAccessGuard],
-    loadComponent: () =>
-      import('./features/profile/pages/profile-settings-page/profile-settings-page').then(
-        (m) => m.ProfileSettingsPageComponent
-      ),
-    title: 'Profile Settings',
   },
   {
     path: APP_ROUTES.ROOT,

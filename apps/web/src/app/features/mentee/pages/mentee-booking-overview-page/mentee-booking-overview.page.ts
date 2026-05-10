@@ -14,6 +14,7 @@ import {
 import { BookingService } from '../../../../shared/services/booking.service';
 import { BookingCardListSkeleton } from '../../../../shared/components/skeleton-loaders/booking-card-list-skeleton/booking-card-list-skeleton';
 import { AuthState } from 'apps/web/src/app/core/auth/store/auth.state';
+import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { FilterButton } from 'apps/web/src/app/shared/components/filter-button/filter-button';
 import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card';
 import { SectionTitle } from 'apps/web/src/app/shared/components/section-title/section-title';
@@ -101,19 +102,19 @@ export class MenteeBookingOverviewPage {
   }
 
   protected onViewDetails(booking: BookingCardInterface): void {
-    void this.router.navigate(['/mentee/booking-overview'], {
+    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
       queryParams: { bookingId: booking.id },
     });
   }
 
   protected onCancelRequest(booking: BookingCardInterface): void {
-    void this.router.navigate(['/mentee/booking-overview'], {
+    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
       queryParams: { bookingId: booking.id, action: 'cancel' },
     });
   }
 
   protected onAddReview(booking: BookingCardInterface): void {
-    void this.router.navigate(['/mentee/booking-overview'], {
+    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
       queryParams: { bookingId: booking.id, action: 'review' },
     });
   }

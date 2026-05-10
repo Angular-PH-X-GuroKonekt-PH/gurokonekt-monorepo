@@ -35,13 +35,6 @@ export class NavigationHelper {
   }
 
   /**
-   * Navigate to forgot password
-   */
-  async navigateToForgotPassword(): Promise<boolean> {
-    return this.router.navigate([APP_ROUTES.FORGOT_PASSWORD]);
-  }
-
-  /**
    * Navigate to dashboard based on user role and profile completion status
    */
   async navigateToDashboard(
@@ -62,19 +55,6 @@ export class NavigationHelper {
     }
 
     return this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
-  }
-
-  /**
-   * Navigate to email verification page
-   */
-  async navigateToVerifyEmail(params: { email: string; role: string; message: string }): Promise<boolean> {
-    return this.router.navigate([APP_ROUTES.VERIFY_EMAIL], {
-      queryParams: { 
-        email: params.email,
-        role: params.role,
-        message: params.message
-      },
-    });
   }
 
   /**
