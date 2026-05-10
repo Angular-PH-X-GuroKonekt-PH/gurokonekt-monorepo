@@ -7,10 +7,11 @@ import { ToastService } from '../../../../../shared/services/toast.service';
 import { BaseStepperRegistrationComponent } from 'apps/web/src/app/shared/base-form/base-stepper-registration.component';
 import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';
 import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
-import { formatPhoneToE164 } from 'apps/web/src/app/shared/helpers/phone.formatter';
+import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { CustomValidators } from 'apps/web/src/app/shared/validators/custom-validators';
 import { ClearAuthMessages, RegisterMentee } from '../../../store/auth.actions';
 import { AuthState } from '../../../store/auth.state';
+import { AuthSelectors } from '../../../store/auth.selectors';
 
 @Component({
   selector: 'app-registration-mentee-page',
@@ -26,13 +27,13 @@ export class RegistrationMenteePage
   private readonly toastService = inject(ToastService);
 
   protected readonly isMenteeRegisterLoading = this.store.selectSignal(
-    AuthState.isMenteeRegisterLoading
+    AuthSelectors.isMenteeRegisterLoading
   );
   protected readonly errorMessage = this.store.selectSignal(
-    AuthState.errorMessage
+    AuthSelectors.errorMessage
   );
   protected readonly successMessage = this.store.selectSignal(
-    AuthState.successMessage
+    AuthSelectors.successMessage
   );
 
   protected readonly totalSteps = 4;

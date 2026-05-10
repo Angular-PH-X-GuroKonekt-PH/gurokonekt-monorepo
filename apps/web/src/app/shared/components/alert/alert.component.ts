@@ -2,8 +2,14 @@ import { Component, input, output } from '@angular/core';
 
 import { IconComponent, IconName } from '../icon/icon.component';
 import { AlertType } from '../../types/alert.types';
-import { AlertHelper } from '../../helpers/alert.helper';
-import { IconHelper } from '../../helpers/icon.helper';
+import {
+  getAlertClasses,
+  getAlertIcon,
+  getIconClasses,
+  getMessageClasses,
+  getTitleClasses,
+} from '../../utils/alert.util';
+import { getContextIcon } from '../../utils/icon.util';
 
 @Component({
   selector: 'app-alert',
@@ -19,22 +25,20 @@ export class AlertComponent {
 
   dismissed = output<void>();
 
-  private readonly alertHelper = AlertHelper;
-
   getAlertClasses(): string {
-    return this.alertHelper.getAlertClasses(this.type());
+    return getAlertClasses(this.type());
   }
 
   getIconClasses(): string {
-    return this.alertHelper.getIconClasses(this.type());
+    return getIconClasses(this.type());
   }
 
   getTitleClasses(): string {
-    return this.alertHelper.getTitleClasses(this.type());
+    return getTitleClasses(this.type());
   }
 
   getMessageClasses(): string {
-    return this.alertHelper.getMessageClasses(this.type());
+    return getMessageClasses(this.type());
   }
 
   getDismissButtonClasses(): string {
@@ -53,11 +57,11 @@ export class AlertComponent {
   }
 
   getIconPath(): string {
-    return this.alertHelper.getIcon(this.type());
+    return getAlertIcon(this.type());
   }
 
   getAlertIconName(): IconName {
-    return IconHelper.getContextIcon(this.type());
+    return getContextIcon(this.type());
   }
 
   getTitle(): string {

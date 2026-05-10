@@ -10,7 +10,7 @@ import { IconComponent } from '../icon/icon.component';
 })
 export class SessionBadge {
 
-   BookingStatus = BookingStatus;
+  BookingStatus = BookingStatus;
 
   status = input.required<BookingStatus>();
 

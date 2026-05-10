@@ -18,7 +18,7 @@ import {
   validateApiResponse,
 } from '../../../shared/helpers/api-response.helper';
 import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
-import { buildApiUrl } from '../../../shared/helpers/api.helper';
+import { buildApiUrl } from '../../../shared/utils/api.util';
 
 @Injectable({
   providedIn: 'root',

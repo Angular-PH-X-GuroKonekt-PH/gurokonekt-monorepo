@@ -14,7 +14,7 @@ import { IconComponent } from '../icon/icon.component';
 import { SectionCard } from '../section-card/section-card.component';
 import { SectionTitle } from '../section-title/section-title.component';
 import { NotificationListSkeleton } from '../skeleton-loaders/notification-list-skeleton/notification-list-skeleton.component';
-import { getNotificationIconClasses, getNotificationIconName, getNotificationTypeClasses, getNotificationTypeLabel } from '../../helpers/notification-display.helper';
+import { getNotificationIconClasses, getNotificationIconName, getNotificationTypeClasses, getNotificationTypeLabel } from '../../utils/notification-display.util';
 
 @Component({
   selector: 'app-notifications',

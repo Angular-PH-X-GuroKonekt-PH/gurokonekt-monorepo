@@ -7,9 +7,9 @@ import type {
   UpdateMentorProfileInterface,
 } from '@gurokonekt/models/interfaces/user/user.model';
 
-import { HttpErrorHelper } from '../../shared/helpers/http-error.helper';
+import { getErrorMessage } from '../../shared/utils/http-error.util';
 import { ApiResponse } from '../../shared/interfaces/api-response.interface';
-import { buildApiUrl } from '../../shared/helpers/api.helper';
+import { buildApiUrl } from '../../shared/utils/api.util';
 
 @Injectable({
   providedIn: 'root',
@@ -171,7 +171,7 @@ export class ProfileService {
       }));
     }
 
-    const errorMessage = HttpErrorHelper.getErrorMessage(error);
+    const errorMessage = getErrorMessage(error);
     const statusCode = error.status || 500;
     
     return throwError(() => ({

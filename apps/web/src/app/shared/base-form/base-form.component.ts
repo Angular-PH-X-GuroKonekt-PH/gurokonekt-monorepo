@@ -1,5 +1,9 @@
 import { FormGroup } from '@angular/forms';
-import { FormValidationHelper } from '../helpers/form-validation.helper';
+import {
+  getFormErrorMessage,
+  hasError,
+  mapErrorToMessage,
+} from '../utils/form-validation.util';
 
 /**
  * Base class for form components providing common validation methods
@@ -15,14 +19,14 @@ export abstract class BaseFormComponent {
    * Get error message for a form field
    */
   protected getErrorMessage(fieldName: string): string {
-    return FormValidationHelper.getErrorMessage(this.form, fieldName);
+    return getFormErrorMessage(this.form, fieldName);
   }
 
   /**
    * Check if a form field has errors
    */
   protected hasError(fieldName: string): boolean {
-    return FormValidationHelper.hasError(this.form, fieldName);
+    return hasError(this.form, fieldName);
   }
 
   /**
@@ -33,6 +37,6 @@ export abstract class BaseFormComponent {
     if (!control?.errors) {
       return '';
     }
-    return FormValidationHelper.mapErrorToMessage(fieldName, control.errors);
+    return mapErrorToMessage(fieldName, control.errors);
   }
 }

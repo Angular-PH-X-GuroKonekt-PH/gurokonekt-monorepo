@@ -4,27 +4,22 @@ import { VALIDATION_MESSAGES } from '../constants/validation-patterns.constants'
 /**
  * Helper class for form validation and error handling
  */
-export class FormValidationHelper {
-  
-  /**
-   * Check if a form field has validation errors
-   */
-  static hasError(form: FormGroup, fieldName: string): boolean {
-    const control = form.get(fieldName);
-    return !!(control?.invalid && control?.touched);
-  }
+export function hasError(form: FormGroup, fieldName: string): boolean {
+  const control = form.get(fieldName);
+  return !!(control?.invalid && control?.touched);
+}
 
   /**
    * Get formatted error message for a form field
    */
-  static getErrorMessage(form: FormGroup, fieldName: string): string {
-    const control = form.get(fieldName);
-    if (!control?.touched || !control?.errors) {
-      return '';
-    }
-
-    return FormValidationHelper.mapErrorToMessage(fieldName, control.errors);
+export function getFormErrorMessage(form: FormGroup, fieldName: string): string {
+  const control = form.get(fieldName);
+  if (!control?.touched || !control?.errors) {
+    return '';
   }
+
+  return mapErrorToMessage(fieldName, control.errors);
+}
 
   /**
    * Map validation errors to user-friendly messages
@@ -32,9 +27,9 @@ export class FormValidationHelper {
    * @param errors ValidationErrors object from Angular forms
    * @returns User-friendly error message string
    */
-  static mapErrorToMessage(fieldName: string, errors: ValidationErrors): string {
-    const fieldDisplayName = FormValidationHelper.getFieldDisplayName(fieldName);
-    const errorKey = Object.keys(errors)[0];
+export function mapErrorToMessage(fieldName: string, errors: ValidationErrors): string {
+  const fieldDisplayName = getFieldDisplayName(fieldName);
+  const errorKey = Object.keys(errors)[0];
 
     switch (errorKey) {
       case 'required':
@@ -54,7 +49,7 @@ export class FormValidationHelper {
       }
 
       case 'pattern':
-        return FormValidationHelper.getPatternErrorMessage(fieldName);
+        return getPatternErrorMessage(fieldName);
 
       case 'min': {
         const min = errors['min']['min'] as number;
@@ -117,12 +112,12 @@ export class FormValidationHelper {
       default:
         return `${fieldDisplayName} is invalid`;
     }
-  }
+}
 
   /**
    * Get user-friendly field display names
    */
-  private static getFieldDisplayName(fieldName: string): string {
+function getFieldDisplayName(fieldName: string): string {
     const fieldNames: { [key: string]: string } = {
       firstName: 'First name',
       lastName: 'Last name',
@@ -140,13 +135,13 @@ export class FormValidationHelper {
       acceptTerms: 'Terms and conditions'
     };
 
-    return fieldNames[fieldName] || fieldName;
-  }
+  return fieldNames[fieldName] || fieldName;
+}
 
   /**
    * Get specific error messages for pattern validation
    */
-  private static getPatternErrorMessage(fieldName: string): string {
+function getPatternErrorMessage(fieldName: string): string {
     // Use centralized validation messages
     switch (fieldName) {
       case 'password':
@@ -160,20 +155,19 @@ export class FormValidationHelper {
       default:
         return 'Please enter a valid format';
     }
-  }
+}
 
   /**
    * Mark all form fields as touched to trigger validation display
    */
-  static markAllFieldsTouched(form: FormGroup): void {
-    form.markAllAsTouched();
-  }
+export function markAllFieldsTouched(form: FormGroup): void {
+  form.markAllAsTouched();
+}
 
   /**
    * Reset form validation state
    */
-  static resetValidationState(form: FormGroup): void {
-    form.markAsUntouched();
-    form.markAsPristine();
-  }
+export function resetValidationState(form: FormGroup): void {
+  form.markAsUntouched();
+  form.markAsPristine();
 }

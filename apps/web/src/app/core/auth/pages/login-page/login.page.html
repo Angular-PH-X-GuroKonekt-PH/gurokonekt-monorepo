@@ -29,11 +29,11 @@
     >
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
         <!-- Error Message -->
-        @if (errorMessage()) {
+        @if (selectSignal.errorMessage()) {
         <div
           class="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 text-sm"
         >
-          {{ errorMessage() }}
+          {{ selectSignal.errorMessage() }}
         </div>
         }
 
@@ -118,9 +118,9 @@
         <button
           type="submit"
           class="w-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-4 text-base font-bold text-white shadow-lg transition duration-200 hover:shadow-xl hover:-translate-y-1 disabled:cursor-not-allowed disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none disabled:transform-none"
-          [disabled]="isLoading()"
+          [disabled]="selectSignal.isLoginLoading()"
         >
-          @if (isLoading()) {
+          @if (selectSignal.isLoginLoading()) {
           <span class="inline-flex items-center gap-2">
             <span class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"></span>
             Signing in...

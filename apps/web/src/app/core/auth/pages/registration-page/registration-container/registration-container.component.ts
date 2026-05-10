@@ -7,6 +7,7 @@ import { RegistrationState } from '../../../store/registration.state';
 import * as RegistrationActions from '../../../store/registration.actions';
 import { RegistrationMenteePage } from '../registration-mentee-page/registration-mentee.page';
 import { RegistrationMentorPage } from '../registration-mentor-page/registration-mentor.page';
+import { RegistrationSelectors } from '../../../store/registration.selectors';
 
 @Component({
 	selector: 'app-registration-container',
@@ -26,7 +27,7 @@ export class RegistrationContainer implements OnInit {
 		this.store.dispatch(new RegistrationActions.InitializeFromQueryParams(step));
 		
 		// Get initial state and update signal
-		const initialStep = this.store.selectSnapshot(RegistrationState.currentStep);
+		const initialStep = this.store.selectSnapshot(RegistrationSelectors.currentStep);
 		this.currentStep.set(initialStep);
 	}
 

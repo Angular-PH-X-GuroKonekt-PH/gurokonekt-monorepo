@@ -23,50 +23,6 @@ export class AuthState {
   private readonly storage = inject(AuthStorageService);
   private readonly router = inject(Router);
 
-  @Selector()
-  static user(state: AuthStateModel) {
-    return state.user;
-  }
-
-  @Selector()
-  static isAuthenticated(state: AuthStateModel) {
-    return state.isAuthenticated;
-  }
-
-  @Selector()
-  static isLoading(state: AuthStateModel) {
-    return state.isLoading;
-  }
-
-  @Selector()
-  static isLoginLoading(state: AuthStateModel) {
-    return state.isLoginLoading;
-  }
-
-  @Selector()
-  static isMenteeRegisterLoading(state: AuthStateModel) {
-    return state.isMenteeRegisterLoading;
-  }
-
-  @Selector()
-  static isMentorRegisterLoading(state: AuthStateModel) {
-    return state.isMentorRegisterLoading;
-  }
-
-  @Selector()
-  static successMessage(state: AuthStateModel) {
-    return state.successMessage;
-  }
-
-  @Selector()
-  static errorMessage(state: AuthStateModel) {
-    return state.errorMessage;
-  }
-
-  @Selector()
-  static lastRegisteredEmail(state: AuthStateModel) {
-    return state.lastRegisteredEmail;
-  }
 
   @Action(AuthActions.Login)
   login(ctx: StateContext<AuthStateModel>, action: AuthActions.Login) {

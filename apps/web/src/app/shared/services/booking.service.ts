@@ -11,7 +11,7 @@ import {
   handleApiErrorWithFallback,
   validateApiResponse,
 } from '../helpers/api-response.helper';
-import { buildApiUrl } from '../helpers/api.helper';
+import { buildApiUrl } from '../utils/api.util';
 
 @Injectable({
   providedIn: 'root',

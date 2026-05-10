@@ -4,70 +4,64 @@ import { EXPERTISE_OPTIONS } from '../constants/expertise.constants';
 /**
  * Helper for managing expertise selection in forms
  */
-export class ExpertiseSelectionHelper {
-  
-  /**
-   * Standard expertise options for mentor registration
-   */
-  static readonly EXPERTISE_OPTIONS = EXPERTISE_OPTIONS;
+export const expertiseOptions = EXPERTISE_OPTIONS;
 
-  /**
-   * Handle expertise checkbox change
-   */
-  static handleExpertiseChange(
-    event: Event, 
-    expertise: string, 
-    form: FormGroup,
-    fieldName = 'areasOfExpertise'
-  ): void {
-    const checkbox = event.target as HTMLInputElement;
-    const currentAreas = form.get(fieldName)?.value || [];
-    
-    if (checkbox.checked) {
-      if (!currentAreas.includes(expertise)) {
-        currentAreas.push(expertise);
-      }
-    } else {
-      const index = currentAreas.indexOf(expertise);
-      if (index > -1) {
-        currentAreas.splice(index, 1);
-      }
+/**
+ * Handle expertise checkbox change
+ */
+export function handleExpertiseChange(
+  event: Event,
+  expertise: string,
+  form: FormGroup,
+  fieldName = 'areasOfExpertise'
+): void {
+  const checkbox = event.target as HTMLInputElement;
+  const currentAreas = form.get(fieldName)?.value || [];
+
+  if (checkbox.checked) {
+    if (!currentAreas.includes(expertise)) {
+      currentAreas.push(expertise);
     }
-    
-    form.patchValue({ [fieldName]: currentAreas });
+  } else {
+    const index = currentAreas.indexOf(expertise);
+    if (index > -1) {
+      currentAreas.splice(index, 1);
+    }
   }
 
-  /**
-   * Check if expertise is selected
-   */
-  static isExpertiseSelected(
-    expertise: string, 
-    form: FormGroup,
-    fieldName = 'areasOfExpertise'
-  ): boolean {
-    const currentAreas = form.get(fieldName)?.value || [];
-    return currentAreas.includes(expertise);
-  }
+  form.patchValue({ [fieldName]: currentAreas });
+}
 
-  /**
-   * Get selected expertise count
-   */
-  static getSelectedExpertiseCount(
-    form: FormGroup,
-    fieldName = 'areasOfExpertise'
-  ): number {
-    const currentAreas = form.get(fieldName)?.value || [];
-    return currentAreas.length;
-  }
+/**
+ * Check if expertise is selected
+ */
+export function isExpertiseSelected(
+  expertise: string,
+  form: FormGroup,
+  fieldName = 'areasOfExpertise'
+): boolean {
+  const currentAreas = form.get(fieldName)?.value || [];
+  return currentAreas.includes(expertise);
+}
 
-  /**
-   * Validate minimum expertise selection
-   */
-  static validateMinimumExpertise(
-    form: FormGroup,
-    minCount = 1,
-    fieldName = 'areasOfExpertise'
-  ): boolean {
-    return ExpertiseSelectionHelper.getSelectedExpertiseCount(form, fieldName) >= minCount;
-  }
+/**
+ * Get selected expertise count
+ */
+export function getSelectedExpertiseCount(
+  form: FormGroup,
+  fieldName = 'areasOfExpertise'
+): number {
+  const currentAreas = form.get(fieldName)?.value || [];
+  return currentAreas.length;
+}
+
+/**
+ * Validate minimum expertise selection
+ */
+export function validateMinimumExpertise(
+  form: FormGroup,
+  minCount = 1,
+  fieldName = 'areasOfExpertise'
+): boolean {
+  return getSelectedExpertiseCount(form, fieldName) >= minCount;
 }

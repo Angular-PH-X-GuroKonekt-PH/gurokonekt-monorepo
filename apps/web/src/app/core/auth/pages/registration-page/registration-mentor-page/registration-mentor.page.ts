@@ -9,10 +9,15 @@ import { BaseStepperRegistrationComponent } from '../../../../../shared/base-for
 import { CustomValidators } from '../../../../../shared/validators/custom-validators';
 import { ToastService } from '../../../../../shared/services/toast.service';
 import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
-import { LocationDataHelper } from 'apps/web/src/app/shared/helpers';
-import { ExpertiseSelectionHelper } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
-import { formatPhoneToE164 } from 'apps/web/src/app/shared/helpers/phone.formatter';
+import { getCountryDisplayName, getLanguageDisplayName } from 'apps/web/src/app/shared/utils';
+import {
+  expertiseOptions,
+  handleExpertiseChange,
+  isExpertiseSelected,
+} from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
+import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { AuthState } from '../../../store/auth.state';
+import { AuthSelectors } from '../../../store/auth.selectors';
 
 @Component({
   selector: 'app-registration-mentor-page',
@@ -28,13 +33,13 @@ export class RegistrationMentorPage
   private readonly toastService = inject(ToastService);
 
   protected readonly isMentorRegisterLoading = this.store.selectSignal(
-    AuthState.isMentorRegisterLoading
+    AuthSelectors.isMentorRegisterLoading
   );
   protected readonly errorMessage = this.store.selectSignal(
-    AuthState.errorMessage
+    AuthSelectors.errorMessage
   );
   protected readonly successMessage = this.store.selectSignal(
-    AuthState.successMessage
+    AuthSelectors.successMessage
   );
 
   protected readonly totalSteps = 5;
@@ -47,8 +52,7 @@ export class RegistrationMentorPage
   ];
 
   protected readonly registerForm: FormGroup;
-  protected readonly expertiseOptions =
-    ExpertiseSelectionHelper.EXPERTISE_OPTIONS;
+  protected readonly expertiseOptions = expertiseOptions;
   protected selectedFiles: File[] = [];
 
   constructor() {
@@ -140,18 +144,11 @@ export class RegistrationMentorPage
   }
 
   protected onExpertiseChange(event: Event, expertise: string): void {
-    ExpertiseSelectionHelper.handleExpertiseChange(
-      event,
-      expertise,
-      this.registerForm
-    );
+    handleExpertiseChange(event, expertise, this.registerForm);
   }
 
   protected isExpertiseSelected(expertise: string): boolean {
-    return ExpertiseSelectionHelper.isExpertiseSelected(
-      expertise,
-      this.registerForm
-    );
+    return isExpertiseSelected(expertise, this.registerForm);
   }
 
   protected onFilesSelected(event: Event): void {
@@ -218,11 +215,11 @@ export class RegistrationMentorPage
 
   protected getCountryLabel(value: string | null): string {
     if (!value) return 'Not specified';
-    return LocationDataHelper.getCountryDisplayName(value);
+    return getCountryDisplayName(value);
   }
 
   protected getLanguageLabel(value: string | null): string {
     if (!value) return 'English';
-    return LocationDataHelper.getLanguageDisplayName(value);
+    return getLanguageDisplayName(value);
   }
 }

@@ -19,6 +19,7 @@ import { FilterButton } from 'apps/web/src/app/shared/components/filter-button/f
 import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card.component';
 import { SectionTitle } from 'apps/web/src/app/shared/components/section-title/section-title.component';
 import { MenteeSessionBookingCard } from '../../components/mentee-session-booking-card/mentee-session-booking-card';
+import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
 
 @Component({
   selector: 'app-mentee-booking-overview-page',
@@ -37,7 +38,7 @@ export class MenteeBookingOverviewPage {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
 
-  protected readonly authUser = this.store.selectSignal(AuthState.user);
+  protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
   protected readonly bookingStatus = BookingStatus;
   protected readonly selectedFilter = signal<BookingFilter>('ALL');

@@ -13,6 +13,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { AuthState } from '../../../../core/auth/store/auth.state';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
+import { AuthSelectors } from '../../../auth/store/auth.selectors';
 
 @Component({
   selector: 'app-profile-settings-page',
@@ -43,7 +44,7 @@ export class ProfileSettingsPageComponent implements OnInit {
   protected avatarError = signal<string | null>(null);
   
   // Get current user from auth state
-  protected readonly currentUser = this.store.selectSignal(AuthState.user);
+  protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
   
   // Expose enums to template
   protected readonly MenteePreferredSessionType = MenteePreferredSessionType;

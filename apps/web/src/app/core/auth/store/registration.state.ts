@@ -10,25 +10,6 @@ import * as RegistrationActions from '../../auth/store/registration.actions';
 @Injectable()
 export class RegistrationState {
 
-  @Selector()
-  static currentStep(state: RegistrationStateModel): RegistrationStep {
-    return state.currentStep;
-  }
-
-  @Selector()
-  static isChooseRole(state: RegistrationStateModel): boolean {
-    return state.currentStep === 'choose-role';
-  }
-
-  @Selector()
-  static isMenteeStep(state: RegistrationStateModel): boolean {
-    return state.currentStep === 'mentee';
-  }
-
-  @Selector()
-  static isMentorStep(state: RegistrationStateModel): boolean {
-    return state.currentStep === 'mentor';
-  }
 
   @Action(RegistrationActions.SetStep)
   setStep(ctx: StateContext<RegistrationStateModel>, action: RegistrationActions.SetStep) {

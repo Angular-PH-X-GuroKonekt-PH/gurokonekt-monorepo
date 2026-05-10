@@ -4,7 +4,7 @@ import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs';
 import { MentorSearchFilter, MentorSearchRequest, MentorSearchResultInterface } from '@gurokonekt/models/interfaces/search/search.model';
 import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
-import { buildApiUrl } from '../../../shared/helpers/api.helper';
+import { buildApiUrl } from '../../../shared/utils/api.util';
 
 @Injectable({ providedIn: 'root' })
 export class MentorSearchService {

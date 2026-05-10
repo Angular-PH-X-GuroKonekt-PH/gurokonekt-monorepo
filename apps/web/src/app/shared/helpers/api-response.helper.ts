@@ -2,12 +2,8 @@ import { HttpErrorResponse } from '@angular/common/http';
 import { Observable, of, throwError } from 'rxjs';
 
 import { ApiResponse } from '../interfaces/api-response.interface';
-import { HttpErrorHelper } from './http-error.helper';
-
-export interface ApiServiceError {
-  message: string;
-  statusCode: number;
-}
+import { ApiServiceError } from '../interfaces/api-service-error.interface';
+import { getErrorMessage } from '../utils/http-error.util';
 
 export function validateApiResponse<T>(
   response: ApiResponse<T>,
@@ -29,7 +25,7 @@ export function handleApiError(
 ): Observable<never> {
   if (error instanceof HttpErrorResponse) {
     return throwError(() => ({
-      message: HttpErrorHelper.getErrorMessage(error),
+      message: getErrorMessage(error),
       statusCode: error.status || 500,
     }));
   }
@@ -56,7 +52,7 @@ export function handleApiErrorWithFallback<T>(
     const normalizedError =
       error instanceof HttpErrorResponse
         ? {
-            message: HttpErrorHelper.getErrorMessage(error),
+            message: getErrorMessage(error),
             statusCode: error.status || 500,
           }
         : 'statusCode' in error && 'message' in error

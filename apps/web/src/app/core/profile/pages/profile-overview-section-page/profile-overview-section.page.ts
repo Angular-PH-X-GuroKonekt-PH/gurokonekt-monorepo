@@ -4,6 +4,7 @@ import { Store } from '@ngxs/store';
 import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
 import { ProfileService } from '../../profile.service';
 import { AuthState } from '../../../../core/auth/store/auth.state';
+import { AuthSelectors } from '../../../auth/store/auth.selectors';
 
 interface AvatarRecord {
   publicUrl?: string;
@@ -35,7 +36,7 @@ export class ProfileOverviewSectionPage {
   private readonly store = inject(Store);
   private readonly profileService = inject(ProfileService);
 
-  private readonly user = this.store.selectSignal(AuthState.user);
+  private readonly user = this.store.selectSignal(AuthSelectors.user);
 
   protected readonly isLoading = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
