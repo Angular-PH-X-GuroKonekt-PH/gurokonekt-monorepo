@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 
 import { APP_ROUTES } from './shared/constants/routes';
 import { dashboardAccessGuard } from './shared/guards/dashboard-access.guard';
+import { profileSetupAccessGuard } from './shared/guards/profile-setup-access.guard';
 import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
 import { menteeCanMatch } from './shared/guards/mentee-can-match.guard';
 import { mentorCanMatch } from './shared/guards/mentor-can-match.guard';
@@ -29,6 +30,7 @@ export const appRoutes: Route[] = [
   {
     path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
     canMatch: [menteeCanMatch],
+    canActivate: [profileSetupAccessGuard],
     loadComponent: () =>
       import('./features/mentee/pages/mentee-post-login-page/mentee-post-login.page').then(
         (m) => m.MenteePostLoginPage
@@ -38,6 +40,7 @@ export const appRoutes: Route[] = [
   {
     path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
     canMatch: [mentorCanMatch],
+    canActivate: [profileSetupAccessGuard],
     loadComponent: () =>
       import('./features/mentor/pages/mentor-post-login-page/mentor-post-login.page').then(
         (m) => m.MentorPostLoginPage
