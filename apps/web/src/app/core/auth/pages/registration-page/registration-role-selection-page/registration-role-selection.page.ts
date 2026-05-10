@@ -1,5 +1,5 @@
 import { Component, signal, output } from '@angular/core';
-import { Role } from '@gurokonekt/models';
+import { Role } from '@gurokonekt/models/interfaces/auth/user.types';
 import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';
 
 @Component({

@@ -1,4 +1,6 @@
-import { AuthUser, RegisterMenteeRequest, RegisterMentorRequest } from '@gurokonekt/models';
+import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
+import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
+import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
 import type {
   UpdateMenteeProfileInterface,
   UpdateMentorProfileInterface,

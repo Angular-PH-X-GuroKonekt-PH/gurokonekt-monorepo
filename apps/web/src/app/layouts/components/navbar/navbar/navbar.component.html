@@ -26,10 +26,18 @@
         </button>
 
         <a [routerLink]="'/dashboard'" class="flex items-center gap-3 ms-2 md:me-24">
+          @if (userRole() === 'mentee') {
+          <img src="assets/logos/logo-light.svg" class="h-12 me-1" alt="Guro Konekt Logo" />
+          <div class="flex items-center justify-center gap-1">
+            <span class="text-xl font-bold text-blue-900">Guro</span>
+            <span class="text-xl font-bold text-orange-500">Konekt</span>
+          </div>
+          } @else {
           <div class="hidden sm:block">
             <p class="text-sm font-semibold text-heading">GuroKonekt</p>
             <p class="text-xs text-body">Mentor Workspace</p>
           </div>
+          }
         </a>
       </div>
 
@@ -40,6 +48,12 @@
           (click)="toggleNotification($event)"
           class="relative mr-8 inline-flex items-center text-body hover:text-heading focus:outline-none">
           <app-icon [name]="'bell'" class="h-6 w-6 transition-transform group-hover:scale-110"></app-icon>
+          @if (unreadCount() > 0) {
+          <span
+            class="absolute -right-1 -top-1 flex h-5 min-w-5 items-center justify-center rounded-full border-2 border-white bg-orange-500 px-1 text-[11px] font-semibold text-white">
+            {{ unreadCount() }}
+          </span>
+          }
         </button>
 
         <div
@@ -52,13 +66,54 @@
           </div>
 
           <div class="divide-y divide-default py-2">
-            <p class="px-4 py-6 text-center text-sm text-body">No notifications yet.</p>
+            @if (isNotificationsLoading()) {
+            <div class="space-y-3 px-4 py-4">
+              <app-notification-list-skeleton [count]="3" [compact]="true" />
+            </div>
+            } @else if (notifications().length === 0) {
+            <div class="px-5 py-6 text-center">
+              <div
+                class="mx-auto mb-3 flex h-11 w-11 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100">
+                <app-icon name="bell" class="h-5 w-5 text-orange-500"></app-icon>
+              </div>
+              <p class="text-sm font-semibold text-heading">No notifications yet</p>
+              <p class="mt-1 text-xs leading-5 text-body">
+                Updates about your bookings and sessions will appear here.
+              </p>
+            </div>
+            } @else {
+            @for (notif of notifications(); track notif.id) {
+            <app-navbar-notification-item
+              [notification]="notif"
+              (markAsRead)="markAsRead($event)" />
+            }
+            }
           </div>
 
           <a
             [routerLink]="'/notifications'"
+            (click)="toggleNotification($event)"
             class="block rounded-b-base bg-neutral-secondary-medium py-2 text-center text-sm font-medium text-body hover:bg-neutral-tertiary-medium">
-            View all
+            <div class="inline-flex items-center">
+              <svg
+                class="me-1.5 h-5 w-5 text-body"
+                aria-hidden="true"
+                xmlns="http://www.w3.org/2000/svg"
+                width="24"
+                height="24"
+                fill="none"
+                viewBox="0 0 24 24">
+                <path
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z" />
+                <path
+                  stroke="currentColor"
+                  stroke-width="2"
+                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z" />
+              </svg>
+              View all
+            </div>
           </a>
         </div>
 

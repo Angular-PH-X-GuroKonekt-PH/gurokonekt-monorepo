@@ -5,15 +5,17 @@ import { of } from 'rxjs';
 import { PasswordVisibilityHelper, LocationDataHelper } from '../helpers';
 import { FormSubmissionHelper } from '../helpers/form-submission.helper';
 import { detectCountryFromPhone } from '../helpers/phone.formatter';
-import { NavigationHelper } from '../helpers';
 import { SignalStateHelper } from '../helpers/signal-state.helper';
 import { getTimezoneForCountry } from '../helpers/timezone.helper';
 import { BaseFormComponent } from './base-form.component';
 import { getSelectedPhoneCountry, getPhoneFormatPlaceholder, getPhoneErrorMessage } from '@gurokonekt/utils';
+import { Router } from '@angular/router';
+import { APP_ROUTES } from '../constants/routes';
 
 
 export abstract class BaseRegistrationComponent extends BaseFormComponent {
   protected readonly fb = inject(FormBuilder);
+  protected readonly router = inject(Router);
   
   protected readonly passwordHelper = new PasswordVisibilityHelper();
   protected readonly confirmPasswordHelper = new PasswordVisibilityHelper();
@@ -129,10 +131,9 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
     return LocationDataHelper.getLanguageDisplayName(langValue);
   }
   
-  private readonly navigationHelper = inject(NavigationHelper);
 
   protected navigateToLogin(): void {
-    this.navigationHelper.navigateToLogin();
+    this.router.navigate([APP_ROUTES.LOGIN]);
   }
   
   protected preSubmissionValidation(): boolean {

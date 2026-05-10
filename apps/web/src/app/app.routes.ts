@@ -6,12 +6,13 @@ import { profileSetupAccessGuard } from './shared/guards/profile-setup-access.gu
 import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
 import { menteeCanMatch } from './shared/guards/mentee-can-match.guard';
 import { mentorCanMatch } from './shared/guards/mentor-can-match.guard';
-import { MenteeLayout } from './layouts/mentee-layout/mentee.layout';
-import { MentorLayout } from './layouts/mentor-layout/mentor.layout';
+import { Layout } from './layouts/layout';
 
 export const appRoutes: Route[] = [
+
+  // Public routes
   {
-    path: APP_ROUTES.REGISTER.replace('/', ''),
+    path: APP_ROUTES.REGISTER,
     canActivate: [unauthenticatedGuard],
     loadComponent: () =>
       import('./core/auth/pages/registration-page/registration-container/registration-container.component').then(
@@ -20,15 +21,15 @@ export const appRoutes: Route[] = [
     title: 'Register',
   },
   {
-    path: APP_ROUTES.LOGIN.replace('/', ''),
+    path: APP_ROUTES.LOGIN,
     canActivate: [unauthenticatedGuard],
     loadComponent: () => import('./core/auth/pages/login-page/login.page').then((m) => m.LoginPage),
     title: 'Login',
   },
 
-  // /profile-setup — mentee sees MenteePostLoginPage, mentor sees MentorPostLoginPage
+  // profile-setup — mentee sees MenteePostLoginPage, mentor sees MentorPostLoginPage
   {
-    path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
+    path: APP_ROUTES.PROFILE_SETUP,
     canMatch: [menteeCanMatch],
     canActivate: [profileSetupAccessGuard],
     loadComponent: () =>
@@ -38,7 +39,7 @@ export const appRoutes: Route[] = [
     title: 'Complete Your Profile',
   },
   {
-    path: APP_ROUTES.PROFILE_SETUP.replace('/', ''),
+    path: APP_ROUTES.PROFILE_SETUP,
     canMatch: [mentorCanMatch],
     canActivate: [profileSetupAccessGuard],
     loadComponent: () =>
@@ -48,50 +49,23 @@ export const appRoutes: Route[] = [
     title: 'Complete Your Mentor Profile',
   },
 
-  // /dashboard — mentee role uses MenteeLayout
+  // MENTEE ROUTES
   {
-    path: APP_ROUTES.DASHBOARD.replace('/', ''),
+    path: '',
     canMatch: [menteeCanMatch],
     canActivate: [dashboardAccessGuard],
-    component: MenteeLayout,
+    component: Layout,
     children: [
       {
-        path: '',
+        path: APP_ROUTES.DASHBOARD,
         loadComponent: () =>
           import('./features/mentee/pages/mentee-dashboard-page/mentee-dashboard.page').then(
             (m) => m.MenteeDashboardPage
           ),
         title: 'Dashboard',
       },
-    ],
-  },
-  // /dashboard — mentor role uses MentorLayout
-  {
-    path: APP_ROUTES.DASHBOARD.replace('/', ''),
-    canMatch: [mentorCanMatch],
-    canActivate: [dashboardAccessGuard],
-    component: MentorLayout,
-    children: [
-      {
-        path: '',
-        loadComponent: () =>
-          import('./features/mentor/pages/mentor-dashboard-page/mentor-dashboard.page').then(
-            (m) => m.MentorDashboardPage
-          ),
-        title: 'Dashboard',
-      },
-    ],
-  },
-
-  // Mentee-only sub-pages — no /mentee/ prefix
-  {
-    path: '',
-    canMatch: [menteeCanMatch],
-    canActivate: [dashboardAccessGuard],
-    component: MenteeLayout,
-    children: [
-      {
-        path: APP_ROUTES.FIND_MENTORS.replace('/', ''),
+           {
+        path: APP_ROUTES.FIND_MENTORS,
         loadComponent: () =>
           import('./features/mentee/pages/mentee-find-mentors-page/mentee-find-mentors.page').then(
             (m) => m.MenteeFindMentorsPage
@@ -99,7 +73,7 @@ export const appRoutes: Route[] = [
         title: 'Find Mentors',
       },
       {
-        path: APP_ROUTES.BOOKING_OVERVIEW.replace('/', ''),
+        path: APP_ROUTES.BOOKING_OVERVIEW,
         loadComponent: () =>
           import('./features/mentee/pages/mentee-booking-overview-page/mentee-booking-overview.page').then(
             (m) => m.MenteeBookingOverviewPage
@@ -107,7 +81,7 @@ export const appRoutes: Route[] = [
         title: 'Booking Overview',
       },
       {
-        path: APP_ROUTES.NOTIFICATIONS.replace('/', ''),
+        path: APP_ROUTES.NOTIFICATIONS,
         loadComponent: () =>
           import('./shared/components/notifications/notifications.component').then(
             (m) => m.Notifications
@@ -116,15 +90,23 @@ export const appRoutes: Route[] = [
       },
     ],
   },
-  // Mentor-only sub-pages
+  // MENTOR ROUTES
   {
     path: '',
     canMatch: [mentorCanMatch],
     canActivate: [dashboardAccessGuard],
-    component: MentorLayout,
+    component: Layout,
     children: [
       {
-        path: APP_ROUTES.NOTIFICATIONS.replace('/', ''),
+        path: APP_ROUTES.DASHBOARD,
+        loadComponent: () =>
+          import('./features/mentor/pages/mentor-dashboard-page/mentor-dashboard.page').then(
+            (m) => m.MentorDashboardPage
+          ),
+        title: 'Dashboard',
+      },
+            {
+        path: APP_ROUTES.NOTIFICATIONS,
         loadComponent: () =>
           import('./shared/components/notifications/notifications.component').then(
             (m) => m.Notifications
@@ -133,7 +115,6 @@ export const appRoutes: Route[] = [
       },
     ],
   },
-
   {
     path: APP_ROUTES.SETTINGS.replace('/', ''),
     canActivate: [dashboardAccessGuard],

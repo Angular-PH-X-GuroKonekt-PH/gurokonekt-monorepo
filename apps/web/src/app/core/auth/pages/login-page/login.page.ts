@@ -7,10 +7,12 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { PasswordVisibilityHelper } from '../../../../shared/helpers';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BaseFormComponent } from '../../../../shared/base-form/base-form.component';
-import { NavigationHelper } from '../../../../shared/helpers';
 import { AuthState } from '../../store/auth.state';
 import * as AuthActions from '../../store/auth.actions';
 import { FormSubmissionHelper } from '../../../../shared/helpers/form-submission.helper';
+import { Router } from '@angular/router'; 
+import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
+import { requiresProfileSetup } from 'apps/web/src/app/shared/helpers/profile-completion.helper';
 
 @Component({
   selector: 'app-login-page',
@@ -21,8 +23,8 @@ import { FormSubmissionHelper } from '../../../../shared/helpers/form-submission
 export class LoginPage extends BaseFormComponent {
   private readonly store = inject(Store);
   private readonly fb = inject(FormBuilder);
+  private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
-  private readonly navigationHelper = inject(NavigationHelper);
   private readonly passwordHelper = new PasswordVisibilityHelper();
 
   protected readonly showPassword = this.passwordHelper.showPassword;
@@ -66,12 +68,10 @@ export class LoginPage extends BaseFormComponent {
 
       const user = this.store.selectSnapshot(AuthState.user);
       if (user) {
-        this.toastService.success('Login successful!', 'Welcome Back!');
-        this.navigationHelper.navigateToDashboard(
-          user.role,
-          user.isProfileComplete,
-          user.isMentorProfileComplete
-        );
+        if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
+            this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
+        }
+        this.router.navigate([APP_ROUTES.DASHBOARD]);
       }
     } catch {
       // Error is already reflected in the errorMessage signal via state
@@ -79,7 +79,7 @@ export class LoginPage extends BaseFormComponent {
   }
 
   protected navigateToRegister(): void {
-    this.navigationHelper.navigateToRoleSelection();
+    this.router.navigate([APP_ROUTES.REGISTER]);
   }
 
   protected navigateToForgotPassword(): void {

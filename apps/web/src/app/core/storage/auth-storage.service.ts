@@ -1,5 +1,5 @@
 import { Injectable } from '@angular/core';
-import { AuthUser } from '@gurokonekt/models';
+import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
 
 const TOKEN_KEY = 'auth_token';
 const USER_KEY = 'auth_user';
