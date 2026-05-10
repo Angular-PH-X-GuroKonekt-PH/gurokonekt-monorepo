@@ -31,15 +31,19 @@
     @if (bottomNavItems().length || showLogout()) {
       <div class="mt-auto px-4 pb-2">
         <div class="border-t border-gray-200 pt-4">
-          @for (item of bottomNavItems(); track item.route) {
-            <a [routerLink]="[item.route]"
-              routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
-              [routerLinkActiveOptions]="{exact: false}"
-              class="flex items-center gap-3 px-4 py-3 text-gray-600 font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
-              <app-icon [name]="item.icon" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
-              <span class="truncate">{{ item.label }}</span>
-            </a>
-          }
+          <ul class="space-y-2 font-medium">
+            @for (item of bottomNavItems(); track item.route) {
+              <li>
+                <a [routerLink]="[item.route]"
+                  routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+                  [routerLinkActiveOptions]="{exact: false}"
+                  class="flex items-center gap-3 px-4 py-3 text-gray-600 font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group relative">
+                  <app-icon [name]="item.icon" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
+                  <span class="truncate">{{ item.label }}</span>
+                </a>
+              </li>
+            }
+          </ul>
           @if (showLogout()) {
             <button type="button" (click)="logout()"
               class="flex w-full items-center gap-3 px-4 py-3 text-gray-600 font-medium rounded-lg hover:bg-gray-50 hover:text-gray-900 transition-all group">
