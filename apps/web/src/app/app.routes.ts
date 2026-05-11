@@ -105,7 +105,23 @@ export const appRoutes: Route[] = [
           ),
         title: 'Dashboard',
       },
-            {
+      {
+        path: APP_ROUTES.BOOKING_OVERVIEW,
+        loadComponent: () =>
+          import('./features/mentor/pages/mentor-booking-overview-page/mentor-booking-overview.page').then(
+            (m) => m.MentorBookingOverviewPage
+          ),
+        title: 'Booking Overview',
+      },
+      {
+        path: APP_ROUTES.MANAGE_AVAILABILITY,
+        loadComponent: () =>
+          import('./features/mentor/pages/mentor-manage-availability-page/mentor-manage-availability.page').then(
+            (m) => m.MentorManageAvailabilityPage
+          ),
+        title: 'Manage Availability',
+      },            
+      {
         path: APP_ROUTES.NOTIFICATIONS,
         loadComponent: () =>
           import('./shared/components/notifications/notifications.component').then(

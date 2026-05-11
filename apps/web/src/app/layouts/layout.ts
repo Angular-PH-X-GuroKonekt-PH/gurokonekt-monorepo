@@ -22,9 +22,9 @@ export class Layout {
   ];
 
   protected readonly mentorItems: NavItem[] = [
-    { label: 'Dashboard', route: APP_ROUTES.DASHBOARD, icon: 'chart-bar' },
-    { label: 'Bookings',   route: APP_ROUTES.BOOKING_OVERVIEW,   icon: 'users' },
-    { label: 'Manage Availability',  route: APP_ROUTES.MANAGE_AVAILABILITY,  icon: 'book-open' },
+    { label: 'Dashboard', route: APP_ROUTES.DASHBOARD, icon: 'squares-2x2' },
+    { label: 'Bookings',   route: APP_ROUTES.BOOKING_OVERVIEW,   icon: 'book-open' },
+    { label: 'Availability',  route: APP_ROUTES.MANAGE_AVAILABILITY,  icon: 'calendar-days' },
   ];
 
   protected readonly bottomNavItems: NavItem[] = [
