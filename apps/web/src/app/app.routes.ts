@@ -120,7 +120,7 @@ export const appRoutes: Route[] = [
             (m) => m.MentorManageAvailabilityPage
           ),
         title: 'Manage Availability',
-      },            
+      },      
       {
         path: APP_ROUTES.NOTIFICATIONS,
         loadComponent: () =>
