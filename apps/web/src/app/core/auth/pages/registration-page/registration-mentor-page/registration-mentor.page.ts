@@ -8,7 +8,7 @@ import { IconComponent } from '../../../../../shared/components/icon/icon.compon
 import { BaseStepperRegistrationComponent } from '../../../../../shared/base-form/base-stepper-registration.component';
 import { CustomValidators } from '../../../../../shared/validators/custom-validators';
 import { ToastService } from '../../../../../shared/services/toast.service';
-import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
+import { FORM_FIELD_VALIDATORS, VALIDATION_PATTERNS } from 'apps/web/src/app/shared/constants';
 import { getCountryDisplayName, getLanguageDisplayName } from 'apps/web/src/app/shared/utils';
 import {
   expertiseOptions,
@@ -76,7 +76,7 @@ export class RegistrationMentorPage
           null,
           [Validators.required, Validators.min(1), Validators.max(60)],
         ],
-        linkedInUrl: ['', [Validators.pattern(/^(?:|https:\/\/(?:www\.)?linkedin\.com\/.*)$/)]],
+        linkedInUrl: ['', [Validators.pattern(VALIDATION_PATTERNS.LINKEDIN_URL)]],
         files: [[]],
         acceptTerms: [false, FORM_FIELD_VALIDATORS.ACCEPT_TERMS],
       },
