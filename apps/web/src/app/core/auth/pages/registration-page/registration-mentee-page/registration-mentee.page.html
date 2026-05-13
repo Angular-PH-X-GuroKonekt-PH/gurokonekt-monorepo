@@ -48,37 +48,38 @@
           >
             @if (currentStep() > $index + 1) {
             <!-- Completed step icon -->
-            <app-icon name="check-mark" class="w-6 h-6 text-green-600"></app-icon>
+            <app-icon
+              name="check-mark"
+              class="w-6 h-6 text-green-600"
+            ></app-icon>
             } @else {
             <span class="text-lg font-extrabold">{{ $index + 1 }}</span>
             }
           </div>
-          
+
           <!-- Connecting Line -->
           @if ($index < stepTitles.length - 1) {
-          <div 
+          <div
             class="absolute top-6 left-1/2 w-full h-0.5 -z-10"
             [class]="currentStep() > $index + 1 ? 'bg-green-500' : 'bg-gray-200'"
-            style="transform: translateX(50%);">
-          </div>
+            style="transform: translateX(50%)"
+          ></div>
           }
 
           <!-- Step Info -->
           <div class="mt-4 text-center max-w-32">
-            <h3 
+            <h3
               class="text-sm font-semibold leading-tight mb-1"
               [class]="currentStep() === $index + 1 ? 'text-orange-600' : 
                        currentStep() > $index + 1 ? 'text-green-600' : 
-                       'text-gray-500'">
+                       'text-gray-500'"
+            >
               {{ stepTitle }}
             </h3>
             <p class="text-xs text-gray-500 leading-relaxed">
-              @switch ($index + 1) {
-                @case (1) { Tell us about yourself }
-                @case (2) { Create a secure password }
-                @case (3) { Location & preferences }
-                @case (4) { Review and accept terms }
-              }
+              @switch ($index + 1) { @case (1) { Tell us about yourself } @case
+              (2) { Create a secure password } @case (3) { Location &
+              preferences } @case (4) { Review and accept terms } }
             </p>
           </div>
         </div>
@@ -90,7 +91,11 @@
     <div
       class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-10 sm:p-12 lg:p-16"
     >
-      <form [formGroup]="registerForm" (ngSubmit)="onSubmit()" (keydown.escape)="closePhoneCountryDropdown()">
+      <form
+        [formGroup]="registerForm"
+        (ngSubmit)="onSubmit()"
+        (keydown.escape)="closePhoneCountryDropdown()"
+      >
         <!-- Step 1: Personal Information -->
         @if (currentStep() === 1) {
         <div class="space-y-6">
@@ -130,7 +135,7 @@
               for="middleName"
               class="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Middle Name/Initial <span class="text-gray-500 text-xs">(Optional)</span>
+              Middle Name/Initial
             </label>
             <input
               type="text"
@@ -176,7 +181,7 @@
               for="suffix"
               class="block text-sm font-semibold text-gray-700 mb-2"
             >
-              Suffix <span class="text-gray-500 text-xs">(Optional)</span>
+              Suffix
             </label>
             <input
               type="text"
@@ -235,14 +240,24 @@
                   class="flex items-center gap-2 h-full px-4 border-r-2 border-gray-200 bg-gray-50 rounded-l-xl hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[7rem]"
                   [attr.aria-label]="'Select country code, currently ' + getSelectedPhoneCountry().label"
                 >
-                  <span class="text-xl leading-none">{{ getSelectedPhoneCountry().flag }}</span>
-                  <span class="text-sm font-medium text-gray-700 whitespace-nowrap leading-none">{{ getSelectedPhoneCountry().phoneCode }}</span>
-                  <app-icon name="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0"></app-icon>
+                  <span class="text-xl leading-none"
+                    >{{ getSelectedPhoneCountry().flag }}</span
+                  >
+                  <span
+                    class="text-sm font-medium text-gray-700 whitespace-nowrap leading-none"
+                    >{{ getSelectedPhoneCountry().phoneCode }}</span
+                  >
+                  <app-icon
+                    name="chevron-down"
+                    class="w-4 h-4 text-gray-400 flex-shrink-0"
+                  ></app-icon>
                 </button>
 
                 <!-- Country Dropdown -->
                 @if (showPhoneCountryDropdown()) {
-                <div class="absolute top-full left-0 z-50 w-80 max-h-60 overflow-y-auto bg-white border-2 border-gray-200 rounded-xl shadow-lg mt-1">
+                <div
+                  class="absolute top-full left-0 z-50 w-80 max-h-60 overflow-y-auto bg-white border-2 border-gray-200 rounded-xl shadow-lg mt-1"
+                >
                   @for (country of countries; track country.value) {
                   <button
                     type="button"
@@ -256,8 +271,12 @@
                   >
                     <span class="text-xl">{{ country.flag }}</span>
                     <div class="flex-1 min-w-0">
-                      <div class="text-sm font-medium text-gray-900 truncate">{{ country.label }}</div>
-                      <div class="text-xs text-gray-500">{{ country.phoneCode }}</div>
+                      <div class="text-sm font-medium text-gray-900 truncate">
+                        {{ country.label }}
+                      </div>
+                      <div class="text-xs text-gray-500">
+                        {{ country.phoneCode }}
+                      </div>
                     </div>
                   </button>
                   }
@@ -280,7 +299,7 @@
             <p class="mt-1 text-sm text-red-600">
               {{ getPhoneErrorMessage() }}
             </p>
-            } 
+            }
           </div>
         </div>
         }
@@ -510,17 +529,7 @@
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
               <div>
                 <span class="text-gray-600">Name:</span>
-                <span class="ml-2 font-medium"
-                  >{{ registerForm.get('firstName')?.value }}
-                  @if (registerForm.get('middleName')?.value) {
-                    {{ registerForm.get('middleName')?.value }}
-                  }
-                  {{ registerForm.get('lastName')?.value }}
-                  @if (registerForm.get('suffix')?.value) {
-                    {{ registerForm.get('suffix')?.value }}
-                  }
-                </span
-                >
+                <span class="ml-2 font-medium">{{ formatFullName() }}</span>
               </div>
               <div>
                 <span class="text-gray-600">Email:</span>
@@ -537,19 +546,24 @@
               <div>
                 <span class="text-gray-600">Country:</span>
                 <span class="ml-2 font-medium"
-                  >{{ getCountryDisplayName(registerForm.get('country')?.value) }}</span
+                  >{{ getCountryDisplayName(registerForm.get('country')?.value)
+                  }}</span
                 >
               </div>
               <div>
                 <span class="text-gray-600">Timezone:</span>
                 <span class="ml-2 font-medium"
-                  >{{ getTimezoneDisplayName(registerForm.get('timezone')?.value) }}</span
+                  >{{
+                  getTimezoneDisplayName(registerForm.get('timezone')?.value)
+                  }}</span
                 >
               </div>
               <div>
                 <span class="text-gray-600">Language:</span>
                 <span class="ml-2 font-medium"
-                  >{{ getLanguageDisplayName(registerForm.get('language')?.value) }}</span
+                  >{{
+                  getLanguageDisplayName(registerForm.get('language')?.value)
+                  }}</span
                 >
               </div>
             </div>
@@ -600,7 +614,9 @@
               alt="Error"
               class="w-5 h-5"
             />
-            <p class="text-sm text-red-700 font-medium">{{ submissionState.error() }}</p>
+            <p class="text-sm text-red-700 font-medium">
+              {{ submissionState.error() }}
+            </p>
           </div>
         </div>
         }
