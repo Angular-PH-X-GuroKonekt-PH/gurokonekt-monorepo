@@ -52,7 +52,9 @@ export class RegistrationMenteePage
     this.registerForm = this.fb.group(
       {
         firstName: ['', FORM_FIELD_VALIDATORS.FIRST_NAME],
+        middleName: ['', FORM_FIELD_VALIDATORS.MIDDLE_NAME],
         lastName: ['', FORM_FIELD_VALIDATORS.LAST_NAME],
+        suffix: ['', FORM_FIELD_VALIDATORS.SUFFIX],
         email: ['', FORM_FIELD_VALIDATORS.EMAIL],
         phoneNumber: ['', FORM_FIELD_VALIDATORS.PHONE_NUMBER],
         password: ['', FORM_FIELD_VALIDATORS.PASSWORD],
@@ -124,7 +126,9 @@ export class RegistrationMenteePage
 
       const registrationData: RegisterMenteeRequest = {
         firstName: formData.firstName,
+        middleName: formData.middleName || undefined,
         lastName: formData.lastName,
+        suffix: formData.suffix || undefined,
         email: formData.email.toLowerCase().trim(),
         phoneNumber: formatPhoneToE164(
           formData.phoneNumber,
