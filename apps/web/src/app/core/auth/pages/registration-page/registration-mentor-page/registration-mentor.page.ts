@@ -76,7 +76,7 @@ export class RegistrationMentorPage
           null,
           [Validators.required, Validators.min(1), Validators.max(60)],
         ],
-        linkedInUrl: ['', FORM_FIELD_VALIDATORS.LINKEDIN_URL],
+        linkedInUrl: ['', [Validators.pattern(/^(?:|https:\/\/(?:www\.)?linkedin\.com\/.*)$/)]],
         files: [[]],
         acceptTerms: [false, FORM_FIELD_VALIDATORS.ACCEPT_TERMS],
       },
