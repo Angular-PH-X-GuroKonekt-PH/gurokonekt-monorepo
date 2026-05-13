@@ -1,25 +1,2 @@
-import { Country } from '../interfaces/country.interface';
-
-export const COUNTRIES: Country[] = [
-  { value: 'PH', label: 'Philippines', phoneCode: '+63', flag: '🇵🇭', phoneFormat: '999 123 4567', phoneRegex: /^[2-9]\d{2}\s?\d{3}\s?\d{4}$/ },
-  { value: 'US', label: 'United States', phoneCode: '+1', flag: '🇺🇸', phoneFormat: '(555) 123-4567', phoneRegex: /^\(\d{3}\)\s?\d{3}-?\d{4}$/ },
-  { value: 'CA', label: 'Canada', phoneCode: '+1', flag: '🇨🇦', phoneFormat: '(555) 123-4567', phoneRegex: /^\(\d{3}\)\s?\d{3}-?\d{4}$/ },
-  { value: 'GB', label: 'United Kingdom', phoneCode: '+44', flag: '🇬🇧', phoneFormat: '07911 123456', phoneRegex: /^0[7]\d{3}\s?\d{6}$/ },
-  { value: 'AU', label: 'Australia', phoneCode: '+61', flag: '🇦🇺', phoneFormat: '0412 345 678', phoneRegex: /^04\d{2}\s?\d{3}\s?\d{3}$/ },
-  { value: 'DE', label: 'Germany', phoneCode: '+49', flag: '🇩🇪', phoneFormat: '0151 12345678', phoneRegex: /^015[0-9]\s?\d{8}$/ },
-  { value: 'FR', label: 'France', phoneCode: '+33', flag: '🇫🇷', phoneFormat: '06 12 34 56 78', phoneRegex: /^0[67]\s?\d{2}\s?\d{2}\s?\d{2}\s?\d{2}$/ },
-  { value: 'ES', label: 'Spain', phoneCode: '+34', flag: '🇪🇸', phoneFormat: '612 34 56 78', phoneRegex: /^[67]\d{2}\s?\d{2}\s?\d{2}\s?\d{2}$/ },
-  { value: 'IT', label: 'Italy', phoneCode: '+39', flag: '🇮🇹', phoneFormat: '312 345 6789', phoneRegex: /^3\d{2}\s?\d{3}\s?\d{4}$/ },
-  { value: 'JP', label: 'Japan', phoneCode: '+81', flag: '🇯🇵', phoneFormat: '90-1234-5678', phoneRegex: /^\d{2}-?\d{4}-?\d{4}$/ },
-  { value: 'CN', label: 'China', phoneCode: '+86', flag: '🇨🇳', phoneFormat: '139 0013 8000', phoneRegex: /^1[3-9]\d\s?\d{4}\s?\d{4}$/ },
-  { value: 'IN', label: 'India', phoneCode: '+91', flag: '🇮🇳', phoneFormat: '98765 43210', phoneRegex: /^[6-9]\d{4}\s?\d{5}$/ },
-  { value: 'BR', label: 'Brazil', phoneCode: '+55', flag: '🇧🇷', phoneFormat: '(11) 99999-9999', phoneRegex: /^\(\d{2}\)\s?9?\d{4}-?\d{4}$/ },
-  { value: 'MX', label: 'Mexico', phoneCode: '+52', flag: '🇲🇽', phoneFormat: '(55) 1234-5678', phoneRegex: /^\(\d{2}\)\s?\d{4}-?\d{4}$/ },
-  { value: 'NL', label: 'Netherlands', phoneCode: '+31', flag: '🇳🇱', phoneFormat: '06 12345678', phoneRegex: /^06\s?\d{8}$/ },
-  { value: 'SE', label: 'Sweden', phoneCode: '+46', flag: '🇸🇪', phoneFormat: '070-123 45 67', phoneRegex: /^07[0-9]-?\d{3}\s?\d{2}\s?\d{2}$/ },
-  { value: 'NO', label: 'Norway', phoneCode: '+47', flag: '🇳🇴', phoneFormat: '406 12 345', phoneRegex: /^[49]\d{2}\s?\d{2}\s?\d{3}$/ },
-  { value: 'DK', label: 'Denmark', phoneCode: '+45', flag: '🇩🇰', phoneFormat: '50 12 34 56', phoneRegex: /^[2-9]\d\s?\d{2}\s?\d{2}\s?\d{2}$/ },
-  { value: 'FI', label: 'Finland', phoneCode: '+358', flag: '🇫🇮', phoneFormat: '050 123 4567', phoneRegex: /^0[45]\d\s?\d{3}\s?\d{4}$/ },
-  { value: 'SG', label: 'Singapore', phoneCode: '+65', flag: '🇸🇬', phoneFormat: '9123 4567', phoneRegex: /^[89]\d{3}\s?\d{4}$/ },
-  { value: 'KR', label: 'South Korea', phoneCode: '+82', flag: '🇰🇷', phoneFormat: '010-1234-5678', phoneRegex: /^010-?\d{4}-?\d{4}$/ },
-];
+export { COUNTRIES } from '@gurokonekt/utils';
+export type { Country } from '@gurokonekt/utils';

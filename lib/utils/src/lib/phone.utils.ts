@@ -1,3 +1,5 @@
+import { COUNTRIES } from './country.utils';
+
 /**
  * Phone number formatting and validation utilities
  */
@@ -5,45 +7,36 @@
 /**
  * Get phone format placeholder based on country code
  */
+function getPhoneFormatExample(format: string, sampleDigits: string): string {
+  let index = 0;
+  return format.replace(/0/g, () => sampleDigits[index++ % sampleDigits.length]);
+}
+
 export function getPhoneFormatPlaceholder(countryCode: string): string {
-  switch (countryCode) {
-    case 'US':
-    case 'CA':
-      return '(555) 123-4567';
-    case 'PH':
-      return '912 345 6789';
-    case 'GB':
-      return '20 7123 4567';
-    case 'DE':
-      return '30 12345678';
-    case 'FR':
-      return '1 23 45 67 89';
-    case 'AU':
-      return '2 1234 5678';
-    case 'JP':
-      return '3-1234-5678';
-    case 'CN':
-      return '138 0013 8000';
-    case 'IN':
-      return '98765 43210';
-    case 'BR':
-      return '11 99999-9999';
-    case 'MX':
-      return '55 1234 5678';
-    default:
-      return 'Enter phone number';
+  const country = COUNTRIES.find((item) => item.value === countryCode);
+  if (!country || !country.phoneFormat) {
+    return 'Enter phone number';
   }
+
+  const sampleDigits = countryCode === 'PH'
+    ? '09957586652'
+    : '9876543210';
+
+  return getPhoneFormatExample(country.phoneFormat, sampleDigits);
 }
 
 /**
  * Get phone error message based on form control errors
  */
-export function getPhoneErrorMessage(errors: any): string {
-  if (errors?.required) {
-    return 'Phone number is required';
-  }
-  if (errors?.pattern) {
-    return 'Please enter a valid phone number';
+export function getPhoneErrorMessage(errors: unknown): string {
+  if (typeof errors === 'object' && errors !== null) {
+    const typedErrors = errors as Record<string, unknown>;
+    if (typedErrors['required']) {
+      return 'Phone number is required';
+    }
+    if (typedErrors['pattern']) {
+      return 'Please enter a valid phone number';
+    }
   }
   return 'Invalid phone number';
 }
