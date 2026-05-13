@@ -186,11 +186,11 @@
                   (click)="togglePhoneCountryDropdown()"
                   (keyup.enter)="togglePhoneCountryDropdown()"
                   (keyup.space)="togglePhoneCountryDropdown()"
-                  class="flex items-center gap-2 h-full px-4 border-r-2 border-gray-200 bg-gray-50 rounded-l-xl hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-28"
+                  class="flex items-center gap-2 h-full px-4 border-r-2 border-gray-200 bg-gray-50 rounded-l-xl hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[7rem]"
                   [attr.aria-label]="'Select country code, currently ' + getSelectedPhoneCountry().label"
                 >
-                  <span class="text-xl">{{ getSelectedPhoneCountry().flag }}</span>
-                  <span class="text-sm font-medium text-gray-700 whitespace-nowrap">{{ getSelectedPhoneCountry().phoneCode }}</span>
+                  <span class="text-xl leading-none">{{ getSelectedPhoneCountry().flag }}</span>
+                  <span class="text-sm font-medium text-gray-700 whitespace-nowrap leading-none">{{ getSelectedPhoneCountry().phoneCode }}</span>
                   <app-icon name="chevron-down" class="w-4 h-4 text-gray-400 flex-shrink-0"></app-icon>
                 </button>
 
@@ -234,11 +234,7 @@
             <p class="mt-1 text-sm text-red-600">
               {{ getPhoneErrorMessage() }}
             </p>
-            } @else {
-            <p class="mt-1 text-xs text-gray-600">
-              Enter your phone number in {{ getSelectedPhoneCountry().label }} format
-            </p>
-            }
+            } 
           </div>
         </div>
         }

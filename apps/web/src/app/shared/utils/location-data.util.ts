@@ -1,12 +1,11 @@
-import { COUNTRIES } from '../constants/countries.constants';
+import { COUNTRIES, Country, getPhoneFormatPlaceholder } from '@gurokonekt/utils';
 import { TIMEZONES, COUNTRY_TIMEZONE_MAP } from '../constants/timezones.constants';
 import { LANGUAGES } from '../constants/languages.constants';
-import { Country } from '../interfaces/country.interface';
 import { Timezone } from '../interfaces/timezone.interface';
 import { Language } from '../interfaces/language.interface';
 
 // Re-export interfaces for convenience
-export type { Country, Timezone, Language };
+export type { Timezone, Language };
 
 export const LOCATION_COUNTRIES = COUNTRIES;
 export const LOCATION_TIMEZONES = TIMEZONES;
@@ -94,7 +93,7 @@ export function getPhoneValidationMessage(countryCode: string): string {
   if (!country) {
     return 'Please enter a valid phone number';
   }
-  return `Please enter a valid ${country.label} phone number (e.g., ${country.phoneFormat})`;
+  return `Please enter a valid ${country.label} phone number (e.g., ${getPhoneFormatPlaceholder(country.value)})`;
 }
 
   /**

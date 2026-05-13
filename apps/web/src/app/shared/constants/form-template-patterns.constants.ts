@@ -44,7 +44,7 @@ export const FORM_CSS_CLASSES = {
   STEP_PROGRESS: 'text-sm text-gray-500',
   
   // Phone input specific
-  PHONE_COUNTRY_BUTTON: 'flex items-center gap-2 h-full px-4 border-r-2 border-gray-200 bg-gray-50 rounded-l-xl hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-28',
+  PHONE_COUNTRY_BUTTON: 'flex items-center gap-2 h-full px-4 border-r-2 border-gray-200 bg-gray-50 rounded-l-xl hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[7rem]',
   PHONE_DROPDOWN: 'absolute top-full left-0 z-50 w-80 max-h-60 overflow-y-auto bg-white border-2 border-gray-200 rounded-xl shadow-lg mt-1',
   PHONE_INPUT: 'w-full pl-32 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors',
   
