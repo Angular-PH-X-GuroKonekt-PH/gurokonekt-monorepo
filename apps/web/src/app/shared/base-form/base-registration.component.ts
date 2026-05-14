@@ -143,7 +143,19 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
   protected getLanguageDisplayName(langValue: string): string {
     return getLanguageDisplayName(langValue);
   }
-  
+
+  protected formatFullName(): string {
+    const form = this.registerForm;
+    const firstName = form.get('firstName')?.value?.trim() ?? '';
+    const middleName = form.get('middleName')?.value?.trim() ?? '';
+    const lastName = form.get('lastName')?.value?.trim() ?? '';
+    const suffix = form.get('suffix')?.value?.trim() ?? '';
+
+    const nameParts = [firstName, middleName, lastName].filter(Boolean);
+    const fullName = nameParts.join(' ');
+
+    return suffix ? `${fullName}, ${suffix}` : fullName;
+  }
 
   protected navigateToLogin(): void {
     this.router.navigate([APP_ROUTES.LOGIN]);
