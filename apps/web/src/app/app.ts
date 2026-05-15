@@ -6,10 +6,8 @@ import {
 } from '@angular/core';
 import { RouterModule, Router, NavigationEnd } from '@angular/router';
 import { toSignal } from '@angular/core/rxjs-interop';
-import { Store } from '@ngxs/store';
 import { filter, map } from 'rxjs/operators';
 import { ToastContainerComponent } from './shared/components/toast/toast.component';
-import * as AuthActions from './core/auth/store/auth.actions';
 
 @Component({
   imports: [RouterModule, ToastContainerComponent],
@@ -19,7 +17,6 @@ import * as AuthActions from './core/auth/store/auth.actions';
 })
 export class App {
   private readonly router = inject(Router);
-  private readonly store = inject(Store);
 
   protected title = 'GuroKonekt';
 
@@ -31,8 +28,6 @@ export class App {
   );
 
   constructor() {
-    this.store.dispatch(new AuthActions.RestoreSession());
-
     afterNextRender(() => {
       import('flowbite').then(({ initFlowbite }) => initFlowbite());
     });
