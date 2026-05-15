@@ -79,6 +79,8 @@ export class MentorManageAvailabilityPage implements OnInit {
   }
 
   protected onAddSlot(): void { /* TODO: Task 3 */ }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onEditSlot(_slot: UserAvailabilityInterface): void { /* TODO: Task 4 */ }
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   protected onDeleteSlot(_slot: UserAvailabilityInterface): void { /* TODO: Task 5 */ }
 }
