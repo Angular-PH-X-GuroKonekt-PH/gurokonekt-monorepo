@@ -1,1 +1,176 @@
-<p>mentor-manage-availability.page works!</p>
+<section class="min-h-screen bg-gray-50">
+  <div class="mx-auto max-w-6xl px-4 py-10 sm:px-6 lg:px-8">
+
+    <!-- Page Header -->
+    <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h1 class="text-2xl font-bold text-blue-950">Manage Availability</h1>
+        <p class="mt-1 text-sm text-gray-500">Set your weekly availability so mentees can book sessions with you.</p>
+      </div>
+      <gk-button variant="primary" (buttonClick)="onAddSlot()">
+        + Add Availability
+      </gk-button>
+    </div>
+
+    <!-- View Toggle -->
+    <div class="mb-6 flex items-center gap-2">
+      <button
+        type="button"
+        class="rounded-full px-5 py-2 text-sm font-medium transition-colors"
+        [class]="viewMode() === 'calendar'
+          ? 'bg-orange-500 text-white shadow-sm'
+          : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+        (click)="setView('calendar')"
+      >
+        Calendar View
+      </button>
+      <button
+        type="button"
+        class="rounded-full px-5 py-2 text-sm font-medium transition-colors"
+        [class]="viewMode() === 'table'
+          ? 'bg-orange-500 text-white shadow-sm'
+          : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+        (click)="setView('table')"
+      >
+        Table View
+      </button>
+    </div>
+
+    <!-- Calendar Sub-Toggle -->
+    @if (viewMode() === 'calendar') {
+      <div class="mb-4 flex items-center gap-2">
+        <button
+          type="button"
+          class="rounded-full px-4 py-1.5 text-xs font-medium transition-colors"
+          [class]="calendarViewType() === 'timeGridWeek'
+            ? 'bg-blue-950 text-white shadow-sm'
+            : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+          (click)="setCalendarView('timeGridWeek')"
+        >
+          Week
+        </button>
+        <button
+          type="button"
+          class="rounded-full px-4 py-1.5 text-xs font-medium transition-colors"
+          [class]="calendarViewType() === 'dayGridMonth'
+            ? 'bg-blue-950 text-white shadow-sm'
+            : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+          (click)="setCalendarView('dayGridMonth')"
+        >
+          Month
+        </button>
+      </div>
+    }
+
+    <!-- Loading Spinner -->
+    @if (selectors.isLoading()) {
+      <div class="flex items-center justify-center py-20">
+        <div class="h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></div>
+      </div>
+    }
+
+    <!-- Error Banner -->
+    @if (selectors.errorMessage()) {
+      <div class="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+        <app-icon name="alert-circle" class="h-5 w-5 shrink-0 text-red-500"></app-icon>
+        <span>{{ selectors.errorMessage() }}</span>
+      </div>
+    }
+
+    <!-- Calendar Panel -->
+    @if (viewMode() === 'calendar' && !selectors.isLoading()) {
+      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+        <full-calendar
+          #calendarEl
+          [options]="calendarOptions"
+          [events]="calendarEvents()"
+        ></full-calendar>
+      </div>
+    }
+
+    <!-- Table Panel -->
+    @if (viewMode() === 'table' && !selectors.isLoading()) {
+      <div class="rounded-2xl border border-gray-200 bg-white shadow-sm">
+        <div class="overflow-x-auto">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Day</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Time Ranges</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Status</th>
+                <th scope="col" class="px-6 py-3 text-left text-xs font-medium uppercase tracking-wider text-gray-500">Actions</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100 bg-white">
+              @for (slot of selectors.availabilities(); track slot.day) {
+                <tr class="transition-colors hover:bg-gray-50">
+                  <td class="whitespace-nowrap px-6 py-4 text-sm font-semibold capitalize text-blue-950">
+                    {{ slot.day }}
+                  </td>
+                  <td class="px-6 py-4 text-sm text-gray-700">
+                    <div class="flex flex-wrap gap-1.5">
+                      @for (frame of slot.timeFrames; track frame.from) {
+                        <span class="inline-flex items-center rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-700 ring-1 ring-inset ring-orange-200">
+                          {{ formatTimeRange(frame) }}
+                        </span>
+                      }
+                    </div>
+                  </td>
+                  <td class="whitespace-nowrap px-6 py-4 text-sm">
+                    @if (isSlotBlocked(slot, blockedBookings())) {
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-200">
+                        <span class="h-1.5 w-1.5 rounded-full bg-red-500"></span>
+                        Booked
+                      </span>
+                    } @else {
+                      <span class="inline-flex items-center gap-1.5 rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">
+                        <span class="h-1.5 w-1.5 rounded-full bg-green-500"></span>
+                        Available
+                      </span>
+                    }
+                  </td>
+                  <td class="whitespace-nowrap px-6 py-4 text-sm">
+                    <div class="flex items-center gap-2">
+                      <button
+                        type="button"
+                        title="Edit slot"
+                        class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-blue-50 hover:text-blue-700"
+                        (click)="onEditSlot(slot)"
+                      >
+                        <app-icon name="pencil" class="h-4 w-4"></app-icon>
+                      </button>
+                      <button
+                        type="button"
+                        title="Delete slot"
+                        class="inline-flex items-center justify-center rounded-lg p-2 text-gray-500 transition-colors hover:bg-red-50 hover:text-red-600"
+                        (click)="onDeleteSlot(slot)"
+                      >
+                        <app-icon name="close" class="h-4 w-4"></app-icon>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              } @empty {
+                <tr>
+                  <td colspan="4" class="px-6 py-16 text-center">
+                    <div class="flex flex-col items-center gap-3">
+                      <div class="flex h-14 w-14 items-center justify-center rounded-2xl bg-gray-100 text-gray-400">
+                        <app-icon name="calendar-plain" class="h-7 w-7"></app-icon>
+                      </div>
+                      <p class="text-sm font-semibold text-gray-700">No availability slots added yet</p>
+                      <p class="text-xs text-gray-500">Add your first slot so mentees can book sessions with you.</p>
+                      <gk-button variant="primary" size="sm" (buttonClick)="onAddSlot()">
+                        + Add Availability
+                      </gk-button>
+                    </div>
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </div>
+    }
+
+  </div>
+</section>

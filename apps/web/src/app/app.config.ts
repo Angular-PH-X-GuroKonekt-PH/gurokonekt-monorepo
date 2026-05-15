@@ -14,6 +14,7 @@ import { authInterceptor } from './core/auth/interceptors/auth.interceptor';
 import { AuthState } from './core/auth/store/auth.state';
 import { RegistrationState } from './core/auth/store/registration.state';
 import { VerifyEmailState } from './core/auth/store/verify-email.state';
+import { AvailabilityState } from './core/availability/store/availability.state';
 
 
 export const appConfig: ApplicationConfig = {
@@ -23,7 +24,7 @@ export const appConfig: ApplicationConfig = {
     provideRouter(appRoutes),
     provideHttpClient(withInterceptors([authInterceptor])),
     provideStore(
-      [AuthState, VerifyEmailState, RegistrationState],
+      [AuthState, VerifyEmailState, RegistrationState, AvailabilityState],
       withNgxsLoggerPlugin({ disabled: !isDevMode() }),
       withNgxsReduxDevtoolsPlugin({ disabled: !isDevMode() })
     ),
