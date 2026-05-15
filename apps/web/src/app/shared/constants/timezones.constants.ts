@@ -13,7 +13,7 @@ export const TIMEZONES: Timezone[] = [
   { value: 'Europe/Paris', label: 'Central European Time (CET)', countries: ['FR', 'DE', 'ES', 'IT', 'NL'] },
   { value: 'Europe/Stockholm', label: 'Central European Time (CET)', countries: ['SE', 'NO', 'DK', 'FI'] },
   // Asia Pacific
-  { value: 'Asia/Manila', label: 'Philippine Standard Time (PST)', countries: ['PH'] },
+  { value: 'Asia/Manila', label: 'Philippine Standard Time (PHT)', countries: ['PH'] },
   { value: 'Asia/Tokyo', label: 'Japan Standard Time (JST)', countries: ['JP'] },
   { value: 'Asia/Shanghai', label: 'China Standard Time (CST)', countries: ['CN'] },
   { value: 'Asia/Seoul', label: 'Korea Standard Time (KST)', countries: ['KR'] },
