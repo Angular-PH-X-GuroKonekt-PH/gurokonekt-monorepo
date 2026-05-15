@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
@@ -16,7 +16,6 @@ import {
   isExpertiseSelected,
 } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
-import { AuthState } from '../../../store/auth.state';
 import { AuthSelectors } from '../../../store/auth.selectors';
 
 @Component({
@@ -31,6 +30,7 @@ export class RegistrationMentorPage
 {
   private readonly store = inject(Store);
   private readonly toastService = inject(ToastService);
+  private readonly initialized = signal(false);
 
   protected readonly isMentorRegisterLoading = this.store.selectSignal(
     AuthSelectors.isMentorRegisterLoading
@@ -86,8 +86,12 @@ export class RegistrationMentorPage
     // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
     
-    // Watch for success and error messages from auth state
+    // Watch for success and error messages from auth state after initialization
     effect(() => {
+      if (!this.initialized()) {
+        return;
+      }
+
       const successMsg = this.successMessage();
       const errorMsg = this.errorMessage();
       
@@ -104,6 +108,9 @@ export class RegistrationMentorPage
   }
 
   ngOnInit(): void {
+    // Clear any stale auth messages from previous login attempts
+    this.store.dispatch(new ClearAuthMessages());
+    this.initialized.set(true);
     this.scrollToTop();
   }
 

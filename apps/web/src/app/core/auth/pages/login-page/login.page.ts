@@ -44,13 +44,6 @@ export class LoginPage extends BaseFormComponent {
 
   constructor() {
     super();
-
-    effect(() => {
-      const errorMsg = this.selectSignal.errorMessage();
-      if (errorMsg) {
-        this.toastService.error(errorMsg);
-      }
-    });
   }
 
   protected togglePasswordVisibility(): void {
@@ -83,6 +76,7 @@ export class LoginPage extends BaseFormComponent {
   }
 
   protected navigateToRegister(): void {
+    this.store.dispatch(new AuthActions.ClearAuthMessages());
     this.router.navigate([APP_ROUTES.REGISTER]);
   }
 

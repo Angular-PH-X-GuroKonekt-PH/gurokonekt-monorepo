@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, inject, OnInit, signal, effect } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormGroup } from '@angular/forms';
 import { Store } from '@ngxs/store';
@@ -10,7 +10,6 @@ import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { CustomValidators } from 'apps/web/src/app/shared/validators/custom-validators';
 import { ClearAuthMessages, RegisterMentee } from '../../../store/auth.actions';
-import { AuthState } from '../../../store/auth.state';
 import { AuthSelectors } from '../../../store/auth.selectors';
 
 @Component({
@@ -25,6 +24,7 @@ export class RegistrationMenteePage
 {
   private readonly store = inject(Store);
   private readonly toastService = inject(ToastService);
+  private readonly initialized = signal(false);
 
   protected readonly isMenteeRegisterLoading = this.store.selectSignal(
     AuthSelectors.isMenteeRegisterLoading
@@ -49,6 +49,25 @@ export class RegistrationMenteePage
   constructor() {
     super();
 
+    effect(() => {
+      if (!this.initialized()) {
+        return;
+      }
+
+      const successMsg = this.successMessage();
+      const errorMsg = this.errorMessage();
+
+      if (successMsg) {
+        this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
+        this.store.dispatch(new ClearAuthMessages());
+      }
+
+      if (errorMsg) {
+        this.toastService.error(errorMsg, 'Registration Failed');
+        this.store.dispatch(new ClearAuthMessages());
+      }
+    });
+
     this.registerForm = this.fb.group(
       {
         firstName: ['', FORM_FIELD_VALIDATORS.FIRST_NAME],
@@ -69,25 +88,12 @@ export class RegistrationMenteePage
 
     // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
-    
-    // Watch for success and error messages from auth state
-    effect(() => {
-      const successMsg = this.successMessage();
-      const errorMsg = this.errorMessage();
-      
-      if (successMsg) {
-        this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
-        this.store.dispatch(new ClearAuthMessages());
-      }
-      
-      if (errorMsg) {
-        this.toastService.error(errorMsg, 'Registration Failed');
-        this.store.dispatch(new ClearAuthMessages());
-      }
-    });
   }
 
   ngOnInit(): void {
+    // Clear any stale auth messages from previous login attempts
+    this.store.dispatch(new ClearAuthMessages());
+    this.initialized.set(true);
     this.scrollToTop();
   }
 
