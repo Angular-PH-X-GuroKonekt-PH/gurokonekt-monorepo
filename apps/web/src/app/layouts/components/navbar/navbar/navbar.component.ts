@@ -26,8 +26,7 @@ import { NavbarNotificationItem } from '../../../../shared/components/navbar-not
 import { NotificationListSkeleton } from '../../../../shared/components/skeleton-loaders/notification-list-skeleton/notification-list-skeleton.component';
 import { ProfileService } from '../../../../core/profile/profile.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
-import { AuthState } from '../../../../core/auth/store/auth.state';
-import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 
 @Component({
   selector: 'app-navbar',

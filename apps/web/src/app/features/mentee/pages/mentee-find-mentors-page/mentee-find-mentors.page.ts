@@ -1,5 +1,4 @@
-import { CommonModule } from '@angular/common';
-import { Component, inject, signal } from '@angular/core';
+import { Component, inject } from '@angular/core';
 import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Pagination } from '@gurokonekt/ui';
@@ -8,42 +7,22 @@ import { catchError, map, of, startWith, switchMap } from 'rxjs';
 import {
   AvailabilityOption,
   MentorSearchFilter,
-  MentorSearchItemInterface,
   MentorSearchResultInterface,
 } from '@gurokonekt/models/interfaces/search/search.model';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { MentorCardListSkeleton } from '../../../../shared/components/skeleton-loaders/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
-import { MentorSearchService } from '../../../mentor/services/mentor-search.service';
-import { MentorService } from '../../../mentor/services/mentor.service';
-import { SectionCard } from '../../../../shared/components/section-card/section-card.component';
-import { SectionTitle } from '../../../../shared/components/section-title/section-title.component';
-import { MentorInfoCard } from '../../../mentor/components/mentor-info-card/mentor-info-card';
-import { MentorSearch } from '../../../mentor/components/mentor-search/mentor-search';
-import { MentorRecommendedCard } from '../../../mentor/components/mentor-recommended-card/mentor-recommended-card';
+import { MentorSearchService } from '../../services/mentor-search.service';
+import { MentorInfoCard } from '../../components/mentor-info-card/mentor-info-card';
+import { MentorSearch } from '../../components/mentor-search/mentor-search';
+import { FindMentorsSearchState } from '../../interfaces/search-mentor.interface';
 
-
-
-type FindMentorsViewModel = {
-  mentors: MentorSearchItemInterface[];
-  totalCount: number;
-  currentPage: number;
-  pageSize: number;
-  isLoading: boolean;
-  hasSearched: boolean;
-  error: string | null;
-};
-
-@Component({ 
+@Component({
   selector: 'app-mentee-find-mentors-page',
   standalone: true,
   imports: [
-    CommonModule,
-    SectionCard,
-    SectionTitle,
     MentorSearch,
     Pagination,
     IconComponent,
-    MentorRecommendedCard,
     MentorCardListSkeleton,
     MentorInfoCard,
   ],
@@ -53,37 +32,30 @@ export class MenteeFindMentorsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly mentorSearchService = inject(MentorSearchService);
-  private readonly mentorService = inject(MentorService);
-  protected readonly currentMentorSlide = signal(0);
 
-  protected readonly vm = toSignal(
+  protected readonly searchState = toSignal(
     this.route.queryParams.pipe(
       switchMap((params) => {
         const filters = this.buildFiltersFromParams(params);
 
         return this.mentorSearchService.searchMentors(filters).pipe(
-          map((response) =>
-            this.buildViewModel(response, {
-              hasSearched: true,
-            })
-          ),
-          startWith(this.buildLoadingViewModel(filters)),
+          map((response) => this.buildSearchState(response)),
+          startWith(this.buildLoadingSearchState(filters)),
           catchError((error) =>
             of(
-              this.buildViewModel(this.buildEmptySearchResult(filters), {
-                hasSearched: true,
-                error:
-                  error instanceof Error
-                    ? error.message
-                    : 'Unable to load mentors. Please try again.',
-              })
+              this.buildSearchState(
+                this.buildEmptySearchResult(filters),
+                error instanceof Error
+                  ? error.message
+                  : 'Unable to load mentors. Please try again.'
+              )
             )
           )
         );
       })
     ),
     {
-      initialValue: this.buildLoadingViewModel(
+      initialValue: this.buildLoadingSearchState(
         this.buildFiltersFromParams(this.route.snapshot.queryParams)
       ),
     }
@@ -121,6 +93,21 @@ export class MenteeFindMentorsPage {
         typeof params['availabilityDay'] === 'string'
           ? (params['availabilityDay'] as AvailabilityOption)
           : null,
+      language:
+        typeof params['language'] === 'string' ? params['language'] : null,
+      minSessionRate: this.parseOptionalPositiveNumber(
+        params['minSessionRate']
+      ),
+      maxSessionRate: this.parseOptionalPositiveNumber(
+        params['maxSessionRate']
+      ),
+      minYearsExperience: this.parseOptionalPositiveNumber(
+        params['minYearsExperience']
+      ),
+      maxYearsExperience: this.parseOptionalPositiveNumber(
+        params['maxYearsExperience']
+      ),
+      minRating: this.parseOptionalPositiveNumber(params['minRating']),
       page,
       limit,
     };
@@ -136,29 +123,40 @@ export class MenteeFindMentorsPage {
     return Math.floor(parsedValue);
   }
 
-  private buildLoadingViewModel(
+  private parseOptionalPositiveNumber(value: unknown): number | null {
+    if (value == null) {
+      return null;
+    }
+
+    const parsedValue = Number(value);
+
+    if (!Number.isFinite(parsedValue) || parsedValue < 0) {
+      return null;
+    }
+
+    return Math.floor(parsedValue);
+  }
+
+  private buildLoadingSearchState(
     filters: MentorSearchFilter
-  ): FindMentorsViewModel {
+  ): FindMentorsSearchState {
     return {
-      ...this.buildViewModel(this.buildEmptySearchResult(filters), {
-        hasSearched: true,
-      }),
+      ...this.buildSearchState(this.buildEmptySearchResult(filters)),
       isLoading: true,
     };
   }
 
-  private buildViewModel(
+  private buildSearchState(
     response: MentorSearchResultInterface,
-    options: { hasSearched: boolean; error?: string | null }
-  ): FindMentorsViewModel {
+    error: string | null = null
+  ): FindMentorsSearchState {
     return {
       mentors: response.results,
       totalCount: response.total,
       currentPage: response.page,
       pageSize: response.limit,
       isLoading: false,
-      hasSearched: options.hasSearched,
-      error: options.error ?? null,
+      error,
     };
   }
 
@@ -172,47 +170,4 @@ export class MenteeFindMentorsPage {
       results: [],
     };
   }
-
-  protected readonly recommendedMentors = toSignal<
-    MentorSearchItemInterface[] | null
-  >(this.mentorService.getRecommendedMentors(6), { initialValue: null });
-
-  
-  protected nextMentorSlide(totalSlides: number): void {
-    if (totalSlides <= 0) {
-      return;
-    }
-
-    this.currentMentorSlide.update((currentSlide) =>
-      currentSlide >= totalSlides ? 0 : currentSlide + 1
-    );
-  }
-
-  protected previousMentorSlide(totalSlides: number): void {
-    if (totalSlides <= 0) {
-      return;
-    }
-
-    this.currentMentorSlide.update((currentSlide) =>
-      currentSlide === 0 ? totalSlides : currentSlide - 1
-    );
-  }
-
-  protected setMentorSlide(index: number): void {
-    this.currentMentorSlide.set(index);
-  }
-
-
-
-  protected getMaxMentorSlide(totalMentors: number): number {
-    return Math.max(totalMentors - 3, 0);
-  }
-
-  protected getMentorSlideIndexes(totalMentors: number): number[] {
-    return Array.from(
-      { length: this.getMaxMentorSlide(totalMentors) + 1 },
-      (_, index) => index
-    );
-  }
-
 }

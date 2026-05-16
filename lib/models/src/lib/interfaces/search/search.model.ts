@@ -118,6 +118,16 @@ export interface MentorSearchFilter {
   page: number;
   limit: number;
   availabilityDay: AvailabilityOption | null;
+
+  language: string | null;
+  minSessionRate: number | null;
+  maxSessionRate: number | null;
+  minYearsExperience: number | null;
+  maxYearsExperience: number | null;
+  minRating: number | null;        // PENDING BACKEND
+
+
+
 }
 
 // Request DTO sent to GET /mentors/search
@@ -131,7 +141,10 @@ export interface MentorSearchRequest {
   minSessionRate?: number;
   maxSessionRate?: number;
   minYearsExperience?: number;
+  maxYearsExperience?: number;
   availabilityDay?: DaysInWeek;
+  minRating?: number;        // PENDING BACKEND
+  language?: string;
   sortBy?: SearchSortBy;
   sortOrder?: SearchSortOrder;
   // TODO: uncomment once backend adds these to SearchMentorDto:
