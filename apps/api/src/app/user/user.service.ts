@@ -568,24 +568,10 @@ export class UserService {
               if (typeof value === 'string' && value.trim().length > 0) return [value];
               return undefined;
             };
-            const normalizeAvailability = (value: unknown): UpdateMenteeProfileDto['availability'] => {
-              if (Array.isArray(value)) return value;
-              if (typeof value === 'string') {
-                try {
-                  const parsed = JSON.parse(value);
-                  return Array.isArray(parsed) ? parsed : undefined;
-                } catch {
-                  return undefined;
-                }
-              }
-              return undefined;
-            };
-
             return {
               ...currentDto,
               learningGoals: normalizeToArray(currentDto.learningGoals),
               areasOfInterest: normalizeToArray(currentDto.areasOfInterest),
-              availability: normalizeAvailability(currentDto.availability),
             };
           })()
         : (() => {
@@ -680,7 +666,6 @@ export class UserService {
           learningGoals: currentDto.learningGoals,
           areasOfInterest: currentDto.areasOfInterest,
           preferredSessionType: currentDto.preferredSessionType,
-          availability: instanceToPlain(currentDto.availability),
           updatedById: currentDto.updatedById,
         };
         await this.prisma.db.$transaction(async (tx) => {

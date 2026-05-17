@@ -68,7 +68,6 @@ export interface MenteeProfileInterface {
   learningGoals: string[];
   areasOfInterest: string[];
   preferredSessionType: MenteePreferredSessionType;
-  availability: UserAvailabilityInterface[];
   user: UserInterface;
   updatedAt: string;
   updatedBy: UserFlatInterface;
@@ -83,7 +82,6 @@ export interface UpdateMenteeProfileInterface {
   learningGoals: string[];
   areasOfInterest: string[];
   preferredSessionType: MenteePreferredSessionType;
-  availability: UserAvailabilityInterface[];
   updatedById: string;
 }
 

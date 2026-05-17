@@ -186,3 +186,5 @@
 [debug] [2026-05-06T22:21:47.810Z] <<< [apiv2][body] POST https://www.googleapis.com/oauth2/v3/token [omitted]
 [debug] [2026-05-06T22:21:47.826Z] >>> [apiv2][query] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo [none]
 [debug] [2026-05-06T22:21:49.459Z] <<< [apiv2][status] GET https://cloudbilling.googleapis.com/v1/projects/gurokonekt/billingInfo 403
+[debug] [2026-05-17T15:31:13.584Z] > command requires scopes: ["email","openid","https://www.googleapis.com/auth/cloudplatformprojects.readonly","https://www.googleapis.com/auth/firebase","https://www.googleapis.com/auth/cloud-platform"]
+[debug] [2026-05-17T15:31:13.595Z] > authorizing via signed-in user (arw.oloroso@gmail.com)

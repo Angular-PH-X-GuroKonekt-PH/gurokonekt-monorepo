@@ -7,7 +7,7 @@ export class UserProfileValidator {
     if (role === UserRole.Mentor) {
       return ['bio', 'skills', 'availability', 'updatedById'];
     }
-    return ['bio', 'learningGoals', 'areasOfInterest', 'preferredSessionType', 'availability', 'updatedById'];
+    return ['bio', 'learningGoals', 'areasOfInterest', 'preferredSessionType', 'updatedById'];
   }
 
   static validateRequiredFields(dto: UpdateMentorProfileDto | UpdateMenteeProfileDto, role: UserRole): string[] {
@@ -48,7 +48,6 @@ export class UserProfileValidator {
         learningGoals: currentDto.learningGoals,
         areasOfInterest: currentDto.areasOfInterest,
         preferredSessionType: currentDto.preferredSessionType,
-        availability: instanceToPlain(currentDto.availability),
         updatedById: currentDto.updatedById,
       };
     }

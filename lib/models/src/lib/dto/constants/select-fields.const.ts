@@ -48,7 +48,6 @@ export class SelectFields {
       learningGoals: true,
       areasOfInterest: true,
       preferredSessionType: true,
-      availability: true,
       updatedAt: true,
       user: { select: this.getUserCredentialsSelect() },
       updatedBy: { select: { id: true, firstName: true, lastName: true } }
