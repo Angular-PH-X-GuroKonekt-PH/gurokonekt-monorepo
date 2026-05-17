@@ -27,19 +27,17 @@ export class UserProfileValidator {
     }
   }
 
-  static buildProfilePayload(dto: UpdateMenteeProfileDto | UpdateMentorProfileDto, role: UserRole, isProfileComplete: boolean) {
+  static buildProfilePayload(dto: UpdateMenteeProfileDto | UpdateMentorProfileDto, role: UserRole) {
     if (role === UserRole.Mentor) {
       const currentDto = dto as UpdateMentorProfileDto;
       return {
         bio: currentDto.bio,
+        areasOfExpertise: currentDto.areasOfExpertise,
+        yearsOfExperience: currentDto.yearsOfExperience,
         skills: currentDto.skills,
         sessionRate: currentDto.sessionRate,
         availability: instanceToPlain(currentDto.availability),
         updatedById: currentDto.updatedById,
-        ...(isProfileComplete && {
-          areasOfExpertise: currentDto.areasOfExpertise,
-          yearsOfExperience: currentDto.yearsOfExperience,
-        }),
       };
     } else {
       const currentDto = dto as UpdateMenteeProfileDto;
