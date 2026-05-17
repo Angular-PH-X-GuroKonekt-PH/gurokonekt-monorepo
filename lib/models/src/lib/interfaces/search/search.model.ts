@@ -143,7 +143,7 @@ export interface MentorSearchRequest {
   minYearsExperience?: number;
   maxYearsExperience?: number;
   availabilityDay?: DaysInWeek;
-  minRating?: number;        // PENDING BACKEND
+  // minRating?: number;        // PENDING BACKEND
   language?: string;
   sortBy?: SearchSortBy;
   sortOrder?: SearchSortOrder;

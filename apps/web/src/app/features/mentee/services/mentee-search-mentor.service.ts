@@ -7,7 +7,7 @@ import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 
 @Injectable({ providedIn: 'root' })
-export class MentorSearchService {
+export class MenteeSearchMentorService {
   private readonly http = inject(HttpClient);
 
   searchMentors(filters: MentorSearchFilter): Observable<MentorSearchResultInterface> {

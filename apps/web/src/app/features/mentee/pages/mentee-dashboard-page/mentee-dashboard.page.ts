@@ -14,7 +14,7 @@ import { of, switchMap } from 'rxjs';
 import { MentorService } from '../../../mentor/services/mentor.service';
 import { CommonModule } from '@angular/common';
 import { MentorSearchItemInterface } from '@gurokonekt/models/interfaces/search/search.model';
-import { MentorCardListSkeleton } from '../../../../shared/components/skeleton-loaders/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
+import { MentorCardListSkeleton } from '../../components/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
 import { BookingCardListSkeleton } from '../../../../shared/components/skeleton-loaders/booking-card-list-skeleton/booking-card-list-skeleton.component';
 import { GreetingCard } from 'apps/web/src/app/shared/components/greeting-card/greeting-card.component';
 import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';

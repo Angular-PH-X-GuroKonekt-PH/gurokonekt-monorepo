@@ -1,4 +1,4 @@
-import { Component, input } from '@angular/core';
+import { Component, computed, input } from '@angular/core';
 import {
   MentorProfileSearch,
   MentorSearchItemInterface,
@@ -17,12 +17,32 @@ import { getLanguageLabel } from '../../../../shared/utils';
 export class MentorInfoCard {
   mentor = input<MentorSearchItemInterface | null>(null);
 
+  protected readonly profile = computed(() => {
+    const mentor = this.mentor();
+
+    return mentor ? this.getProfile(mentor) : null;
+  });
+
+  protected readonly skills = computed(() =>
+    this.getPrimarySkills(this.profile()?.skills ?? [])
+  );
+
+  protected readonly remainingSkillsCount = computed(() =>
+    Math.max((this.profile()?.skills.length ?? 0) - this.skills().length, 0)
+  );
+
+  protected readonly availabilityLabels = computed(() => {
+    const mentor = this.mentor();
+
+    return mentor ? this.getAvailabilityLabels(mentor) : [];
+  });
+
   getProfile(mentor: MentorSearchItemInterface): MentorProfileSearch | null {
     return mentor.mentorProfiles[0] ?? null;
   }
 
   getPrimarySkills(skills: string[]): string[] {
-    return skills.slice(0, 3);
+    return skills.slice(0, 5);
   }
 
   getAvailability(mentor: MentorSearchItemInterface): UserAvailabilityInterface[] {

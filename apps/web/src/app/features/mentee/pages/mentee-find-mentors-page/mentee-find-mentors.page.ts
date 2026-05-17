@@ -10,8 +10,8 @@ import {
   MentorSearchResultInterface,
 } from '@gurokonekt/models/interfaces/search/search.model';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { MentorCardListSkeleton } from '../../../../shared/components/skeleton-loaders/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
-import { MentorSearchService } from '../../services/mentor-search.service';
+import { MentorCardListSkeleton } from '../../components/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
+import { MenteeSearchMentorService } from '../../services/mentee-search-mentor.service';
 import { MentorInfoCard } from '../../components/mentor-info-card/mentor-info-card';
 import { MentorSearch } from '../../components/mentor-search/mentor-search';
 import { FindMentorsSearchState } from '../../interfaces/search-mentor.interface';
@@ -31,14 +31,14 @@ import { FindMentorsSearchState } from '../../interfaces/search-mentor.interface
 export class MenteeFindMentorsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly mentorSearchService = inject(MentorSearchService);
+  private readonly menteeSearchMentorService = inject(MenteeSearchMentorService);
 
   protected readonly searchState = toSignal(
     this.route.queryParams.pipe(
       switchMap((params) => {
         const filters = this.buildFiltersFromParams(params);
 
-        return this.mentorSearchService.searchMentors(filters).pipe(
+        return this.menteeSearchMentorService.searchMentors(filters).pipe(
           map((response) => this.buildSearchState(response)),
           startWith(this.buildLoadingSearchState(filters)),
           catchError((error) =>
