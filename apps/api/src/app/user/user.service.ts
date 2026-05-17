@@ -58,10 +58,10 @@ export class UserService {
   // ====================================================
 
   async getUserProfileById(
-    userId: string, 
-    ipAddress: string, 
+    userId: string,
+    ipAddress: string,
     userAgent: string
-  ): Promise<ResponseDto> { 
+  ): Promise<ResponseDto> {
     try {
       const user = await this.prisma.db.user.findUnique({
         where: { id: userId },
@@ -89,6 +89,22 @@ export class UserService {
         };
       }
 
+      // Fetch role-specific profile and embed it alongside user credentials
+      let responseData: Record<string, unknown> = { ...user };
+      if (user.role === UserRole.Mentee) {
+        const menteeProfile = await this.prisma.db.menteeProfile.findUnique({
+          where: { userId },
+          select: SelectFields.getMenteeProfileOnlySelect(),
+        });
+        responseData = { ...user, menteeProfile };
+      } else if (user.role === UserRole.Mentor) {
+        const mentorProfile = await this.prisma.db.mentorProfile.findUnique({
+          where: { userId },
+          select: SelectFields.getMentorProfileOnlySelect(),
+        });
+        responseData = { ...user, mentorProfile };
+      }
+
       await this.prisma.db.logs.create({
         data: {
           actionType: LogsActionType.Read,
@@ -105,7 +121,7 @@ export class UserService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.GET_USER_PROFILE.code,
         message: API_RESPONSE.SUCCESS.GET_USER_PROFILE.message,
-        data: user,
+        data: responseData,
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -651,7 +667,7 @@ export class UserService {
       let profileResponse: Record<string, unknown> | null = null;
 
       if (role === UserRole.Mentor) {
-        const payload = UserProfileValidator.buildProfilePayload(effectiveDto, role, isProfileComplete);
+        const payload = UserProfileValidator.buildProfilePayload(effectiveDto, role);
         await this.prisma.db.$transaction(async (tx) => {
           profileResponse = await tx.mentorProfile.upsert({
             where: { userId },

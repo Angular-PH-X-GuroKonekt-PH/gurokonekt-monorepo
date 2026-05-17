@@ -81,6 +81,35 @@ export class SelectFields {
     }
   }
 
+  static getMenteeProfileOnlySelect() {
+    return {
+      id: true,
+      bio: true,
+      learningGoals: true,
+      areasOfInterest: true,
+      preferredSessionType: true,
+      availability: true,
+      updatedAt: true,
+      updatedBy: { select: { id: true, firstName: true, lastName: true } },
+    };
+  }
+
+  static getMentorProfileOnlySelect() {
+    return {
+      id: true,
+      title: true,
+      areasOfExpertise: true,
+      yearsOfExperience: true,
+      linkedInUrl: true,
+      bio: true,
+      skills: true,
+      sessionRate: true,
+      availability: true,
+      updatedAt: true,
+      updatedBy: { select: { id: true, firstName: true, lastName: true } },
+    };
+  }
+
   static getMentorSearchSelect() {
     return {
       id: true,
