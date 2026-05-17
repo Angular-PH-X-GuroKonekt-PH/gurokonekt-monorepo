@@ -144,7 +144,6 @@ model MenteeProfile {
   learningGoals        String[]                   @map("learning_goals")
   areasOfInterest      String[]                   @map("areas_of_interest")
   preferredSessionType MenteePreferredSessionType @map("preferred_session_type")
-  availability         Json
   updatedById          String?                    @map("updated_by_id")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
 
