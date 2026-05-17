@@ -17,6 +17,15 @@ export class AuthValidationService {
     return !!user;
   }
 
+  async phoneExists(phone: string): Promise<boolean> {
+    if (!phone) return false;
+    const user = await this.prisma.db.user.findUnique({
+      where: { phoneNumber: phone },
+      select: { id: true },
+    });
+    return !!user;
+  }
+
   async getUserByEmail(email: string) {
     return this.prisma.db.user.findUnique({
       where: { email: email.toLowerCase().trim() },
