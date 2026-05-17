@@ -114,19 +114,6 @@ export class UpdateMenteeProfileDto implements Partial<UpdateMenteeProfileInterf
   @IsOptional()
   preferredSessionType?: MenteePreferredSessionType;
 
-  @ApiPropertyOptional({ type: [UserAvailabilityDto] })
-  @Transform(({ value }) => {
-    if (typeof value === 'string') {
-      try { return JSON.parse(value); } catch { return value; }
-    }
-    return value;
-  })
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => UserAvailabilityDto)
-  @IsOptional()
-  availability?: UserAvailabilityDto[];
-
   @ApiPropertyOptional()
   @IsUUID()
   @IsOptional()

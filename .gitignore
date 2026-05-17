@@ -52,3 +52,5 @@ apps/api/.env
 CLAUDE.md
 docs
 postman
+apps/api/.env.prod
+apps/api/.env.test
