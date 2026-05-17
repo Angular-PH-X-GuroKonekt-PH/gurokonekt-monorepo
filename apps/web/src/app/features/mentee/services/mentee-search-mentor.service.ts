@@ -7,7 +7,7 @@ import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 
 @Injectable({ providedIn: 'root' })
-export class MentorSearchService {
+export class MenteeSearchMentorService {
   private readonly http = inject(HttpClient);
 
   searchMentors(filters: MentorSearchFilter): Observable<MentorSearchResultInterface> {
@@ -41,6 +41,12 @@ export class MentorSearchService {
       ...(filters.skills.length ? { skills: filters.skills.join(',') } : {}),
       ...(filters.expertise.length ? { expertise: filters.expertise.join(',') } : {}),
       ...(filters.availabilityDay != null ? { availabilityDay: filters.availabilityDay } : {}),
+      ...(filters.language != null ? { language: filters.language } : {}),
+      ...(filters.minSessionRate != null ? { minSessionRate: filters.minSessionRate } : {}),
+      ...(filters.maxSessionRate != null ? { maxSessionRate: filters.maxSessionRate } : {}),
+      ...(filters.minYearsExperience != null ? { minYearsExperience: filters.minYearsExperience } : {}),
+      ...(filters.maxYearsExperience != null ? { maxYearsExperience: filters.maxYearsExperience } : {}),
+      // ...(filters.minRating != null ? { minRating: filters.minRating } : {}), // PENDING BACKEND
     };
 
     return Object.entries(dto).reduce((params, [key, value]) => {
