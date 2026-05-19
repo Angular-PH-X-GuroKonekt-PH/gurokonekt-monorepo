@@ -653,7 +653,15 @@ export class UserService {
       let profileResponse: Record<string, unknown> | null = null;
 
       if (role === UserRole.Mentor) {
-        const payload = UserProfileValidator.buildProfilePayload(effectiveDto, role);
+        const payload = UserProfileValidator.buildProfilePayload(effectiveDto, role) as {
+          bio: string;
+          areasOfExpertise: string[];
+          yearsOfExperience: number;
+          skills: string[];
+          sessionRate: number;
+          availability: Record<string, any>;
+          updatedById?: string;
+        };
         await this.prisma.db.$transaction(async (tx) => {
           profileResponse = await tx.mentorProfile.upsert({
             where: { userId },
@@ -681,7 +689,7 @@ export class UserService {
           bio: currentDto.bio,
           learningGoals: currentDto.learningGoals,
           areasOfInterest: currentDto.areasOfInterest,
-          preferredSessionType: currentDto.preferredSessionType,
+          preferredSessionType: currentDto.preferredSessionType!,
           updatedById: currentDto.updatedById,
         };
         await this.prisma.db.$transaction(async (tx) => {
