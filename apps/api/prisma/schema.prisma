@@ -99,7 +99,7 @@ model User {
   country             String?
   timezone            String?
   language            String?
-  phoneNumber         String?    @unique         @map("phone_number")        
+  phoneNumber         String?                    @map("phone_number")
   hashPassword        String                     @map("hash_password")
   isProfileComplete   Boolean    @default(false) @map("is_profile_complete")
   isMentorProfileComplete   Boolean    @default(false) @map("is_mentor_profile_complete")
