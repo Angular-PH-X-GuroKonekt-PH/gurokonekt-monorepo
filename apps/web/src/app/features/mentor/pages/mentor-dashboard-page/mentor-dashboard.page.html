@@ -1,172 +1,158 @@
-<section class="min-h-screen px-5 py-6 text-blue-950">
-    <div class="relative w-full overflow-hidden rounded-4xl bg-linear-to-br from-slate-950 via-blue-950 to-indigo-900 p-5 sm:p-6 md:p-8">
-        <div class="pointer-events-none absolute inset-0 opacity-30">
-            <div class="absolute -right-12 -top-12 h-56 w-56 rounded-full bg-orange-400/20 blur-3xl"></div>
-            <div class="absolute bottom-0 right-1/4 h-72 w-72 rounded-full bg-blue-400/20 blur-3xl"></div>
-            <div class="absolute left-0 top-1/3 h-64 w-64 rounded-full bg-indigo-300/10 blur-3xl"></div>
+<div class="font-sans p-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
+    <div
+      class="lg:col-span-2 bg-linear-to-r from-[#1e2d5a] to-[#2d4080] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+    >
+      <div class="px-7 py-5 flex-1 flex items-center justify-between gap-4">
+        <div class="flex flex-col justify-center">
+          <p class="text-sm font-semibold text-orange-400 uppercase tracking-widest mb-2">
+            Good to see you back
+          </p>
+
+          <h2 class="text-2xl font-bold mb-2 text-white">
+            Welcome back, {{ fullName() }}!
+          </h2>
+
+          <p class="text-sm" style="color: #E6ECFF;">
+            Here's what's happening with your mentoring sessions today.
+          </p>
         </div>
 
-        <div class="relative flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-            <div class="flex flex-col items-start justify-start gap-3 md:max-w-2xl">
-                <div>
-                    <p class="inline-flex items-center rounded-full bg-white/12 px-3 py-1.5 text-xs font-semibold uppercase tracking-[0.18em] text-white/85">
-                        GuroKonekt
-                    </p>
-                </div>
+        <img src="assets/logos/logo.svg" alt="GuroKonekt logo" class="h-30 w-30" />
+      </div>
 
-                <div class="space-y-1">
-                    <p class="font-bold leading-tight text-white text-[clamp(1.5rem,3vw,1.75rem)]">
-                        Welcome back, {{ mentorName() }}!
-                        <br />
-                        <span class="hidden font-normal text-white/75 md:block text-[clamp(0.875rem,1.8vw,0.9rem)]">
-                            You have {{ pendingRequests() }} mentorship requests awaiting your approval today.
-                        </span>
-                    </p>
-                </div>
-            </div>
+      <div class="relative px-7 py-6 flex items-center justify-between gap-4">
+        @if (mentorBookings.upcomingSession(); as session) {
+          <div>
+            <span
+              class="inline-block bg-orange-500 text-white text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2"
+            >
+              Coming Up Next
+            </span>
 
-            <div class="hidden md:flex md:shrink-0 md:items-center md:justify-center">
-                <div class="flex h-32 w-32 items-center justify-center rounded-[2rem] lg:h-36 lg:w-36 lg:p-6">
-                    <img src="assets/logos/logo.svg" alt="GuroKonekt logo" class="max-h-full max-w-full object-contain opacity-70"/>
-                </div>
-            </div>
-        </div>
-    </div>
+            <h3 class="text-white text-xl font-bold leading-tight">
+              {{ session.title }}
+            </h3>
 
-    <div class="mt-8 grid gap-5 md:grid-cols-3">
-        <div class="relative overflow-hidden rounded-[22px] bg-white px-8 py-7 shadow-sm">
-            <div class="absolute right-3 bottom-3 opacity-[0.07]">
-                <app-icon [name]="'clock'" class="h-20 w-20 text-orange-500"></app-icon>
-            </div>
-            <div class="relative flex items-center gap-5">
-                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white bg-orange-500">
-                    <app-icon [name]="'clock'" class="h-7 w-7"></app-icon>
-                </div>
-                <div class="grid grid-rows-2 h-14">
-                    <p class="text-3xl font-extrabold self-start">{{ pendingRequests() }}</p>
-                    <p class="text-sm font-medium text-slate-500 self-end">Pending Requests</p>
-                </div>
-            </div>
-        </div>
+            <p class="text-blue-200 text-sm mt-1">
+              with {{ session.mentor }} &bull;
+              {{ session.dateTime | date:'MMM d, y' }} &bull;
+              {{ session.dateTime | date:'h:mm a' }}
+            </p>
+          </div>
 
-        <div class="relative overflow-hidden rounded-[22px] bg-white px-8 py-7 shadow-sm">
-            <div class="absolute right-3 bottom-3 opacity-[0.07]">
-                <app-icon [name]="'calendar-days'" class="h-20 w-20 text-blue-950"></app-icon>
-            </div>
-            <div class="relative flex items-center gap-5">
-                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white bg-blue-950">
-                    <app-icon [name]="'calendar-days'" class="h-7 w-7"></app-icon>
-                </div>
-                <div class="grid grid-rows-2 h-14">
-                    <p class="text-3xl font-extrabold self-start">{{ upcomingSessions() }}</p>
-                    <p class="mt-2 text-sm font-medium text-slate-500 self-end">Upcoming Sessions</p>
-                </div>
-            </div>
-        </div>
-
-        <div class="relative overflow-hidden rounded-[22px] bg-white px-8 py-7 shadow-sm">
-            <div class="absolute right-3 bottom-3 opacity-[0.07]">
-                <app-icon [name]="'check-mark-circle'" class="h-20 w-20 text-blue-700"></app-icon>
-            </div>
-            <div class="relative flex items-center gap-5">
-                <div class="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl text-white bg-blue-700">
-                    <app-icon [name]="'check-mark-circle'" class="h-7 w-7"></app-icon>
-                </div>
-                <div class="grid grid-rows-2 h-14">
-                    <p class="text-3xl font-extrabold self-start">{{ completedSessions() }}</p>
-                    <p class="mt-2 text-sm font-medium text-slate-500 self-end">Completed Sessions</p>
-                </div>
-            </div>
-        </div>
-    </div>
-
-    <div class="mt-8">
-        <div class="mb-5 flex items-center justify-between">
-            <h2 class="text-md font-semibold">Quick Actions</h2>
-        </div>
-
-        <div class="grid gap-7 sm:grid-cols-2 xl:grid-cols-4">
-            <a routerLink="/booking-overview" class="group flex min-h-44 flex-col rounded-[22px] p-7 shadow-sm bg-white text-blue-950 hover:bg-blue-950 hover:text-white transition-colors duration-200 cursor-pointer">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 group-hover:bg-white/10 transition-colors duration-200">
-                    <app-icon [name]="'book-open'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
-                </div>
-                <h2 class="mt-7 text-sm font-extrabold">View Bookings</h2>
-                <p class="mt-3 max-w-40 text-xs leading-5 text-slate-500 group-hover:text-blue-100 transition-colors duration-200">
-                    See your full schedule and student bios for upcoming calls.
-                </p>
-                <span aria-hidden="true"
-                    class="mt-auto inline-flex items-center gap-2 pt-6 text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-white transition-colors duration-200">
-                    View List <app-icon [name]="'arrow-long-right'" class="h-5 w-3"></app-icon>
-                </span>
+          @if (session.sessionLink) {
+            <a
+              [href]="session.sessionLink"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="shrink-0 flex items-center gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold text-sm px-5 py-3 rounded-xl transition-colors shadow-lg whitespace-nowrap"
+            >
+              Join Call
             </a>
-
-            <a routerLink="/manage-availability" class="group flex min-h-44 flex-col rounded-[22px] p-7 shadow-sm bg-white text-blue-950 hover:bg-blue-950 hover:text-white transition-colors duration-200 cursor-pointer">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 group-hover:bg-white/10 transition-colors duration-200">
-                    <app-icon [name]="'calendar-days'" class="h-10 w-5 transition-transform group-hover:scale-110"></app-icon>
-                </div>
-                <h2 class="mt-7 text-sm font-extrabold">Manage Availability</h2>
-                <p class="mt-3 max-w-40 text-xs leading-5 text-slate-500 group-hover:text-blue-100 transition-colors duration-200">
-                    Configure your weekly slots and sync your calendar.
-                </p>
-                <span aria-hidden="true"
-                    class="mt-auto inline-flex items-center gap-2 pt-6 text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-white transition-colors duration-200">
-                    Explore <app-icon [name]="'arrow-long-right'" class="h-5 w-3"></app-icon>
-                </span>
-            </a>
-
-            <a routerLink="/settings" class="group flex min-h-44 flex-col rounded-[22px] p-7 shadow-sm bg-white text-blue-950 hover:bg-blue-950 hover:text-white transition-colors duration-200 cursor-pointer">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 group-hover:bg-white/10 transition-colors duration-200">
-                    <app-icon [name]="'user'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
-                </div>
-                <h2 class="mt-7 text-sm font-extrabold">Edit Profile</h2>
-                <p class="mt-3 max-w-40 text-xs leading-5 text-slate-500 group-hover:text-blue-100 transition-colors duration-200">
-                    Update your expertise, bio, and mentorship pricing.
-                </p>
-                <span aria-hidden="true"
-                    class="mt-auto inline-flex items-center gap-2 pt-6 text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-white transition-colors duration-200">
-                    Update <app-icon [name]="'arrow-long-right'" class="h-5 w-3"></app-icon>
-                </span>
-            </a>
-
-            <a routerLink="/notifications" class="group flex min-h-44 flex-col rounded-[22px] p-7 shadow-sm bg-white text-blue-950 hover:bg-blue-950 hover:text-white transition-colors duration-200 cursor-pointer">
-                <div class="flex h-11 w-11 items-center justify-center rounded-xl bg-slate-50 group-hover:bg-white/10 transition-colors duration-200">
-                    <app-icon [name]="'bell'" class="h-5 w-5 transition-transform group-hover:scale-110"></app-icon>
-                </div>
-                <h2 class="mt-7 text-sm font-extrabold">Recent Notifications</h2>
-                <p class="mt-3 max-w-40 text-xs leading-5 text-slate-500 group-hover:text-blue-100 transition-colors duration-200">
-                    Check recent student activity and system updates.
-                </p>
-                <span aria-hidden="true"
-                    class="mt-auto inline-flex items-center gap-2 pt-6 text-[11px] font-bold uppercase tracking-wider text-slate-400 group-hover:text-white transition-colors duration-200">
-                    Check All <app-icon [name]="'arrow-long-right'" class="h-5 w-3"></app-icon>
-                </span>
-            </a>
-        </div>
-    </div>
-
-    <section class="mt-8">
-        <div class="mb-5 flex items-center justify-between">
-            <h2 class="text-md font-semibold">Next Sessions</h2>
-            <button type="button" class="text-[11px] font-bold uppercase tracking-wide text-blue-800">
-                View All
+          } @else {
+            <button
+              type="button"
+              disabled
+              title="No link provided"
+              class="shrink-0 flex items-center gap-2 bg-gray-300 text-white font-semibold text-sm px-5 py-3 rounded-xl shadow-lg whitespace-nowrap cursor-not-allowed"
+            >
+              Join Call
             </button>
+          }
+        } @else {
+          <div>
+            <span
+              class="inline-block bg-white/10 text-blue-100 text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2"
+            >
+              Schedule Clear
+            </span>
+
+            <h3 class="text-white text-xl font-bold leading-tight">
+              No upcoming sessions
+            </h3>
+
+            <p class="text-blue-200 text-sm mt-1">
+              Approved mentoring sessions will appear here once scheduled.
+            </p>
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="flex flex-col gap-4">
+      <div class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
+            Pending Requests
+          </p>
+
+          <p class="text-4xl font-bold text-gray-800">
+            {{ mentorBookings.pendingRequests() }}
+          </p>
         </div>
 
-        <div class="flex flex-col gap-3">
-            @for (session of nextSessions(); track session.name) {
-                <div class="rounded-[22px] bg-white p-6 shadow-sm">
-                    <div class="flex items-center justify-between gap-4">
-                        <div>
-                            <h3 class="text-base font-extrabold">{{ session.name }}</h3>
-                            <p class="mt-1 text-sm text-slate-500">{{ session.topic }}</p>
-                        </div>
-                        <div class="text-right">
-                            <p class="text-sm font-extrabold">{{ session.time }}</p>
-                            <p class="mt-1 text-xs text-slate-400">{{ session.eta }}</p>
-                        </div>
-                    </div>
-                </div>
-            }
+        <div class="w-14 h-14 rounded-2xl bg-orange-100 flex items-center justify-center shrink-0">
+          <svg class="w-7 h-7 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+            />
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 11v4M12 11a1 1 0 100-2 1 1 0 000 2z"
+            />
+          </svg>
         </div>
-    </section>
-</section>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
+            Upcoming Sessions
+          </p>
+
+          <p class="text-4xl font-bold text-gray-800">
+            {{ mentorBookings.upcomingSessions() }}
+          </p>
+        </div>
+
+        <div class="w-14 h-14 rounded-2xl bg-indigo-100 flex items-center justify-center shrink-0">
+          <svg class="w-7 h-7 text-indigo-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <rect x="3" y="4" width="18" height="18" rx="2" ry="2" stroke="currentColor" stroke-width="1.8" fill="none" />
+            <line x1="16" y1="2" x2="16" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <line x1="8" y1="2" x2="8" y2="6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" />
+            <line x1="3" y1="10" x2="21" y2="10" stroke="currentColor" stroke-width="1.8" />
+            <path stroke-linecap="round" d="M8 14h.01M12 14h.01M16 14h.01M8 18h.01M12 18h.01" stroke-width="2" />
+          </svg>
+        </div>
+      </div>
+
+      <div class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between">
+        <div>
+          <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
+            Total Completed
+          </p>
+
+          <p class="text-4xl font-bold text-gray-800">
+            {{ mentorBookings.totalCompleted() }}
+          </p>
+        </div>
+
+        <div class="w-14 h-14 rounded-2xl bg-gray-100 flex items-center justify-center shrink-0">
+          <svg class="w-7 h-7 text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
+          </svg>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <app-mentor-bookings-table footerMode="viewAll" />
+</div>
