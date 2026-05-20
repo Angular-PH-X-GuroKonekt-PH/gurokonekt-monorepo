@@ -3,6 +3,7 @@ export * from './api.util';
 export * from './form-validation.util';
 export * from './http-error.util';
 export * from './icon.util';
+export * from './language.util';
 export * from './location-data.util';
 export * from './notification-display.util';
 export * from './password-visibility.util';

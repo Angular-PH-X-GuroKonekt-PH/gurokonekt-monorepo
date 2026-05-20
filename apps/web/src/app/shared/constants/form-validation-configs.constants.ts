@@ -32,10 +32,7 @@ export const FORM_FIELD_VALIDATORS = {
   // Professional Fields (for mentors)
   EXPERTISE_AREAS: [Validators.required, Validators.minLength(1)], // Array validation
   YEARS_OF_EXPERIENCE: [Validators.required, Validators.min(1), Validators.max(60)],
-  LINKEDIN_URL: [
-    Validators.required,
-    Validators.pattern(VALIDATION_PATTERNS.LINKEDIN_URL),
-  ],
+  LINKEDIN_URL: [Validators.pattern(VALIDATION_PATTERNS.LINKEDIN_URL)], // Optional LinkedIn profile URL
   
   // File Upload Fields
   VERIFICATION_FILES: [Validators.required], // Array validation for files

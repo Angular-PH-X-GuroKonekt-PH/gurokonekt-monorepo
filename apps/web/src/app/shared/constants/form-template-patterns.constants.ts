@@ -13,12 +13,12 @@ export const FORM_CSS_CLASSES = {
   LABEL_REQUIRED: 'text-orange-500',
   
   // Input fields
-  INPUT_BASE: 'w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors',
+  INPUT_BASE: 'form-control-input',
   INPUT_ERROR: 'border-red-500',
-  INPUT_WITH_ICON: 'pr-12', // For password visibility toggle
+  INPUT_WITH_ICON: 'form-control-input-with-icon', // For password visibility toggle
   
   // Select dropdowns
-  SELECT_BASE: 'w-full px-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors',
+  SELECT_BASE: 'form-control-input',
   SELECT_ERROR: 'border-red-500',
   
   // Error messages
@@ -44,9 +44,9 @@ export const FORM_CSS_CLASSES = {
   STEP_PROGRESS: 'text-sm text-gray-500',
   
   // Phone input specific
-  PHONE_COUNTRY_BUTTON: 'flex items-center gap-2 h-full px-4 border-r-2 border-gray-200 bg-gray-50 rounded-l-xl hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-28',
+  PHONE_COUNTRY_BUTTON: 'flex items-center gap-2 h-full px-4 border-r-2 border-gray-200 bg-gray-50 rounded-l-xl hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500 min-w-[7rem]',
   PHONE_DROPDOWN: 'absolute top-full left-0 z-50 w-80 max-h-60 overflow-y-auto bg-white border-2 border-gray-200 rounded-xl shadow-lg mt-1',
-  PHONE_INPUT: 'w-full pl-32 pr-4 py-3 rounded-xl border-2 border-gray-200 focus:border-orange-500 focus:outline-none transition-colors',
+  PHONE_INPUT: 'form-control-input form-control-phone-input',
   
   // Password visibility toggle
   PASSWORD_TOGGLE_BUTTON: 'absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700',
