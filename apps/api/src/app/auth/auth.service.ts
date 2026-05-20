@@ -51,7 +51,7 @@ export class AuthService {
         options: { emailRedirectTo },
       });
 
-      if (error || !data?.user?.id || !data.user.identities?.length) {
+      if (error || !data?.user?.id) {
         return error
           ? this.errorHandler.handleSupabaseError(error)
           : AuthResponseFactory.errorByKey('NO_DATA_RETURNED_ON_AUTH');
@@ -163,16 +163,6 @@ export class AuthService {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
           message: API_RESPONSE.ERROR.NO_DATA_RETURNED_ON_AUTH.message,
-          data: null,
-        };
-      }
-
-      if (!data.user.identities || data.user.identities.length === 0) {
-        this.logger.error(`${API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message} (${normalizedEmail}) — Supabase identity empty`);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
-          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
           data: null,
         };
       }
