@@ -144,15 +144,6 @@ export class AuthService {
         };
       }
 
-      if (dto.phoneNumber && await this.validation.phoneExists(dto.phoneNumber)) {
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code,
-          message: API_RESPONSE.ERROR.USER_ALREADY_EXISTS.message,
-          data: null,
-        };
-      }
-
       const emailRedirectTo = dto.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`;
       const { data, error } = await this.supabase.client.auth.signUp({
         email: normalizedEmail,
