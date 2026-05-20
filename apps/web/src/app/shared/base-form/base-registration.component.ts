@@ -157,6 +157,10 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
     return suffix ? `${fullName}, ${suffix}` : fullName;
   }
 
+  protected passwordsMatch(): boolean {
+    return !this.registerForm.hasError('passwordMismatch');
+  }
+
   protected navigateToLogin(): void {
     this.router.navigate([APP_ROUTES.LOGIN]);
   }

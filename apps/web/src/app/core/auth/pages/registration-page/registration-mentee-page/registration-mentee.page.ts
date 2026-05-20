@@ -113,7 +113,8 @@ export class RegistrationMenteePage
           !!form.get('email')?.valid &&
           !!form.get('phoneNumber')?.valid &&
           !!form.get('password')?.valid &&
-          !!form.get('confirmPassword')?.valid
+          !!form.get('confirmPassword')?.valid &&
+          this.passwordsMatch()
         );
       case 3:
         return !!form.get('country')?.valid && !!form.get('timezone')?.valid;
