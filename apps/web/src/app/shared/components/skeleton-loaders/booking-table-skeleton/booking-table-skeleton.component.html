@@ -1,0 +1,35 @@
+<tbody class="divide-y divide-gray-50">
+  @for (_ of items(); track $index) {
+  <tr class="animate-pulse">
+    <td class="px-6 py-4">
+      <div class="flex items-center gap-3">
+        <div class="h-10 w-10 rounded-full bg-slate-200"></div>
+
+        <div class="space-y-2">
+          <div class="h-3.5 w-32 rounded bg-slate-200"></div>
+          <div class="h-3 w-14 rounded bg-slate-100"></div>
+        </div>
+      </div>
+    </td>
+
+    <td class="px-24 py-4">
+      <div class="h-3.5 w-52 max-w-full rounded bg-slate-200"></div>
+    </td>
+
+    <td class="px-24 py-4">
+      <div class="space-y-2">
+        <div class="h-3.5 w-24 rounded bg-slate-200"></div>
+        <div class="h-3 w-16 rounded bg-slate-100"></div>
+      </div>
+    </td>
+
+    <td class="px-24 py-4">
+      <div class="h-6 w-24 rounded-full bg-slate-100"></div>
+    </td>
+
+    <td class="px-18 py-4">
+      <div class="h-9 w-9 rounded-lg bg-slate-100"></div>
+    </td>
+  </tr>
+  }
+</tbody>

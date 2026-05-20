@@ -54,9 +54,16 @@ export interface BookingWithUsersInterface extends BookingInterface {
   mentee?: BookingUserSummaryInterface | null;
 }
 
-
-
 export interface BookingCardInterface extends BookingInterface {
   mentor?: BookingUserSummaryInterface | null;
   mentee?: BookingUserSummaryInterface | null;
 }
+
+export interface UpcomingSession {
+  title: string;
+  mentor: string;
+  dateTime: string;
+  sessionLink?: string | null;
+}
+
+export type BookingTab = 'All' | 'Pending' | 'Approved' | 'Completed' | 'Cancelled' | 'Rejected';

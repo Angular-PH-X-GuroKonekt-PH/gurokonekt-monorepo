@@ -1,0 +1,46 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
+    <div class="relative w-full max-w-md rounded-lg bg-white shadow">
+        <div class="flex items-center justify-between border-b border-gray-200 p-4">
+            <h3 class="text-lg font-semibold text-gray-900">Approve Booking</h3>
+
+            <button type="button" (click)="closed.emit()"
+                class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900">
+                <span class="sr-only">Close modal</span>
+                &times;
+            </button>
+        </div>
+
+        <div class="p-4">
+            <label for="session-link" class="mb-2 block text-sm font-medium text-gray-900">
+                Session link
+            </label>
+
+            <input id="session-link" type="url" [ngModel]="sessionLink()" (ngModelChange)="sessionLink.set($event)"
+                placeholder="https://meet.google.com/..."
+                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500" />
+
+            <p class="mt-2 text-sm text-gray-500">
+                Add the meeting link before approving this session.
+            </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-3 border-t border-gray-200 p-4">
+            <button type="button" (click)="closed.emit()"
+                class="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100">
+                Cancel
+            </button>
+
+            <button type="button" (click)="confirmed.emit()" [disabled]="submitting()"
+                class="relative overflow-hidden rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed">
+                <span [class.opacity-0]="submitting()">Approve</span>
+
+                @if (submitting()) {
+                <span class="absolute inset-0 z-10 flex items-center justify-center bg-gray-300/50">
+                    <span
+                        class="inline-block h-5 w-5 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+                </span>
+                }
+            </button>
+        </div>
+    </div>
+</div>

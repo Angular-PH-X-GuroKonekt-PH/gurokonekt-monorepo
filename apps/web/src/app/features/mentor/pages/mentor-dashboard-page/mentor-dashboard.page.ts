@@ -1,22 +1,22 @@
-import { Component, signal } from '@angular/core';
-import { IconComponent } from "../../../../shared/components/icon/icon.component";
-import { RouterLink } from '@angular/router';
+import { DatePipe } from '@angular/common';
+import { Component, computed, inject } from '@angular/core';
 
+import { MentorBookingsTable } from '../../components/mentor-bookings-table/mentor-bookings-table';
+import { MentorBookingService } from '../../services/mentor-booking.service';
+import { Store } from '@ngxs/store';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 @Component({
   selector: 'app-mentor-dashboard-page',
-  imports: [IconComponent, RouterLink],
-  templateUrl: './mentor-dashboard.page.html'
+  imports: [DatePipe, MentorBookingsTable],
+  templateUrl: './mentor-dashboard.page.html',
 })
 export class MentorDashboardPage {
-  mentorName = signal('Marcus');
+  store = inject(Store);
+  authUser = this.store.selectSignal(AuthSelectors.user);
+  mentorBookings = inject(MentorBookingService);
 
-  pendingRequests = signal(3);
-  upcomingSessions = signal(12);
-  completedSessions = signal(148);
-
-  nextSessions = signal([
-    { name: 'Alex Chen', topic: 'Product Management Career Path', time: '2:00 PM', eta: 'In 45 minutes' },
-    { name: 'Maria Santos', topic: 'UI/UX Design Fundamentals', time: '4:30 PM', eta: 'In 3 hours' },
-    { name: 'James Reyes', topic: 'Backend Engineering with Node.js', time: '6:00 PM', eta: 'In 4.5 hours' },
-  ]);  
+  fullName = computed(() => {
+    const value = this.authUser()?.['fullName'];
+    return typeof value === 'string' && value.trim() ? value : 'Mentee';
+  });
 }
