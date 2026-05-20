@@ -43,10 +43,6 @@ export class AuthService {
         return AuthResponseFactory.errorByKey('USER_ALREADY_EXISTS');
       }
 
-      if (dto.phoneNumber && await this.validation.phoneExists(dto.phoneNumber)) {
-        return AuthResponseFactory.errorByKey('USER_ALREADY_EXISTS');
-      }
-
       // Create user in Supabase Auth
       const emailRedirectTo = dto.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`;
       const { data, error } = await this.supabase.client.auth.signUp({
