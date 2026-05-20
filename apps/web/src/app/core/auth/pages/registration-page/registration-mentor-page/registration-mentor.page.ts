@@ -131,7 +131,9 @@ export class RegistrationMentorPage
         );
       case 2:
         return (
-          !!form.get('password')?.valid && !!form.get('confirmPassword')?.valid
+          !!form.get('password')?.valid &&
+          !!form.get('confirmPassword')?.valid &&
+          this.passwordsMatch()
         );
       case 3:
         return !!form.get('country')?.valid && !!form.get('timezone')?.valid;
