@@ -91,10 +91,6 @@ export class ProfileService {
     this.appendArrayField(formData, 'areasOfInterest', data.areasOfInterest);
     this.appendFieldIfPresent(formData, 'preferredSessionType', data.preferredSessionType);
 
-    if (data.availability) {
-      formData.append('availability', JSON.stringify(data.availability));
-    }
-
     formData.append('updatedById', userId);
 
     if (avatarFile) {
