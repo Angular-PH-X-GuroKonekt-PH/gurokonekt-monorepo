@@ -28,14 +28,6 @@
       class="mx-auto w-full max-w-lg bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-8 sm:p-10"
     >
       <form [formGroup]="loginForm" (ngSubmit)="onSubmit()">
-        <!-- Error Message -->
-        @if (selectSignal.errorMessage()) {
-        <div
-          class="mb-6 p-4 bg-red-50 border-2 border-red-200 rounded-xl text-red-700 text-sm"
-        >
-          {{ selectSignal.errorMessage() }}
-        </div>
-        }
 
         <!-- Email -->
         <div class="mb-6">

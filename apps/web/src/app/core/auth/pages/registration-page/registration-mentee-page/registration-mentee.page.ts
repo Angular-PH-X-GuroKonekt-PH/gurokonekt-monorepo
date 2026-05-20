@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, signal, effect } from '@angular/core';
+import { Component, effect, inject, OnInit } from '@angular/core';
 import { ReactiveFormsModule } from '@angular/forms';
 import { FormGroup } from '@angular/forms';
 import { Store } from '@ngxs/store';
@@ -24,7 +24,6 @@ export class RegistrationMenteePage
 {
   private readonly store = inject(Store);
   private readonly toastService = inject(ToastService);
-  private readonly initialized = signal(false);
 
   protected readonly isMenteeRegisterLoading = this.store.selectSignal(
     AuthSelectors.isMenteeRegisterLoading
@@ -49,22 +48,30 @@ export class RegistrationMenteePage
   constructor() {
     super();
 
-    effect(() => {
-      if (!this.initialized()) {
-        return;
-      }
+    let lastSuccessNotified: string | null = null;
+    let lastErrorNotified: string | null = null;
 
+    effect(() => {
       const successMsg = this.successMessage();
       const errorMsg = this.errorMessage();
 
-      if (successMsg) {
+      if (successMsg && successMsg !== lastSuccessNotified) {
+        lastSuccessNotified = successMsg;
         this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
         this.store.dispatch(new ClearAuthMessages());
       }
 
-      if (errorMsg) {
+      if (errorMsg && errorMsg !== lastErrorNotified) {
+        lastErrorNotified = errorMsg;
         this.toastService.error(errorMsg, 'Registration Failed');
         this.store.dispatch(new ClearAuthMessages());
+      }
+
+      if (!successMsg) {
+        lastSuccessNotified = null;
+      }
+      if (!errorMsg) {
+        lastErrorNotified = null;
       }
     });
 
@@ -91,9 +98,6 @@ export class RegistrationMenteePage
   }
 
   ngOnInit(): void {
-    // Clear any stale auth messages from previous login attempts
-    this.store.dispatch(new ClearAuthMessages());
-    this.initialized.set(true);
     this.scrollToTop();
   }
 
