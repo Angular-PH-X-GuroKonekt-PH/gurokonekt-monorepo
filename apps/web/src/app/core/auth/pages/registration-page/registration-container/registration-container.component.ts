@@ -5,6 +5,7 @@ import { RegistrationRoleSelectionPage } from '../registration-role-selection-pa
 import { RegistrationStep } from '../../../models/registration.state.model';
 import { RegistrationState } from '../../../store/registration.state';
 import * as RegistrationActions from '../../../store/registration.actions';
+import * as AuthActions from '../../../store/auth.actions';
 import { RegistrationMenteePage } from '../registration-mentee-page/registration-mentee.page';
 import { RegistrationMentorPage } from '../registration-mentor-page/registration-mentor.page';
 import { RegistrationSelectors } from '../../../store/registration.selectors';
@@ -22,6 +23,9 @@ export class RegistrationContainer implements OnInit {
 	protected currentStep = signal<RegistrationStep>('choose-role');
 
 	ngOnInit() {
+		// Clear any stale auth messages from previous login attempts
+		this.store.dispatch(new AuthActions.ClearAuthMessages());
+		
 		// Initialize from query params once using snapshot (no subscription)
 		const step = this.route.snapshot.queryParams['step'];
 		this.store.dispatch(new RegistrationActions.InitializeFromQueryParams(step));

@@ -1,4 +1,4 @@
-import { Component, inject, OnInit, effect } from '@angular/core';
+import { Component, effect, inject, OnInit } from '@angular/core';
 import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
@@ -16,7 +16,6 @@ import {
   isExpertiseSelected,
 } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
-import { AuthState } from '../../../store/auth.state';
 import { AuthSelectors } from '../../../store/auth.selectors';
 
 @Component({
@@ -85,20 +84,31 @@ export class RegistrationMentorPage
 
     // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
-    
-    // Watch for success and error messages from auth state
+
+    let lastSuccessNotified: string | null = null;
+    let lastErrorNotified: string | null = null;
+
     effect(() => {
       const successMsg = this.successMessage();
       const errorMsg = this.errorMessage();
-      
-      if (successMsg) {
+
+      if (successMsg && successMsg !== lastSuccessNotified) {
+        lastSuccessNotified = successMsg;
         this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
         this.store.dispatch(new ClearAuthMessages());
       }
-      
-      if (errorMsg) {
+
+      if (errorMsg && errorMsg !== lastErrorNotified) {
+        lastErrorNotified = errorMsg;
         this.toastService.error(errorMsg, 'Registration Failed');
         this.store.dispatch(new ClearAuthMessages());
+      }
+
+      if (!successMsg) {
+        lastSuccessNotified = null;
+      }
+      if (!errorMsg) {
+        lastErrorNotified = null;
       }
     });
   }

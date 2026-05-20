@@ -1,4 +1,4 @@
-import { Component, inject, effect } from '@angular/core';
+import { Component, effect, inject } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { createSelectMap, Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
@@ -45,10 +45,18 @@ export class LoginPage extends BaseFormComponent {
   constructor() {
     super();
 
+    let lastErrorNotified: string | null = null;
+
     effect(() => {
       const errorMsg = this.selectSignal.errorMessage();
-      if (errorMsg) {
-        this.toastService.error(errorMsg);
+
+      if (errorMsg && errorMsg !== lastErrorNotified) {
+        lastErrorNotified = errorMsg;
+        this.toastService.errorExclusive(errorMsg, 'Login Failed');
+      }
+
+      if (!errorMsg) {
+        lastErrorNotified = null;
       }
     });
   }
@@ -83,6 +91,7 @@ export class LoginPage extends BaseFormComponent {
   }
 
   protected navigateToRegister(): void {
+    this.store.dispatch(new AuthActions.ClearAuthMessages());
     this.router.navigate([APP_ROUTES.REGISTER]);
   }
 

@@ -42,6 +42,20 @@ export class ToastService {
   }
 
   /**
+   * Show one error toast at a time (removes existing error toasts first).
+   * Use for repeated failures (e.g. login) so notifications do not stack.
+   */
+  errorExclusive(message: string, title?: string, duration = 5000): void {
+    this.toasts.update((toasts) => toasts.filter((t) => t.type !== 'error'));
+    this.show({
+      type: 'error',
+      message,
+      title: title || 'Error',
+      duration,
+    });
+  }
+
+  /**
    * Show a warning toast notification
    */
   warning(message: string, title?: string, duration = 5000): void {
