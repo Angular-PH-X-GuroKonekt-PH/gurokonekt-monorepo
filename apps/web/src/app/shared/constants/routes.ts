@@ -2,6 +2,7 @@ export const APP_ROUTES = {
   ROOT: '',
   LOGIN: 'login',
   REGISTER: 'register',
+  REGISTER_MENTOR_CONFIRMATION: 'register/mentor/confirmation',
   PROFILE_SETUP: 'profile-setup',
   DASHBOARD: 'dashboard',
   FIND_MENTORS: 'find-mentors',
