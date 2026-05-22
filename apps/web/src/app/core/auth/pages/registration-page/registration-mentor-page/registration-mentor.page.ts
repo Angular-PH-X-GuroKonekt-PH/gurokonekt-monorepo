@@ -16,6 +16,7 @@ import {
   isExpertiseSelected,
 } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
+import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { AuthSelectors } from '../../../store/auth.selectors';
 
 @Component({
@@ -94,12 +95,15 @@ export class RegistrationMentorPage
 
       if (successMsg && successMsg !== lastSuccessNotified) {
         lastSuccessNotified = successMsg;
+        this.handleSubmissionSuccess();
         this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
         this.store.dispatch(new ClearAuthMessages());
+        this.router.navigate([APP_ROUTES.REGISTER_MENTOR_CONFIRMATION]);
       }
 
       if (errorMsg && errorMsg !== lastErrorNotified) {
         lastErrorNotified = errorMsg;
+        this.handleSubmissionError(errorMsg);
         this.toastService.error(errorMsg, 'Registration Failed');
         this.store.dispatch(new ClearAuthMessages());
       }
