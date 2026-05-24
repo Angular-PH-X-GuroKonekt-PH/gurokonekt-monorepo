@@ -35,7 +35,7 @@ async function bootstrap() {
       }
     },
     methods: ['GET', 'HEAD', 'PUT', 'PATCH', 'POST', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-API-Key'],
     credentials: true,
     preflightContinue: false,
     optionsSuccessStatus: 204,
@@ -47,6 +47,7 @@ async function bootstrap() {
     .setDescription('API documentation for the application')
     .setVersion('1.0')
     .addBearerAuth()
+    .addApiKey({ type: 'apiKey', in: 'header', name: 'X-API-Key' }, 'x-api-key')
     .build();
     
   const document = SwaggerModule.createDocument(app, config);

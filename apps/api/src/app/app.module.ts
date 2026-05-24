@@ -10,6 +10,7 @@ import { NotificationModule } from './notification/notification.module';
 import { BookingModule } from './booking/booking.module';
 import { SearchModule } from './search/search.module';
 import { NotificationGateway } from './gateway/notification-gateway.gateway';
+import { MetricsModule } from './metrics/metrics.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { NotificationGateway } from './gateway/notification-gateway.gateway';
     NotificationModule,
     BookingModule,
     SearchModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, NotificationGateway],
