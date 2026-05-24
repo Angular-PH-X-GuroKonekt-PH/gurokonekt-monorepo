@@ -9,6 +9,7 @@ import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
 import { BookingModule } from './booking/booking.module';
 import { SearchModule } from './search/search.module';
+import { MetricsModule } from './metrics/metrics.module';
 import { NotificationGateway } from './gateway/notification-gateway.gateway';
 
 @Module({
@@ -20,6 +21,7 @@ import { NotificationGateway } from './gateway/notification-gateway.gateway';
     NotificationModule,
     BookingModule,
     SearchModule,
+    MetricsModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, NotificationGateway],
