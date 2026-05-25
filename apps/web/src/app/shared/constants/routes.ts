@@ -3,6 +3,7 @@ export const APP_ROUTES = {
   LOGIN: 'login',
   REGISTER: 'register',
   REGISTER_MENTOR_CONFIRMATION: 'register/mentor/confirmation',
+  REGISTER_MENTEE_CONFIRMATION: 'register/mentee/confirmation',
   PROFILE_SETUP: 'profile-setup',
   DASHBOARD: 'dashboard',
   FIND_MENTORS: 'find-mentors',

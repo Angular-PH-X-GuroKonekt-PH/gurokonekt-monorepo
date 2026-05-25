@@ -4,7 +4,7 @@ import { APP_ROUTES } from './shared/constants/routes';
 import { dashboardAccessGuard } from './shared/guards/dashboard-access.guard';
 import { profileSetupAccessGuard } from './shared/guards/profile-setup-access.guard';
 import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
-import { mentorRegistrationConfirmationGuard } from './shared/guards/mentor-registration-confirmation.guard';
+import { registrationConfirmationGuard } from './shared/guards/registration-confirmation.guard';
 import { menteeCanMatch } from './shared/guards/mentee-can-match.guard';
 import { mentorCanMatch } from './shared/guards/mentor-can-match.guard';
 import { Layout } from './layouts/layout';
@@ -29,12 +29,21 @@ export const appRoutes: Route[] = [
   },
   {
     path: APP_ROUTES.REGISTER_MENTOR_CONFIRMATION,
-    canActivate: [unauthenticatedGuard, mentorRegistrationConfirmationGuard],
+    canActivate: [unauthenticatedGuard, registrationConfirmationGuard('mentor')],
     loadComponent: () =>
       import(
         './core/auth/pages/registration-page/registration-mentor-confirmation-page/registration-mentor-confirmation.page'
       ).then((m) => m.RegistrationMentorConfirmationPage),
     title: 'Mentor Registration Confirmation',
+  },
+  {
+    path: APP_ROUTES.REGISTER_MENTEE_CONFIRMATION,
+    canActivate: [unauthenticatedGuard, registrationConfirmationGuard('mentee')],
+    loadComponent: () =>
+      import(
+        './core/auth/pages/registration-page/registration-mentee-confirmation-page/registration-mentee-confirmation.page'
+      ).then((m) => m.RegistrationMenteeConfirmationPage),
+    title: 'Mentee Registration Confirmation',
   },
 
   // profile-setup — mentee sees MenteePostLoginPage, mentor sees MentorPostLoginPage

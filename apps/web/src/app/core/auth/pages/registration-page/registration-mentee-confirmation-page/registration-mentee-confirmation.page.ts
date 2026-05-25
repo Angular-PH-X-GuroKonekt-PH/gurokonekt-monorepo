@@ -7,7 +7,7 @@ import { APP_ROUTES } from '../../../../../shared/constants/routes';
 import { AuthSelectors } from '../../../store/auth.selectors';
 
 @Component({
-  selector: 'app-registration-mentor-confirmation-page',
+  selector: 'app-registration-mentee-confirmation-page',
   standalone: true,
   imports: [RegistrationConfirmationLayoutComponent],
   template: `
@@ -19,7 +19,7 @@ import { AuthSelectors } from '../../../store/auth.selectors';
     />
   `,
 })
-export class RegistrationMentorConfirmationPage {
+export class RegistrationMenteeConfirmationPage {
   private readonly router = inject(Router);
   private readonly store = inject(Store);
 
@@ -28,12 +28,12 @@ export class RegistrationMentorConfirmationPage {
   );
 
   protected readonly welcomeMessage =
-    'We are glad you are joining us as a mentor. Your application has been received and our team will review your profile soon.';
+    'We are glad you are joining us as a mentee. Your registration has been received and you are almost ready to start learning!';
 
   protected readonly nextSteps = [
     'Verify your email so you can sign in.',
-    'Our team reviews your profile and documents.',
-    'You will receive an email when your account is approved.',
+    'Complete your profile to personalize your experience.',
+    'Browse available mentors and book your first session.',
   ];
 
   protected navigateToLogin(): void {
