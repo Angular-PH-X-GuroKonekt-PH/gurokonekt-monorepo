@@ -8,6 +8,7 @@ import { BaseStepperRegistrationComponent } from 'apps/web/src/app/shared/base-f
 import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';
 import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
+import { buildVerifyEmailRedirectUrl } from 'apps/web/src/app/shared/utils/email-verification.util';
 import { CustomValidators } from 'apps/web/src/app/shared/validators/custom-validators';
 import { ClearAuthMessages, RegisterMentee } from '../../../store/auth.actions';
 import { AuthSelectors } from '../../../store/auth.selectors';
@@ -135,6 +136,8 @@ export class RegistrationMenteePage
     try {
       const formData = this.registerForm.value;
 
+      const emailRedirectTo = buildVerifyEmailRedirectUrl();
+
       const registrationData: RegisterMenteeRequest = {
         firstName: formData.firstName,
         middleName: formData.middleName || undefined,
@@ -150,6 +153,7 @@ export class RegistrationMenteePage
         country: formData.country,
         timezone: formData.timezone,
         language: formData.language || 'en',
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
       };
 
       this.store.dispatch(new RegisterMentee(registrationData));

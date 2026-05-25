@@ -5,6 +5,7 @@ import { tap, catchError, throwError } from 'rxjs';
 import { VerifyEmailStateModel, initialVerifyEmailState } from '../models/verify-email.state.model';
 import * as VerifyEmailActions from './verify-email.actions';
 import { AuthService } from '../services/auth.service';
+import { buildVerifyEmailRedirectUrl } from '../../../shared/utils/email-verification.util';
 
 @State<VerifyEmailStateModel>({
   name: 'verifyEmail',
@@ -70,7 +71,9 @@ export class VerifyEmailState {
       resendError: null
     });
 
-    return this.authService.resendVerificationEmail(state.email).pipe(
+    return this.authService
+      .resendVerificationEmail(state.email, buildVerifyEmailRedirectUrl())
+      .pipe(
       tap(() => {
         ctx.dispatch(new VerifyEmailActions.ResendVerificationEmailSuccess());
       }),
