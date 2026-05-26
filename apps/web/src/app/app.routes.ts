@@ -46,6 +46,7 @@ export const appRoutes: Route[] = [
     title: 'Mentee Registration Confirmation',
     
   },
+  {
     path: APP_ROUTES.VERIFY_EMAIL,
     canActivate: [unauthenticatedGuard],
     loadComponent: () =>
