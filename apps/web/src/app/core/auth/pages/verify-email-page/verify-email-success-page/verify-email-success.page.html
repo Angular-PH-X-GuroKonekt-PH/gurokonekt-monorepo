@@ -1,0 +1,35 @@
+<app-email-verification-result-layout
+  iconName="check-mark"
+  iconWrapperClass="bg-green-100"
+  iconClass="h-7 w-7 text-green-600"
+  title="Email verified successfully"
+>
+  <p resultDescription class="mt-3 text-sm text-gray-600 leading-relaxed">
+    Your email address has been confirmed. You can now sign in to your GuroKonekt
+    account.
+  </p>
+
+  <div
+    resultBody
+    class="rounded-xl border border-green-200 border-l-4 border-l-green-500 bg-green-50 p-5 text-sm text-gray-700"
+  >
+    <p class="font-medium text-green-900">You are all set</p>
+    <p class="mt-2 leading-relaxed">
+      If you registered as a mentor, our team may still review your profile before
+      full access is granted. You will receive an email when your account is approved.
+    </p>
+  </div>
+
+  <div resultActions class="pt-4 flex justify-end">
+    <button
+      type="button"
+      (click)="navigateToLogin()"
+      (keyup.enter)="navigateToLogin()"
+      (keyup.space)="navigateToLogin()"
+      class="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600"
+    >
+      Go to Login
+      <app-icon name="chevron-right" class="w-4 h-4"></app-icon>
+    </button>
+  </div>
+</app-email-verification-result-layout>

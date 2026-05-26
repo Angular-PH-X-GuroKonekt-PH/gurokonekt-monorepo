@@ -44,6 +44,42 @@ export const appRoutes: Route[] = [
         './core/auth/pages/registration-page/registration-mentee-confirmation-page/registration-mentee-confirmation.page'
       ).then((m) => m.RegistrationMenteeConfirmationPage),
     title: 'Mentee Registration Confirmation',
+    
+  },
+    path: APP_ROUTES.VERIFY_EMAIL,
+    canActivate: [unauthenticatedGuard],
+    loadComponent: () =>
+      import(
+        './core/auth/pages/verify-email-page/verify-email-callback-page/verify-email-callback.page'
+      ).then((m) => m.VerifyEmailCallbackPage),
+    title: 'Verify Email',
+  },
+  {
+    path: APP_ROUTES.VERIFY_EMAIL_SUCCESS,
+    canActivate: [unauthenticatedGuard],
+    loadComponent: () =>
+      import(
+        './core/auth/pages/verify-email-page/verify-email-success-page/verify-email-success.page'
+      ).then((m) => m.VerifyEmailSuccessPage),
+    title: 'Email Verified',
+  },
+  {
+    path: APP_ROUTES.VERIFY_EMAIL_EXPIRED,
+    canActivate: [unauthenticatedGuard],
+    loadComponent: () =>
+      import(
+        './core/auth/pages/verify-email-page/verify-email-expired-page/verify-email-expired.page'
+      ).then((m) => m.VerifyEmailExpiredPage),
+    title: 'Verification Link Expired',
+  },
+  {
+    path: APP_ROUTES.VERIFY_EMAIL_ALREADY_VERIFIED,
+    canActivate: [unauthenticatedGuard],
+    loadComponent: () =>
+      import(
+        './core/auth/pages/verify-email-page/verify-email-already-verified-page/verify-email-already-verified.page'
+      ).then((m) => m.VerifyEmailAlreadyVerifiedPage),
+    title: 'Email Already Verified',
   },
 
   // profile-setup — mentee sees MenteePostLoginPage, mentor sees MentorPostLoginPage

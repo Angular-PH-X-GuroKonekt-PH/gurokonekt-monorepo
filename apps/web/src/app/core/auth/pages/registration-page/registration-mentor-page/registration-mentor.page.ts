@@ -17,6 +17,7 @@ import {
 } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
+import { buildVerifyEmailRedirectUrl } from 'apps/web/src/app/shared/utils/email-verification.util';
 import { AuthSelectors } from '../../../store/auth.selectors';
 
 @Component({
@@ -198,6 +199,7 @@ export class RegistrationMentorPage
 
     try {
       const formData = this.registerForm.value;
+      const emailRedirectTo = buildVerifyEmailRedirectUrl();
 
       const registrationData: RegisterMentorRequest = {
         firstName: formData.firstName,
@@ -218,6 +220,7 @@ export class RegistrationMentorPage
         linkedInUrl: formData.linkedInUrl || undefined,
         areasOfExpertise: formData.areasOfExpertise || [],
         files: this.selectedFiles,
+        ...(emailRedirectTo ? { emailRedirectTo } : {}),
       };
 
       this.store.dispatch(new RegisterMentor(registrationData));

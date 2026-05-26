@@ -1,4 +1,4 @@
-import { Component, effect, inject } from '@angular/core';
+import { Component, effect, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { createSelectMap, Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
@@ -14,6 +14,10 @@ import { Router } from '@angular/router';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { requiresProfileSetup } from 'apps/web/src/app/shared/utils/profile-completion.util';
 import { AuthSelectors } from '../../store/auth.selectors';
+import {
+  hasEmailVerificationCallbackHash,
+  redirectToVerifyEmailCallback,
+} from '../../../../shared/utils/email-verification.util';
 
 @Component({
   selector: 'app-login-page',
@@ -21,7 +25,7 @@ import { AuthSelectors } from '../../store/auth.selectors';
   imports: [ReactiveFormsModule, IconComponent],
   templateUrl: './login.page.html',
 })
-export class LoginPage extends BaseFormComponent {
+export class LoginPage extends BaseFormComponent implements OnInit {
   private readonly store = inject(Store);
   private readonly fb = inject(FormBuilder);
   private readonly router = inject(Router);
@@ -41,6 +45,12 @@ export class LoginPage extends BaseFormComponent {
     password: ['', [Validators.required, Validators.minLength(1)]],
   });
   protected readonly form: FormGroup = this.loginForm;
+
+  ngOnInit(): void {
+    if (hasEmailVerificationCallbackHash()) {
+      redirectToVerifyEmailCallback();
+    }
+  }
 
   constructor() {
     super();

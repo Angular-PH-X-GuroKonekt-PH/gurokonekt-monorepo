@@ -52,6 +52,10 @@ export class AuthService {
     
     // Append areasOfExpertise as JSON string (backend will parse it)
     formData.append('areasOfExpertise', JSON.stringify(data.areasOfExpertise));
+
+    if (data.emailRedirectTo) {
+      formData.append('emailRedirectTo', data.emailRedirectTo);
+    }
     
     // Append files
     if (data.files && data.files.length > 0) {
@@ -102,10 +106,10 @@ export class AuthService {
   /**
    * Resend verification email
    */
-  resendVerificationEmail(email: string): Observable<AuthResponse> {
+  resendVerificationEmail(email: string, emailRedirectTo?: string): Observable<AuthResponse> {
     return this.http.post<AuthResponse>(
       buildApiUrl(API_CONFIG.endpoints.auth.resendConfirmation),
-      { type: 'signup', email }
+      { type: 'signup', email, ...(emailRedirectTo ? { emailRedirectTo } : {}) }
     ).pipe(
       catchError(this.handleError)
     );
