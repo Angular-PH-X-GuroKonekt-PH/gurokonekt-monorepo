@@ -10,6 +10,7 @@ import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { buildVerifyEmailRedirectUrl } from 'apps/web/src/app/shared/utils/email-verification.util';
 import { CustomValidators } from 'apps/web/src/app/shared/validators/custom-validators';
+import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { ClearAuthMessages, RegisterMentee } from '../../../store/auth.actions';
 import { AuthSelectors } from '../../../store/auth.selectors';
 
@@ -58,12 +59,15 @@ export class RegistrationMenteePage
 
       if (successMsg && successMsg !== lastSuccessNotified) {
         lastSuccessNotified = successMsg;
+        this.handleSubmissionSuccess();
         this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
         this.store.dispatch(new ClearAuthMessages());
+        this.router.navigate([APP_ROUTES.REGISTER_MENTEE_CONFIRMATION]);
       }
 
       if (errorMsg && errorMsg !== lastErrorNotified) {
         lastErrorNotified = errorMsg;
+        this.handleSubmissionError(errorMsg);
         this.toastService.error(errorMsg, 'Registration Failed');
         this.store.dispatch(new ClearAuthMessages());
       }

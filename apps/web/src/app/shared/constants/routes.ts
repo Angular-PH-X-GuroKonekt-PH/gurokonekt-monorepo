@@ -3,6 +3,7 @@ export const APP_ROUTES = {
   LOGIN: 'login',
   REGISTER: 'register',
   REGISTER_MENTOR_CONFIRMATION: 'register/mentor/confirmation',
+  REGISTER_MENTEE_CONFIRMATION: 'register/mentee/confirmation',
   VERIFY_EMAIL: 'verify-email',
   VERIFY_EMAIL_SUCCESS: 'verify-email/success',
   VERIFY_EMAIL_EXPIRED: 'verify-email/expired',
