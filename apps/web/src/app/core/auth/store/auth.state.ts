@@ -129,6 +129,8 @@ export class AuthState {
   registerMenteeSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.RegisterMenteeSuccess) {
     const { message, email } = action.payload;
 
+    this.storage.setLastRegisteredEmail(email);
+
     ctx.patchState({
       isMenteeRegisterLoading: false,
       isLoading: false,
@@ -174,6 +176,8 @@ export class AuthState {
   @Action(AuthActions.RegisterMentorSuccess)
   registerMentorSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.RegisterMentorSuccess) {
     const { message, email } = action.payload;
+
+    this.storage.setLastRegisteredEmail(email);
 
     ctx.patchState({
       isMentorRegisterLoading: false,
