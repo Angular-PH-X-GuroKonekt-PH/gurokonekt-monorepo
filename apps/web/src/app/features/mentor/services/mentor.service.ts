@@ -73,6 +73,7 @@ export class MentorService {
 
     return {
       id: mentor.id,
+      title: mentor.title ?? '',
       bio: mentor.bio ?? '',
       areasOfExpertise: mentor.areasOfExpertise ?? [],
       yearsOfExperience: mentor.yearsOfExperience ?? 0,

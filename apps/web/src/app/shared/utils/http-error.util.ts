@@ -4,13 +4,13 @@ import { HttpErrorResponse } from '@angular/common/http';
  * Centralized HTTP error handling helper for consistent error messaging
  */
 export function getErrorMessage(error: HttpErrorResponse | any): string {
-  if (error && typeof error === 'object' && 'status' in error) {
-    return mapStatusToMessage(error.status, error.message);
-  }
-
   if (error instanceof HttpErrorResponse) {
     const serverMessage = error.error?.message || error.message;
     return mapStatusToMessage(error.status, serverMessage);
+  }
+
+  if (error && typeof error === 'object' && 'status' in error) {
+    return mapStatusToMessage(error.status, error.message);
   }
 
   return error?.message || 'An unexpected error occurred. Please try again.';
@@ -39,9 +39,9 @@ function mapStatusToMessage(status: number, serverMessage?: string): string {
   }
 }
 
-  /**
-   * Get user-friendly error message for registration errors
-   */
+/**
+ * Get user-friendly error message for registration errors
+ */
 export function getAuthErrorMessage(error: any): string {
   const message = getErrorMessage(error);
 

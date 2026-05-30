@@ -1,4 +1,5 @@
 import { Component, computed, input } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import {
   MentorProfileSearch,
   MentorSearchItemInterface,
@@ -7,15 +8,22 @@ import { UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/us
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { getLanguageLabel } from '../../../../shared/utils';
+import { APP_ROUTES } from '../../../../shared/constants/routes';
+import {
+  formatAvailabilityLabel,
+  formatDayLabel,
+} from '../../utils/mentor-availability.util';
 
 @Component({
   selector: 'app-mentor-info-card',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, RouterLink],
   templateUrl: './mentor-info-card.html',
 })
 export class MentorInfoCard {
   mentor = input<MentorSearchItemInterface | null>(null);
+
+  protected readonly mentorProfileRoute = APP_ROUTES.MENTOR_PROFILE;
 
   protected readonly profile = computed(() => {
     const mentor = this.mentor();
@@ -60,15 +68,19 @@ export class MentorInfoCard {
       }
 
       if (!availability.timeFrames?.length) {
-        return [this.capitalize(availability.day)];
+        return [formatDayLabel(availability.day)];
       }
 
       return availability.timeFrames.map((timeFrame) => {
         if (!timeFrame.from || !timeFrame.to) {
-          return this.capitalize(availability.day);
+          return formatDayLabel(availability.day);
         }
 
-        return `${this.capitalize(availability.day)}, ${this.formatTo12Hour(timeFrame.from)} - ${this.formatTo12Hour(timeFrame.to)}`;
+        return formatAvailabilityLabel(
+          availability.day,
+          timeFrame.from,
+          timeFrame.to
+        );
       });
     });
   }
@@ -89,27 +101,5 @@ export class MentorInfoCard {
     }
 
     return `${profile.yearsOfExperience}+ Years`;
-  }
-
-  formatTo12Hour(time: string): string {
-    const [hourStr, minute] = time.split(':');
-    const hour = Number(hourStr);
-
-    if (Number.isNaN(hour) || !minute) {
-      return time;
-    }
-
-    const period = hour >= 12 ? 'PM' : 'AM';
-    const normalizedHour = hour % 12 || 12;
-
-    return `${normalizedHour}:${minute} ${period}`;
-  }
-
-  private capitalize(value: string): string {
-    if (!value) {
-      return '';
-    }
-
-    return value.charAt(0).toUpperCase() + value.slice(1);
   }
 }

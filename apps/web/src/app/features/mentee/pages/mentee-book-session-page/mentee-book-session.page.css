@@ -1,0 +1,58 @@
+:host ::ng-deep .booking-calendar .fc {
+  font-family: inherit;
+}
+
+:host ::ng-deep .booking-calendar .fc-toolbar-title {
+  color: #172554;
+  font-size: 1rem;
+  font-weight: 800;
+}
+
+:host ::ng-deep .booking-calendar .fc-button {
+  border: 0;
+  border-radius: 9999px;
+  background: #f97316;
+  box-shadow: none;
+  font-weight: 700;
+}
+
+:host ::ng-deep .booking-calendar .fc-button:hover,
+:host ::ng-deep .booking-calendar .fc-button:focus {
+  background: #fb923c;
+}
+
+:host ::ng-deep .booking-calendar .fc-col-header-cell-cushion {
+  color: #94a3b8;
+  font-size: 0.68rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+:host ::ng-deep .booking-calendar .fc-daygrid-day-frame {
+  min-height: 4.25rem;
+  cursor: not-allowed;
+}
+
+:host ::ng-deep .booking-calendar .guro-calendar-available .fc-daygrid-day-frame {
+  cursor: pointer;
+}
+
+:host ::ng-deep .booking-calendar .guro-calendar-available .fc-daygrid-day-number {
+  border: 1px solid #fed7aa;
+  border-radius: 0.9rem;
+  color: #ea580c;
+  font-weight: 800;
+  min-width: 2.25rem;
+  text-align: center;
+}
+
+:host ::ng-deep .booking-calendar .guro-calendar-selected .fc-daygrid-day-number {
+  border-color: #172554;
+  background: #172554;
+  color: #ffffff;
+}
+
+:host ::ng-deep .booking-calendar .guro-calendar-disabled {
+  opacity: 0.35;
+}
