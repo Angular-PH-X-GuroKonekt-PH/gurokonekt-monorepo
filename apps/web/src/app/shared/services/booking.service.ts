@@ -6,8 +6,10 @@ import { ApiResponse } from '../interfaces/api-response.interface';
 import {
   BookingStatus,
   BookingCardInterface,
+  CreateBookingRequestInterface,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import {
+  handleApiError,
   handleApiErrorWithFallback,
   validateApiResponse,
 } from '../helpers/api-response.helper';
@@ -18,6 +20,32 @@ import { buildApiUrl } from '../utils/api.util';
 })
 export class BookingService {
   private readonly http = inject(HttpClient);
+
+  createBooking(
+    request: CreateBookingRequestInterface
+  ): Observable<BookingCardInterface> {
+    return this.http
+      .post<ApiResponse<BookingCardInterface>>(buildApiUrl('/booking'), request)
+      .pipe(
+        map((response) => {
+          if (response.status !== 'success' || !response.data) {
+            throw {
+              message: response.message || 'Failed to create booking.',
+              statusCode: response.statusCode || 500,
+            };
+          }
+
+          return response.data;
+        }),
+        map((booking) => ({
+          ...booking,
+          sessionDateTime: new Date(booking.sessionDateTime),
+          createdAt: new Date(booking.createdAt),
+          updatedAt: new Date(booking.updatedAt),
+        })),
+        catchError(handleApiError)
+      );
+  }
 
   getBookingsByUserId(userId: string): Observable<BookingCardInterface[]> {
     return this.http
@@ -49,7 +77,10 @@ export class BookingService {
       );
   }
 
-  getBookingsByStatuses(userId: string, statuses: BookingStatus[]): Observable<BookingCardInterface[]> {
+  getBookingsByStatuses(
+    userId: string,
+    statuses: BookingStatus[]
+  ): Observable<BookingCardInterface[]> {
     return this.getBookingsByUserId(userId).pipe(
       map((booking) =>
         booking.filter((booking) => statuses.includes(booking.status))
@@ -85,11 +116,16 @@ export class BookingService {
             updatedAt: new Date(booking.updatedAt),
           }))
         ),
-        catchError(handleApiErrorWithFallback([], 'Failed to fetch mentor bookings'))
+        catchError(
+          handleApiErrorWithFallback([], 'Failed to fetch mentor bookings')
+        )
       );
   }
 
-  approveBooking(id: string, sessionLink: string): Observable<BookingCardInterface | null> {
+  approveBooking(
+    id: string,
+    sessionLink: string
+  ): Observable<BookingCardInterface | null> {
     return this.http
       .patch<ApiResponse<BookingCardInterface>>(
         buildApiUrl(`/booking/${id}/approve`),
@@ -97,9 +133,14 @@ export class BookingService {
       )
       .pipe(
         map((response) =>
-          validateApiResponse<BookingCardInterface>(response, 'Failed to approve booking.')
+          validateApiResponse<BookingCardInterface>(
+            response,
+            'Failed to approve booking.'
+          )
         ),
-        catchError(handleApiErrorWithFallback(null, 'Failed to approve booking'))
+        catchError(
+          handleApiErrorWithFallback(null, 'Failed to approve booking')
+        )
       );
   }
 
@@ -111,9 +152,14 @@ export class BookingService {
       )
       .pipe(
         map((response) =>
-          validateApiResponse<BookingCardInterface>(response, 'Failed to reject booking.')
+          validateApiResponse<BookingCardInterface>(
+            response,
+            'Failed to reject booking.'
+          )
         ),
-        catchError(handleApiErrorWithFallback(null, 'Failed to reject booking'))
+        catchError(
+          handleApiErrorWithFallback(null, 'Failed to reject booking')
+        )
       );
   }
 
@@ -125,9 +171,14 @@ export class BookingService {
       )
       .pipe(
         map((response) =>
-          validateApiResponse<BookingCardInterface>(response, 'Failed to complete booking.')
+          validateApiResponse<BookingCardInterface>(
+            response,
+            'Failed to complete booking.'
+          )
         ),
-        catchError(handleApiErrorWithFallback(null, 'Failed to complete booking'))
+        catchError(
+          handleApiErrorWithFallback(null, 'Failed to complete booking')
+        )
       );
   }
 

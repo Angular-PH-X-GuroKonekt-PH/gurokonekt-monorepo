@@ -59,6 +59,12 @@ export interface BookingCardInterface extends BookingInterface {
   mentee?: BookingUserSummaryInterface | null;
 }
 
+export interface CreateBookingRequestInterface {
+  mentorId: string;
+  sessionDateTime: Date;
+  notes?: string;
+}
+
 export interface UpcomingSession {
   title: string;
   mentor: string;

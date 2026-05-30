@@ -70,8 +70,8 @@
   </div>
 
   <div class="mt-4 border-t border-slate-100 pt-4">
-    <div class="flex min-h-12 items-start justify-between gap-6">
-      <div class="min-w-0">
+    <div class="min-h-12">
+      <div>
         <p class="text-2xs font-bold uppercase tracking-[0.14em] text-slate-400">
           Availability
         </p>
@@ -88,22 +88,12 @@
           }
         </div>
       </div>
-
-      <div class="shrink-0 text-right">
-        <p class="text-2xs font-bold uppercase tracking-[0.14em] text-slate-400">
-          Rate
-        </p>
-
-        <p class="mt-1 whitespace-nowrap text-lg font-semibold leading-5 text-slate-900">
-          P{{ profile()?.sessionRate ?? 0 }}/Session
-        </p>
-      </div>
     </div>
 
-    <button type="button"
+    <a [routerLink]="['/', mentorProfileRoute, mentorProfile.id]"
       class="mt-5 inline-flex min-h-12 w-full items-center justify-center rounded-2xl bg-orange-500 px-5 text-sm font-semibold text-white shadow-[0_14px_26px_rgba(234,88,12,0.22)] transition hover:bg-orange-400 focus:outline-none focus:ring-4 focus:ring-orange-200">
       View Profile
-    </button>
+    </a>
   </div>
 </div>
 }

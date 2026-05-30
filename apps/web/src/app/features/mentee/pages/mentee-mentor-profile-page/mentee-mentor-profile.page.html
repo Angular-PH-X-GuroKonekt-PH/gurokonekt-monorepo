@@ -1,0 +1,207 @@
+<div class="mx-auto flex max-w-7xl flex-col gap-7">
+
+  @if (mentor(); as mentorProfile) {
+  <app-mentor-profile-hero
+    [mentorProfile]="mentorProfile"
+    [mentorFullName]="mentorFullName()"
+  ></app-mentor-profile-hero>
+
+  <section class="grid gap-7 lg:grid-cols-[minmax(0,1fr)_23rem]">
+    <div class="space-y-7">
+      <div class="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p class="flex items-center gap-2 text-2xs font-bold uppercase tracking-[0.16em] text-slate-400">
+            <app-icon name="clock" class="h-4 w-4 text-orange-500"></app-icon>
+            Timezone
+          </p>
+          <p class="mt-2 truncate text-xs font-bold text-blue-950">
+            {{ mentorProfile.user.timezone || 'Not listed' }}
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p class="flex items-center gap-2 text-2xs font-bold uppercase tracking-[0.16em] text-slate-400">
+            <app-icon name="map-pin" class="h-4 w-4 text-orange-500"></app-icon>
+            Country
+          </p>
+          <p class="mt-2 truncate text-xs font-bold text-blue-950">
+            {{ getCountryLabel(mentorProfile.user.country) }}
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p class="flex items-center gap-2 text-2xs font-bold uppercase tracking-[0.16em] text-slate-400">
+            <app-icon name="chat-bubble-left-right" class="h-4 w-4 text-orange-500"></app-icon>
+            Language
+          </p>
+          <p class="mt-2 truncate text-xs font-bold text-blue-950">
+            {{ getMentorLanguageLabel(mentorProfile.user.language) }}
+          </p>
+        </article>
+
+        <article class="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm">
+          <p class="flex items-center gap-2 text-2xs font-bold uppercase tracking-[0.16em] text-slate-400">
+            <app-icon name="academic-cap" class="h-4 w-4 text-orange-500"></app-icon>
+            Experience
+          </p>
+          <p class="mt-2 truncate text-xs font-bold text-blue-950">
+            {{ getExperienceLabel(mentorProfile.yearsOfExperience) }}
+          </p>
+        </article>
+      </div>
+
+      <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_18px_50px_rgba(15,23,42,0.06)]">
+        <div class="flex items-start justify-between gap-4">
+          <div>
+            <p class="text-2xs font-bold uppercase tracking-[0.18em] text-orange-500">
+              About
+            </p>
+            <h2 class="mt-1 text-lg font-bold text-blue-950">
+              How {{ mentorProfile.user.firstName || 'this mentor' }} can help
+            </h2>
+          </div>
+          <span class="hidden rounded-full bg-blue-50 px-3 py-1 text-2xs font-bold text-blue-950 sm:inline-flex">
+            Mentor
+          </span>
+        </div>
+
+        <p class="mt-5 text-sm leading-7 text-slate-700">
+          {{ mentorProfile.bio || 'No mentor bio available yet.' }}
+        </p>
+      </article>
+
+      <div class="grid gap-7 xl:grid-cols-2">
+        <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                <app-icon name="wrench-screwdriver" class="h-5 w-5"></app-icon>
+              </span>
+              <h2 class="text-base font-bold text-blue-950">Core Skills</h2>
+            </div>
+            <span class="rounded-full bg-blue-50 px-3 py-1 text-2xs font-bold text-blue-950">
+              {{ mentorProfile.skills.length || 0 }}
+            </span>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-2.5">
+            @for (skill of displayedSkills(); track skill) {
+            <span
+              class="inline-flex items-center gap-2 rounded-full bg-orange-50 px-4 py-2 text-xs font-semibold text-blue-950 ring-1 ring-orange-100"
+            >
+              {{ skill }}
+            </span>
+            } @empty {
+            <p class="text-sm text-body">No skills listed yet.</p>
+            }
+
+            @if (remainingSkillsCount() > 0) {
+            <span class="rounded-full bg-orange-100 px-4 py-2 text-xs font-bold text-orange-800">
+              +{{ remainingSkillsCount() }} more
+            </span>
+            }
+          </div>
+        </article>
+
+        <article class="rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-sm">
+          <div class="flex items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+              <span class="flex h-10 w-10 items-center justify-center rounded-2xl bg-orange-50 text-orange-600">
+                <app-icon name="light-bulb" class="h-5 w-5"></app-icon>
+              </span>
+              <h2 class="text-base font-bold text-blue-950">Expertise</h2>
+            </div>
+            <span class="rounded-full bg-blue-50 px-3 py-1 text-2xs font-bold text-blue-950">
+              {{ mentorProfile.areasOfExpertise.length || 0 }}
+            </span>
+          </div>
+
+          <div class="mt-5 flex flex-wrap gap-2.5">
+            @for (expertise of displayedExpertise(); track expertise) {
+            <span
+              class="inline-flex items-center gap-2 rounded-full bg-orange-50 px-4 py-2 text-xs font-semibold text-blue-950 ring-1 ring-orange-100"
+            >
+              {{ expertise }}
+            </span>
+            } @empty {
+            <p class="text-sm text-body">No expertise listed yet.</p>
+            }
+
+            @if (remainingExpertiseCount() > 0) {
+            <span class="rounded-full bg-orange-100 px-4 py-2 text-xs font-bold text-orange-800">
+              +{{ remainingExpertiseCount() }} more
+            </span>
+            }
+          </div>
+        </article>
+      </div>
+    </div>
+
+    <aside
+      class="h-fit rounded-[1.75rem] border border-slate-200 bg-white p-6 shadow-[0_24px_60px_rgba(15,23,42,0.1)]"
+    >
+      <div class="flex items-start justify-between gap-4">
+        <div>
+          <p class="text-2xs font-bold uppercase tracking-[0.18em] text-orange-500">
+            Availability
+          </p>
+          <h2 class="mt-1 text-lg font-bold text-blue-950">Recurring schedule</h2>
+          <p class="mt-2 text-xs leading-5 text-slate-500">
+            Available weekly schedule. Select your exact date and time on the
+            booking page.
+          </p>
+        </div>
+
+        <span
+          class="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-2xs font-bold text-blue-950"
+        >
+          {{ mentorProfile.availability.length || 0 }} days
+        </span>
+      </div>
+
+      <div class="mt-6 space-y-3">
+        @for (availability of mentorProfile.availability; track availability.day) {
+        <article class="relative overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
+          <div class="absolute inset-y-4 left-0 w-1 rounded-r-full bg-orange-400"></div>
+
+          <div class="flex gap-3 pl-2">
+            <div
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-2xl bg-white text-orange-600 ring-1 ring-orange-100"
+            >
+              <app-icon name="calendar-plain" class="h-5 w-5"></app-icon>
+            </div>
+
+            <div class="min-w-0">
+              <h3 class="text-xs font-bold text-blue-950">
+                {{ getAvailabilityDay(availability.day) }}
+              </h3>
+              <div class="mt-2 flex flex-wrap gap-1.5">
+                @for (timeFrame of availability.timeFrames; track timeFrame.from + timeFrame.to) {
+                <span class="rounded-full bg-white px-3 py-1 text-2xs font-semibold text-slate-600 ring-1 ring-slate-100">
+                  {{ getAvailabilityTime(timeFrame.from, timeFrame.to) }}
+                </span>
+                }
+              </div>
+            </div>
+          </div>
+        </article>
+        } @empty {
+        <p class="rounded-2xl border border-dashed border-slate-200 p-5 text-sm text-body">
+          No available schedule yet.
+        </p>
+        }
+
+        <a
+          [routerLink]="['/', bookSessionRoute, mentorId()]"
+          class="mt-3 inline-flex min-h-14 w-full items-center justify-center gap-2 rounded-full bg-orange-500 px-7 text-sm font-bold text-white shadow-[0_18px_34px_rgba(249,115,22,0.24)] transition hover:bg-orange-400"
+        >
+          Book a session
+          <app-icon name="chevron-right" class="h-4 w-4 text-white"></app-icon>
+        </a>
+      </div>
+    </aside>
+  </section>
+  } @else {
+  <app-mentee-page-loader></app-mentee-page-loader>
+  }
+</div>

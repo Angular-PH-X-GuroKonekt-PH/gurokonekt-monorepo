@@ -87,6 +87,7 @@ export interface UpdateMenteeProfileInterface {
 
 export interface MentorProfileInterface {
   id: string;
+  title?: string;
   bio: string;
   areasOfExpertise: string[];
   yearsOfExperience: number;

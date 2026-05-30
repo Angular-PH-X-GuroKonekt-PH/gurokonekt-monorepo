@@ -120,13 +120,29 @@ export const appRoutes: Route[] = [
           ),
         title: 'Dashboard',
       },
-           {
+      {
         path: APP_ROUTES.FIND_MENTORS,
         loadComponent: () =>
           import('./features/mentee/pages/mentee-find-mentors-page/mentee-find-mentors.page').then(
             (m) => m.MenteeFindMentorsPage
           ),
         title: 'Find Mentors',
+      },
+      {
+        path: `${APP_ROUTES.MENTOR_PROFILE}/:mentorId`,
+        loadComponent: () =>
+          import('./features/mentee/pages/mentee-mentor-profile-page/mentee-mentor-profile.page').then(
+            (m) => m.MenteeMentorProfilePage
+          ),
+        title: 'Mentor Profile',
+      },
+      {
+        path: `${APP_ROUTES.BOOK_SESSION}/:mentorId`,
+        loadComponent: () =>
+          import('./features/mentee/pages/mentee-book-session-page/mentee-book-session.page').then(
+            (m) => m.MenteeBookSessionPage
+          ),
+        title: 'Book Session',
       },
       {
         path: APP_ROUTES.BOOKING_OVERVIEW,

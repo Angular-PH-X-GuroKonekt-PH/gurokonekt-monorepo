@@ -11,6 +11,8 @@ export const APP_ROUTES = {
   PROFILE_SETUP: 'profile-setup',
   DASHBOARD: 'dashboard',
   FIND_MENTORS: 'find-mentors',
+  MENTOR_PROFILE: 'mentor-profile',
+  BOOK_SESSION: 'book-session',
   BOOKING_OVERVIEW: 'booking-overview',
   SETTINGS: 'settings',
   SETTINGS_OVERVIEW: 'settings/overview',

@@ -1,0 +1,137 @@
+<div class="mx-auto flex max-w-7xl flex-col gap-7">
+
+  @if (mentor(); as mentorProfile) {
+  <app-mentor-profile-hero
+    [mentorProfile]="mentorProfile"
+    [mentorFullName]="mentorFullName()"
+  ></app-mentor-profile-hero>
+
+  <section class="grid gap-8 lg:grid-cols-[1fr_1fr]">
+    <div>
+      <div class="flex items-center justify-between">
+        <h2 class="text-base font-bold text-blue-950">Select Date</h2>
+        <p class="text-base font-semibold text-slate-700">
+          Next 90 Days
+        </p>
+      </div>
+
+      <div
+        class="booking-calendar mt-5 rounded-4xl bg-white p-6 shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+      >
+        <full-calendar [options]="calendarOptions()"></full-calendar>
+
+        <div
+          class="mt-7 flex items-center gap-6 text-sm font-semibold text-slate-600"
+        >
+          <span class="inline-flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full bg-blue-950"></span>
+            Selected
+          </span>
+          <span class="inline-flex items-center gap-2">
+            <span class="h-3 w-3 rounded-full border border-orange-400"></span>
+            Available
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <div class="space-y-7">
+      <div>
+        <h2 class="text-base font-bold text-blue-950">Available Time Slots</h2>
+
+        <div class="mt-5 grid gap-3 sm:grid-cols-3">
+          @for (slot of availableSlots(); track slot.bookingDateTime.toISOString()) {
+          <button
+            type="button"
+            (click)="selectSlot(slot)"
+            class="rounded-2xl border px-4 py-5 text-center transition"
+            [class.border-blue-950]="selectedSlot()?.bookingDateTime === slot.bookingDateTime"
+            [class.bg-blue-950]="selectedSlot()?.bookingDateTime === slot.bookingDateTime"
+            [class.text-white]="selectedSlot()?.bookingDateTime === slot.bookingDateTime"
+            [class.shadow-lg]="selectedSlot()?.bookingDateTime === slot.bookingDateTime"
+            [class.border-slate-200]="selectedSlot()?.bookingDateTime !== slot.bookingDateTime"
+            [class.bg-white]="selectedSlot()?.bookingDateTime !== slot.bookingDateTime"
+            [class.text-slate-500]="selectedSlot()?.bookingDateTime !== slot.bookingDateTime">
+            <span class="block text-xs font-semibold opacity-75">
+              Available
+            </span>
+            <span class="mt-1 block text-base font-bold">{{ slot.label }}</span>
+          </button>
+          } @empty {
+          <div
+            class="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-body"
+          >
+            Select an available date to see time slots.
+          </div>
+          }
+        </div>
+      </div>
+
+      <label class="block">
+        <span
+          class="flex items-center justify-between text-base font-bold text-blue-950"
+        >
+          Optional note for the mentor
+          <span class="text-xs font-semibold text-slate-400">
+            {{ bookingNote().length }}/300
+          </span>
+        </span>
+        <textarea
+          rows="5"
+          maxlength="300"
+          [ngModel]="bookingNote()"
+          (ngModelChange)="updateBookingNote($event)"
+          placeholder="Tell your mentor what you'd like to achieve in this session..."
+          class="mt-4 w-full resize-none rounded-3xl border border-slate-200 bg-white p-5 text-base text-heading outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
+        ></textarea>
+      </label>
+
+      @if (errorMessage()) {
+      <p class="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
+        {{ errorMessage() }}
+      </p>
+      }
+
+      <section
+        class="rounded-4xl border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+      >
+        <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex items-center gap-4">
+            <div
+              class="hidden h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 md:flex"
+            >
+              <app-icon name="calendar-days" class="h-6 w-6 text-blue-950"></app-icon>
+            </div>
+
+            <div>
+              <p class="text-xs font-bold uppercase tracking-[0.14em] text-slate-400">
+                Selected Schedule
+              </p>
+              <p class="mt-1 text-sm font-bold text-blue-950">
+                @if (selectedSlot(); as slot) {
+                {{ slot.displayDateTime | date: 'MMM d, y' }} &bull;
+                {{ slot.displayDateTime | date: 'h:mm a' }}
+                } @else {
+                No time slot selected yet
+                }
+              </p>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            (click)="confirmBooking()"
+            [disabled]="isSubmitting() || !selectedSlot()"
+            class="inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-orange-500 px-8 text-base font-bold text-white shadow-[0_18px_34px_rgba(249,115,22,0.28)] transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+          >
+            {{ isSubmitting() ? 'Confirming...' : 'Confirm Booking' }}
+            <app-icon name="chevron-right" class="h-5 w-5 text-white"></app-icon>
+          </button>
+        </div>
+      </section>
+    </div>
+  </section>
+  } @else {
+  <app-mentee-page-loader></app-mentee-page-loader>
+  }
+</div>
