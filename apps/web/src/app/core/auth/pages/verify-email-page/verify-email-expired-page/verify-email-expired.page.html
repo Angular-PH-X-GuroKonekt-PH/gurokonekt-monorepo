@@ -9,30 +9,40 @@
     after a limited time.
   </p>
 
+  
   <div
     resultBody
     class="rounded-xl border border-amber-200 border-l-4 border-l-amber-500 bg-amber-50 p-5 text-sm text-gray-700"
   >
     <p class="font-medium text-amber-900">What you can do</p>
     <ul class="mt-2 list-disc space-y-1.5 pl-5 marker:text-orange-400">
-      @if (email()) {
       <li>
-        Request a new verification email for
-        <span class="font-medium text-gray-900">{{ email() }}</span>.
+        Click the button below to request a new verification email@if (email()) {
+        <span> for
+          <span class="font-medium text-gray-900">{{ email() }}</span></span>}.
       </li>
-      } @else {
-      <li>Register again to receive a new verification email.</li>
-      }
       <li>Check your inbox and spam folder for the latest message from GuroKonekt.</li>
     </ul>
-
-    @if (message()) {
-    <p class="mt-3 text-green-800 font-medium">{{ message() }}</p>
-    }
-    @if (resendError()) {
-    <p class="mt-3 text-red-600">{{ resendError() }}</p>
-    }
   </div>
+
+  @if (message()) {
+  <div
+    resultBody
+    class="flex items-start gap-2.5 rounded-xl border border-green-300 border-l-4 border-l-green-500 bg-green-50 p-4 text-sm"
+  >
+    <app-icon name="check-mark-circle" class="h-5 w-5 shrink-0 text-green-600 mt-0.5"></app-icon>
+    <p class="font-medium text-green-800">{{ message() }}</p>
+  </div>
+  }
+  @if (resendError()) {
+  <div
+    resultBody
+    class="flex items-start gap-2.5 rounded-xl border border-red-300 border-l-4 border-l-red-500 bg-red-50 p-4 text-sm"
+  >
+    <app-icon name="alert-circle" class="h-5 w-5 shrink-0 text-red-500 mt-0.5"></app-icon>
+    <p class="font-medium text-red-700">{{ resendError() }}</p>
+  </div>
+  }
 
   <div
     resultActions
@@ -45,27 +55,17 @@
     >
       Back to Login
     </button>
-    @if (email()) {
     <button
       type="button"
       [disabled]="isResendLoading()"
       (click)="resendVerification()"
-      class="inline-flex items-center gap-1.5 rounded-lg border border-orange-300 bg-orange-50 px-4 py-2 text-sm font-semibold text-orange-700 transition-colors hover:bg-orange-100 disabled:cursor-not-allowed disabled:opacity-60"
+      class="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
     >
       @if (isResendLoading()) {
       Sending…
       } @else {
       Resend verification email
       }
-    </button>
-    }
-    <button
-      type="button"
-      (click)="navigateToRegister()"
-      class="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600"
-    >
-      Register again
-      <app-icon name="chevron-right" class="w-4 h-4"></app-icon>
     </button>
   </div>
 </app-email-verification-result-layout>

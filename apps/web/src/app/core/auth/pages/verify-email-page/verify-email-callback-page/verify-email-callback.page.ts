@@ -7,6 +7,7 @@ import {
   getEmailVerificationParams,
   resolveEmailVerificationOutcome,
 } from '../../../../../shared/utils/email-verification.util';
+import { AuthStorageService } from '../../../../storage/auth-storage.service';
 import { AuthSelectors } from '../../../store/auth.selectors';
 import { InitializeVerification } from '../../../store/verify-email.actions';
 
@@ -26,6 +27,7 @@ import { InitializeVerification } from '../../../store/verify-email.actions';
 export class VerifyEmailCallbackPage implements OnInit {
   private readonly router = inject(Router);
   private readonly store = inject(Store);
+  private readonly authStorage = inject(AuthStorageService);
 
   ngOnInit(): void {
     const params = getEmailVerificationParams();
@@ -43,7 +45,9 @@ export class VerifyEmailCallbackPage implements OnInit {
     if (outcome) {
       if (outcome === 'expired') {
         const email =
-          this.store.selectSnapshot(AuthSelectors.lastRegisteredEmail) ?? '';
+          this.store.selectSnapshot(AuthSelectors.lastRegisteredEmail) ||
+          this.authStorage.getLastRegisteredEmail() ||
+          '';
         if (email) {
           this.store.dispatch(
             new InitializeVerification({ email, role: '', message: '' })
