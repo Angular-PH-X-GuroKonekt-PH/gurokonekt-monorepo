@@ -1,0 +1,82 @@
+<div class="bg-white rounded-xl border border-gray-200">
+  <!-- Filters -->
+  <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3">
+    <select
+      [value]="statusFilter()"
+      (change)="onStatusFilterChange($any($event.target).value)"
+      class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <option value="all">All Status</option>
+      <option value="active">Active</option>
+      <option value="inactive">Inactive</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-6 py-3 text-left font-medium">Name</th>
+          <th class="px-6 py-3 text-left font-medium">Email</th>
+          <th class="px-6 py-3 text-left font-medium">Status</th>
+          <th class="px-6 py-3 text-left font-medium">Registered</th>
+          <th class="px-6 py-3 text-left font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        @if (isLoading()) {
+          <tr>
+            <td colspan="5" class="px-6 py-8 text-center text-gray-400">Loading...</td>
+          </tr>
+        } @else if (mentees().length === 0) {
+          <tr>
+            <td colspan="5" class="px-6 py-8 text-center text-gray-400">No mentees found.</td>
+          </tr>
+        } @else {
+          @for (mentee of mentees(); track mentee.id) {
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 font-medium text-gray-900">
+                {{ mentee.firstName }} {{ mentee.lastName }}
+              </td>
+              <td class="px-6 py-4 text-gray-600">{{ mentee.email }}</td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  [class]="mentee.status === 'active' ? 'bg-green-50 text-green-700' : 'bg-gray-100 text-gray-600'"
+                >
+                  {{ getDisplayStatus(mentee) }}
+                </span>
+              </td>
+              <td class="px-6 py-4 text-gray-500">
+                {{ mentee.createdAt | date: 'MMM d, y' }}
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-blue-600 cursor-pointer hover:underline text-xs">View</span>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+      <span>{{ total() }} total</span>
+      <div class="flex items-center gap-2">
+        <button
+          [disabled]="page() === 1"
+          (click)="onPageChange(page() - 1)"
+          class="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+        >Prev</button>
+        <span>{{ page() }} / {{ totalPages() }}</span>
+        <button
+          [disabled]="page() === totalPages()"
+          (click)="onPageChange(page() + 1)"
+          class="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+        >Next</button>
+      </div>
+    </div>
+  }
+</div>
