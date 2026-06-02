@@ -43,7 +43,7 @@ export class JwtGuardStrategy extends PassportStrategy(Strategy) {
     try {
       const dbUser = await this.prisma.db.user.findUnique({
         where: { id: user.sub },
-        select: { status: true },
+        select: { status: true, role: true },
       });
 
       if (!dbUser) {
@@ -59,7 +59,7 @@ export class JwtGuardStrategy extends PassportStrategy(Strategy) {
       return {
         id: user.sub,
         email: user.email,
-        role: user.role,
+        role: dbUser.role,
       };
     } catch (err) {
       this.logger.error(`DB error during JWT validation: ${(err as Error).message}`);
