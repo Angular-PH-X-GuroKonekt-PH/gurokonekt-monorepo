@@ -253,19 +253,16 @@
               <div class="block text-sm font-semibold text-gray-700 mb-3">
                 Preferred Session Type <span class="text-red-500">*</span>
               </div>
+              <p class="text-sm text-gray-600 mb-4">Select one or more</p>
               <div class="grid grid-cols-2 gap-4">
-                <label 
-                  class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all"
-                  [class]="profileForm.get('preferredSessionType')?.value === MenteePreferredSessionType.Online 
+                <button
+                  type="button"
+                  (click)="toggleSessionType(MenteePreferredSessionType.Online)"
+                  class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+                  [class]="isSessionTypeSelected(MenteePreferredSessionType.Online)
                     ? 'border-orange-500 bg-orange-50' 
                     : 'border-gray-300 hover:border-orange-300'"
                 >
-                  <input
-                    type="radio"
-                    formControlName="preferredSessionType"
-                    [value]="MenteePreferredSessionType.Online"
-                    class="sr-only"
-                  />
                   <div class="flex-1">
                     <div class="flex items-center gap-3">
                       <app-icon name="user" class="w-6 h-6 text-orange-600"></app-icon>
@@ -275,23 +272,19 @@
                       </div>
                     </div>
                   </div>
-                  @if (profileForm.get('preferredSessionType')?.value === MenteePreferredSessionType.Online) {
+                  @if (isSessionTypeSelected(MenteePreferredSessionType.Online)) {
                     <app-icon name="check-mark" class="w-5 h-5 text-orange-600"></app-icon>
                   }
-                </label>
+                </button>
 
-                <label 
-                  class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all"
-                  [class]="profileForm.get('preferredSessionType')?.value === MenteePreferredSessionType.InPerson 
+                <button
+                  type="button"
+                  (click)="toggleSessionType(MenteePreferredSessionType.InPerson)"
+                  class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+                  [class]="isSessionTypeSelected(MenteePreferredSessionType.InPerson)
                     ? 'border-orange-500 bg-orange-50' 
                     : 'border-gray-300 hover:border-orange-300'"
                 >
-                  <input
-                    type="radio"
-                    formControlName="preferredSessionType"
-                    [value]="MenteePreferredSessionType.InPerson"
-                    class="sr-only"
-                  />
                   <div class="flex-1">
                     <div class="flex items-center gap-3">
                       <app-icon name="map-pin" class="w-6 h-6 text-orange-600"></app-icon>
@@ -301,11 +294,14 @@
                       </div>
                     </div>
                   </div>
-                  @if (profileForm.get('preferredSessionType')?.value === MenteePreferredSessionType.InPerson) {
+                  @if (isSessionTypeSelected(MenteePreferredSessionType.InPerson)) {
                     <app-icon name="check-mark" class="w-5 h-5 text-orange-600"></app-icon>
                   }
-                </label>
+                </button>
               </div>
+              @if (preferredSessionTypes.length === 0) {
+                <p class="text-sm text-red-600 mt-2">Please select at least one session type</p>
+              }
             </div>
 
             <!-- Navigation -->

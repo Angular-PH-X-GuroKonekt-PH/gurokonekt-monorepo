@@ -89,7 +89,7 @@ export class ProfileService {
     this.appendFieldIfPresent(formData, 'timezone', data.timezone);
     this.appendArrayField(formData, 'learningGoals', data.learningGoals);
     this.appendArrayField(formData, 'areasOfInterest', data.areasOfInterest);
-    this.appendFieldIfPresent(formData, 'preferredSessionType', data.preferredSessionType);
+    this.appendArrayField(formData, 'preferredSessionType', data.preferredSessionType);
 
     formData.append('updatedById', userId);
 

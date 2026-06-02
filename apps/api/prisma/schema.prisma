@@ -143,7 +143,7 @@ model MenteeProfile {
   bio                  String?
   learningGoals        String[]                   @map("learning_goals")
   areasOfInterest      String[]                   @map("areas_of_interest")
-  preferredSessionType MenteePreferredSessionType @map("preferred_session_type")
+  preferredSessionType MenteePreferredSessionType[] @map("preferred_session_type")
   updatedById          String?                    @map("updated_by_id")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
 

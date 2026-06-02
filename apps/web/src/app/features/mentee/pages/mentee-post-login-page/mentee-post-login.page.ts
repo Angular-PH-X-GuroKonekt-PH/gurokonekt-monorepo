@@ -75,7 +75,7 @@ export class MenteePostLoginPage implements OnInit {
       bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
       learningGoals: this.fb.array([], Validators.required),
       areasOfInterest: this.fb.array([], Validators.required),
-      preferredSessionType: [MenteePreferredSessionType.Online, Validators.required],
+      preferredSessionType: this.fb.array([], Validators.required),
     });
 
     // Add initial learning goal field
@@ -142,6 +142,27 @@ export class MenteePostLoginPage implements OnInit {
 
   isAreaSelected(area: string): boolean {
     return this.areasOfInterest.controls.some(control => control.value === area);
+  }
+
+  // Preferred Session Type Management
+  get preferredSessionTypes(): FormArray {
+    return this.profileForm.get('preferredSessionType') as FormArray;
+  }
+
+  toggleSessionType(type: MenteePreferredSessionType): void {
+    const index = this.preferredSessionTypes.controls.findIndex(
+      control => control.value === type
+    );
+
+    if (index >= 0) {
+      this.preferredSessionTypes.removeAt(index);
+    } else {
+      this.preferredSessionTypes.push(this.fb.control(type));
+    }
+  }
+
+  isSessionTypeSelected(type: MenteePreferredSessionType): boolean {
+    return this.preferredSessionTypes.controls.some(control => control.value === type);
   }
 
   // Avatar Management
@@ -241,7 +262,8 @@ export class MenteePostLoginPage implements OnInit {
       case 2:
         return this.learningGoals.valid && 
                this.learningGoals.length > 0 &&
-               this.areasOfInterest.length > 0;
+               this.areasOfInterest.length > 0 &&
+               this.preferredSessionTypes.length > 0;
       case 3:
         return this.hasAtLeastOneAvailability();
       default:
@@ -268,7 +290,7 @@ export class MenteePostLoginPage implements OnInit {
       bio: this.profileForm.value.bio,
       learningGoals: this.learningGoals.value,
       areasOfInterest: this.areasOfInterest.value,
-      preferredSessionType: this.profileForm.value.preferredSessionType,
+      preferredSessionType: this.preferredSessionTypes.value,
       ...(availability.length > 0 && { availability }),
     };
   }
