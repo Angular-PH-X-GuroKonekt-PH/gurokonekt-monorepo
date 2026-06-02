@@ -53,6 +53,11 @@ enum LogsActionType {
   reset_password
   verify_reset_pin
   deactivate_account
+  admin_activate_mentee
+  admin_deactivate_mentee
+  admin_reject_mentee
+  admin_resend_verification
+  admin_force_cancel_booking
 
   @@map("logs_action_type")
 }
@@ -133,6 +138,7 @@ model User {
   bookingsAsMentee     Booking[]             @relation("MenteeBookings")
   bookingsAsMentor     Booking[]             @relation("MentorBookings")
   deactivationFeedback DeactivationFeedback?
+  bookingFeedback      BookingFeedback[]
 
   @@map("users")
 }
@@ -248,14 +254,31 @@ model Booking {
   status          BookingStatus @default(PENDING)
   sessionLink     String?       @map("session_link")
   notes           String?
+  cancelReason    String?       @map("cancel_reason")
   isDeleted       Boolean       @default(false) @map("is_deleted")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  mentee          User          @relation("MenteeBookings", fields: [menteeId], references: [id])
-  mentor          User          @relation("MentorBookings", fields: [mentorId], references: [id])
+  mentee          User             @relation("MenteeBookings", fields: [menteeId], references: [id])
+  mentor          User             @relation("MentorBookings", fields: [mentorId], references: [id])
+  feedback        BookingFeedback[]
 
   @@map("bookings")
+}
+
+model BookingFeedback {
+  id        String   @id @default(uuid())
+  bookingId String   @map("booking_id")
+  userId    String   @map("user_id")
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([bookingId, userId])
+  @@map("booking_feedback")
 }
 
 model DeactivationFeedback {
