@@ -1048,4 +1048,83 @@ export class AuthService {
       }
     }
   }
+
+  async adminResendEmailConfirmation(userId: string, adminId: string, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+    try {
+      const user = await this.prisma.db.user.findUnique({ where: { id: userId }, select: { id: true, email: true, role: true } });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      const { data: supabaseUser, error: fetchError } = await this.supabase.clientAdmin.auth.admin.getUserById(user.id);
+
+      if (fetchError || !supabaseUser) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      if (supabaseUser.user.email_confirmed_at) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.code,
+          message: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.message,
+          data: null,
+        };
+      }
+
+      const { error } = await this.supabase.client.auth.resend({
+        type: ResendOTPTypes.SignUp,
+        email: user.email,
+        options: { emailRedirectTo: REDIRECT_LINKS.VERIFY_EMAIL },
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.AdminResendVerification,
+          targetId: userId,
+          details: error
+            ? API_RESPONSE.ERROR.ADMIN_RESEND_VERIFICATION.message
+            : API_RESPONSE.SUCCESS.ADMIN_RESEND_VERIFICATION.message,
+          metadata: { email: user.email, adminId },
+          ipAddress,
+          userAgent,
+          createdById: adminId,
+        },
+      });
+
+      if (error) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.ADMIN_RESEND_VERIFICATION.code,
+          message: API_RESPONSE.ERROR.ADMIN_RESEND_VERIFICATION.message,
+          data: error,
+        };
+      }
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.ADMIN_RESEND_VERIFICATION.code,
+        message: API_RESPONSE.SUCCESS.ADMIN_RESEND_VERIFICATION.message,
+        data: null,
+      };
+    } catch (error: any) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+        data: error,
+      };
+    }
+  }
 }

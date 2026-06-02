@@ -14,6 +14,10 @@ export enum LogsActionType {
   ResetPassword = "reset_password",
   VerifyResetPin = "verify_reset_pin",
   DeactivateAccount = "deactivate_account",
+  AdminActivateMentee = "admin_activate_mentee",
+  AdminDeactivateMentee = "admin_deactivate_mentee",
+  AdminRejectMentee = "admin_reject_mentee",
+  AdminResendVerification = "admin_resend_verification",
 }
 
 export interface LogsInterface {
