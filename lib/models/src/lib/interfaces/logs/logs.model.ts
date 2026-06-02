@@ -14,6 +14,7 @@ export enum LogsActionType {
   ResetPassword = "reset_password",
   VerifyResetPin = "verify_reset_pin",
   DeactivateAccount = "deactivate_account",
+  AdminForceCancelBooking = "admin_force_cancel_booking",
 }
 
 export interface LogsInterface {

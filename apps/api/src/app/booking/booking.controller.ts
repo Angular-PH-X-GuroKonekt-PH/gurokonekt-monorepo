@@ -29,6 +29,7 @@ import {
   BookingStatus,
   CreateBookingDto,
   MentorBookingsQueryDto,
+  UserBookingsQueryDto,
   ResponseDto,
   ResponseStatus,
   SWAGGER_DOCUMENTATION,
@@ -83,47 +84,6 @@ export class BookingController {
     @Req() req: Request & { user: { id: string } },
   ) {
     const response = await this.bookingService.create(dto, req.user.id);
-
-    if (response.status === ResponseStatus.Error) {
-      throw new HttpException(
-        {
-          status: response.status,
-          statusCode: response.statusCode,
-          message: response.message,
-          data: response.data,
-        },
-        response.statusCode || HttpStatus.BAD_REQUEST,
-      );
-    }
-
-    return response;
-  }
-
-  // ====================================================
-  // GET - Get All Bookings (admin / internal)
-  // ====================================================
-
-  @Get()
-  @ApiOperation({
-    summary: 'Get all bookings (admin / internal use)',
-    description: 'Returns every booking record in the system regardless of user. Intended for admin dashboards only.',
-  })
-  @ApiResponse({
-    status: 200,
-    description: 'All bookings retrieved successfully.',
-    type: ResponseDto,
-    schema: {
-      example: {
-        status: 'success',
-        statusCode: 200,
-        message: 'Bookings retrieved successfully',
-        data: [],
-      },
-    },
-  })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  async findAll() {
-    const response = await this.bookingService.findAll();
 
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
@@ -226,9 +186,10 @@ export class BookingController {
   @ApiResponse({ status: 403, description: 'Access denied — you can only view your own bookings.' })
   async findByUserId(
     @Param('userId') userId: string,
+    @Query() query: UserBookingsQueryDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.bookingService.findByUserId(userId, req.user.id);
+    const response = await this.bookingService.findByUserId(userId, req.user.id, query);
 
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(

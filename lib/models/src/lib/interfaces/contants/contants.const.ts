@@ -209,6 +209,22 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Account deactivated successfully',
     },
+
+    /**
+     * ADMIN BOOKING MANAGEMENT
+     */
+    ADMIN_GET_BOOKINGS: {
+      code: 200,
+      message: 'Booking list retrieved successfully',
+    },
+    ADMIN_GET_BOOKING: {
+      code: 200,
+      message: 'Booking details retrieved successfully',
+    },
+    ADMIN_FORCE_CANCEL_BOOKING: {
+      code: 200,
+      message: 'Booking force-cancelled successfully',
+    },
   },
   ERROR: {
     /**
@@ -567,6 +583,30 @@ export const API_RESPONSE = {
     ACCOUNT_DEACTIVATION_FAILED: {
       code: 500,
       message: 'Failed to deactivate account',
+    },
+
+    /**
+     * ADMIN
+     */
+    ADMIN_ACCESS_DENIED: {
+      code: 403,
+      message: 'Access denied: admin privileges required',
+    },
+    ADMIN_GET_BOOKINGS: {
+      code: 500,
+      message: 'Failed to retrieve booking list',
+    },
+    ADMIN_GET_BOOKING: {
+      code: 500,
+      message: 'Failed to retrieve booking details',
+    },
+    ADMIN_FORCE_CANCEL_BOOKING: {
+      code: 500,
+      message: 'Failed to force-cancel booking',
+    },
+    BOOKING_CANNOT_BE_CANCELLED: {
+      code: 400,
+      message: 'Booking cannot be cancelled: it is already completed, cancelled, or deleted',
     },
   }
 }
