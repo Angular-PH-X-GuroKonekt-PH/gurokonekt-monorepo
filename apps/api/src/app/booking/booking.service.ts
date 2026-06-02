@@ -8,6 +8,8 @@ import {
   CreateBookingDto,
   MentorBookingsQueryDto,
   UserBookingsQueryDto,
+  NotificationInterface,
+  NotificationStatus,
   NotificationType,
   ResponseDto,
   ResponseStatus,
