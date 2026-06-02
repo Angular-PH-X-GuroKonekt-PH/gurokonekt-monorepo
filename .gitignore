@@ -5,6 +5,9 @@ dist
 tmp
 out-tsc
 
+# local scripts (one-off dev utilities, never commit)
+apps/api/scripts/
+
 # dependencies
 node_modules
 

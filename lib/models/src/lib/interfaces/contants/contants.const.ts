@@ -209,6 +209,38 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Account deactivated successfully',
     },
+
+    /**
+     * ADMIN MENTEE MANAGEMENT
+     */
+    ADMIN_GET_MENTEES: {
+      code: 200,
+      message: 'Mentee list retrieved successfully',
+    },
+    ADMIN_GET_MENTEE: {
+      code: 200,
+      message: 'Mentee profile retrieved successfully',
+    },
+    ADMIN_ACTIVATE_MENTEE: {
+      code: 200,
+      message: 'Mentee account activated successfully',
+    },
+    ADMIN_DEACTIVATE_MENTEE: {
+      code: 200,
+      message: 'Mentee account deactivated successfully',
+    },
+    ADMIN_REJECT_MENTEE: {
+      code: 200,
+      message: 'Mentee account rejected successfully',
+    },
+    ADMIN_RESEND_VERIFICATION: {
+      code: 200,
+      message: 'Verification email resent successfully',
+    },
+    ADMIN_GET_REJECTION_LOG: {
+      code: 200,
+      message: 'Rejection log retrieved successfully',
+    },
   },
   ERROR: {
     /**
@@ -567,6 +599,50 @@ export const API_RESPONSE = {
     ACCOUNT_DEACTIVATION_FAILED: {
       code: 500,
       message: 'Failed to deactivate account',
+    },
+
+    /**
+     * ADMIN MENTEE MANAGEMENT
+     */
+    ADMIN_GET_MENTEES: {
+      code: 500,
+      message: 'Failed to retrieve mentee list',
+    },
+    ADMIN_GET_MENTEE: {
+      code: 500,
+      message: 'Failed to retrieve mentee profile',
+    },
+    ADMIN_ACTIVATE_MENTEE: {
+      code: 500,
+      message: 'Failed to activate mentee account',
+    },
+    ADMIN_DEACTIVATE_MENTEE: {
+      code: 500,
+      message: 'Failed to deactivate mentee account',
+    },
+    ADMIN_REJECT_MENTEE: {
+      code: 500,
+      message: 'Failed to reject mentee account',
+    },
+    ADMIN_RESEND_VERIFICATION: {
+      code: 500,
+      message: 'Failed to resend verification email',
+    },
+    ADMIN_GET_REJECTION_LOG: {
+      code: 500,
+      message: 'Failed to retrieve rejection log',
+    },
+    ADMIN_ACCESS_DENIED: {
+      code: 403,
+      message: 'Access denied: admin privileges required',
+    },
+    NOT_A_MENTEE: {
+      code: 400,
+      message: 'Target user is not a mentee',
+    },
+    REJECTION_LOG_NOT_FOUND: {
+      code: 404,
+      message: 'No rejection record found for this mentee',
     },
   }
 }

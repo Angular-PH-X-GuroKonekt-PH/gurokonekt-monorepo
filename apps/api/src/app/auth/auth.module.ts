@@ -21,5 +21,6 @@ import {
     AuthRateLimiterService,
     AuthErrorHandlerService,
   ],
+  exports: [AuthService],
 })
 export class AuthModule {}
