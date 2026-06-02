@@ -1,0 +1,48 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+  <div class="w-full max-w-md bg-white rounded-2xl shadow-xl">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900">Deactivation Reason</h2>
+      <button type="button" (click)="close()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="px-6 py-4">
+      @if (isLoading()) {
+        <p class="text-sm text-gray-400 text-center py-8">Loading...</p>
+      } @else {
+        <div class="space-y-3">
+          <p class="text-sm text-gray-600">
+            <span class="font-semibold text-gray-900">{{ mentee().firstName }} {{ mentee().lastName }}</span>
+            deactivated their account.
+          </p>
+          @if (feedback(); as f) {
+            <div class="rounded-lg bg-gray-50 border border-gray-200 p-4 space-y-1">
+              <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Reason provided</p>
+              <p class="text-sm text-gray-800">{{ f.reason }}</p>
+              <p class="text-xs text-gray-400">{{ f.createdAt | date: 'MMM d, y' }}</p>
+            </div>
+          } @else {
+            <div class="rounded-lg bg-gray-50 border border-gray-200 p-4">
+              <p class="text-sm text-gray-500">No deactivation reason was provided.</p>
+            </div>
+          }
+        </div>
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-gray-200">
+      <button type="button" (click)="close()"
+        class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>
