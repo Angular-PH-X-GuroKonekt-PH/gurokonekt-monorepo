@@ -26,7 +26,7 @@
     <!-- Progress Stepper -->
     <div class="mb-10">
       <div class="flex items-center justify-center max-w-3xl mx-auto">
-        @for (step of [1, 2, 3]; track step) {
+        @for (step of [1, 2]; track step) {
           <div class="flex flex-col items-center relative flex-1">
             <!-- Step Circle -->
             <div
@@ -43,7 +43,7 @@
             </div>
             
             <!-- Connecting Line -->
-            @if (step < 3) {
+            @if (step < 2) {
               <div 
                 class="absolute top-6 left-1/2 w-full h-0.5 -z-10"
                 [class]="currentStep() > step ? 'bg-green-500' : 'bg-gray-200'"
@@ -61,7 +61,6 @@
                 @switch (step) {
                   @case (1) { Basic Info }
                   @case (2) { Interests & Goals }
-                  @case (3) { Availability }
                 }
               </h3>
             </div>
@@ -306,105 +305,6 @@
                   }
                 </label>
               </div>
-            </div>
-
-            <!-- Navigation -->
-            <div class="flex justify-between pt-6">
-              <button
-                type="button"
-                (click)="previousStep()"
-                class="px-8 py-3 bg-gray-200 text-gray-700 rounded-lg font-semibold hover:bg-gray-300 transition-colors"
-              >
-                Back
-              </button>
-              <button
-                type="button"
-                (click)="nextStep()"
-                [disabled]="!canProceedToNextStep()"
-                class="px-8 py-3 bg-orange-500 text-white rounded-lg font-semibold hover:bg-orange-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                Continue
-              </button>
-            </div>
-          </div>
-        }
-
-        <!-- Step 3: Availability Schedule -->
-        @if (currentStep() === 3) {
-          <div class="space-y-8">
-            <div class="text-center mb-6">
-              <h2 class="text-2xl font-bold text-gray-900">Set Your Availability</h2>
-              <p class="text-gray-600 mt-2">When are you available for mentorship sessions?</p>
-            </div>
-
-            <!-- Schedule Builder -->
-            <div class="space-y-4">
-              @for (day of daysOfWeek; track day) {
-                @let schedule = getDaySchedule(day);
-                @if (schedule) {
-                  <div class="border-2 rounded-lg p-4" [class]="schedule.enabled ? 'border-orange-500 bg-orange-50' : 'border-gray-200'">
-                    <div class="flex items-center justify-between mb-3">
-                      <label class="flex items-center gap-3 cursor-pointer">
-                        <input
-                          type="checkbox"
-                          [checked]="schedule.enabled"
-                          (change)="toggleDay(day)"
-                          class="w-5 h-5 text-orange-600 rounded focus:ring-orange-500"
-                        />
-                        <span class="font-semibold text-gray-900 capitalize">{{ day }}</span>
-                      </label>
-                      
-                      @if (schedule.enabled && schedule.timeFrames.length < 3) {
-                        <button
-                          type="button"
-                          (click)="addTimeFrame(day)"
-                          class="text-sm px-3 py-1 text-orange-600 hover:bg-orange-100 rounded transition-colors"
-                        >
-                          + Add Time
-                        </button>
-                      }
-                    </div>
-
-                    @if (schedule.enabled) {
-                      <div class="space-y-2 ml-8">
-                        @for (timeFrame of schedule.timeFrames; track $index) {
-                          <div class="flex items-center gap-3">
-                            <input
-                              type="time"
-                              [value]="timeFrame.from"
-                              (change)="updateTimeFrame(day, $index, 'from', $any($event.target).value)"
-                              class="px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                            />
-                            <span class="text-gray-500">to</span>
-                            <input
-                              type="time"
-                              [value]="timeFrame.to"
-                              (change)="updateTimeFrame(day, $index, 'to', $any($event.target).value)"
-                              class="px-3 py-2 border-2 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500"
-                            />
-                            @if (schedule.timeFrames.length > 1) {
-                              <button
-                                type="button"
-                                (click)="removeTimeFrame(day, $index)"
-                                class="p-2 text-red-600 hover:bg-red-50 rounded transition-colors"
-                              >
-                                <app-icon name="close" class="w-4 h-4"></app-icon>
-                              </button>
-                            }
-                          </div>
-                        }
-                      </div>
-                    }
-                  </div>
-                }
-              }
-            </div>
-
-            <div class="bg-blue-50 border-2 border-blue-200 rounded-lg p-4 flex items-start gap-3">
-              <app-icon name="alert-info" class="w-5 h-5 text-blue-600 mt-0.5"></app-icon>
-              <p class="text-sm text-blue-800">
-                Please select at least one day and time slot when you're available for mentorship sessions.
-              </p>
             </div>
 
             <!-- Navigation -->

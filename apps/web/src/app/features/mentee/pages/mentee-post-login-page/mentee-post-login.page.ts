@@ -4,9 +4,8 @@ import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } fr
 import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
-import { MenteePreferredSessionType, DaysInWeek } from '@gurokonekt/models/interfaces/user/user.model';
+import { MenteePreferredSessionType } from '@gurokonekt/models/interfaces/user/user.model';
 import type { UpdateMenteeProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
-import type { DayAvailability, TimeFrame } from '../../../../shared/interfaces/post-login.interface';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
@@ -22,7 +21,6 @@ import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
 export class MenteePostLoginPage implements OnInit {
   private static readonly MAX_LEARNING_GOALS = 5;
   private static readonly MAX_AREAS_OF_INTEREST = 5;
-  private static readonly MAX_TIME_FRAMES_PER_DAY = 3;
   private static readonly MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
   private static readonly ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 
@@ -32,7 +30,7 @@ export class MenteePostLoginPage implements OnInit {
   private readonly store = inject(Store);
 
   protected readonly currentStep = signal(1);
-  protected readonly totalSteps = 3;
+  protected readonly totalSteps = 2;
   protected readonly isSubmitting = signal(false);
   
   protected avatarPreview = signal<string | null>(null);
@@ -44,9 +42,7 @@ export class MenteePostLoginPage implements OnInit {
   
   // Expose enums to template
   protected readonly MenteePreferredSessionType = MenteePreferredSessionType;
-  protected readonly DaysInWeek = DaysInWeek;
-  protected readonly daysOfWeek = Object.values(DaysInWeek);
-  
+
   protected readonly areasOfInterestOptions = [
     'Web Development',
     'Mobile Development',
@@ -63,11 +59,9 @@ export class MenteePostLoginPage implements OnInit {
   ];
 
   protected profileForm!: FormGroup;
-  protected availabilitySchedule = signal<DayAvailability[]>([]);
 
   ngOnInit(): void {
     this.initializeForm();
-    this.initializeAvailability();
   }
 
   private initializeForm(): void {
@@ -80,28 +74,6 @@ export class MenteePostLoginPage implements OnInit {
 
     // Add initial learning goal field
     this.addLearningGoal();
-  }
-
-  private initializeAvailability(): void {
-    const schedule: DayAvailability[] = this.daysOfWeek.map(day => ({
-      day,
-      enabled: false,
-      timeFrames: [this.createDefaultTimeFrame()]
-    }));
-    this.availabilitySchedule.set(schedule);
-  }
-
-  private createDefaultTimeFrame(): TimeFrame {
-    return { from: '09:00', to: '17:00' };
-  }
-
-  private updateScheduleForDay(day: DaysInWeek, update: (daySchedule: DayAvailability) => void): void {
-    const schedule = this.availabilitySchedule();
-    const dayIndex = schedule.findIndex(d => d.day === day);
-    if (dayIndex < 0) return;
-
-    update(schedule[dayIndex]);
-    this.availabilitySchedule.set([...schedule]);
   }
 
   // Learning Goals Management
@@ -185,40 +157,6 @@ export class MenteePostLoginPage implements OnInit {
     this.avatarError.set(null);
   }
 
-  // Availability Management
-  toggleDay(day: DaysInWeek): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      daySchedule.enabled = !daySchedule.enabled;
-    });
-  }
-
-  addTimeFrame(day: DaysInWeek): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (daySchedule.timeFrames.length < MenteePostLoginPage.MAX_TIME_FRAMES_PER_DAY) {
-        daySchedule.timeFrames.push(this.createDefaultTimeFrame());
-      }
-    });
-  }
-
-  removeTimeFrame(day: DaysInWeek, timeFrameIndex: number): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (daySchedule.timeFrames.length > 1) {
-        daySchedule.timeFrames.splice(timeFrameIndex, 1);
-      }
-    });
-  }
-
-  updateTimeFrame(day: DaysInWeek, timeFrameIndex: number, field: 'from' | 'to', value: string): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (!daySchedule.timeFrames[timeFrameIndex]) return;
-      daySchedule.timeFrames[timeFrameIndex][field] = value;
-    });
-  }
-
-  getDaySchedule(day: DaysInWeek): DayAvailability | undefined {
-    return this.availabilitySchedule().find(d => d.day === day);
-  }
-
   // Step Navigation
   nextStep(): void {
     if (this.currentStep() < this.totalSteps) {
@@ -242,34 +180,17 @@ export class MenteePostLoginPage implements OnInit {
         return this.learningGoals.valid && 
                this.learningGoals.length > 0 &&
                this.areasOfInterest.length > 0;
-      case 3:
-        return this.hasAtLeastOneAvailability();
       default:
         return false;
     }
   }
 
-  private hasAtLeastOneAvailability(): boolean {
-    return this.availabilitySchedule().some(day => day.enabled && day.timeFrames.length > 0);
-  }
-
-  private buildAvailabilityPayload(): Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }> {
-    return this.availabilitySchedule()
-      .filter(day => day.enabled)
-      .map(day => ({
-        day: day.day,
-        timeFrames: day.timeFrames,
-      }));
-  }
-
   private buildProfileData(): Partial<UpdateMenteeProfileInterface> {
-    const availability = this.buildAvailabilityPayload();
     return {
       bio: this.profileForm.value.bio,
       learningGoals: this.learningGoals.value,
       areasOfInterest: this.areasOfInterest.value,
       preferredSessionType: this.profileForm.value.preferredSessionType,
-      ...(availability.length > 0 && { availability }),
     };
   }
 
@@ -277,11 +198,6 @@ export class MenteePostLoginPage implements OnInit {
     if (!this.selectedAvatarFile) {
       this.toastService.error('Profile picture is required');
       this.currentStep.set(1);
-      return false;
-    }
-
-    if (!this.hasAtLeastOneAvailability()) {
-      this.toastService.error('Please set at least one availability slot');
       return false;
     }
 

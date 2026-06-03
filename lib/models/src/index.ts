@@ -34,3 +34,5 @@ export * from './lib/interfaces/booking/booking.model';
 export * from './lib/dto/booking/booking.dto';
 export * from './lib/interfaces/search/search.model';
 export * from './lib/dto/search/search-mentor.dto';
+export * from './lib/interfaces/admin/admin-mentee.model';
+export * from './lib/dto/admin/admin-mentee.dto';

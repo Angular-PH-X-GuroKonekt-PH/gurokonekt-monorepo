@@ -1,0 +1,105 @@
+{
+  "name": "admin-portal",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "projectType": "application",
+  "prefix": "app",
+  "sourceRoot": "apps/admin-portal/src",
+  "tags": [],
+  "targets": {
+    "build": {
+      "executor": "@angular/build:application",
+      "outputs": ["{options.outputPath}"],
+      "options": {
+        "outputPath": "dist/apps/admin-portal",
+        "browser": "apps/admin-portal/src/main.ts",
+        "polyfills": ["zone.js"],
+        "tsConfig": "apps/admin-portal/tsconfig.app.json",
+        "inlineStyleLanguage": "scss",
+        "assets": [
+          {
+            "glob": "**/*",
+            "input": "apps/admin-portal/public"
+          },
+          {
+            "glob": "**/*",
+            "input": "apps/admin-portal/src/assets",
+            "output": "assets"
+          }
+        ],
+        "styles": ["apps/admin-portal/src/styles.scss"]
+      },
+      "configurations": {
+        "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/admin-portal/src/environments/environment.ts",
+              "with": "apps/admin-portal/src/environments/environment.prod.ts"
+            }
+          ],
+          "budgets": [
+            {
+              "type": "initial",
+              "maximumWarning": "600kb",
+              "maximumError": "1mb"
+            },
+            {
+              "type": "anyComponentStyle",
+              "maximumWarning": "8kb",
+              "maximumError": "16kb"
+            }
+          ],
+          "outputHashing": "all"
+        },
+        "test": {
+          "fileReplacements": [
+            {
+              "replace": "apps/admin-portal/src/environments/environment.ts",
+              "with": "apps/admin-portal/src/environments/environment.test.ts"
+            }
+          ]
+        },
+        "development": {
+          "optimization": false,
+          "extractLicenses": false,
+          "sourceMap": true
+        }
+      },
+      "defaultConfiguration": "production"
+    },
+    "serve": {
+      "continuous": true,
+      "executor": "@angular/build:dev-server",
+      "configurations": {
+        "production": {
+          "buildTarget": "admin-portal:build:production"
+        },
+        "test": {
+          "buildTarget": "admin-portal:build:test"
+        },
+        "development": {
+          "buildTarget": "admin-portal:build:development"
+        }
+      },
+      "defaultConfiguration": "development"
+    },
+    "extract-i18n": {
+      "executor": "@angular/build:extract-i18n",
+      "options": {
+        "buildTarget": "admin-portal:build"
+      }
+    },
+    "lint": {
+      "executor": "@nx/eslint:lint"
+    },
+    "serve-static": {
+      "continuous": true,
+      "executor": "@nx/web:file-server",
+      "options": {
+        "buildTarget": "admin-portal:build",
+        "port": 4200,
+        "staticFilePath": "dist/apps/admin-portal/browser",
+        "spa": true
+      }
+    }
+  }
+}
