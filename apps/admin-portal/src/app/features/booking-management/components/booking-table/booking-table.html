@@ -1,0 +1,93 @@
+<div class="bg-white rounded-xl border border-gray-200">
+  <!-- Filters -->
+  <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3 flex-wrap">
+    <input
+      type="text"
+      placeholder="Search mentor or mentee..."
+      (input)="onSearchChange($any($event.target).value)"
+      class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 w-56 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    />
+    <select
+      [value]="statusFilter()"
+      (change)="onStatusFilterChange($any($event.target).value)"
+      class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+    >
+      <option value="">All Status</option>
+      <option value="PENDING">Pending</option>
+      <option value="APPROVED">Confirmed</option>
+      <option value="COMPLETED">Completed</option>
+      <option value="CANCELLED">Cancelled</option>
+      <option value="REJECTED">Rejected</option>
+    </select>
+  </div>
+
+  <!-- Table -->
+  <div class="overflow-x-auto">
+    <table class="w-full text-sm">
+      <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+        <tr>
+          <th class="px-6 py-3 text-left font-medium">Mentee</th>
+          <th class="px-6 py-3 text-left font-medium">Mentor</th>
+          <th class="px-6 py-3 text-left font-medium">Session Date</th>
+          <th class="px-6 py-3 text-left font-medium">Status</th>
+          <th class="px-6 py-3 text-left font-medium">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-100">
+        @if (isLoading()) {
+          <tr>
+            <td colspan="5" class="px-6 py-8 text-center text-gray-400">Loading...</td>
+          </tr>
+        } @else if (bookings().length === 0) {
+          <tr>
+            <td colspan="5" class="px-6 py-8 text-center text-gray-400">No bookings found.</td>
+          </tr>
+        } @else {
+          @for (booking of bookings(); track booking.id) {
+            <tr class="hover:bg-gray-50 transition-colors">
+              <td class="px-6 py-4 text-gray-900">
+                {{ booking.mentee?.firstName }} {{ booking.mentee?.lastName }}
+              </td>
+              <td class="px-6 py-4 text-gray-600">
+                {{ booking.mentor?.firstName }} {{ booking.mentor?.lastName }}
+              </td>
+              <td class="px-6 py-4 text-gray-500">
+                {{ booking.sessionDateTime | date: 'MMM d, y · h:mm a' }}
+              </td>
+              <td class="px-6 py-4">
+                <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                  [class]="getStatusClass(booking.status)"
+                >
+                  {{ booking.status }}
+                </span>
+              </td>
+              <td class="px-6 py-4">
+                <span class="text-blue-600 cursor-pointer hover:underline text-xs">View</span>
+              </td>
+            </tr>
+          }
+        }
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Pagination -->
+  @if (totalPages() > 1) {
+    <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+      <span>{{ total() }} total</span>
+      <div class="flex items-center gap-2">
+        <button
+          [disabled]="page() === 1"
+          (click)="onPageChange(page() - 1)"
+          class="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+        >Prev</button>
+        <span>{{ page() }} / {{ totalPages() }}</span>
+        <button
+          [disabled]="page() === totalPages()"
+          (click)="onPageChange(page() + 1)"
+          class="px-3 py-1 rounded border border-gray-200 disabled:opacity-40 hover:bg-gray-50"
+        >Next</button>
+      </div>
+    </div>
+  }
+</div>

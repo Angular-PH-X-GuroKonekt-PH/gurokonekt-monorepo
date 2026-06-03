@@ -1,0 +1,117 @@
+<!-- Overlay -->
+<div class="fixed inset-0 z-50 flex items-start justify-end bg-black/40" (click)="close()">
+  <!-- Panel -->
+  <div class="relative h-full w-full max-w-lg bg-white shadow-xl flex flex-col" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900">Mentee Profile</h2>
+      <button type="button" (click)="close()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+      @if (isLoading()) {
+        <div class="flex items-center justify-center py-16 text-gray-400 text-sm">Loading...</div>
+      } @else if (detail(); as d) {
+
+        <!-- Avatar + name -->
+        <div class="flex items-center gap-4">
+          @if (d.avatarUrl) {
+            <img [src]="d.avatarUrl" alt="Avatar" class="h-16 w-16 rounded-full object-cover border border-gray-200" />
+          } @else {
+            <div class="h-16 w-16 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xl font-bold">
+              {{ d.firstName.charAt(0) }}{{ d.lastName.charAt(0) }}
+            </div>
+          }
+          <div>
+            <p class="text-lg font-semibold text-gray-900">{{ d.firstName }} {{ d.middleName ? d.middleName + ' ' : '' }}{{ d.lastName }}</p>
+            <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+              [class]="{
+                'bg-green-50 text-green-700': d.status === 'active',
+                'bg-yellow-50 text-yellow-700': d.status === 'inactive' && !d.isEmailVerified,
+                'bg-gray-100 text-gray-600': d.status === 'inactive' && d.isEmailVerified,
+                'bg-red-50 text-red-700': d.status === 'rejected'
+              }">
+              {{ getComputedStatus(d) }}
+            </span>
+          </div>
+        </div>
+
+        <!-- Contact info -->
+        <div class="space-y-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Contact</h3>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div><p class="text-gray-400 text-xs">Email</p><p class="text-gray-900 font-medium break-all">{{ d.email }}</p></div>
+            <div><p class="text-gray-400 text-xs">Phone</p><p class="text-gray-900 font-medium">{{ d.phoneNumber || '—' }}</p></div>
+            <div><p class="text-gray-400 text-xs">Country</p><p class="text-gray-900 font-medium">{{ d.country || '—' }}</p></div>
+            <div><p class="text-gray-400 text-xs">Language</p><p class="text-gray-900 font-medium">{{ d.language || '—' }}</p></div>
+            <div><p class="text-gray-400 text-xs">Timezone</p><p class="text-gray-900 font-medium">{{ d.timezone || '—' }}</p></div>
+            <div><p class="text-gray-400 text-xs">Registered</p><p class="text-gray-900 font-medium">{{ d.createdAt | date: 'MMM d, y' }}</p></div>
+          </div>
+        </div>
+
+        <!-- Mentee profile -->
+        @if (d.menteeProfile; as profile) {
+          <div class="space-y-2">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Profile</h3>
+            @if (profile.bio) {
+              <div><p class="text-gray-400 text-xs">Bio</p><p class="text-gray-900 text-sm">{{ profile.bio }}</p></div>
+            }
+            @if (profile.learningGoals?.length) {
+              <div>
+                <p class="text-gray-400 text-xs mb-1">Learning Goals</p>
+                <div class="flex flex-wrap gap-1">
+                  @for (goal of profile.learningGoals; track goal) {
+                    <span class="bg-blue-50 text-blue-700 text-xs px-2 py-0.5 rounded-full">{{ goal }}</span>
+                  }
+                </div>
+              </div>
+            }
+            @if (profile.areasOfInterest?.length) {
+              <div>
+                <p class="text-gray-400 text-xs mb-1">Areas of Interest</p>
+                <div class="flex flex-wrap gap-1">
+                  @for (area of profile.areasOfInterest; track area) {
+                    <span class="bg-orange-50 text-orange-700 text-xs px-2 py-0.5 rounded-full">{{ area }}</span>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        }
+
+        <!-- Rejection log -->
+        @if (rejectionLog(); as log) {
+          <div class="rounded-lg bg-red-50 border border-red-200 p-4 space-y-1">
+            <p class="text-xs font-semibold uppercase tracking-wider text-red-500">Rejection Reason</p>
+            <p class="text-sm text-red-800">{{ log.reason }}</p>
+            <p class="text-xs text-red-400">{{ log.createdAt | date: 'MMM d, y' }}</p>
+          </div>
+        }
+
+        <!-- Deactivation note -->
+        @if (d.status === 'inactive' && d.isEmailVerified) {
+          <div class="rounded-lg bg-gray-50 border border-gray-200 p-4">
+            <p class="text-xs font-semibold uppercase tracking-wider text-gray-400">Account Status</p>
+            <p class="text-sm text-gray-700 mt-1">This account has been deactivated.</p>
+          </div>
+        }
+
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-gray-200">
+      <button type="button" (click)="close()"
+        class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>

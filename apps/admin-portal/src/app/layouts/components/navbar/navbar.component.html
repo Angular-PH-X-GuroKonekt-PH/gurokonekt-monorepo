@@ -1,0 +1,27 @@
+<nav class="fixed top-0 z-40 w-full border-b border-gray-200 bg-gray-50">
+  <div class="px-3 py-3 lg:px-5 lg:pl-3">
+    <div class="flex items-center justify-between">
+
+      <div class="flex items-center justify-start">
+        <div class="hidden sm:block ms-64 ps-4">
+          <p class="text-sm font-semibold text-gray-900">Admin Portal</p>
+        </div>
+      </div>
+
+      <div class="flex items-center gap-4">
+        @if (selectors.user(); as user) {
+          <span class="text-sm font-medium text-gray-700">{{ user.firstName }} {{ user.lastName }}</span>
+        }
+        <button
+          type="button"
+          (click)="logout()"
+          class="flex items-center gap-2 text-sm font-medium text-gray-600 hover:text-orange-600 transition-colors"
+        >
+          <app-icon name="arrow-right-on-rectangle" class="h-5 w-5" />
+          <span>Sign out</span>
+        </button>
+      </div>
+
+    </div>
+  </div>
+</nav>
