@@ -7,9 +7,10 @@ import {
   BookingStatus,
   CreateBookingDto,
   MentorBookingsQueryDto,
+  UserBookingsQueryDto,
+  NotificationInterface,
   NotificationStatus,
   NotificationType,
-  NotificationInterface,
   ResponseDto,
   ResponseStatus,
   UpdateBookingDto,
@@ -112,33 +113,6 @@ export class BookingService {
   // GET ALL
   // ====================================================
 
-  async findAll(): Promise<ResponseDto<BookingInterface[]>> {
-    try {
-      const bookings = await this.prisma.db.booking.findMany({
-        where: { isDeleted: false },
-        orderBy: { sessionDateTime: 'asc' },
-        include: {
-          mentor: { select: BOOKING_USER_SELECT },
-          mentee: { select: BOOKING_USER_SELECT },
-        },
-      });
-
-      return {
-        status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.GET_BOOKINGS.code,
-        message: API_RESPONSE.SUCCESS.GET_BOOKINGS.message,
-        data: bookings as unknown as BookingInterface[],
-      };
-    } catch (error) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: API_RESPONSE.ERROR.GET_BOOKINGS.code,
-        message: API_RESPONSE.ERROR.GET_BOOKINGS.message,
-        data: null,
-      };
-    }
-  }
 
   // ====================================================
   // GET BY ID
@@ -204,7 +178,8 @@ export class BookingService {
   async findByUserId(
     userId: string,
     authenticatedUserId: string,
-  ): Promise<ResponseDto<BookingInterface[]>> {
+    query: UserBookingsQueryDto,
+  ): Promise<ResponseDto<unknown>> {
     try {
       const isAdmin = await this.checkIsAdmin(authenticatedUserId);
 
@@ -217,23 +192,34 @@ export class BookingService {
         };
       }
 
-      const bookings = await this.prisma.db.booking.findMany({
-        where: {
-          isDeleted: false,
-          OR: [{ menteeId: userId }, { mentorId: userId }],
-        },
-        orderBy: { sessionDateTime: 'asc' },
-        include: {
-          mentor: { select: BOOKING_USER_SELECT },
-          mentee: { select: BOOKING_USER_SELECT },
-        },
-      });
+      const page = query.page ?? 1;
+      const limit = query.limit ?? 20;
+      const skip = (page - 1) * limit;
+
+      const where = {
+        isDeleted: false,
+        OR: [{ menteeId: userId }, { mentorId: userId }],
+      };
+
+      const [bookings, total] = await Promise.all([
+        this.prisma.db.booking.findMany({
+          where,
+          orderBy: { sessionDateTime: 'asc' },
+          include: {
+            mentor: { select: BOOKING_USER_SELECT },
+            mentee: { select: BOOKING_USER_SELECT },
+          },
+          skip,
+          take: limit,
+        }),
+        this.prisma.db.booking.count({ where }),
+      ]);
 
       return {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.GET_BOOKINGS.code,
         message: API_RESPONSE.SUCCESS.GET_BOOKINGS.message,
-        data: bookings as unknown as BookingInterface[],
+        data: { data: bookings, total, page, limit, totalPages: Math.ceil(total / limit) },
       };
     } catch (error) {
       this.logger.error(error.message, error.stack);
@@ -383,7 +369,7 @@ export class BookingService {
     mentorId: string,
     authenticatedUserId: string,
     query: MentorBookingsQueryDto,
-  ): Promise<ResponseDto<BookingInterface[]>> {
+  ): Promise<ResponseDto<unknown>> {
     try {
       const isAdmin = await this.checkIsAdmin(authenticatedUserId);
 
@@ -396,24 +382,35 @@ export class BookingService {
         };
       }
 
-      const bookings = await this.prisma.db.booking.findMany({
-        where: {
-          mentorId,
-          isDeleted: false,
-          ...(query.status !== undefined && { status: query.status }),
-        },
-        orderBy: { sessionDateTime: 'asc' },
-        include: {
-          mentor: { select: BOOKING_USER_SELECT },
-          mentee: { select: BOOKING_USER_SELECT },
-        },
-      });
+      const page = query.page ?? 1;
+      const limit = query.limit ?? 20;
+      const skip = (page - 1) * limit;
+
+      const where = {
+        mentorId,
+        isDeleted: false,
+        ...(query.status !== undefined && { status: query.status }),
+      };
+
+      const [bookings, total] = await Promise.all([
+        this.prisma.db.booking.findMany({
+          where,
+          orderBy: { sessionDateTime: 'asc' },
+          include: {
+            mentor: { select: BOOKING_USER_SELECT },
+            mentee: { select: BOOKING_USER_SELECT },
+          },
+          skip,
+          take: limit,
+        }),
+        this.prisma.db.booking.count({ where }),
+      ]);
 
       return {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.GET_MENTOR_BOOKINGS.code,
         message: API_RESPONSE.SUCCESS.GET_MENTOR_BOOKINGS.message,
-        data: bookings as unknown as BookingInterface[],
+        data: { data: bookings, total, page, limit, totalPages: Math.ceil(total / limit) },
       };
     } catch (error) {
       this.logger.error(error.message, error.stack);

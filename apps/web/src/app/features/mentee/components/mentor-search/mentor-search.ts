@@ -33,8 +33,6 @@ export class MentorSearch {
     name: '',
     availabilityDay: null,
     language: '',
-    minSessionRate: null,
-    maxSessionRate: null,
     minYearsExperience: null,
     maxYearsExperience: null,
     minRating: null,
@@ -52,8 +50,6 @@ export class MentorSearch {
     name: [''],
     availabilityDay: [null as AvailabilityOption | null],
     language: [''],
-    minSessionRate: [null as number | null],
-    maxSessionRate: [null as number | null],
     minYearsExperience: [null as number | null],
     maxYearsExperience: [null as number | null],
     minRating: [null as number | null],
@@ -111,8 +107,6 @@ export class MentorSearch {
       this.selectedExpertise().length > 0,
       value.availabilityDay != null,
       !!value.language?.trim(),
-      value.minSessionRate != null,
-      value.maxSessionRate != null,
       value.minYearsExperience != null,
       value.maxYearsExperience != null,
       value.minRating != null,
@@ -233,8 +227,6 @@ export class MentorSearch {
       name: formValue.name ?? null,
       availabilityDay: formValue.availabilityDay ?? null,
       language: formValue.language ?? null,
-      minSessionRate: this.getNumberOrNull(formValue.minSessionRate),
-      maxSessionRate: this.getNumberOrNull(formValue.maxSessionRate),
       minYearsExperience: this.getNumberOrNull(formValue.minYearsExperience),
       maxYearsExperience: this.getNumberOrNull(formValue.maxYearsExperience),
       minRating: this.getNumberOrNull(formValue.minRating),
@@ -254,8 +246,6 @@ export class MentorSearch {
       expertise: filters.expertise.length ? filters.expertise.join(',') : null,
       availabilityDay: filters.availabilityDay ?? null,
       language: filters.language || null,
-      minSessionRate: filters.minSessionRate ?? null,
-      maxSessionRate: filters.maxSessionRate ?? null,
       minYearsExperience: filters.minYearsExperience ?? null,
       maxYearsExperience: filters.maxYearsExperience ?? null,
       minRating: filters.minRating ?? null,
@@ -280,9 +270,6 @@ export class MentorSearch {
         params['availabilityDay'] as AvailabilityOption
       );
     }
-
-    this.setNumberFilterFromUrl(params, 'minSessionRate');
-    this.setNumberFilterFromUrl(params, 'maxSessionRate');
     this.setNumberFilterFromUrl(params, 'minYearsExperience');
     this.setNumberFilterFromUrl(params, 'maxYearsExperience');
     this.setNumberFilterFromUrl(params, 'minRating');
@@ -298,8 +285,6 @@ export class MentorSearch {
   private setNumberFilterFromUrl(
     params: Record<string, string>,
     controlName:
-      | 'minSessionRate'
-      | 'maxSessionRate'
       | 'minYearsExperience'
       | 'maxYearsExperience'
       | 'minRating'
