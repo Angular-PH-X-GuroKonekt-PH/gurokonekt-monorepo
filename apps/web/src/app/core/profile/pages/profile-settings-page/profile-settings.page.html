@@ -293,36 +293,34 @@
               <label for="preferredSessionType" class="block text-sm font-semibold text-gray-700 mb-4">
                 Preferred Session Type <span class="text-red-500">*</span>
               </label>
+              <p class="text-sm text-gray-600 mb-4">Select one or more</p>
 
               <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all"
-                  [class]="profileForm.get('preferredSessionType')?.value === MenteePreferredSessionType.Online ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                  <input
-                    type="radio"
-                    [value]="MenteePreferredSessionType.Online"
-                    formControlName="preferredSessionType"
-                    class="w-4 h-4 text-orange-600 focus:ring-2 focus:ring-orange-500"
-                  />
+                <button
+                  type="button"
+                  (click)="toggleSessionType(MenteePreferredSessionType.Online)"
+                  class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+                  [class]="isSessionTypeSelected(MenteePreferredSessionType.Online) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
                   <div>
                     <span class="text-gray-900 font-medium block">Online</span>
                     <span class="text-gray-600 text-sm">Video/Voice calls</span>
                   </div>
-                </label>
+                </button>
 
-                <label class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all"
-                  [class]="profileForm.get('preferredSessionType')?.value === MenteePreferredSessionType.InPerson ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                  <input
-                    type="radio"
-                    [value]="MenteePreferredSessionType.InPerson"
-                    formControlName="preferredSessionType"
-                    class="w-4 h-4 text-orange-600 focus:ring-2 focus:ring-orange-500"
-                  />
+                <button
+                  type="button"
+                  (click)="toggleSessionType(MenteePreferredSessionType.InPerson)"
+                  class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+                  [class]="isSessionTypeSelected(MenteePreferredSessionType.InPerson) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
                   <div>
                     <span class="text-gray-900 font-medium block">In-Person</span>
                     <span class="text-gray-600 text-sm">Face-to-face meetings</span>
                   </div>
-                </label>
+                </button>
               </div>
+              @if (preferredSessionTypes.length === 0) {
+                <p class="text-sm text-red-600 mt-2">Please select at least one session type</p>
+              }
             </div>
 
             <!-- Availability Schedule -->

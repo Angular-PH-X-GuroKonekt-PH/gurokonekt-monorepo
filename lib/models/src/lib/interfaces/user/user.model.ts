@@ -67,7 +67,7 @@ export interface MenteeProfileInterface {
   bio: string;
   learningGoals: string[];
   areasOfInterest: string[];
-  preferredSessionType: MenteePreferredSessionType;
+  preferredSessionType: MenteePreferredSessionType[];
   user: UserInterface;
   updatedAt: string;
   updatedBy: UserFlatInterface;
@@ -81,7 +81,7 @@ export interface UpdateMenteeProfileInterface {
   timezone: string;
   learningGoals: string[];
   areasOfInterest: string[];
-  preferredSessionType: MenteePreferredSessionType;
+  preferredSessionType: MenteePreferredSessionType[];
   updatedById: string;
 }
 
