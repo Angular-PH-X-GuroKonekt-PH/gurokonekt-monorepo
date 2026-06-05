@@ -2,7 +2,7 @@ import { AvailabilityOption } from '@gurokonekt/models/interfaces/search/search.
 import { DaysInWeek } from '@gurokonekt/models/interfaces/user/user.model';
 
 export const MENTOR_SEARCH_EXPERIENCE_OPTIONS = [
-  { label: 'Any experience', min: null, max: null },
+  { label: 'All', min: null, max: null },
   { label: '0-2 years', min: 0, max: 2 },
   { label: '3-5 years', min: 3, max: 5 },
   { label: '6-10 years', min: 6, max: 10 },
@@ -10,7 +10,7 @@ export const MENTOR_SEARCH_EXPERIENCE_OPTIONS = [
 ];
 
 export const MENTOR_SEARCH_RATING_OPTIONS = [
-  { label: 'Any rating', value: null },
+  { label: 'All', value: null },
   { label: '5 stars', value: 5 },
   { label: '4 stars & up', value: 4 },
   { label: '3 stars & up', value: 3 },
@@ -27,6 +27,5 @@ export const MENTOR_SEARCH_AVAILABILITY_OPTIONS: {
   { label: 'Thursday', value: DaysInWeek.Thursday },
   { label: 'Friday', value: DaysInWeek.Friday },
   { label: 'Saturday', value: DaysInWeek.Saturday },
-  { label: 'Sunday', value: DaysInWeek.Sunday },
-  { label: 'Any time', value: null },
+  { label: 'Sunday', value: DaysInWeek.Sunday }
 ];
