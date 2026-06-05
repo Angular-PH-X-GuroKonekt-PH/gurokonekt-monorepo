@@ -1,17 +1,99 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsDate, IsEnum, IsNotEmpty, IsOptional, IsString, IsUrl, IsUUID } from 'class-validator';
+import { IsDate, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, IsUrl, IsUUID, Max, Min } from 'class-validator';
 import { BookingInterface, BookingStatus } from '../../interfaces/booking/booking.model';
 
 export class MentorBookingsQueryDto {
-  @ApiPropertyOptional({
-    enum: BookingStatus,
-    description: 'Filter bookings by status',
-    example: BookingStatus.PENDING,
-  })
+  @ApiPropertyOptional({ enum: BookingStatus, description: 'Filter bookings by status' })
   @IsOptional()
   @IsEnum(BookingStatus)
   status?: BookingStatus;
+
+  @ApiPropertyOptional({ description: 'Page number', example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ description: 'Items per page', example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+}
+
+export class UserBookingsQueryDto {
+  @ApiPropertyOptional({ description: 'Page number', example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ description: 'Items per page', example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+}
+
+export class AdminListBookingsQueryDto {
+  @ApiPropertyOptional({ enum: BookingStatus, description: 'Filter by booking status' })
+  @IsOptional()
+  @IsEnum(BookingStatus)
+  status?: BookingStatus;
+
+  @ApiPropertyOptional({ description: 'Filter sessions from this date (ISO 8601)' })
+  @IsOptional()
+  @IsDateString()
+  dateFrom?: string;
+
+  @ApiPropertyOptional({ description: 'Filter sessions up to this date (ISO 8601)' })
+  @IsOptional()
+  @IsDateString()
+  dateTo?: string;
+
+  @ApiPropertyOptional({ description: 'Search by mentor or mentee name' })
+  @IsOptional()
+  @IsString()
+  search?: string;
+
+  @ApiPropertyOptional({ enum: ['sessionDateTime', 'createdAt'], description: 'Sort field' })
+  @IsOptional()
+  @IsEnum(['sessionDateTime', 'createdAt'])
+  sortBy?: 'sessionDateTime' | 'createdAt';
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], description: 'Sort direction' })
+  @IsOptional()
+  @IsEnum(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
+
+  @ApiPropertyOptional({ description: 'Page number', example: 1 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @ApiPropertyOptional({ description: 'Items per page (max 100)', example: 20 })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
+}
+
+export class AdminForceCancelBookingDto {
+  @ApiProperty({ description: 'Reason for force-cancelling the booking' })
+  @IsNotEmpty()
+  @IsString()
+  reason!: string;
 }
 
 export class ApproveBookingDto {
