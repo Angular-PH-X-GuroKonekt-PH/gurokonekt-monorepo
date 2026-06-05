@@ -118,10 +118,7 @@ export interface MentorSearchFilter {
   page: number;
   limit: number;
   availabilityDay: AvailabilityOption | null;
-
   language: string | null;
-  minSessionRate: number | null;
-  maxSessionRate: number | null;
   minYearsExperience: number | null;
   maxYearsExperience: number | null;
   minRating: number | null;        // PENDING BACKEND

@@ -42,8 +42,6 @@ export class MenteeSearchMentorService {
       ...(filters.expertise.length ? { expertise: filters.expertise.join(',') } : {}),
       ...(filters.availabilityDay != null ? { availabilityDay: filters.availabilityDay } : {}),
       ...(filters.language != null ? { language: filters.language } : {}),
-      ...(filters.minSessionRate != null ? { minSessionRate: filters.minSessionRate } : {}),
-      ...(filters.maxSessionRate != null ? { maxSessionRate: filters.maxSessionRate } : {}),
       ...(filters.minYearsExperience != null ? { minYearsExperience: filters.minYearsExperience } : {}),
       ...(filters.maxYearsExperience != null ? { maxYearsExperience: filters.maxYearsExperience } : {}),
       // ...(filters.minRating != null ? { minRating: filters.minRating } : {}), // PENDING BACKEND

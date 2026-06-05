@@ -95,12 +95,6 @@ export class MenteeFindMentorsPage {
           : null,
       language:
         typeof params['language'] === 'string' ? params['language'] : null,
-      minSessionRate: this.parseOptionalPositiveNumber(
-        params['minSessionRate']
-      ),
-      maxSessionRate: this.parseOptionalPositiveNumber(
-        params['maxSessionRate']
-      ),
       minYearsExperience: this.parseOptionalPositiveNumber(
         params['minYearsExperience']
       ),
