@@ -191,8 +191,9 @@
 
         </div>
 
-        <div class="mt-4 grid grid-cols-1 gap-4 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_minmax(0,1fr)_3.5rem]">
-          <div class="relative">
+        <div class="mt-4 flex justify-center">
+          <div class="grid w-full grid-cols-1 gap-4 sm:grid-cols-[minmax(0,20rem)_minmax(0,20rem)_3.5rem] lg:w-auto">
+            <div class="relative">
             <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Language</p>
             <button
               type="button"
@@ -240,7 +241,7 @@
             }
           </div>
 
-          <div class="relative">
+            <div class="relative">
             <p class="mb-1.5 flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">
               Rating
             </p>
@@ -281,38 +282,17 @@
             }
           </div>
 
-          <div>
-            <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Min Price</p>
-            <input
-              type="number"
-              min="0"
-              formControlName="minSessionRate"
-              placeholder="P0"
-              class="block min-h-11 w-full rounded-xl border-0 bg-violet-50 px-4 text-sm font-semibold text-slate-600 outline-none placeholder:text-slate-400 focus:bg-violet-50 focus:ring-2 focus:ring-blue-200"
-            />
+            <button
+              type="button"
+              (click)="resetFilters()"
+              [disabled]="activeFilterCount() === 0"
+              class="inline-flex h-11 w-11 self-end items-center justify-center rounded-xl bg-blue-950 text-white shadow-[0_12px_24px_rgba(30,64,175,0.22)] transition hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
+              aria-label="Clear filters"
+              title="Clear filters"
+            >
+              <app-icon name="filter" class="h-5 w-5" />
+            </button>
           </div>
-
-          <div>
-            <p class="mb-1.5 text-[11px] font-bold uppercase tracking-[0.14em] text-slate-400">Max Price</p>
-            <input
-              type="number"
-              min="0"
-              formControlName="maxSessionRate"
-              placeholder="P200"
-              class="block min-h-11 w-full rounded-xl border-0 bg-violet-50 px-4 text-sm font-semibold text-slate-600 outline-none placeholder:text-slate-400 focus:bg-violet-50 focus:ring-2 focus:ring-blue-200"
-            />
-          </div>
-
-          <button
-            type="button"
-            (click)="resetFilters()"
-            [disabled]="activeFilterCount() === 0"
-            class="self-end inline-flex min-h-11 items-center justify-center rounded-xl bg-blue-950 px-4 text-white shadow-[0_12px_24px_rgba(30,64,175,0.22)] transition hover:bg-blue-900 disabled:cursor-not-allowed disabled:bg-slate-200 disabled:text-slate-400 disabled:shadow-none"
-            aria-label="Clear filters"
-            title="Clear filters"
-          >
-            <app-icon name="filter" class="h-5 w-5" />
-          </button>
         </div>
       </div>
     </div>
