@@ -224,6 +224,9 @@ export const API_RESPONSE = {
     ADMIN_FORCE_CANCEL_BOOKING: {
       code: 200,
       message: 'Booking force-cancelled successfully',
+      },
+
+      /**
      * ADMIN MENTEE MANAGEMENT
      */
     ADMIN_GET_MENTEES: {
@@ -636,6 +639,9 @@ export const API_RESPONSE = {
     BOOKING_CANNOT_BE_CANCELLED: {
       code: 400,
       message: 'Booking cannot be cancelled: it is already completed, cancelled, or deleted',
+      },
+
+      /**
      * ADMIN MENTEE MANAGEMENT
      */
     ADMIN_GET_MENTEES: {
@@ -665,10 +671,6 @@ export const API_RESPONSE = {
     ADMIN_GET_REJECTION_LOG: {
       code: 500,
       message: 'Failed to retrieve rejection log',
-    },
-    ADMIN_ACCESS_DENIED: {
-      code: 403,
-      message: 'Access denied: admin privileges required',
     },
     NOT_A_MENTEE: {
       code: 400,
