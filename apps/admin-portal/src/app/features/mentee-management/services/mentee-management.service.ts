@@ -40,6 +40,7 @@ export interface MenteesQueryParams {
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
+  search?: string;
 }
 
 @Injectable({ providedIn: 'root' })

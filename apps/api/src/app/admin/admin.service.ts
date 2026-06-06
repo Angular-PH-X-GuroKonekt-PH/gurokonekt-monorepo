@@ -48,6 +48,15 @@ export class AdminService {
         };
       }
 
+      if (query.search?.trim()) {
+        const term = query.search.trim();
+        where['OR'] = [
+          { firstName: { contains: term, mode: 'insensitive' } },
+          { lastName:  { contains: term, mode: 'insensitive' } },
+          { email:     { contains: term, mode: 'insensitive' } },
+        ];
+      }
+
       const skip = (page - 1) * limit;
 
       const [mentees, total] = await Promise.all([
