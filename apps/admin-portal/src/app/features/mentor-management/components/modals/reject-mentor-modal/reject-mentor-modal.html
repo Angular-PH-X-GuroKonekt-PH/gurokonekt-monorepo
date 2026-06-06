@@ -19,10 +19,11 @@
       </p>
 
       <div>
-        <label class="block text-sm font-medium text-gray-700 mb-1">
+        <label for="reject-reason" class="block text-sm font-medium text-gray-700 mb-1">
           Reason <span class="text-red-500">*</span>
         </label>
         <textarea
+          id="reject-reason"
           [ngModel]="reason()"
           (ngModelChange)="reason.set($event)"
           (blur)="touched.set(true)"

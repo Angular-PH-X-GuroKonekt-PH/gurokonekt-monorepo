@@ -42,17 +42,15 @@ export class ViewMentorProfileModalComponent {
       });
 
       if (m.status === 'rejected') {
-        this.mentorService.getRejectionLog(m.id).subscribe({
-          next: (res) => this.rejectionLog.set(res.data),
-          error: () => {},
-        });
+        this.mentorService.getRejectionLog(m.id).subscribe(
+          (res) => this.rejectionLog.set(res.data)
+        );
       }
 
       if (m.status === 'inactive') {
-        this.mentorService.getDeactivationFeedback(m.id).subscribe({
-          next: (res) => this.deactivationFeedback.set(res.data),
-          error: () => {},
-        });
+        this.mentorService.getDeactivationFeedback(m.id).subscribe(
+          (res) => this.deactivationFeedback.set(res.data)
+        );
       }
     });
   }

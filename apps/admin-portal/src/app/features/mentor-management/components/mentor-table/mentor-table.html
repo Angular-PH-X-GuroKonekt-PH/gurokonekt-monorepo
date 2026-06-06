@@ -36,8 +36,9 @@
 
     <!-- Date From -->
     <div class="flex items-center gap-2">
-      <label class="text-xs text-gray-500 font-medium">From</label>
+      <label for="date-from" class="text-xs text-gray-500 font-medium">From</label>
       <input
+        id="date-from"
         type="date"
         [value]="dateFrom()"
         (change)="onDateFromChange($any($event.target).value)"
@@ -47,8 +48,9 @@
 
     <!-- Date To -->
     <div class="flex items-center gap-2">
-      <label class="text-xs text-gray-500 font-medium">To</label>
+      <label for="date-to" class="text-xs text-gray-500 font-medium">To</label>
       <input
+        id="date-to"
         type="date"
         [value]="dateTo()"
         (change)="onDateToChange($any($event.target).value)"
@@ -70,7 +72,10 @@
   </div>
 
   <!-- Table Card -->
-  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden" (click)="closeDropdown()">
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden"
+    tabindex="-1"
+    (click)="closeDropdown()"
+    (keydown.escape)="closeDropdown()">
     <div class="overflow-x-auto">
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
@@ -120,7 +125,10 @@
                 </td>
                 <td class="px-6 py-4 text-gray-500">{{ mentor.createdAt | date: 'MMM d, y' }}</td>
                 <td class="px-6 py-4">
-                  <div class="relative" (click)="$event.stopPropagation()">
+                  <div class="relative"
+                    tabindex="-1"
+                    (click)="$event.stopPropagation()"
+                    (keydown)="$event.stopPropagation()">
                     <button
                       type="button"
                       (click)="toggleDropdown(mentor.id, $event)"
