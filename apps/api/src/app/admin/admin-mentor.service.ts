@@ -177,6 +177,20 @@ export class AdminMentorService {
 
   async getMentorRejectionLog(mentorId: string): Promise<ResponseDto> {
     try {
+      const mentor = await this.prisma.db.user.findFirst({
+        where: { id: mentorId, role: UserRole.Mentor },
+        select: { id: true },
+      });
+
+      if (!mentor) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
       const log = await this.prisma.db.adminRejectionLog.findFirst({
         where: { mentorId },
         orderBy: { createdAt: 'desc' },
@@ -217,6 +231,20 @@ export class AdminMentorService {
 
   async getMentorDeactivationFeedback(mentorId: string): Promise<ResponseDto> {
     try {
+      const mentor = await this.prisma.db.user.findFirst({
+        where: { id: mentorId, role: UserRole.Mentor },
+        select: { id: true },
+      });
+
+      if (!mentor) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
       const feedback = await this.prisma.db.deactivationFeedback.findUnique({
         where: { userId: mentorId },
         select: { id: true, userId: true, reason: true, createdAt: true },
