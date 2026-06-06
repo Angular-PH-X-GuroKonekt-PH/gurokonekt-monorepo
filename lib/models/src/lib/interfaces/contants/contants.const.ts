@@ -754,11 +754,11 @@ export const API_RESPONSE = {
     },
     MENTOR_INVALID_STATUS_FOR_APPROVE: {
       code: 400,
-      message: 'Mentor account must be in pending status to be approved',
+      message: 'Mentor account must be in pending_review status to be approved',
     },
     MENTOR_INVALID_STATUS_FOR_REJECT: {
       code: 400,
-      message: 'Mentor account must be in pending status to be rejected',
+      message: 'Mentor account must be in pending_review status to be rejected',
     },
     MENTOR_INVALID_STATUS_FOR_DEACTIVATE: {
       code: 400,

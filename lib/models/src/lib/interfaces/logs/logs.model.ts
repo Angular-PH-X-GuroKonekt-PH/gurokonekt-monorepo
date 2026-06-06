@@ -19,8 +19,8 @@ export enum LogsActionType {
   AdminDeactivateMentee = "admin_deactivate_mentee",
   AdminRejectMentee = "admin_reject_mentee",
   AdminResendVerification = "admin_resend_verification",
-  AdminApproveMentor    = "admin_approve_mentor",
-  AdminRejectMentor     = "admin_reject_mentor",
+  AdminApproveMentor = "admin_approve_mentor",
+  AdminRejectMentor = "admin_reject_mentor",
   AdminDeactivateMentor = "admin_deactivate_mentor",
 }
 
