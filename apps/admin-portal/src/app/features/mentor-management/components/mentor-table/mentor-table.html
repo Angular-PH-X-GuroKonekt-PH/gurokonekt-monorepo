@@ -1,0 +1,253 @@
+<div class="space-y-4">
+
+  <!-- Filter Bar -->
+  <div class="flex flex-wrap items-center gap-3">
+
+    <!-- Status filter -->
+    <div class="relative">
+      <select
+        [value]="statusFilter()"
+        (change)="onStatusFilterChange($any($event.target).value)"
+        class="appearance-none text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+      >
+        <option value="all">All Status</option>
+        <option value="pending">Pending</option>
+        <option value="approved">Approved</option>
+        <option value="rejected">Rejected</option>
+        <option value="inactive">Inactive</option>
+      </select>
+      <svg class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+      </svg>
+    </div>
+
+    <!-- Search -->
+    <div class="relative">
+      <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
+      </svg>
+      <input
+        type="text"
+        (input)="onSearchInput($any($event.target).value)"
+        placeholder="Search by name or email..."
+        class="text-sm border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white w-56"
+      />
+    </div>
+
+    <!-- Date From -->
+    <div class="flex items-center gap-2">
+      <label class="text-xs text-gray-500 font-medium">From</label>
+      <input
+        type="date"
+        [value]="dateFrom()"
+        (change)="onDateFromChange($any($event.target).value)"
+        class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+      />
+    </div>
+
+    <!-- Date To -->
+    <div class="flex items-center gap-2">
+      <label class="text-xs text-gray-500 font-medium">To</label>
+      <input
+        type="date"
+        [value]="dateTo()"
+        (change)="onDateToChange($any($event.target).value)"
+        class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+      />
+    </div>
+
+    @if (dateFrom() || dateTo()) {
+      <button
+        type="button"
+        (click)="onDateFromChange(''); onDateToChange('')"
+        class="text-xs text-gray-400 hover:text-gray-600 underline"
+      >
+        Clear dates
+      </button>
+    }
+
+    <span class="ml-auto text-xs text-gray-400">{{ total() }} total</span>
+  </div>
+
+  <!-- Table Card -->
+  <div class="bg-white rounded-xl border border-gray-200 overflow-hidden" (click)="closeDropdown()">
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+          <tr>
+            <th class="px-6 py-3 text-left font-medium">Name</th>
+            <th class="px-6 py-3 text-left font-medium">Email</th>
+            <th class="px-6 py-3 text-left font-medium">Status</th>
+            <th class="px-6 py-3 text-left font-medium">Registered</th>
+            <th class="px-6 py-3 text-left font-medium w-12">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+
+          @if (isLoading()) {
+            <tr>
+              <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">Loading mentors...</td>
+            </tr>
+          } @else if (mentors().length === 0) {
+            <tr>
+              <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">No mentors found.</td>
+            </tr>
+          } @else {
+            @for (mentor of mentors(); track mentor.id) {
+
+              <!-- Data row -->
+              <tr class="hover:bg-gray-50 transition-colors">
+                <td class="px-6 py-4">
+                  <div class="flex items-center gap-3">
+                    @if (mentor.avatarUrl) {
+                      <img [src]="mentor.avatarUrl" class="h-8 w-8 rounded-full object-cover" alt="avatar" />
+                    } @else {
+                      <div class="h-8 w-8 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xs font-bold shrink-0">
+                        {{ mentor.firstName.charAt(0) }}{{ mentor.lastName.charAt(0) }}
+                      </div>
+                    }
+                    <span class="font-medium text-gray-900">{{ mentor.firstName }} {{ mentor.lastName }}</span>
+                  </div>
+                </td>
+                <td class="px-6 py-4 text-gray-600">{{ mentor.email }}</td>
+                <td class="px-6 py-4">
+                  <span
+                    class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+                    [class]="getStatusClass(mentor.status)"
+                  >
+                    {{ getStatusLabel(mentor.status) }}
+                  </span>
+                </td>
+                <td class="px-6 py-4 text-gray-500">{{ mentor.createdAt | date: 'MMM d, y' }}</td>
+                <td class="px-6 py-4">
+                  <div class="relative" (click)="$event.stopPropagation()">
+                    <button
+                      type="button"
+                      (click)="toggleDropdown(mentor.id, $event)"
+                      class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                    >
+                      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/>
+                      </svg>
+                    </button>
+
+                    @if (openDropdownId() === mentor.id) {
+                      <div class="absolute right-0 z-20 mt-1 w-48 bg-white border border-gray-200 rounded-xl shadow-lg py-1">
+
+                        <!-- View Profile — always shown -->
+                        <button type="button" (click)="openViewProfile(mentor)"
+                          class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                          <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z"/>
+                          </svg>
+                          View Profile
+                        </button>
+
+                        <!-- Pending actions: Approve + Reject -->
+                        @if (isPending(mentor.status)) {
+                          <button type="button" (click)="openConfirm(mentor, 'approve')"
+                            class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-green-700 hover:bg-green-50 transition-colors">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"/>
+                            </svg>
+                            Approve
+                          </button>
+                          <button type="button" (click)="openReject(mentor)"
+                            class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 transition-colors">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/>
+                            </svg>
+                            Reject
+                          </button>
+                        }
+
+                        <!-- Approved: Deactivate -->
+                        @if (mentor.status === 'approved') {
+                          <button type="button" (click)="openConfirm(mentor, 'deactivate')"
+                            class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-orange-700 hover:bg-orange-50 transition-colors">
+                            <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                              <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/>
+                            </svg>
+                            Deactivate
+                          </button>
+                        }
+
+                      </div>
+                    }
+                  </div>
+                </td>
+              </tr>
+
+              <!-- Inline confirm row -->
+              @if (confirmAction() !== null && selectedMentor()?.id === mentor.id) {
+                <tr class="bg-orange-50 border-l-4 border-orange-400">
+                  <td colspan="5" class="px-6 py-3">
+                    <div class="flex items-center justify-between">
+                      <p class="text-sm font-medium text-orange-800">
+                        {{ getConfirmMessage(confirmAction()!.type) }}
+                      </p>
+                      <div class="flex items-center gap-2">
+                        <button type="button" (click)="cancelConfirm()"
+                          class="px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-300 rounded-lg hover:bg-gray-50 transition-colors">
+                          Cancel
+                        </button>
+                        <button
+                          type="button"
+                          [disabled]="submitting()"
+                          (click)="executeConfirm()"
+                          class="px-3 py-1.5 text-xs font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 disabled:opacity-50 transition-colors"
+                        >
+                          {{ submitting() ? 'Processing...' : 'Confirm' }}
+                        </button>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+              }
+
+            }
+          }
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+        <span>{{ (page() - 1) * limit + 1 }}–{{ page() * limit > total() ? total() : page() * limit }} of {{ total() }}</span>
+        <div class="flex items-center gap-2">
+          <button
+            [disabled]="page() === 1"
+            (click)="onPageChange(page() - 1)"
+            class="px-3 py-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+          >Prev</button>
+          <span>{{ page() }} / {{ totalPages() }}</span>
+          <button
+            [disabled]="page() === totalPages()"
+            (click)="onPageChange(page() + 1)"
+            class="px-3 py-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+          >Next</button>
+        </div>
+      </div>
+    }
+  </div>
+
+</div>
+
+<!-- Modals -->
+@if (showViewModal() && selectedMentor()) {
+  <app-view-mentor-profile-modal
+    [mentor]="selectedMentor()!"
+    (closed)="closeViewModal()"
+  />
+}
+
+@if (showRejectModal() && selectedMentor()) {
+  <app-reject-mentor-modal
+    [mentor]="selectedMentor()!"
+    [submitting]="submitting()"
+    (confirmed)="onRejectConfirmed($event)"
+    (closed)="closeRejectModal()"
+  />
+}
