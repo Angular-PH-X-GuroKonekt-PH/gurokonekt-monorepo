@@ -201,7 +201,7 @@ export class MentorSearch {
   getAvailabilityLabel(value: AvailabilityOption | null): string {
     return (
       this.availabilityOptions.find((option) => option.value === value)
-        ?.label ?? 'Any Time'
+        ?.label ?? 'All'
     );
   }
 
@@ -223,7 +223,7 @@ export class MentorSearch {
       (item) => item.min === min && item.max === max
     );
 
-    return option?.label ?? 'Any experience';
+    return option?.label ?? 'All';
   }
 
   // Language filter handlers
@@ -236,7 +236,7 @@ export class MentorSearch {
 
     return (
       this.languageOptions.find((language) => language.value === languageCode)
-        ?.label ?? 'Any Language'
+        ?.label ?? 'All'
     );
   }
 
@@ -250,7 +250,7 @@ export class MentorSearch {
 
     return (
       this.ratingOptions.find((option) => option.value === rating)?.label ??
-      'Any rating'
+      'All'
     );
   }
 
