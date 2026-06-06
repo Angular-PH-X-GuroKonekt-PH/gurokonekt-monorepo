@@ -34,6 +34,14 @@ export const appRoutes: Route[] = [
         title: 'Mentee Management',
       },
       {
+        path: APP_ROUTES.MENTOR_MANAGEMENT,
+        loadComponent: () =>
+          import('./features/mentor-management/pages/mentor-management-page/mentor-management.page').then(
+            (m) => m.MentorManagementPage
+          ),
+        title: 'Mentor Management',
+      },
+      {
         path: APP_ROUTES.BOOKING_MANAGEMENT,
         loadComponent: () =>
           import('./features/booking-management/pages/booking-management-page/booking-management.page').then(
