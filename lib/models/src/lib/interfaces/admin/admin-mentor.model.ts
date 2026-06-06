@@ -9,6 +9,7 @@ export interface AdminMentorListItemInterface {
   status: UserStatus;
   isMentorApproved: boolean;
   isMentorProfileComplete: boolean;
+  isProfileComplete: boolean;
   createdAt: string;
   avatarUrl: string | null;
 }
@@ -27,10 +28,14 @@ export interface AdminMentorDetailInterface extends AdminMentorListItemInterface
     bio: string | null;
     skills: string[];
     sessionRate: number | null;
+    sessionDurationMinutes: number;
     availability: unknown;
   } | null;
   documentAttachments: {
     id: string;
+    userId: string;
+    bucketName: string;
+    storagePath: string;
     publicUrl: string;
     fileName: string;
     fileType: string;
@@ -48,7 +53,7 @@ export interface AdminMentorListResponseInterface {
 
 export interface AdminMentorRejectionLogInterface {
   id: string;
-  mentorId: string;
+  mentorId: string | null;
   adminId: string;
   reason: string;
   createdAt: string;

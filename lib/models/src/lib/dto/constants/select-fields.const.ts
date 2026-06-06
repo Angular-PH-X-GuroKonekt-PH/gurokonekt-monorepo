@@ -102,6 +102,7 @@ export class SelectFields {
       bio: true,
       skills: true,
       sessionRate: true,
+      sessionDurationMinutes: true,
       availability: true,
       updatedAt: true,
       updatedBy: { select: { id: true, firstName: true, lastName: true } },
