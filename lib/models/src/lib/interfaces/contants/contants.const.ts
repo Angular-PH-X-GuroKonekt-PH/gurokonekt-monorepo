@@ -257,6 +257,50 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Rejection log retrieved successfully',
     },
+
+    /**
+     * ADMIN DASHBOARD
+     */
+    ADMIN_GET_DASHBOARD: {
+      code: 200,
+      message: 'Dashboard metrics retrieved successfully',
+    },
+    ADMIN_GET_GROWTH_CHART: {
+      code: 200,
+      message: 'Growth chart data retrieved successfully',
+    },
+
+    /**
+     * ADMIN ANNOUNCEMENTS
+     */
+    ADMIN_BROADCAST_ANNOUNCEMENT: {
+      code: 200,
+      message: 'Announcement broadcast successfully',
+    },
+
+    /**
+     * ADMIN REPORTS
+     */
+    ADMIN_GET_REPORTS_OVERVIEW: {
+      code: 200,
+      message: 'Platform overview report retrieved successfully',
+    },
+    ADMIN_GET_REPORTS_SESSIONS: {
+      code: 200,
+      message: 'Session report retrieved successfully',
+    },
+    ADMIN_GET_REPORTS_MENTORS: {
+      code: 200,
+      message: 'Mentor report retrieved successfully',
+    },
+
+    /**
+     * ADMIN ROLES
+     */
+    ADMIN_GET_ROLES: {
+      code: 200,
+      message: 'Admin roles retrieved successfully',
+    },
   },
   ERROR: {
     /**
@@ -679,6 +723,50 @@ export const API_RESPONSE = {
     REJECTION_LOG_NOT_FOUND: {
       code: 404,
       message: 'No rejection record found for this mentee',
+    },
+
+    /**
+     * ADMIN DASHBOARD
+     */
+    ADMIN_GET_DASHBOARD: {
+      code: 500,
+      message: 'Failed to retrieve dashboard metrics',
+    },
+    ADMIN_GET_GROWTH_CHART: {
+      code: 500,
+      message: 'Failed to retrieve growth chart data',
+    },
+
+    /**
+     * ADMIN ANNOUNCEMENTS
+     */
+    ADMIN_BROADCAST_ANNOUNCEMENT: {
+      code: 500,
+      message: 'Failed to broadcast announcement',
+    },
+
+    /**
+     * ADMIN REPORTS
+     */
+    ADMIN_GET_REPORTS_OVERVIEW: {
+      code: 500,
+      message: 'Failed to retrieve platform overview report',
+    },
+    ADMIN_GET_REPORTS_SESSIONS: {
+      code: 500,
+      message: 'Failed to retrieve session report',
+    },
+    ADMIN_GET_REPORTS_MENTORS: {
+      code: 500,
+      message: 'Failed to retrieve mentor report',
+    },
+
+    /**
+     * ADMIN ROLES
+     */
+    ADMIN_GET_ROLES: {
+      code: 500,
+      message: 'Failed to retrieve admin roles',
     },
   }
 }
