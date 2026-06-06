@@ -58,6 +58,9 @@ enum LogsActionType {
   admin_reject_mentee
   admin_resend_verification
   admin_force_cancel_booking
+  admin_approve_mentor
+  admin_reject_mentor
+  admin_deactivate_mentor
 
   @@map("logs_action_type")
 }
@@ -140,6 +143,7 @@ model User {
   deactivationFeedback  DeactivationFeedback?
   bookingFeedback       BookingFeedback[]
   adminRejections       AdminRejectionLog[]  @relation("mentee_rejections")
+  mentorRejections      AdminRejectionLog[]  @relation("mentor_rejections")
   adminRejectionActions AdminRejectionLog[]  @relation("admin_rejection_actions")
 
   @@map("users")
@@ -296,12 +300,14 @@ model DeactivationFeedback {
 
 model AdminRejectionLog {
   id        String   @id @default(uuid())
-  menteeId  String   @map("mentee_id")
+  menteeId  String?  @map("mentee_id")
+  mentorId  String?  @map("mentor_id")
   adminId   String   @map("admin_id")
   reason    String
   createdAt DateTime @default(now()) @map("created_at")
 
-  mentee    User     @relation("mentee_rejections", fields: [menteeId], references: [id])
+  mentee    User?    @relation("mentee_rejections", fields: [menteeId], references: [id])
+  mentor    User?    @relation("mentor_rejections", fields: [mentorId], references: [id])
   admin     User     @relation("admin_rejection_actions", fields: [adminId], references: [id])
 
   @@map("admin_rejection_logs")
