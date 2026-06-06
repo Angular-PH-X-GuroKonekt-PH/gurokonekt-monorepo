@@ -57,6 +57,7 @@ enum LogsActionType {
   admin_deactivate_mentee
   admin_reject_mentee
   admin_resend_verification
+  admin_force_cancel_booking
 
   @@map("logs_action_type")
 }
@@ -136,8 +137,9 @@ model User {
   notifications        Notification[]
   bookingsAsMentee     Booking[]             @relation("MenteeBookings")
   bookingsAsMentor     Booking[]             @relation("MentorBookings")
-  deactivationFeedback DeactivationFeedback?
-  adminRejections      AdminRejectionLog[]   @relation("mentee_rejections")
+  deactivationFeedback  DeactivationFeedback?
+  bookingFeedback       BookingFeedback[]
+  adminRejections       AdminRejectionLog[]  @relation("mentee_rejections")
   adminRejectionActions AdminRejectionLog[]  @relation("admin_rejection_actions")
 
   @@map("users")
@@ -149,7 +151,7 @@ model MenteeProfile {
   bio                  String?
   learningGoals        String[]                   @map("learning_goals")
   areasOfInterest      String[]                   @map("areas_of_interest")
-  preferredSessionType MenteePreferredSessionType @map("preferred_session_type")
+  preferredSessionType MenteePreferredSessionType[] @map("preferred_session_type")
   updatedById          String?                    @map("updated_by_id")
   updatedAt            DateTime                   @updatedAt @map("updated_at")
 
@@ -254,14 +256,31 @@ model Booking {
   status          BookingStatus @default(PENDING)
   sessionLink     String?       @map("session_link")
   notes           String?
+  cancelReason    String?       @map("cancel_reason")
   isDeleted       Boolean       @default(false) @map("is_deleted")
   createdAt       DateTime      @default(now()) @map("created_at")
   updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  mentee          User          @relation("MenteeBookings", fields: [menteeId], references: [id])
-  mentor          User          @relation("MentorBookings", fields: [mentorId], references: [id])
+  mentee          User             @relation("MenteeBookings", fields: [menteeId], references: [id])
+  mentor          User             @relation("MentorBookings", fields: [mentorId], references: [id])
+  feedback        BookingFeedback[]
 
   @@map("bookings")
+}
+
+model BookingFeedback {
+  id        String   @id @default(uuid())
+  bookingId String   @map("booking_id")
+  userId    String   @map("user_id")
+  rating    Int
+  comment   String?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  booking   Booking  @relation(fields: [bookingId], references: [id])
+  user      User     @relation(fields: [userId], references: [id])
+
+  @@unique([bookingId, userId])
+  @@map("booking_feedback")
 }
 
 model DeactivationFeedback {

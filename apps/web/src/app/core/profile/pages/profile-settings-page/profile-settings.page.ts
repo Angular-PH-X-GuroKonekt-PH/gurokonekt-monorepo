@@ -140,7 +140,7 @@ export class ProfileSettingsPageComponent implements OnInit {
       language: ['', Validators.required],
       learningGoals: this.fb.array([]),
       areasOfInterest: this.fb.array([], Validators.required),
-      preferredSessionType: [MenteePreferredSessionType.Online, Validators.required],
+      preferredSessionType: this.fb.array([], Validators.required),
     });
   }
 
@@ -196,7 +196,11 @@ export class ProfileSettingsPageComponent implements OnInit {
     const language = profileData.language || profileData.user?.language || '';
     const learningGoals = profileData.learningGoals || [];
     const areasOfInterest = profileData.areasOfInterest || [];
-    const preferredSessionType = profileData.preferredSessionType || MenteePreferredSessionType.Online;
+    const preferredSessionType = Array.isArray(profileData.preferredSessionType)
+      ? profileData.preferredSessionType
+      : profileData.preferredSessionType
+        ? [profileData.preferredSessionType]
+        : [];
     const availability = profileData.availability || [];
 
     this.profileForm.patchValue({
@@ -205,7 +209,12 @@ export class ProfileSettingsPageComponent implements OnInit {
       country,
       timezone,
       language,
-      preferredSessionType,
+    });
+
+    // Populate preferred session types
+    this.preferredSessionTypes.clear();
+    preferredSessionType.forEach((type: MenteePreferredSessionType) => {
+      this.preferredSessionTypes.push(this.fb.control(type));
     });
 
     // Populate learning goals
@@ -287,6 +296,27 @@ export class ProfileSettingsPageComponent implements OnInit {
 
   isAreaSelected(area: string): boolean {
     return this.areasOfInterest.controls.some(control => control.value === area);
+  }
+
+  // Preferred Session Type Management
+  get preferredSessionTypes(): FormArray {
+    return this.profileForm.get('preferredSessionType') as FormArray;
+  }
+
+  toggleSessionType(type: MenteePreferredSessionType): void {
+    const index = this.preferredSessionTypes.controls.findIndex(
+      control => control.value === type
+    );
+
+    if (index >= 0) {
+      this.preferredSessionTypes.removeAt(index);
+    } else {
+      this.preferredSessionTypes.push(this.fb.control(type));
+    }
+  }
+
+  isSessionTypeSelected(type: MenteePreferredSessionType): boolean {
+    return this.preferredSessionTypes.controls.some(control => control.value === type);
   }
 
   // Avatar Management
@@ -387,7 +417,7 @@ export class ProfileSettingsPageComponent implements OnInit {
       language: this.profileForm.value.language,
       learningGoals: this.learningGoals.value.filter((g: string) => g.trim()),
       areasOfInterest: this.areasOfInterest.value,
-      preferredSessionType: this.profileForm.value.preferredSessionType,
+      preferredSessionType: this.preferredSessionTypes.value,
       ...(availability.length > 0 && { availability }),
     };
   }
@@ -398,6 +428,11 @@ export class ProfileSettingsPageComponent implements OnInit {
 
     if (this.areasOfInterest.length === 0) {
       this.toastService.error('Please select at least one area of interest');
+      return;
+    }
+
+    if (this.preferredSessionTypes.length === 0) {
+      this.toastService.error('Please select at least one preferred session type');
       return;
     }
 

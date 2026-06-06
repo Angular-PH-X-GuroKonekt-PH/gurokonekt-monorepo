@@ -19,9 +19,19 @@ export interface BookingInterface {
   status: BookingStatus;
   sessionLink?: string;
   notes?: string;
+  cancelReason?: string | null;
   isDeleted: boolean;
   createdAt: Date;
   updatedAt: Date;
+}
+
+export interface BookingFeedbackInterface {
+  id: string;
+  bookingId: string;
+  userId: string;
+  rating: number;
+  comment: string | null;
+  createdAt: string;
 }
 
 export interface BookingSessionCardInterface {

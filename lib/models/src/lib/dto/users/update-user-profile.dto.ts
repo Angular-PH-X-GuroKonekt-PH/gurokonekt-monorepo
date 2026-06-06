@@ -109,10 +109,16 @@ export class UpdateMenteeProfileDto implements Partial<UpdateMenteeProfileInterf
   @IsOptional()
   areasOfInterest?: string[];
 
-  @ApiPropertyOptional({ enum: MenteePreferredSessionType })
-  @IsEnum(MenteePreferredSessionType)
+  @ApiPropertyOptional({ enum: MenteePreferredSessionType, isArray: true })
+  @Transform(({ value }) => {
+    if (typeof value === 'string') return [value];
+    return Array.isArray(value) ? value : [];
+  })
+  @IsArray()
+  @IsEnum(MenteePreferredSessionType, { each: true })
+  @ArrayMinSize(1, { message: 'At least one preferred session type is required' })
   @IsOptional()
-  preferredSessionType?: MenteePreferredSessionType;
+  preferredSessionType?: MenteePreferredSessionType[];
 
   @ApiPropertyOptional()
   @IsUUID()

@@ -6,7 +6,7 @@ import {
   WebSocketServer,
 } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
-import { ALLOWED_CORS_ORIGINS, NotificationInterface } from '@gurokonekt/models';
+import { isAllowedOrigin, NotificationInterface } from '@gurokonekt/models';
 
 export const NOTIFICATION_EVENTS = {
   CREATED: 'notification:created',
@@ -16,7 +16,10 @@ export const NOTIFICATION_EVENTS = {
 
 @WebSocketGateway({
   cors: {
-    origin: ALLOWED_CORS_ORIGINS,
+    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
+      if (isAllowedOrigin(origin)) callback(null, true);
+      else callback(new Error(`Origin ${origin} is not allowed by CORS`));
+    },
     credentials: true,
   },
   transports: ['websocket', 'polling'],

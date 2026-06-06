@@ -1,4 +1,4 @@
-import { Component, inject, signal } from '@angular/core';
+import { Component, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import {
@@ -15,6 +15,8 @@ import {
   MENTOR_SEARCH_RATING_OPTIONS,
 } from '../../constants/mentor-search-filter.constants';
 import { MentorSearchDropdown } from '../../interfaces/search-mentor.interface';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
+import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-mentor-search',
@@ -33,8 +35,6 @@ export class MentorSearch {
     name: '',
     availabilityDay: null,
     language: '',
-    minSessionRate: null,
-    maxSessionRate: null,
     minYearsExperience: null,
     maxYearsExperience: null,
     minRating: null,
@@ -52,8 +52,6 @@ export class MentorSearch {
     name: [''],
     availabilityDay: [null as AvailabilityOption | null],
     language: [''],
-    minSessionRate: [null as number | null],
-    maxSessionRate: [null as number | null],
     minYearsExperience: [null as number | null],
     maxYearsExperience: [null as number | null],
     minRating: [null as number | null],
@@ -64,6 +62,39 @@ export class MentorSearch {
   readonly selectedSkills = signal<string[]>([]);
   readonly selectedExpertise = signal<string[]>([]);
   readonly skillQuery = signal('');
+
+  private readonly nameSearchValue = toSignal(
+    this.filterForm.controls.name.valueChanges.pipe(
+      debounceTime(300),
+      distinctUntilChanged()
+    ),
+    { initialValue: this.filterForm.controls.name.value ?? '' }
+  );
+
+  private readonly clearNameSearchWhenEmpty = effect(() => {
+    const value = this.nameSearchValue();
+
+    if (value?.trim()) {
+      return;
+    }
+
+    this.clearNameSearchParam();
+  });
+
+  private clearNameSearchParam(): void {
+    const currentName = this.route.snapshot.queryParamMap.get('name');
+
+    if (!currentName) {
+      return;
+    }
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { name: null, page: 1 },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
+  }
 
   constructor() {
     const params = this.route.snapshot.queryParams;
@@ -111,8 +142,6 @@ export class MentorSearch {
       this.selectedExpertise().length > 0,
       value.availabilityDay != null,
       !!value.language?.trim(),
-      value.minSessionRate != null,
-      value.maxSessionRate != null,
       value.minYearsExperience != null,
       value.maxYearsExperience != null,
       value.minRating != null,
@@ -233,8 +262,6 @@ export class MentorSearch {
       name: formValue.name ?? null,
       availabilityDay: formValue.availabilityDay ?? null,
       language: formValue.language ?? null,
-      minSessionRate: this.getNumberOrNull(formValue.minSessionRate),
-      maxSessionRate: this.getNumberOrNull(formValue.maxSessionRate),
       minYearsExperience: this.getNumberOrNull(formValue.minYearsExperience),
       maxYearsExperience: this.getNumberOrNull(formValue.maxYearsExperience),
       minRating: this.getNumberOrNull(formValue.minRating),
@@ -254,8 +281,6 @@ export class MentorSearch {
       expertise: filters.expertise.length ? filters.expertise.join(',') : null,
       availabilityDay: filters.availabilityDay ?? null,
       language: filters.language || null,
-      minSessionRate: filters.minSessionRate ?? null,
-      maxSessionRate: filters.maxSessionRate ?? null,
       minYearsExperience: filters.minYearsExperience ?? null,
       maxYearsExperience: filters.maxYearsExperience ?? null,
       minRating: filters.minRating ?? null,
@@ -270,9 +295,7 @@ export class MentorSearch {
     this.setFilterValue('language', params['language']);
 
     this.selectedSkills.set(this.getListFromUrlParam(params, 'skills'));
-    this.selectedExpertise.set(
-      this.getListFromUrlParam(params, 'expertise')
-    );
+    this.selectedExpertise.set(this.getListFromUrlParam(params, 'expertise'));
 
     if (params['availabilityDay']) {
       this.setFilterValue(
@@ -280,9 +303,6 @@ export class MentorSearch {
         params['availabilityDay'] as AvailabilityOption
       );
     }
-
-    this.setNumberFilterFromUrl(params, 'minSessionRate');
-    this.setNumberFilterFromUrl(params, 'maxSessionRate');
     this.setNumberFilterFromUrl(params, 'minYearsExperience');
     this.setNumberFilterFromUrl(params, 'maxYearsExperience');
     this.setNumberFilterFromUrl(params, 'minRating');
@@ -298,16 +318,11 @@ export class MentorSearch {
   private setNumberFilterFromUrl(
     params: Record<string, string>,
     controlName:
-      | 'minSessionRate'
-      | 'maxSessionRate'
       | 'minYearsExperience'
       | 'maxYearsExperience'
       | 'minRating'
   ): void {
-    this.setFilterValue(
-      controlName,
-      this.getNumberOrNull(params[controlName])
-    );
+    this.setFilterValue(controlName, this.getNumberOrNull(params[controlName]));
   }
 
   private setFilterValue(controlName: string, value: unknown): void {
