@@ -34,10 +34,9 @@ export class ViewMenteeProfileModalComponent {
       });
 
       if (m.status === 'rejected') {
-        this.menteeService.getRejectionLog(m.id).subscribe({
-          next: (res) => this.rejectionLog.set(res.data),
-          error: () => {},
-        });
+        this.menteeService.getRejectionLog(m.id).subscribe(
+          (res) => this.rejectionLog.set(res.data)
+        );
       }
     });
   }

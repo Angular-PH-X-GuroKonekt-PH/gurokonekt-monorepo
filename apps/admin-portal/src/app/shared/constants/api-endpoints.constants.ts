@@ -3,6 +3,13 @@ export const API_ENDPOINTS = {
     login: '/auth/login',
   },
   admin: {
+    dashboard: '/admin/dashboard',
+    dashboardGrowth: '/admin/dashboard/growth',
+    broadcastAnnouncement: '/admin/announcements/broadcast',
+    reportsOverview: '/admin/reports/overview',
+    reportsSessions: '/admin/reports/sessions',
+    reportsMentors: '/admin/reports/mentors',
+    roles: '/admin/roles',
     mentees: '/admin/mentees',
     menteeById: (id: string) => `/admin/mentees/${id}`,
     menteeActivate: (id: string) => `/admin/mentees/${id}/activate`,

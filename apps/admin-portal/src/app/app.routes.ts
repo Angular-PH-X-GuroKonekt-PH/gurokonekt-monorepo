@@ -26,6 +26,14 @@ export const appRoutes: Route[] = [
         title: 'Dashboard',
       },
       {
+        path: APP_ROUTES.MENTOR_MANAGEMENT,
+        loadComponent: () =>
+          import('./features/mentor-management/pages/mentor-management-page/mentor-management.page').then(
+            (m) => m.MentorManagementPage
+          ),
+        title: 'Mentor Management',
+      },
+      {
         path: APP_ROUTES.MENTEE_MANAGEMENT,
         loadComponent: () =>
           import('./features/mentee-management/pages/mentee-management-page/mentee-management.page').then(
@@ -40,6 +48,30 @@ export const appRoutes: Route[] = [
             (m) => m.BookingManagementPage
           ),
         title: 'Booking Management',
+      },
+      {
+        path: APP_ROUTES.NOTIFICATIONS,
+        loadComponent: () =>
+          import('./features/notifications/pages/notifications-page/notifications.page').then(
+            (m) => m.NotificationsPage
+          ),
+        title: 'Notifications & Announcements',
+      },
+      {
+        path: APP_ROUTES.REPORTS,
+        loadComponent: () =>
+          import('./features/reports/pages/reports-page/reports.page').then(
+            (m) => m.ReportsPage
+          ),
+        title: 'Reporting & Analytics',
+      },
+      {
+        path: APP_ROUTES.ADMIN_ROLES,
+        loadComponent: () =>
+          import('./features/admin-roles/pages/admin-roles-page/admin-roles.page').then(
+            (m) => m.AdminRolesPage
+          ),
+        title: 'Admin Roles & Permissions',
       },
       {
         path: '',

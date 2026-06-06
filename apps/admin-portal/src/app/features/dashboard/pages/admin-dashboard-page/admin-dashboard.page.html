@@ -1,6 +1,66 @@
 <div>
   <h1 class="text-2xl font-bold text-gray-900 mb-1">Dashboard</h1>
   @if (selectors.user(); as user) {
-    <p class="text-sm text-gray-500">Welcome back, {{ user.firstName }}.</p>
+    <p class="text-sm text-gray-500 mb-6">Welcome back, {{ user.firstName }}.</p>
   }
+
+  <!-- Metrics -->
+  @if (metricsError()) {
+    <div class="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+      {{ metricsError() }}
+    </div>
+  }
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
+    <app-metric-card
+      label="Total Mentors"
+      [value]="metrics()?.totalMentors ?? null"
+      icon="academic-cap"
+      iconBg="bg-blue-50 text-blue-600"
+      [loading]="metricsLoading()"
+    />
+    <app-metric-card
+      label="Total Mentees"
+      [value]="metrics()?.totalMentees ?? null"
+      icon="users"
+      iconBg="bg-green-50 text-green-600"
+      [loading]="metricsLoading()"
+    />
+    <app-metric-card
+      label="Pending Verifications"
+      [value]="metrics()?.pendingApprovals ?? null"
+      icon="clock"
+      iconBg="bg-yellow-50 text-yellow-600"
+      [loading]="metricsLoading()"
+    />
+    <app-metric-card
+      label="Active Bookings"
+      [value]="metrics()?.activeSessions ?? null"
+      icon="calendar-days"
+      iconBg="bg-orange-50 text-orange-500"
+      [loading]="metricsLoading()"
+    />
+    <app-metric-card
+      label="Total Bookings"
+      [value]="metrics()?.totalBookings ?? null"
+      icon="chart-bar"
+      iconBg="bg-purple-50 text-purple-600"
+      [loading]="metricsLoading()"
+    />
+  </div>
+
+  <!-- Shortcut Cards -->
+  <h2 class="text-base font-semibold text-gray-700 mb-3">Quick Actions</h2>
+  <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+    @for (shortcut of shortcuts; track shortcut.route) {
+      <app-shortcut-card
+        [label]="shortcut.label"
+        [route]="shortcut.route"
+        [icon]="shortcut.icon"
+        [iconBg]="shortcut.iconBg"
+      />
+    }
+  </div>
+
+  <!-- Growth Chart -->
+  <app-growth-chart />
 </div>
