@@ -38,6 +38,11 @@ describe('MenteeTableComponent — search', () => {
     expect(createComponent().componentInstance).toBeTruthy();
   });
 
+  it('ngOnInit calls loadMentees on initialization', () => {
+    createComponent();
+    expect(mockService.getMentees).toHaveBeenCalledTimes(1);
+  });
+
   it('search signal initializes to empty string', () => {
     const instance = createComponent().componentInstance as any;
     expect(instance.search()).toBe('');
