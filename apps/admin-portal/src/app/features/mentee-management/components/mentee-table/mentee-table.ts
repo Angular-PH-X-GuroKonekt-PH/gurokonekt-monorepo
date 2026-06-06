@@ -1,7 +1,7 @@
 import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Subject } from 'rxjs';
-import { debounceTime } from 'rxjs/operators';
+import { debounceTime } from 'rxjs';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MenteeManagementService, MenteeListItem, MenteesQueryParams } from '../../services/mentee-management.service';
 import { ViewMenteeProfileModalComponent } from '../modals/view-mentee-profile-modal/view-mentee-profile-modal';
