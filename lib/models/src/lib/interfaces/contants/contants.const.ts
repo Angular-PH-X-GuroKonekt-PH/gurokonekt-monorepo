@@ -257,6 +257,38 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Rejection log retrieved successfully',
     },
+
+    /**
+     * ADMIN MENTOR MANAGEMENT
+     */
+    ADMIN_GET_MENTORS: {
+      code: 200,
+      message: 'Mentor list retrieved successfully',
+    },
+    ADMIN_GET_MENTOR: {
+      code: 200,
+      message: 'Mentor profile retrieved successfully',
+    },
+    ADMIN_APPROVE_MENTOR: {
+      code: 200,
+      message: 'Mentor account approved successfully',
+    },
+    ADMIN_REJECT_MENTOR: {
+      code: 200,
+      message: 'Mentor account rejected successfully',
+    },
+    ADMIN_DEACTIVATE_MENTOR: {
+      code: 200,
+      message: 'Mentor account deactivated successfully',
+    },
+    ADMIN_GET_MENTOR_REJECTION_LOG: {
+      code: 200,
+      message: 'Mentor rejection log retrieved successfully',
+    },
+    ADMIN_GET_MENTOR_DEACTIVATION_FEEDBACK: {
+      code: 200,
+      message: 'Mentor deactivation feedback retrieved successfully',
+    },
   },
   ERROR: {
     /**
@@ -679,6 +711,58 @@ export const API_RESPONSE = {
     REJECTION_LOG_NOT_FOUND: {
       code: 404,
       message: 'No rejection record found for this mentee',
+    },
+
+    /**
+     * ADMIN MENTOR MANAGEMENT
+     */
+    ADMIN_GET_MENTORS: {
+      code: 500,
+      message: 'Failed to retrieve mentor list',
+    },
+    ADMIN_GET_MENTOR: {
+      code: 500,
+      message: 'Failed to retrieve mentor profile',
+    },
+    ADMIN_APPROVE_MENTOR: {
+      code: 500,
+      message: 'Failed to approve mentor account',
+    },
+    ADMIN_REJECT_MENTOR: {
+      code: 500,
+      message: 'Failed to reject mentor account',
+    },
+    ADMIN_DEACTIVATE_MENTOR: {
+      code: 500,
+      message: 'Failed to deactivate mentor account',
+    },
+    ADMIN_GET_MENTOR_REJECTION_LOG: {
+      code: 500,
+      message: 'Failed to retrieve mentor rejection log',
+    },
+    ADMIN_GET_MENTOR_DEACTIVATION_FEEDBACK: {
+      code: 500,
+      message: 'Failed to retrieve mentor deactivation feedback',
+    },
+    NOT_A_MENTOR: {
+      code: 400,
+      message: 'Target user is not a mentor',
+    },
+    MENTOR_REJECTION_LOG_NOT_FOUND: {
+      code: 404,
+      message: 'No rejection record found for this mentor',
+    },
+    MENTOR_INVALID_STATUS_FOR_APPROVE: {
+      code: 400,
+      message: 'Mentor account must be in pending status to be approved',
+    },
+    MENTOR_INVALID_STATUS_FOR_REJECT: {
+      code: 400,
+      message: 'Mentor account must be in pending status to be rejected',
+    },
+    MENTOR_INVALID_STATUS_FOR_DEACTIVATE: {
+      code: 400,
+      message: 'Mentor account must be approved to be deactivated',
     },
   }
 }
