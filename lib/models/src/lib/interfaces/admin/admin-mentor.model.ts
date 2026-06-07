@@ -1,0 +1,60 @@
+import { UserStatus } from '../user/user.model';
+
+export interface AdminMentorListItemInterface {
+  id: string;
+  firstName: string;
+  middleName: string | null;
+  lastName: string;
+  email: string;
+  status: UserStatus;
+  isMentorApproved: boolean;
+  isMentorProfileComplete: boolean;
+  isProfileComplete: boolean;
+  createdAt: string;
+  avatarUrl: string | null;
+}
+
+export interface AdminMentorDetailInterface extends AdminMentorListItemInterface {
+  phoneNumber: string | null;
+  country: string | null;
+  language: string | null;
+  timezone: string | null;
+  mentorProfile: {
+    id: string;
+    title: string | null;
+    areasOfExpertise: string[];
+    yearsOfExperience: number | null;
+    linkedInUrl: string | null;
+    bio: string | null;
+    skills: string[];
+    sessionRate: number | null;
+    sessionDurationMinutes: number;
+    availability: unknown;
+  } | null;
+  documentAttachments: {
+    id: string;
+    userId: string;
+    bucketName: string;
+    storagePath: string;
+    publicUrl: string;
+    fileName: string;
+    fileType: string;
+    fileSize: number;
+  }[];
+}
+
+export interface AdminMentorListResponseInterface {
+  data: AdminMentorListItemInterface[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface AdminMentorRejectionLogInterface {
+  id: string;
+  mentorId: string | null;
+  adminId: string;
+  reason: string;
+  createdAt: string;
+}
