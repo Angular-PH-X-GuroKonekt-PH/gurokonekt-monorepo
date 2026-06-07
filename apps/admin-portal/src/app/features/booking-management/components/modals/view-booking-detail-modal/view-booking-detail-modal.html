@@ -1,0 +1,147 @@
+<!-- Overlay -->
+<div class="fixed inset-0 z-50 flex items-start justify-end bg-black/40" (click)="close()">
+  <!-- Panel -->
+  <div class="relative h-full w-full max-w-lg bg-white shadow-xl flex flex-col" (click)="$event.stopPropagation()">
+
+    <!-- Header -->
+    <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
+      <h2 class="text-lg font-semibold text-gray-900">Booking Details</h2>
+      <button type="button" (click)="close()" class="text-gray-400 hover:text-gray-600 transition-colors">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
+        </svg>
+      </button>
+    </div>
+
+    <!-- Body -->
+    <div class="flex-1 overflow-y-auto px-6 py-4 space-y-6">
+      @if (isLoading()) {
+        <div class="flex items-center justify-center py-16 text-gray-400 text-sm">Loading...</div>
+      } @else if (detail(); as d) {
+
+        <!-- Status badge -->
+        <div>
+          <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
+            [class]="getStatusClass(d.status)">
+            {{ getStatusLabel(d.status) }}
+          </span>
+        </div>
+
+        <!-- Participants -->
+        <div class="space-y-3">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Participants</h3>
+
+          <!-- Mentee -->
+          <div class="flex items-center gap-3">
+            @if (d.mentee?.avatarAttachments?.[0]?.publicUrl) {
+              <img [src]="d.mentee!.avatarAttachments![0].publicUrl" class="h-9 w-9 rounded-full object-cover border border-gray-200" alt="mentee avatar" />
+            } @else {
+              <div class="h-9 w-9 rounded-full bg-orange-100 flex items-center justify-center text-orange-600 text-xs font-bold shrink-0">
+                {{ d.mentee?.firstName?.charAt(0) }}{{ d.mentee?.lastName?.charAt(0) }}
+              </div>
+            }
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ d.mentee?.firstName }} {{ d.mentee?.lastName }}</p>
+              <p class="text-xs text-gray-400">Mentee</p>
+            </div>
+          </div>
+
+          <!-- Mentor -->
+          <div class="flex items-center gap-3">
+            @if (d.mentor?.avatarAttachments?.[0]?.publicUrl) {
+              <img [src]="d.mentor!.avatarAttachments![0].publicUrl" class="h-9 w-9 rounded-full object-cover border border-gray-200" alt="mentor avatar" />
+            } @else {
+              <div class="h-9 w-9 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 text-xs font-bold shrink-0">
+                {{ d.mentor?.firstName?.charAt(0) }}{{ d.mentor?.lastName?.charAt(0) }}
+              </div>
+            }
+            <div>
+              <p class="text-sm font-medium text-gray-900">{{ d.mentor?.firstName }} {{ d.mentor?.lastName }}</p>
+              <p class="text-xs text-gray-400">Mentor</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Session info -->
+        <div class="space-y-2">
+          <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Session</h3>
+          <div class="grid grid-cols-2 gap-3 text-sm">
+            <div>
+              <p class="text-gray-400 text-xs">Date &amp; Time</p>
+              <p class="text-gray-900 font-medium">{{ d.sessionDateTime | date: 'MMM d, y · h:mm a' }}</p>
+            </div>
+            <div>
+              <p class="text-gray-400 text-xs">Booked On</p>
+              <p class="text-gray-900 font-medium">{{ d.createdAt | date: 'MMM d, y' }}</p>
+            </div>
+            @if (d.sessionLink) {
+              <div class="col-span-2">
+                <p class="text-gray-400 text-xs">Session Link</p>
+                <a [href]="d.sessionLink" target="_blank" rel="noopener noreferrer"
+                  class="text-blue-600 hover:underline text-sm break-all">{{ d.sessionLink }}</a>
+              </div>
+            }
+            @if (d.notes) {
+              <div class="col-span-2">
+                <p class="text-gray-400 text-xs">Notes</p>
+                <p class="text-gray-900 text-sm">{{ d.notes }}</p>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Feedback & Ratings (COMPLETED only) -->
+        @if (d.status === 'COMPLETED') {
+          <div class="space-y-3">
+            <h3 class="text-xs font-semibold uppercase tracking-wider text-gray-400">Feedback &amp; Ratings</h3>
+            @if (d.feedback?.length) {
+              @for (fb of d.feedback; track fb.id) {
+                <div class="rounded-lg bg-gray-50 border border-gray-200 p-4 space-y-2">
+                  <div class="flex items-center justify-between">
+                    <p class="text-sm font-medium text-gray-900">{{ fb.user.firstName }} {{ fb.user.lastName }}</p>
+                    <span class="text-xs px-2 py-0.5 rounded-full"
+                      [class]="fb.user.role === 'mentee' ? 'bg-orange-50 text-orange-700' : 'bg-blue-50 text-blue-700'">
+                      {{ fb.user.role === 'mentee' ? 'Mentee' : 'Mentor' }}
+                    </span>
+                  </div>
+                  <div class="flex items-center gap-0.5">
+                    @for (star of [1,2,3,4,5]; track star) {
+                      <svg class="h-4 w-4" [class]="star <= fb.rating ? 'text-yellow-400' : 'text-gray-200'"
+                        fill="currentColor" viewBox="0 0 24 24">
+                        <path d="M12 17.27 18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z"/>
+                      </svg>
+                    }
+                    <span class="text-xs text-gray-500 ml-1">{{ fb.rating }}/5</span>
+                  </div>
+                  @if (fb.comment) {
+                    <p class="text-sm text-gray-700">{{ fb.comment }}</p>
+                  }
+                </div>
+              }
+            } @else {
+              <p class="text-sm text-gray-400">No feedback submitted yet.</p>
+            }
+          </div>
+        }
+
+        <!-- Cancellation reason (CANCELLED only) -->
+        @if (d.status === 'CANCELLED' && d.cancelReason) {
+          <div class="rounded-lg bg-red-50 border border-red-200 p-4 space-y-1">
+            <p class="text-xs font-semibold uppercase tracking-wider text-red-500">Cancellation Reason</p>
+            <p class="text-sm text-red-800">{{ d.cancelReason }}</p>
+          </div>
+        }
+
+      }
+    </div>
+
+    <!-- Footer -->
+    <div class="px-6 py-4 border-t border-gray-200">
+      <button type="button" (click)="close()"
+        class="w-full py-2 px-4 bg-gray-100 hover:bg-gray-200 text-gray-700 text-sm font-medium rounded-lg transition-colors">
+        Close
+      </button>
+    </div>
+
+  </div>
+</div>

@@ -15,6 +15,10 @@ export class ListMenteesQueryDto {
   dateTo?: string;
 
   @IsOptional()
+  @IsString()
+  search?: string;
+
+  @IsOptional()
   @IsEnum(['createdAt', 'firstName', 'lastName'])
   sortBy?: 'createdAt' | 'firstName' | 'lastName';
 
