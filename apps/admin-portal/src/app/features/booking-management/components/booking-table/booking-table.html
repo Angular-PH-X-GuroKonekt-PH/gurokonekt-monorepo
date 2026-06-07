@@ -1,4 +1,5 @@
-<div class="bg-white rounded-xl border border-gray-200">
+<div class="bg-white rounded-xl border border-gray-200" (click)="closeDropdown()">
+
   <!-- Filters -->
   <div class="px-6 py-4 border-b border-gray-100 flex items-center gap-3 flex-wrap">
     <input
@@ -19,6 +20,36 @@
       <option value="CANCELLED">Cancelled</option>
       <option value="REJECTED">Rejected</option>
     </select>
+
+    <div class="flex items-center gap-2">
+      <label class="text-xs text-gray-500 font-medium">From</label>
+      <input
+        type="date"
+        [value]="dateFrom()"
+        (change)="onDateFromChange($any($event.target).value)"
+        class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    <div class="flex items-center gap-2">
+      <label class="text-xs text-gray-500 font-medium">To</label>
+      <input
+        type="date"
+        [value]="dateTo()"
+        (change)="onDateToChange($any($event.target).value)"
+        class="text-sm border border-gray-200 rounded-lg px-3 py-1.5 focus:outline-none focus:ring-2 focus:ring-blue-500"
+      />
+    </div>
+
+    @if (dateFrom() || dateTo()) {
+      <button
+        type="button"
+        (click)="onDateFromChange(''); onDateToChange('')"
+        class="text-xs text-gray-400 hover:text-gray-600 underline"
+      >
+        Clear dates
+      </button>
+    }
   </div>
 
   <!-- Table -->
@@ -30,7 +61,7 @@
           <th class="px-6 py-3 text-left font-medium">Mentor</th>
           <th class="px-6 py-3 text-left font-medium">Session Date</th>
           <th class="px-6 py-3 text-left font-medium">Status</th>
-          <th class="px-6 py-3 text-left font-medium">Actions</th>
+          <th class="px-6 py-3 text-left font-medium w-12">Actions</th>
         </tr>
       </thead>
       <tbody class="divide-y divide-gray-100">
@@ -58,11 +89,48 @@
                 <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium"
                   [class]="getStatusClass(booking.status)"
                 >
-                  {{ booking.status }}
+                  {{ getStatusLabel(booking.status) }}
                 </span>
               </td>
               <td class="px-6 py-4">
-                <span class="text-blue-600 cursor-pointer hover:underline text-xs">View</span>
+                <div class="relative" (click)="$event.stopPropagation()">
+                  <button
+                    type="button"
+                    (click)="toggleDropdown(booking.id, $event)"
+                    class="p-1.5 rounded-lg text-gray-400 hover:bg-gray-100 hover:text-gray-600 transition-colors"
+                  >
+                    <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24">
+                      <path d="M12 6a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Zm0 8a2 2 0 1 1 0-4 2 2 0 0 1 0 4Z"/>
+                    </svg>
+                  </button>
+
+                  @if (openDropdownId() === booking.id) {
+                    <div class="absolute right-0 z-20 mt-1 w-52 bg-white border border-gray-200 rounded-xl shadow-lg py-1">
+
+                      <!-- View Booking Details — always shown -->
+                      <button type="button" (click)="openViewDetail(booking)"
+                        class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 transition-colors">
+                        <svg class="h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M2.036 12.322a1.012 1.012 0 0 1 0-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178Z"/>
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/>
+                        </svg>
+                        View Booking Details
+                      </button>
+
+                      <!-- Force Cancel — only for APPROVED (Confirmed) -->
+                      @if (booking.status === 'APPROVED') {
+                        <button type="button" (click)="openForceCancel(booking)"
+                          class="flex w-full items-center gap-2 px-4 py-2.5 text-sm text-red-700 hover:bg-red-50 transition-colors">
+                          <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M18.364 18.364A9 9 0 0 0 5.636 5.636m12.728 12.728A9 9 0 0 1 5.636 5.636m12.728 12.728L5.636 5.636"/>
+                          </svg>
+                          Force Cancel Booking
+                        </button>
+                      }
+
+                    </div>
+                  }
+                </div>
               </td>
             </tr>
           }
@@ -91,3 +159,20 @@
     </div>
   }
 </div>
+
+<!-- Modals -->
+@if (showDetailModal() && selectedBooking()) {
+  <app-view-booking-detail-modal
+    [booking]="selectedBooking()!"
+    (closed)="closeDetailModal()"
+  />
+}
+
+@if (showForceCancelModal() && selectedBooking()) {
+  <app-force-cancel-booking-modal
+    [booking]="selectedBooking()!"
+    [submitting]="submitting()"
+    (confirmed)="onForceCancelConfirmed($event)"
+    (closed)="closeForceCancelModal()"
+  />
+}
