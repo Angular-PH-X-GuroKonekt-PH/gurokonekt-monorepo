@@ -1,10 +1,15 @@
-import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, Min } from 'class-validator';
+import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 
-export class ListMenteesQueryDto {
+export class ListMentorsQueryDto {
   @IsOptional()
-  @IsEnum(['active', 'inactive', 'all'])
-  status?: 'active' | 'inactive' | 'all';
+  @IsEnum(['pending', 'approved', 'rejected', 'inactive', 'all'])
+  status?: 'pending' | 'approved' | 'rejected' | 'inactive' | 'all';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
 
   @IsOptional()
   @IsDateString()
@@ -13,10 +18,6 @@ export class ListMenteesQueryDto {
   @IsOptional()
   @IsDateString()
   dateTo?: string;
-
-  @IsOptional()
-  @IsString()
-  search?: string;
 
   @IsOptional()
   @IsEnum(['createdAt', 'firstName', 'lastName'])
@@ -40,10 +41,8 @@ export class ListMenteesQueryDto {
   limit?: number;
 }
 
-export class AdminRejectMenteeDto {
+export class AdminRejectMentorDto {
   @IsNotEmpty()
   @IsString()
   reason!: string;
 }
-
-export class AdminMenteeActionDto {}
