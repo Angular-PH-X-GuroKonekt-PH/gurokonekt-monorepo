@@ -300,6 +300,9 @@ export const API_RESPONSE = {
     ADMIN_GET_ROLES: {
       code: 200,
       message: 'Admin roles retrieved successfully',
+    },
+
+    /**
      * ADMIN MENTOR MANAGEMENT
      */
     ADMIN_GET_MENTORS: {
@@ -796,6 +799,9 @@ export const API_RESPONSE = {
     ADMIN_GET_ROLES: {
       code: 500,
       message: 'Failed to retrieve admin roles',
+    },
+
+    /**
      * ADMIN MENTOR MANAGEMENT
      */
     ADMIN_GET_MENTORS: {

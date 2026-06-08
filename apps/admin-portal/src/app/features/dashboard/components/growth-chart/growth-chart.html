@@ -25,19 +25,15 @@
     </div>
   </div>
 
-  @if (loading()) {
-    <div class="flex items-center justify-center h-64">
-      <div class="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
-    </div>
-  } @else if (error()) {
-    <div class="flex items-center justify-center h-64 text-sm text-red-500">{{ error() }}</div>
-  } @else {
-    <div class="h-64">
-      <canvas baseChart
-        [data]="chartData()"
-        [options]="chartOptions"
-        type="line">
-      </canvas>
-    </div>
-  }
+  <div class="relative h-64">
+    @if (loading()) {
+      <div class="absolute inset-0 flex items-center justify-center">
+        <div class="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+      </div>
+    }
+    @if (error()) {
+      <div class="absolute inset-0 flex items-center justify-center text-sm text-red-500">{{ error() }}</div>
+    }
+    <canvas #chartCanvas [class.invisible]="loading() || !!error()"></canvas>
+  </div>
 </div>

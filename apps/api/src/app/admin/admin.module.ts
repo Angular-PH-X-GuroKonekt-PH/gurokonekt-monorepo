@@ -17,9 +17,10 @@ import { PrismaModule } from '../prisma/prisma.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { AuthModule } from '../auth/auth.module';
 import { JwtGuardModule } from '../jwt-guard/jwt-guard.module';
+import { MailModule } from '../mail/mail.module';
 
 @Module({
-  imports: [PrismaModule, SupabaseModule, AuthModule, JwtGuardModule],
+  imports: [PrismaModule, SupabaseModule, AuthModule, JwtGuardModule, MailModule],
   controllers: [
     AdminController,
     AdminBookingController,
@@ -27,6 +28,7 @@ import { JwtGuardModule } from '../jwt-guard/jwt-guard.module';
     AdminAnnouncementsController,
     AdminReportsController,
     AdminRolesController,
+    AdminMentorController,
   ],
   providers: [
     AdminService,
@@ -35,12 +37,7 @@ import { JwtGuardModule } from '../jwt-guard/jwt-guard.module';
     AdminAnnouncementsService,
     AdminReportsService,
     AdminRolesService,
+    AdminMentorService,
   ],
-import { MailModule } from '../mail/mail.module';
-
-@Module({
-  imports: [PrismaModule, SupabaseModule, AuthModule, JwtGuardModule, MailModule],
-  controllers: [AdminController, AdminBookingController, AdminMentorController],
-  providers: [AdminService, AdminBookingService, AdminMentorService],
 })
 export class AdminModule {}

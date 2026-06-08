@@ -1,10 +1,9 @@
-import { Component, inject, OnInit, signal } from '@angular/core';
-import { BaseChartDirective } from 'ng2-charts';
-import { ChartData, ChartOptions } from 'chart.js';
+import { Component, ElementRef, inject, OnDestroy, OnInit, signal, ViewChild } from '@angular/core';
 import {
   Chart,
   CategoryScale,
   LinearScale,
+  LineController,
   PointElement,
   LineElement,
   Title,
@@ -14,36 +13,23 @@ import {
 } from 'chart.js';
 import { DashboardService, GrowthPeriod, GrowthWindow } from '../../services/dashboard.service';
 
-Chart.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler);
+Chart.register(CategoryScale, LinearScale, LineController, PointElement, LineElement, Title, Tooltip, Legend, Filler);
 
 @Component({
   selector: 'app-growth-chart',
-  imports: [BaseChartDirective],
+  imports: [],
   templateUrl: './growth-chart.html',
 })
-export class GrowthChartComponent implements OnInit {
+export class GrowthChartComponent implements OnInit, OnDestroy {
+  @ViewChild('chartCanvas', { static: true }) chartCanvas!: ElementRef<HTMLCanvasElement>;
+
   private readonly dashboardService = inject(DashboardService);
+  private chartInstance: Chart | null = null;
 
   protected period = signal<GrowthPeriod>('daily');
   protected window = signal<GrowthWindow>('30d');
   protected loading = signal(true);
   protected error = signal<string | null>(null);
-
-  protected chartData = signal<ChartData<'line'>>({ labels: [], datasets: [] });
-
-  protected readonly chartOptions: ChartOptions<'line'> = {
-    responsive: true,
-    maintainAspectRatio: false,
-    interaction: { mode: 'index', intersect: false },
-    plugins: {
-      legend: { position: 'top', labels: { font: { size: 12 }, usePointStyle: true } },
-      tooltip: { padding: 10 },
-    },
-    scales: {
-      x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 11 } } },
-      y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } } },
-    },
-  };
 
   protected readonly periods: { value: GrowthPeriod; label: string }[] = [
     { value: 'daily', label: 'Daily' },
@@ -62,6 +48,10 @@ export class GrowthChartComponent implements OnInit {
 
   ngOnInit(): void {
     this.loadChart();
+  }
+
+  ngOnDestroy(): void {
+    this.chartInstance?.destroy();
   }
 
   protected onPeriodChange(value: string): void {
@@ -86,35 +76,64 @@ export class GrowthChartComponent implements OnInit {
       next: (res) => {
         this.loading.set(false);
         if (res.status === 'success' && res.data) {
-          const d = res.data;
-          this.chartData.set({
-            labels: d.labels,
-            datasets: [
-              {
-                label: 'Registrations',
-                data: d.registrations ?? [],
-                borderColor: '#f97316',
-                backgroundColor: 'rgba(249,115,22,0.08)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 3,
-              },
-              {
-                label: 'Bookings',
-                data: d.bookings ?? [],
-                borderColor: '#3b82f6',
-                backgroundColor: 'rgba(59,130,246,0.08)',
-                fill: true,
-                tension: 0.3,
-                pointRadius: 3,
-              },
-            ],
-          });
+          const raw = res.data as any;
+          const points: { label: string; registrations?: number; bookings?: number }[] = raw.points ?? [];
+          const labels = points.map((p) => p.label);
+          const registrations = points.map((p) => p.registrations ?? 0);
+          const bookings = points.map((p) => p.bookings ?? 0);
+          this.renderChart(labels, registrations, bookings);
         }
       },
       error: () => {
         this.loading.set(false);
         this.error.set('Failed to load chart data.');
+      },
+    });
+  }
+
+  private renderChart(labels: string[], registrations: number[], bookings: number[]): void {
+    const canvas = this.chartCanvas?.nativeElement;
+    if (!canvas) return;
+
+    this.chartInstance?.destroy();
+
+    this.chartInstance = new Chart(canvas, {
+      type: 'line',
+      data: {
+        labels,
+        datasets: [
+          {
+            label: 'Registrations',
+            data: registrations,
+            borderColor: '#f97316',
+            backgroundColor: 'rgba(249,115,22,0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+          },
+          {
+            label: 'Bookings',
+            data: bookings,
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59,130,246,0.08)',
+            fill: true,
+            tension: 0.3,
+            pointRadius: 3,
+          },
+        ],
+      },
+      options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        interaction: { mode: 'index', intersect: false },
+        plugins: {
+          legend: { position: 'top', labels: { font: { size: 12 }, usePointStyle: true } },
+          tooltip: { padding: 10 },
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { maxTicksLimit: 10, font: { size: 11 } } },
+          y: { beginAtZero: true, ticks: { precision: 0, font: { size: 11 } } },
+        },
       },
     });
   }
