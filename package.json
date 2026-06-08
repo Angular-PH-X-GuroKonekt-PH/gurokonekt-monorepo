@@ -85,6 +85,7 @@
   },
   "dependencies": {
     "@angular-devkit/build-angular": "~20.3.0",
+    "@angular/cdk": "^20.2.14",
     "@angular/common": "~20.3.0",
     "@angular/compiler": "~20.3.0",
     "@angular/core": "~20.3.0",
@@ -112,6 +113,7 @@
     "@supabase/supabase-js": "^2.84.0",
     "axios": "^1.6.0",
     "bcrypt": "^6.0.0",
+    "chart.js": "^4.5.1",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.3",
     "contentful": "^11.10.1",
@@ -119,6 +121,7 @@
     "express": "^4.21.2",
     "jwks-rsa": "^3.2.2",
     "multer": "^2.0.2",
+    "ng2-charts": "^10.0.0",
     "nodemailer": "^8.0.10",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",

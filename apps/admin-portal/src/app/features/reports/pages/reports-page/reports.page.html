@@ -1,0 +1,124 @@
+<div>
+  <h1 class="text-2xl font-bold text-gray-900 mb-1">Reporting & Analytics</h1>
+  <p class="text-sm text-gray-500 mb-6">Platform-wide statistics and performance metrics.</p>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-20">
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+    </div>
+  } @else if (error()) {
+    <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+      {{ error() }}
+    </div>
+  } @else {
+    <!-- Users Overview -->
+    @if (overview(); as ov) {
+      <section class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Users Overview</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-gray-900">{{ ov.users.total }}</p>
+            <p class="text-xs text-gray-500 mt-1">Total Users</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-gray-900">{{ ov.users.totalMentors }}</p>
+            <p class="text-xs text-gray-500 mt-1">Mentors</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-gray-900">{{ ov.users.totalMentees }}</p>
+            <p class="text-xs text-gray-500 mt-1">Mentees</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-blue-600">{{ ov.users.mentors.approved }}</p>
+            <p class="text-xs text-gray-500 mt-1">Approved Mentors</p>
+          </div>
+        </div>
+        <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-yellow-600">{{ ov.users.mentors.pending }}</p>
+            <p class="text-xs text-gray-500 mt-1">Pending Mentor Review</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-red-600">{{ ov.users.mentors.rejected }}</p>
+            <p class="text-xs text-gray-500 mt-1">Rejected Mentors</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-gray-600">{{ ov.averageSessionRate | number: '1.0-2' }}</p>
+            <p class="text-xs text-gray-500 mt-1">Avg Session Rate (₱)</p>
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- Sessions -->
+    @if (sessions(); as sess) {
+      <section class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Sessions</h2>
+        <div class="grid grid-cols-2 sm:grid-cols-4 gap-4 mb-4">
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-gray-900">{{ sess.total }}</p>
+            <p class="text-xs text-gray-500 mt-1">Total Sessions</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-green-600">{{ sess.completionRate }}%</p>
+            <p class="text-xs text-gray-500 mt-1">Completion Rate</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-red-500">{{ sess.cancellationRate }}%</p>
+            <p class="text-xs text-gray-500 mt-1">Cancellation Rate</p>
+          </div>
+          <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
+            <p class="text-2xl font-bold text-blue-600">{{ sess.upcomingThisWeek }}</p>
+            <p class="text-xs text-gray-500 mt-1">Upcoming This Week</p>
+          </div>
+        </div>
+        <div class="bg-white rounded-xl border border-gray-200 p-4">
+          <p class="text-sm font-medium text-gray-700 mb-2">By Status</p>
+          <div class="flex flex-wrap gap-2">
+            @for (key of objectKeys(sess.byStatus); track key) {
+              <span class="inline-flex items-center gap-1.5 rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700">
+                {{ key }}: <span class="font-bold">{{ sess.byStatus[key] }}</span>
+              </span>
+            }
+          </div>
+        </div>
+      </section>
+    }
+
+    <!-- Top Mentors -->
+    @if (mentors(); as ment) {
+      <section class="mb-8">
+        <h2 class="text-lg font-semibold text-gray-800 mb-3">Top Mentors by Completed Sessions</h2>
+        <div class="bg-white rounded-xl border border-gray-200 overflow-hidden">
+          <table class="min-w-full divide-y divide-gray-200">
+            <thead class="bg-gray-50">
+              <tr>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">#</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Name</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Completed Sessions</th>
+                <th class="px-4 py-3 text-left text-xs font-semibold text-gray-500 uppercase tracking-wider">Session Rate</th>
+              </tr>
+            </thead>
+            <tbody class="divide-y divide-gray-100">
+              @if (ment.topByCompletedSessions.length === 0) {
+                <tr>
+                  <td colspan="4" class="px-4 py-6 text-center text-sm text-gray-400">No completed sessions yet.</td>
+                </tr>
+              }
+              @for (mentor of ment.topByCompletedSessions; track mentor.id; let i = $index) {
+                <tr class="hover:bg-gray-50">
+                  <td class="px-4 py-3 text-sm text-gray-500">{{ i + 1 }}</td>
+                  <td class="px-4 py-3 text-sm font-medium text-gray-900">{{ mentor.name }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">{{ mentor.completedSessions }}</td>
+                  <td class="px-4 py-3 text-sm text-gray-700">
+                    {{ mentor.sessionRate !== null ? ('₱' + mentor.sessionRate) : '—' }}
+                  </td>
+                </tr>
+              }
+            </tbody>
+          </table>
+        </div>
+      </section>
+    }
+  }
+</div>

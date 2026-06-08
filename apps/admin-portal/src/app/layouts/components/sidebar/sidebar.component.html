@@ -16,41 +16,62 @@
     <ul class="space-y-2 px-4 font-medium">
       @for (item of navItems(); track item.route) {
         <li>
-          <a
-            [routerLink]="item.route"
-            routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
-            [routerLinkActiveOptions]="{ exact: false }"
-            class="flex items-center gap-3 px-4 py-3 text-gray-600 font-medium rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-all group relative"
-          >
-            <app-icon [name]="asIconName(item.icon)" class="h-5 w-5 transition-transform group-hover:scale-110" />
-            <span class="truncate">{{ item.label }}</span>
-          </a>
+          @if (item.disabled) {
+            <div
+              class="flex items-center gap-3 px-4 py-3 text-gray-400 font-medium rounded-lg cursor-not-allowed select-none"
+              title="Coming in Phase 2"
+            >
+              <app-icon [name]="asIconName(item.icon)" class="h-5 w-5" />
+              <span class="truncate flex-1">{{ item.label }}</span>
+              @if (item.badge) {
+                <span class="text-[10px] font-semibold px-1.5 py-0.5 rounded bg-gray-200 text-gray-500">{{ item.badge }}</span>
+              }
+            </div>
+          } @else {
+            <a
+              [routerLink]="item.route"
+              routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+              [routerLinkActiveOptions]="{ exact: false }"
+              class="flex items-center gap-3 px-4 py-3 text-gray-600 font-medium rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-all group relative"
+            >
+              <app-icon [name]="asIconName(item.icon)" class="h-5 w-5 transition-transform group-hover:scale-110" />
+              <span class="truncate">{{ item.label }}</span>
+            </a>
+          }
         </li>
       }
     </ul>
 
-    <!-- Bottom Nav -->
-    @if (bottomNavItems().length) {
-      <div class="mt-auto px-4 pb-2">
-        <div class="border-t border-gray-200 pt-4">
-          <ul class="space-y-2 font-medium">
-            @for (item of bottomNavItems(); track item.route) {
-              <li>
-                <a
-                  [routerLink]="item.route"
-                  routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
-                  [routerLinkActiveOptions]="{ exact: false }"
-                  class="flex items-center gap-3 px-4 py-3 text-gray-600 font-medium rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-all group relative"
-                >
-                  <app-icon [name]="asIconName(item.icon)" class="h-5 w-5 transition-transform group-hover:scale-110" />
-                  <span class="truncate">{{ item.label }}</span>
-                </a>
-              </li>
-            }
-          </ul>
-        </div>
+    <!-- Bottom Nav + Logout -->
+    <div class="mt-auto px-4 pb-2">
+      <div class="border-t border-gray-200 pt-4">
+        <ul class="space-y-2 font-medium">
+          @for (item of bottomNavItems(); track item.route) {
+            <li>
+              <a
+                [routerLink]="item.route"
+                routerLinkActive="bg-orange-50 text-orange-600 border-l-4 border-orange-500"
+                [routerLinkActiveOptions]="{ exact: false }"
+                class="flex items-center gap-3 px-4 py-3 text-gray-600 font-medium rounded-lg hover:bg-gray-100 hover:text-gray-900 transition-all group relative"
+              >
+                <app-icon [name]="asIconName(item.icon)" class="h-5 w-5 transition-transform group-hover:scale-110" />
+                <span class="truncate">{{ item.label }}</span>
+              </a>
+            </li>
+          }
+          <li>
+            <button
+              type="button"
+              (click)="logout()"
+              class="flex w-full items-center gap-3 px-4 py-3 text-gray-600 font-medium rounded-lg hover:bg-red-50 hover:text-red-600 transition-all group"
+            >
+              <app-icon name="arrow-right-on-rectangle" class="h-5 w-5 transition-transform group-hover:scale-110" />
+              <span>Logout</span>
+            </button>
+          </li>
+        </ul>
       </div>
-    }
+    </div>
 
   </div>
 </aside>

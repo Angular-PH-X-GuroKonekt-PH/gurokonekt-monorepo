@@ -1,7 +1,7 @@
 <!-- Overlay -->
-<div class="fixed inset-0 z-50 flex items-start justify-end bg-black/40" (click)="close()">
+<div class="fixed inset-0 z-50 flex items-start justify-end bg-black/40" role="button" tabindex="0" aria-label="Close" (click)="close()" (keydown.enter)="close()" (keydown.escape)="close()">
   <!-- Panel -->
-  <div class="relative h-full w-full max-w-lg bg-white shadow-xl flex flex-col" (click)="$event.stopPropagation()">
+  <div class="relative h-full w-full max-w-lg bg-white shadow-xl flex flex-col" tabindex="-1" (click)="$event.stopPropagation()" (keydown)="$event.stopPropagation()">
 
     <!-- Header -->
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">

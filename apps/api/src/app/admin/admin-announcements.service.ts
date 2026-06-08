@@ -20,7 +20,7 @@ export class AdminAnnouncementsService {
       const users = await this.prisma.db.user.findMany({
         where: {
           role: { in: roleFilter },
-          status: UserStatus.Active,
+          status: { notIn: [UserStatus.Deleted, UserStatus.Banned, UserStatus.Suspended] },
         },
         select: { id: true },
       });
