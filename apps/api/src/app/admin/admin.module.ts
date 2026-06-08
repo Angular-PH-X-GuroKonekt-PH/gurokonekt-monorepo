@@ -11,6 +11,8 @@ import { AdminReportsController } from './admin-reports.controller';
 import { AdminReportsService } from './admin-reports.service';
 import { AdminRolesController } from './admin-roles.controller';
 import { AdminRolesService } from './admin-roles.service';
+import { AdminMentorController } from './admin-mentor.controller';
+import { AdminMentorService } from './admin-mentor.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { AuthModule } from '../auth/auth.module';
@@ -34,5 +36,11 @@ import { JwtGuardModule } from '../jwt-guard/jwt-guard.module';
     AdminReportsService,
     AdminRolesService,
   ],
+import { MailModule } from '../mail/mail.module';
+
+@Module({
+  imports: [PrismaModule, SupabaseModule, AuthModule, JwtGuardModule, MailModule],
+  controllers: [AdminController, AdminBookingController, AdminMentorController],
+  providers: [AdminService, AdminBookingService, AdminMentorService],
 })
 export class AdminModule {}

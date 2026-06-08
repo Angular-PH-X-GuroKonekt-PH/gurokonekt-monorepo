@@ -1,5 +1,8 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, inject, signal, OnInit, DestroyRef } from '@angular/core';
 import { DatePipe } from '@angular/common';
+import { Subject } from 'rxjs';
+import { debounceTime } from 'rxjs';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { MenteeManagementService, MenteeListItem, MenteesQueryParams } from '../../services/mentee-management.service';
 import { ViewMenteeProfileModalComponent } from '../modals/view-mentee-profile-modal/view-mentee-profile-modal';
 import { RejectMenteeModalComponent } from '../modals/reject-mentee-modal/reject-mentee-modal';
@@ -14,6 +17,8 @@ export type ComputedStatus = 'active' | 'not-verified' | 'deactivated' | 'reject
 })
 export class MenteeTableComponent implements OnInit {
   private readonly menteeService = inject(MenteeManagementService);
+  private readonly destroyRef = inject(DestroyRef);
+  private readonly searchSubject = new Subject<void>();
 
   // Data
   protected mentees = signal<MenteeListItem[]>([]);
@@ -27,6 +32,7 @@ export class MenteeTableComponent implements OnInit {
   protected statusFilter = signal<'active' | 'inactive' | 'all'>('all');
   protected dateFrom = signal('');
   protected dateTo = signal('');
+  protected search = signal('');
 
   // Dropdown
   protected openDropdownId = signal<string | null>(null);
@@ -40,6 +46,9 @@ export class MenteeTableComponent implements OnInit {
   protected confirmAction = signal<'activate' | 'deactivate' | 'resend' | null>(null);
 
   ngOnInit(): void {
+    this.searchSubject
+      .pipe(debounceTime(300), takeUntilDestroyed(this.destroyRef))
+      .subscribe(() => this.loadMentees());
     this.loadMentees();
   }
 
@@ -53,6 +62,7 @@ export class MenteeTableComponent implements OnInit {
       limit: this.limit,
       ...(this.dateFrom() && { dateFrom: this.dateFrom() }),
       ...(this.dateTo() && { dateTo: this.dateTo() }),
+      ...(this.search().trim() && { search: this.search().trim() }),
     };
 
     this.menteeService.getMentees(params).subscribe({
@@ -82,6 +92,18 @@ export class MenteeTableComponent implements OnInit {
 
   protected onDateToChange(value: string): void {
     this.dateTo.set(value);
+    this.page.set(1);
+    this.loadMentees();
+  }
+
+  protected onSearchChange(value: string): void {
+    this.search.set(value);
+    this.page.set(1);
+    this.searchSubject.next();
+  }
+
+  protected clearSearch(): void {
+    this.search.set('');
     this.page.set(1);
     this.loadMentees();
   }

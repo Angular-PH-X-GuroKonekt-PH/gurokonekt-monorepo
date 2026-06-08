@@ -37,3 +37,5 @@ export * from './lib/dto/search/search-mentor.dto';
 export * from './lib/interfaces/admin/admin-mentee.model';
 export * from './lib/dto/admin/admin-mentee.dto';
 export * from './lib/dto/admin/admin-dashboard.dto';
+export * from './lib/interfaces/admin/admin-mentor.model';
+export * from './lib/dto/admin/admin-mentor.dto';
