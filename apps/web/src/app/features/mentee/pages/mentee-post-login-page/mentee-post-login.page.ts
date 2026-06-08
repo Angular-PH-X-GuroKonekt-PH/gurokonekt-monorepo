@@ -202,8 +202,6 @@ export class MenteePostLoginPage implements OnInit {
                this.learningGoals.length > 0 &&
                this.areasOfInterest.length > 0 &&
                this.preferredSessionTypes.length > 0;
-      case 3:
-        return this.hasAtLeastOneAvailability();
       default:
         return false;
     }
@@ -215,7 +213,6 @@ export class MenteePostLoginPage implements OnInit {
       learningGoals: this.learningGoals.value,
       areasOfInterest: this.areasOfInterest.value,
       preferredSessionType: this.preferredSessionTypes.value,
-      ...(availability.length > 0 && { availability }),
     };
   }
 
