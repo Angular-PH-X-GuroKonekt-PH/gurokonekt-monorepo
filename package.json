@@ -85,7 +85,6 @@
   },
   "dependencies": {
     "@angular-devkit/build-angular": "~20.3.0",
-    "@angular/cdk": "^20.2.14",
     "@angular/common": "~20.3.0",
     "@angular/compiler": "~20.3.0",
     "@angular/core": "~20.3.0",
@@ -121,7 +120,6 @@
     "express": "^4.21.2",
     "jwks-rsa": "^3.2.2",
     "multer": "^2.0.2",
-    "ng2-charts": "^10.0.0",
     "nodemailer": "^8.0.10",
     "passport": "^0.7.0",
     "passport-jwt": "^4.0.1",
