@@ -1,20 +1,20 @@
 import { Route } from '@angular/router';
 import { APP_ROUTES } from './shared/constants/routes';
-// import { authGuard } from './shared/guards/auth.guard';
-// import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
+import { authGuard } from './shared/guards/auth.guard';
+import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
 import { Layout } from './layouts/layout';
 
 export const appRoutes: Route[] = [
   {
     path: APP_ROUTES.LOGIN,
-    // canActivate: [unauthenticatedGuard],
+    canActivate: [unauthenticatedGuard],
     loadComponent: () =>
       import('./core/auth/pages/login-page/login.page').then((m) => m.LoginPage),
     title: 'Admin Login',
   },
   {
     path: '',
-    // canActivate: [authGuard],
+    canActivate: [authGuard],
     component: Layout,
     children: [
       {
@@ -40,6 +40,14 @@ export const appRoutes: Route[] = [
             (m) => m.MenteeManagementPage
           ),
         title: 'Mentee Management',
+      },
+      {
+        path: APP_ROUTES.MENTOR_MANAGEMENT,
+        loadComponent: () =>
+          import('./features/mentor-management/pages/mentor-management-page/mentor-management.page').then(
+            (m) => m.MentorManagementPage
+          ),
+        title: 'Mentor Management',
       },
       {
         path: APP_ROUTES.BOOKING_MANAGEMENT,

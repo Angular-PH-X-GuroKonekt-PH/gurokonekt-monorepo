@@ -29,6 +29,7 @@ export class AdminService {
         status = 'all',
         dateFrom,
         dateTo,
+        search,
         sortBy = 'createdAt',
         sortOrder = 'desc',
         page = 1,
@@ -46,6 +47,15 @@ export class AdminService {
           ...(dateFrom ? { gte: new Date(dateFrom) } : {}),
           ...(dateTo ? { lte: new Date(dateTo) } : {}),
         };
+      }
+
+      if (search?.trim()) {
+        const term = search.trim();
+        where['OR'] = [
+          { firstName: { contains: term, mode: 'insensitive' } },
+          { lastName: { contains: term, mode: 'insensitive' } },
+          { email: { contains: term, mode: 'insensitive' } },
+        ];
       }
 
       const skip = (page - 1) * limit;
