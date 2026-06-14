@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto } from '@gurokonekt/models';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto, RefreshTokenDto } from '@gurokonekt/models';
 import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, UserRole, UserStatus, LogsActionType,
   ResendOTPTypes, REDIRECT_LINKS
 } from '@gurokonekt/models';
@@ -1015,6 +1015,42 @@ export class AuthService {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.RESET_PASSWORD.code,
         message: API_RESPONSE.ERROR.RESET_PASSWORD.message,
+        data: error,
+      };
+    }
+  }
+
+  async refreshToken(dto: RefreshTokenDto): Promise<ResponseDto> {
+    try {
+      const { data, error } = await this.supabase.client.auth.refreshSession({
+        refresh_token: dto.refreshToken,
+      });
+
+      if (error || !data?.session) {
+        this.logger.warn(`Token refresh failed: ${error?.message ?? 'no session returned'}`);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.REFRESH_TOKEN_INVALID.code,
+          message: API_RESPONSE.ERROR.REFRESH_TOKEN_INVALID.message,
+          data: null,
+        };
+      }
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.REFRESH_TOKEN.code,
+        message: API_RESPONSE.SUCCESS.REFRESH_TOKEN.message,
+        data: {
+          accessToken: data.session.access_token,
+          refreshToken: data.session.refresh_token,
+        },
+      };
+    } catch (error: any) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.REFRESH_TOKEN_FAILED.code,
+        message: API_RESPONSE.ERROR.REFRESH_TOKEN_FAILED.message,
         data: error,
       };
     }

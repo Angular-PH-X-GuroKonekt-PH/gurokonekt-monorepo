@@ -51,6 +51,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Signed out successfully',
     },
+    REFRESH_TOKEN: {
+      code: 200,
+      message: 'Token refreshed successfully',
+    },
     CONFIRMATION_EMAIL_SENT: {
       code: 200,
       message: 'Confirmation email sent successfully',
@@ -378,6 +382,10 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Email address is already confirmed',
     },
+    SESSION_EXPIRED: {
+      code: 401,
+      message: 'Your session has expired. Please log in again.',
+    },
     SIGNIN_ATTEMPT_INVALID_CREDENTIALS: {
       code: 401,
       message: 'Invalid login credentials',
@@ -393,6 +401,14 @@ export const API_RESPONSE = {
     PASSWORD_INCORRECT: {
       code: 401,
       message: 'Password incorrect',
+    },
+    REFRESH_TOKEN_INVALID: {
+      code: 401,
+      message: 'Refresh token is invalid or has expired. Please log in again.',
+    },
+    REFRESH_TOKEN_FAILED: {
+      code: 500,
+      message: 'Failed to refresh token',
     },
     UPDATE_PASSWORD_TOO_MANY_ATTEMPTS: {
       code: 429,
@@ -940,6 +956,24 @@ Authenticates a user with email and password via Supabase.
     bodyExample: {
       email: 'jane.delacruz@example.com',
       password: 'Password@123',
+    },
+  },
+
+  REFRESH_TOKEN: {
+    summary: 'Refresh an access token using a refresh token',
+    description: `
+Exchanges a valid refresh token for a new access token and refresh token pair.
+
+**Use this endpoint when:** the user receives a \`401\` response with \`errorCode: "SESSION_EXPIRED"\` on any protected route.
+
+**Returns:** a new \`accessToken\` and \`refreshToken\`. Store both and replace the expired access token.
+
+**If this endpoint also returns \`401\`:** the refresh token itself has expired — redirect the user to the login page.
+
+**Supabase refresh token behaviour:** refresh tokens are single-use. Each successful call issues a new refresh token; the old one is invalidated immediately.
+`,
+    bodyExample: {
+      refreshToken: 'your-supabase-refresh-token',
     },
   },
 

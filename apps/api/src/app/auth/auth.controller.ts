@@ -20,6 +20,7 @@ import {
 import {
   ForgotPasswordDto,
   MentorDocumentsInterceptor,
+  RefreshTokenDto,
   RegisterMenteeDto,
   RegisterMentorDto,
   ResendConfirmationEmailDto,
@@ -203,6 +204,99 @@ export class AuthController {
       );
     }
     
+    return response;
+  }
+
+  // ====================================================
+  // POST - Refresh Token
+  // ====================================================
+  //
+  // FRONTEND INTEGRATION NOTE:
+  //
+  // The frontend currently does NOT store the refresh token. To use this
+  // endpoint the Angular team needs to make the following changes:
+  //
+  // 1. AuthStorageService (core/storage/auth-storage.service.ts)
+  //    Add setRefreshToken(token: string) / getRefreshToken() / clearRefreshToken()
+  //    using a new localStorage key e.g. 'auth_refresh_token'.
+  //
+  // 2. AuthStateModel (core/auth/models/auth.state.model.ts)
+  //    Add `refreshToken: string | null` to the interface and initialAuthState.
+  //
+  // 3. AuthService.login() (core/auth/services/auth.service.ts)
+  //    The login response already contains `response.data.session.refresh_token`.
+  //    Map it alongside the access token in the returned AuthResponse object.
+  //
+  // 4. AuthState.loginSuccess (core/auth/store/auth.state.ts)
+  //    Call storage.setRefreshToken(refreshToken) when storing the access token.
+  //    Also persist refreshToken in the NGXS state.
+  //
+  // 5. AuthState.logout (core/auth/store/auth.state.ts)
+  //    Call storage.clearRefreshToken() inside the logout action.
+  //
+  // 6. auth.interceptor.ts (core/auth/interceptors/auth.interceptor.ts)
+  //    When an HTTP response returns 401 with errorCode === 'SESSION_EXPIRED':
+  //    a. Read the stored refresh token.
+  //    b. Call POST /auth/refresh-token with { refreshToken }.
+  //    c. If successful: store the new access + refresh tokens, then retry the
+  //       original failed request with the new access token.
+  //    d. If the refresh call also returns 401: clear storage and redirect to /login.
+  //
+  // 7. auth.state.ts getErrorMessage() (core/auth/store/auth.state.ts line 309)
+  //    The current hardcoded `if (status === 401) return 'Invalid email or password'`
+  //    will incorrectly label session-expiry errors. Update it to check the
+  //    errorCode field from the response body:
+  //      const errorCode = originalError?.error?.errorCode;
+  //      if (status === 401 && errorCode === 'SESSION_EXPIRED')
+  //        return 'Your session has expired. Please log in again.';
+  //      if (status === 401) return 'Invalid email or password. Please try again.';
+  //
+  // ====================================================
+
+  @Post('refresh-token')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.REFRESH_TOKEN.summary,
+    description: SWAGGER_DOCUMENTATION.REFRESH_TOKEN.description,
+  })
+  @ApiBody({
+    type: RefreshTokenDto,
+    examples: {
+      default: { summary: 'Refresh session tokens', value: SWAGGER_DOCUMENTATION.REFRESH_TOKEN.bodyExample },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed successfully. Returns a new access token and refresh token.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
+          refreshToken: 'new-supabase-refresh-token',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Refresh token is invalid or has expired. User must log in again.' })
+  @ApiResponse({ status: 500, description: 'Internal server error.' })
+  async refreshToken(@Body() input: RefreshTokenDto) {
+    const response = await this.authService.refreshToken(input);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.UNAUTHORIZED,
+      );
+    }
+
     return response;
   }
 

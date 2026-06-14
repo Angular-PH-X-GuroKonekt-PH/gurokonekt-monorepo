@@ -39,3 +39,9 @@ export class ResendConfirmationEmailDto implements ResendConfirmationEmailInterf
   @IsUrl({}, { message: 'emailRedirectTo must be a valid URL' })
   emailRedirectTo?: string;
 }
+
+export class RefreshTokenDto {
+  @IsString({ message: 'Refresh token must be a string' })
+  @IsNotEmpty({ message: 'Refresh token cannot be empty' })
+  refreshToken!: string;
+}
