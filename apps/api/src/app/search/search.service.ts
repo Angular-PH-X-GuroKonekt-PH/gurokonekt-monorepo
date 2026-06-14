@@ -62,7 +62,7 @@ export class SearchService {
         });
 
         const sorted = this.sortInMemory(all as unknown as MentorSearchItemInterface[], sortBy, sortOrder);
-        const filtered = this.filterByAvailabilityDay(sorted, dto.availabilityDay);
+        const filtered = this.filterByAvailabilityDay(sorted, dto.availabilityDaysArray);
         total = filtered.length;
         results = filtered.slice((page - 1) * limit, page * limit);
       } else {
@@ -77,7 +77,7 @@ export class SearchService {
             take: limit,
           }) as unknown as Promise<MentorSearchItemInterface[]>,
         ]);
-        results = this.filterByAvailabilityDay(results, dto.availabilityDay);
+        results = this.filterByAvailabilityDay(results, dto.availabilityDaysArray);
         total = results.length;
       }
 
@@ -271,15 +271,15 @@ export class SearchService {
 
   private filterByAvailabilityDay(
     mentors: MentorSearchItemInterface[],
-    day: DaysInWeek | undefined,
+    days: DaysInWeek[],
   ): MentorSearchItemInterface[] {
-    if (!day) return mentors;
+    if (!days.length) return mentors;
 
     return mentors.filter((mentor) => {
       const availability = mentor.mentorProfiles[0]?.availability;
       if (!availability || !Array.isArray(availability)) return false;
-      return (availability as { day: string }[]).some(
-        (slot) => slot.day?.toLowerCase() === day.toLowerCase(),
+      return (availability as { day: string }[]).some((slot) =>
+        days.some((day) => slot.day?.toLowerCase() === day.toLowerCase()),
       );
     });
   }
