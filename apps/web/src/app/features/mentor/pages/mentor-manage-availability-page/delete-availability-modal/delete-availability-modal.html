@@ -1,0 +1,47 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
+  <div class="relative w-full max-w-md rounded-lg bg-white shadow">
+    <div class="p-6 text-center">
+      <svg class="mx-auto mb-4 h-12 w-12 text-gray-400" aria-hidden="true" fill="none" viewBox="0 0 20 20">
+        <path
+          stroke="currentColor"
+          stroke-linecap="round"
+          stroke-linejoin="round"
+          stroke-width="2"
+          d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z"
+        />
+      </svg>
+
+      <h3 class="mb-5 text-lg font-normal text-gray-500">
+        {{ title }}
+      </h3>
+
+      <p class="mb-5 text-sm text-gray-400">
+        {{ description }}
+      </p>
+
+      <button
+        type="button"
+        (click)="confirmed.emit()"
+        [disabled]="submitting()"
+        class="relative me-2 overflow-hidden rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed"
+      >
+        <span [class.opacity-0]="submitting()">Yes, delete</span>
+
+        @if (submitting()) {
+        <span class="absolute inset-0 z-10 flex items-center justify-center bg-gray-300/50">
+          <span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+        </span>
+        }
+      </button>
+
+      <button
+        type="button"
+        (click)="closed.emit()"
+        [disabled]="submitting()"
+        class="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        No, Cancel
+      </button>
+    </div>
+  </div>
+</div>

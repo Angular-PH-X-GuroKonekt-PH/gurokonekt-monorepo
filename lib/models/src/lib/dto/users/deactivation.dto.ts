@@ -1,6 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
-import { IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Min } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  ArrayMinSize,
+  IsArray,
+  IsEnum,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { DaysInWeek } from '../../interfaces/user/user.model';
+import { TimeFrameDto, UserAvailabilityDto } from './update-user-profile.dto';
 
 export class InitiateDeactivationDto {
   @ApiProperty({ description: 'Current account password for verification' })
@@ -65,8 +77,12 @@ export class ManageAvailabilityDto {
       { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
       { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
     ],
+    type: [UserAvailabilityDto],
   })
-  availability!: { day: DaysInWeek; timeFrames: { from: string; to: string }[] }[];
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => UserAvailabilityDto)
+  availability!: UserAvailabilityDto[];
 }
 
 export class AddAvailabilitySlotDto {
@@ -81,8 +97,13 @@ export class AddAvailabilitySlotDto {
   @ApiProperty({
     description: 'New time frames to append to this day. Must not overlap with existing frames for this day.',
     example: [{ from: '14:00', to: '17:00' }],
+    type: [TimeFrameDto],
   })
-  timeFrames!: { from: string; to: string }[];
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => TimeFrameDto)
+  timeFrames!: TimeFrameDto[];
 
   @ApiPropertyOptional({
     description: 'Optionally update the standard session duration (minutes) at the same time. Minimum 15.',
@@ -93,6 +114,33 @@ export class AddAvailabilitySlotDto {
   @IsInt()
   @Min(15)
   sessionDurationMinutes?: number;
+}
+
+export class UpdateAvailabilitySlotDto {
+  @ApiProperty({
+    enum: DaysInWeek,
+    description: 'Day of the week for the availability slot to update',
+    example: DaysInWeek.Monday,
+  })
+  @IsEnum(DaysInWeek)
+  day!: DaysInWeek;
+
+  @ApiProperty({
+    description: 'Zero-based index of the specific time frame to update.',
+    example: 0,
+  })
+  @IsInt()
+  @Min(0)
+  timeFrameIndex!: number;
+
+  @ApiProperty({
+    description: 'Replacement time frame. It must be at least 60 minutes and divisible by 60 minutes.',
+    example: { from: '14:00', to: '16:00' },
+    type: TimeFrameDto,
+  })
+  @ValidateNested()
+  @Type(() => TimeFrameDto)
+  timeFrame!: TimeFrameDto;
 }
 
 export class DeleteAvailabilitySlotDto {

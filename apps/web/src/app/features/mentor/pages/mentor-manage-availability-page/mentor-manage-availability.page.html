@@ -1,1 +1,257 @@
-<p>mentor-manage-availability.page works!</p>
+<section>
+  <div class="space-y-3">
+    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+      <div>
+        <app-section-title title="Manage Availability"
+          subtitle="Set your weekly availability so mentees can book sessions with you." />
+      </div>
+
+      <div class="flex flex-col gap-2 sm:items-end">
+        <div class="flex flex-col gap-3 sm:flex-row sm:items-end">
+          <gk-button class="bg-orange-500 rounded-lg" variant="primary" (buttonClick)="onAddSlot()">
+            + Add Availability
+          </gk-button>
+        </div>
+      </div>
+    </div>
+
+    <div class="flex items-center gap-2">
+      <button type="button" class="rounded-full px-5 py-2 text-sm font-medium transition-colors" [class]="viewMode() === 'table'
+          ? 'bg-orange-500 text-white shadow-sm'
+          : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'" (click)="setView('table')">
+        Table View
+      </button>
+
+      <button type="button" class="rounded-full px-5 py-2 text-sm font-medium transition-colors" [class]="viewMode() === 'calendar'
+          ? 'bg-orange-500 text-white shadow-sm'
+          : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'" (click)="setView('calendar')">
+        Calendar View
+      </button>
+    </div>
+
+    @if (selectors.isLoading()) {
+    <div class="flex items-center justify-center py-20">
+      <div class="h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></div>
+    </div>
+    }
+
+    @if (selectors.errorMessage()) {
+    <div class="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
+      <app-icon name="alert-circle" class="h-5 w-5 shrink-0 text-red-500"></app-icon>
+      <span>{{ selectors.errorMessage() }}</span>
+    </div>
+    }
+
+    @if (viewMode() === 'calendar' && !selectors.isLoading()) {
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <full-calendar [options]="calendarOptions" [events]="calendarEvents()"></full-calendar>
+    </div>
+    }
+
+    @if (viewMode() === 'table' && !selectors.isLoading()) {
+    <div class="rounded-2xl bg-white shadow-sm">
+      <div class="flex items-center justify-between border-b border-gray-100 px-6 py-5">
+        <h2 class="text-lg font-bold text-gray-800">Weekly Availability</h2>
+
+        <app-week-picker [value]="selectedWeekValue" (valueChange)="onSelectedWeekChange($event)" />
+      </div>
+
+      <div class="overflow-x-auto px-6 pb-6">
+        <table class="w-full min-w-[840px] table-fixed border-separate border-spacing-0 text-left text-sm">
+          <thead>
+            <tr class="bg-white">
+              <th
+                class="w-[6%] border-b border-gray-100 px-4 py-4 text-[11px] font-bold tracking-[0.18em] text-gray-400">
+              </th>
+              <th
+                class="w-[22%] border-b border-gray-100 px-4 py-4 text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                DAY</th>
+              <th
+                class="w-[18%] border-b border-gray-100 px-4 py-4 text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                SLOTS</th>
+              <th
+                class="w-[18%] border-b border-gray-100 px-4 py-4 text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                AVAILABLE</th>
+              <th
+                class="w-[22%] border-b border-gray-100 px-4 py-4 text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                BOOKINGS</th>
+              <th
+                class="w-[14%] border-b border-gray-100 px-4 py-4 text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                ACTIONS</th>
+            </tr>
+          </thead>
+
+          <tbody>
+            @for (day of days; track day) {
+            @let slot = getAvailabilityForDay(day);
+
+            <tr class="border-b border-gray-100 transition-colors hover:bg-gray-50/70">
+              <td class="border-b border-gray-100 px-4 py-4">
+                @if (slot) {
+                <button type="button"
+                  class="inline-flex h-6 w-6 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+                  [attr.aria-label]="isDayExpanded(day) ? 'Collapse day details' : 'Expand day details'"
+                  (click)="toggleDayDetails(day)">
+                  <app-icon [name]="isDayExpanded(day) ? 'chevron-down' : 'chevron-right'"
+                    class="h-3.5 w-3.5"></app-icon>
+                </button>
+                }
+              </td>
+
+              <td class="border-b border-gray-100 px-4 py-4 text-sm font-semibold text-gray-900">
+                <div class="capitalize">{{ day }}</div>
+                <div class="mt-1 text-xs font-normal text-gray-500">
+                  {{ getDateLabelForDay(day) }}
+                </div>
+              </td>
+
+              <td class="border-b border-gray-100 px-4 py-4 text-sm text-gray-700">
+                @if (slot) {
+                <span class="font-medium text-gray-900">
+                  {{ slot.timeFrames.length }}
+                </span>
+                } @else {
+                <span class="text-sm text-gray-400">0</span>
+                }
+              </td>
+
+              <td class="border-b border-gray-100 px-4 py-4 text-sm text-gray-700">
+                @if (slot) {
+                <span class="font-medium text-gray-900">
+                  {{ getAvailableSlotCount(day) }}
+                </span>
+                } @else {
+                <span class="text-sm text-gray-400">0</span>
+                }
+              </td>
+
+              <td class="border-b border-gray-100 px-4 py-4 text-sm text-gray-700">
+                @if (slot && getBookingSummaryLabel(day) !== 'None') {
+                <span class="font-medium text-gray-900">{{ getBookingSummaryLabel(day) }}</span>
+                } @else {
+                <span class="text-sm text-gray-400">None</span>
+                }
+              </td>
+
+              <td class="border-b border-gray-100 px-4 py-4 text-sm">
+                @if (slot) {
+                <div class="flex items-center gap-2">
+                  <button type="button" class="rounded-md p-1.5 text-blue-700 hover:bg-blue-50 cursor-pointer"
+                    (click)="onEditDay(slot)">
+                    <app-icon name="pencil-square" class="h-4 w-4"></app-icon>
+                  </button>
+
+                  <button type="button" class="rounded-md p-1.5 text-red-600 hover:bg-red-50 cursor-pointer"
+                    (click)="onDeleteDay(slot)">
+                    <app-icon name="trash" class="h-4 w-4"></app-icon>
+                  </button>
+                </div>
+                } @else {
+                <span class="text-sm text-gray-400">No actions</span>
+                }
+              </td>
+            </tr>
+
+            @if (slot && isDayExpanded(day)) {
+            <tr>
+              <td class="px-4 py-0"></td>
+              <td colspan="5" class="px-4 py-0">
+                <div class="ml-0 py-3">
+                  <table class="w-full table-fixed border-separate border-spacing-0 text-sm">
+                    <thead>
+                      <tr class="bg-white">
+                        <th
+                          class="w-[28%] border-b border-gray-100 px-5 py-3 text-left text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                          AVAILABLE TIME</th>
+                        <th
+                          class="w-[28%] border-b border-gray-100 px-5 py-3 text-left text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                          BOOKING</th>
+                        <th
+                          class="w-[20%] border-b border-gray-100 px-5 py-3 text-left text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                          AVAILABILITY</th>
+                        <th
+                          class="w-[24%] border-b border-gray-100 px-5 py-3 text-right text-[11px] font-bold tracking-[0.18em] text-gray-400">
+                          ACTIONS</th>
+                      </tr>
+                    </thead>
+
+                    <tbody>
+                      @for (frame of slot.timeFrames; track frame.from; let frameIndex = $index) {
+                      @let frameBookedTime = getBlockedTimeForFrame(day, frame);
+                      @let frameBooking = getActiveBookingForFrame(day, frame);
+                      @let frameStatus = getTimeFrameStatus(day, frame);
+
+                      <tr class="hover:bg-gray-50/70">
+                        <td class="border-b border-gray-100 px-5 py-3 font-medium text-gray-900">
+                          {{ formatTimeRange(frame) }}
+                        </td>
+                        <td class="border-b border-gray-100 px-5 py-3">
+                          @if (frameBooking && frameBookedTime) {
+                          <span [class]="getBookingBadgeClasses(frameBooking.status)">
+                            {{ frameBookedTime }}
+                          </span>
+                          } @else {
+                          <span class="text-sm text-gray-400">None</span>
+                          }
+                        </td>
+                        <td class="border-b border-gray-100 px-5 py-3">
+                          @if (frameStatus === 'Approved') {
+                          <span
+                            class="inline-flex rounded-full bg-red-50 px-3 py-1 text-xs font-medium text-red-700 ring-1 ring-inset ring-red-200">
+                            Approved
+                          </span>
+                          } @else if (frameStatus === 'Pending') {
+                          <span
+                            class="inline-flex rounded-full bg-amber-50 px-3 py-1 text-xs font-medium text-amber-700 ring-1 ring-inset ring-amber-200">
+                            Pending
+                          </span>
+                          } @else {
+                          <span
+                            class="inline-flex rounded-full bg-green-50 px-3 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-200">
+                            Available
+                          </span>
+                          }
+                        </td>
+                        <td class="border-b border-gray-100 px-5 py-3">
+                          <div class="flex items-center justify-end gap-2">
+                            <button type="button" class="rounded-md p-1.5 text-blue-700 hover:bg-blue-50"
+                              title="Edit this time frame" aria-label="Edit this time frame"
+                              (click)="onEditTimeFrame(slot, frame, frameIndex)">
+                              <app-icon name="pencil-square" class="h-4 w-4"></app-icon>
+                            </button>
+
+                            <button type="button" class="rounded-md p-1.5 text-red-600 hover:bg-red-50"
+                              title="Delete this time frame" aria-label="Delete this time frame"
+                              (click)="onDeleteTimeFrame(slot, frame, frameIndex)">
+                              <app-icon name="trash" class="h-4 w-4"></app-icon>
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                      }
+                    </tbody>
+                  </table>
+                </div>
+              </td>
+            </tr>
+            }
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+    }
+  </div>
+
+  @if (showSlotModal()) {
+  <app-availability-slot-modal [days]="days" [editingDay]="editingDay()"
+    [sessionDurationMinutes]="selectors.sessionDurationMinutes()" [(day)]="slotForm.day" [(from)]="slotForm.from"
+    [(to)]="slotForm.to" (closed)="closeSlotModal()" (saved)="saveSlot()" />
+  }
+
+  @if (deleteAvailabilityTarget(); as target) {
+  <app-delete-availability-modal [slot]="target.slot" [timeFrame]="target.timeFrame ?? null"
+    [submitting]="deleteAvailabilitySubmitting()" (closed)="closeDeleteAvailabilityModal()"
+    (confirmed)="confirmDeleteAvailability()" />
+  }
+</section>
