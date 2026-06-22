@@ -1,8 +1,8 @@
-<div class="font-sans p-6">
+<div class="mt-6">
   <div class="grid grid-cols-1 lg:grid-cols-3 gap-5 mb-6">
-    <div
-      class="lg:col-span-2 bg-linear-to-r from-[#1e2d5a] to-[#2d4080] rounded-2xl shadow-sm overflow-hidden flex flex-col"
-    >
+
+    <div class="lg:col-span-2 bg-linear-to-r from-[#1e2d5a] to-[#2d4080] rounded-2xl shadow-sm overflow-hidden flex flex-col">
+
       <div class="px-7 py-5 flex-1 flex items-center justify-between gap-4">
         <div class="flex flex-col justify-center">
           <p class="text-sm font-semibold text-orange-400 uppercase tracking-widest mb-2">
@@ -24,9 +24,7 @@
       <div class="relative px-7 py-6 flex items-center justify-between gap-4">
         @if (mentorBookings.upcomingSession(); as session) {
           <div>
-            <span
-              class="inline-block bg-orange-500 text-white text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2"
-            >
+            <span class="inline-block bg-orange-500 text-white text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2">
               Coming Up Next
             </span>
 
@@ -78,6 +76,7 @@
           </div>
         }
       </div>
+      
     </div>
 
     <div class="flex flex-col gap-4">

@@ -83,3 +83,8 @@ export interface UpcomingSession {
 }
 
 export type BookingTab = 'All' | 'Pending' | 'Approved' | 'Completed' | 'Cancelled' | 'Rejected';
+
+export interface ActiveBookingSummaryInterface {
+  time: string;
+  status: BookingStatus;
+}

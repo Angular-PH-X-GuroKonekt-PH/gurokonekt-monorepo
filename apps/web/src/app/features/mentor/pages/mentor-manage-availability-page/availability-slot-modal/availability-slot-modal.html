@@ -1,0 +1,71 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4">
+  <div class="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
+    <div class="mb-5 flex items-center justify-between">
+      <h2 class="text-lg font-semibold text-blue-950">
+        {{ editingDay() ? 'Edit Availability' : 'Add Availability' }}
+      </h2>
+
+      <button type="button" class="rounded-lg p-2 text-gray-500 hover:bg-gray-100" (click)="closed.emit()">
+        <app-icon name="close" class="h-4 w-4"></app-icon>
+      </button>
+    </div>
+
+    <div class="space-y-4">
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">Day</span>
+        <select
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          [ngModel]="day()"
+          (ngModelChange)="day.set($event)"
+          [disabled]="editingDay() !== null"
+        >
+          @for (dayOption of days(); track dayOption) {
+          <option [value]="dayOption">{{ dayOption }}</option>
+          }
+        </select>
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">From</span>
+        <input
+          type="time"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          [ngModel]="from()"
+          (ngModelChange)="from.set($event)"
+        />
+      </label>
+
+      <label class="block">
+        <span class="mb-1 block text-sm font-medium text-gray-700">To</span>
+        <input
+          type="time"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm"
+          [ngModel]="to()"
+          (ngModelChange)="to.set($event)"
+        />
+      </label>
+
+      <p class="text-xs text-gray-500">
+        This availability repeats weekly. Each bookable session is {{ sessionDurationMinutes() }} minutes.
+      </p>
+    </div>
+
+    <div class="mt-6 flex justify-end gap-2">
+      <button
+        type="button"
+        class="rounded-lg border border-gray-200 px-4 py-2 text-sm font-medium text-gray-600 hover:bg-gray-50"
+        (click)="closed.emit()"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+        (click)="saved.emit()"
+      >
+        Save
+      </button>
+    </div>
+  </div>
+</div>

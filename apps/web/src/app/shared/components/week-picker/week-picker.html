@@ -1,0 +1,22 @@
+<div>
+    <div class="relative w-full sm:w-65">
+        <div class="pointer-events-none absolute inset-y-0 inset-s-0 flex items-center ps-3">
+            <svg class="h-4 w-4 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none"
+                viewBox="0 0 24 24">
+                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                    d="M8 7V3m8 4V3M4 11h16M5 5h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H5a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1Z" />
+            </svg>
+        </div>
+
+        <input type="text" readonly
+            class="block w-full cursor-pointer rounded-lg border bg-white p-2.5 ps-10 text-sm text-gray-900 focus:ring-orange-500"
+            [class.border-orange-500]="isPickerOpen"
+            [class.ring-1]="isPickerOpen"
+            [class.ring-orange-500]="isPickerOpen"
+            [class.border-gray-300]="!isPickerOpen"
+            placeholder="Select week" [value]="displayValue" (click)="openPicker()" />
+
+        <input #datepickerInput type="text" class="pointer-events-none absolute left-0 top-full h-0 w-0 opacity-0"
+            tabindex="-1" aria-hidden="true" />
+    </div>
+</div>

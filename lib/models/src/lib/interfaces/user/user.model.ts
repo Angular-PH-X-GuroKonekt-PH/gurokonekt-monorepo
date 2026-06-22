@@ -124,6 +124,14 @@ export interface TimeFrameInterface {
   to: string;  
 }
 
+export type TimeFrameAvailabilityStatus = 'Available' | 'Pending' | 'Approved';
+
+export interface DeleteAvailabilityTargetInterface {
+  slot: UserAvailabilityInterface;
+  timeFrame?: TimeFrameInterface;
+  timeFrameIndex?: number;
+}
+
 export interface MentorCardInterface {
   id: string;
   firstName: string;

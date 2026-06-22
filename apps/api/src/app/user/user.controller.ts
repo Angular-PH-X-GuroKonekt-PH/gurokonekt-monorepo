@@ -38,6 +38,7 @@ import {
   ResponseStatus,
   SetSessionDurationDto,
   SWAGGER_DOCUMENTATION,
+  UpdateAvailabilitySlotDto,
   UpdateMenteeProfileDto,
   UpdateMentorProfileDto,
   UpdateUserRoleDto,
@@ -757,6 +758,60 @@ export class UserController {
     @Req() req: Request & { user: { id: string } },
   ) {
     const response = await this.userService.addAvailabilitySlot(userId, dto, req.user.id);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
+
+  // ====================================================
+  // PATCH - Update One Availability Time Frame
+  // ====================================================
+
+  @Patch(':userId/availability/slot')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Update one availability time frame',
+    description: 'Updates a specific time frame by day and zero-based index. The replacement range is normalized into 60-minute slots.',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the mentor',
+    example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+  })
+  @ApiBody({
+    type: UpdateAvailabilitySlotDto,
+    examples: {
+      default: {
+        summary: 'Update one Monday slot',
+        value: {
+          day: 'monday',
+          timeFrameIndex: 0,
+          timeFrame: { from: '14:00', to: '16:00' },
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Slot updated successfully. Returns the full updated schedule including sessionDurationMinutes.',
+    type: ResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized - missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied - mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 404, description: 'Slot not found for specified day / time frame index.' })
+  async updateAvailabilitySlot(
+    @Param('userId') userId: string,
+    @Body() dto: UpdateAvailabilitySlotDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    const response = await this.userService.updateAvailabilitySlot(userId, dto, req.user.id);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },

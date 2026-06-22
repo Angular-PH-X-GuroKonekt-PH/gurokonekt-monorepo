@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_RESPONSE, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
+import { API_RESPONSE, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateAvailabilitySlotDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
 import { StorageService } from '../storage/storage.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { instanceToPlain } from 'class-transformer';
@@ -14,6 +14,7 @@ import bcrypt from 'bcrypt';
 
 interface TimeFrame { from: string; to: string; }
 interface AvailabilitySlot { day: DaysInWeek; timeFrames: TimeFrame[]; }
+const DEFAULT_SESSION_DURATION_MINUTES = 60;
 
 /** Convert "HH:MM" string to total minutes since midnight. */
 function timeToMinutes(time: string): number {
@@ -42,6 +43,38 @@ function validateTimeFrames(frames: TimeFrame[]): string | null {
     }
   }
   return null;
+}
+
+function minutesToTime(totalMinutes: number): string {
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
+}
+
+function splitIntoSessionFrames(frames: TimeFrame[]): TimeFrame[] {
+  return frames.flatMap((frame) => {
+    const start = timeToMinutes(frame.from);
+    const end = timeToMinutes(frame.to);
+    const duration = end - start;
+
+    if (duration < DEFAULT_SESSION_DURATION_MINUTES) {
+      throw new Error(`${frame.from}–${frame.to} is shorter than ${DEFAULT_SESSION_DURATION_MINUTES} min`);
+    }
+
+    if (duration % DEFAULT_SESSION_DURATION_MINUTES !== 0) {
+      throw new Error(`${frame.from}–${frame.to} must be divisible by ${DEFAULT_SESSION_DURATION_MINUTES} min`);
+    }
+
+    const slots: TimeFrame[] = [];
+    for (let slotStart = start; slotStart < end; slotStart += DEFAULT_SESSION_DURATION_MINUTES) {
+      slots.push({
+        from: minutesToTime(slotStart),
+        to: minutesToTime(slotStart + DEFAULT_SESSION_DURATION_MINUTES),
+      });
+    }
+
+    return slots;
+  });
 }
 
 @Injectable()
@@ -985,7 +1018,7 @@ export class UserService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.GET_AVAILABILITY.code,
         message: API_RESPONSE.SUCCESS.GET_AVAILABILITY.message,
-        data: { sessionDurationMinutes: profile.sessionDurationMinutes, availability: profile.availability },
+        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES, availability: profile.availability },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1023,7 +1056,9 @@ export class UserService {
         };
       }
 
-      // Validate time frames and minimum frame length
+      const normalizedAvailability: AvailabilitySlot[] = [];
+
+      // Validate time frames and normalize every range into one-hour slots.
       for (const entry of dto.availability) {
         const err = validateTimeFrames(entry.timeFrames);
         if (err) {
@@ -1034,24 +1069,27 @@ export class UserService {
             data: null,
           };
         }
-        for (const f of entry.timeFrames) {
-          const frameMins = timeToMinutes(f.to) - timeToMinutes(f.from);
-          if (frameMins < dto.sessionDurationMinutes) {
-            return {
-              status: ResponseStatus.Error,
-              statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
-              message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message}: ${f.from}–${f.to} is shorter than ${dto.sessionDurationMinutes} min`,
-              data: null,
-            };
-          }
+
+        try {
+          normalizedAvailability.push({
+            day: entry.day,
+            timeFrames: splitIntoSessionFrames(entry.timeFrames),
+          });
+        } catch (error) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
+            message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message}: ${(error as Error).message}`,
+            data: null,
+          };
         }
       }
 
       await this.prisma.db.mentorProfile.update({
         where: { userId },
         data: {
-          sessionDurationMinutes: dto.sessionDurationMinutes,
-          availability: JSON.parse(JSON.stringify(dto.availability)),
+          sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
+          availability: JSON.parse(JSON.stringify(normalizedAvailability)),
         },
       });
 
@@ -1059,7 +1097,7 @@ export class UserService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.code,
         message: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.message,
-        data: { sessionDurationMinutes: dto.sessionDurationMinutes, availability: dto.availability },
+        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES, availability: normalizedAvailability },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1091,7 +1129,7 @@ export class UserService {
         select: { availability: true, sessionDurationMinutes: true },
       });
 
-      const duration = dto.sessionDurationMinutes ?? profile?.sessionDurationMinutes ?? 60;
+      const duration = DEFAULT_SESSION_DURATION_MINUTES;
 
       // Validate the new frames themselves
       const validationError = validateTimeFrames(dto.timeFrames);
@@ -1104,17 +1142,16 @@ export class UserService {
         };
       }
 
-      // Each new frame must be long enough for at least one session
-      for (const f of dto.timeFrames) {
-        const frameMins = timeToMinutes(f.to) - timeToMinutes(f.from);
-        if (frameMins < duration) {
-          return {
-            status: ResponseStatus.Error,
-            statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
-            message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message}: ${f.from}–${f.to} is shorter than ${duration} min`,
-            data: null,
-          };
-        }
+      let normalizedFrames: TimeFrame[];
+      try {
+        normalizedFrames = splitIntoSessionFrames(dto.timeFrames);
+      } catch (error) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
+          message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message}: ${(error as Error).message}`,
+          data: null,
+        };
       }
 
       const current: AvailabilitySlot[] = (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
@@ -1122,7 +1159,7 @@ export class UserService {
       // Merge: append new frames to existing frames for this day and check for overlaps
       const existingDay = current.find(s => s.day === dto.day);
       const existingFrames = existingDay?.timeFrames ?? [];
-      const mergedFrames = [...existingFrames, ...dto.timeFrames];
+      const mergedFrames = [...existingFrames, ...normalizedFrames];
       const overlapErr = validateTimeFrames(mergedFrames);
       if (overlapErr) {
         return {
@@ -1135,10 +1172,12 @@ export class UserService {
 
       const updated = existingDay
         ? current.map(s => s.day === dto.day ? { ...s, timeFrames: mergedFrames } : s)
-        : [...current, { day: dto.day, timeFrames: dto.timeFrames }];
+        : [...current, { day: dto.day, timeFrames: normalizedFrames }];
 
-      const updateData: Record<string, unknown> = { availability: JSON.parse(JSON.stringify(updated)) };
-      if (dto.sessionDurationMinutes !== undefined) updateData['sessionDurationMinutes'] = dto.sessionDurationMinutes;
+      const updateData: Record<string, unknown> = {
+        sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
+        availability: JSON.parse(JSON.stringify(updated)),
+      };
 
       await this.prisma.db.mentorProfile.update({ where: { userId }, data: updateData });
 
@@ -1155,6 +1194,100 @@ export class UserService {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.ADD_AVAILABILITY_SLOT_FAILED.code,
         message: API_RESPONSE.ERROR.ADD_AVAILABILITY_SLOT_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * PATCH - Updates one availability time frame for a specific day.
+   */
+  async updateAvailabilitySlot(
+    userId: string,
+    dto: UpdateAvailabilitySlotDto,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto> {
+    try {
+      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      if (check) return check;
+
+      const profile = await this.prisma.db.mentorProfile.findUnique({
+        where: { userId },
+        select: { availability: true, sessionDurationMinutes: true },
+      });
+
+      const current: AvailabilitySlot[] = (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
+      const dayEntry = current.find(s => s.day === dto.day);
+
+      if (!dayEntry || dto.timeFrameIndex < 0 || dto.timeFrameIndex >= dayEntry.timeFrames.length) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_SLOT_NOT_FOUND.code,
+          message: `Time frame index ${dto.timeFrameIndex} does not exist for day: ${dto.day}`,
+          data: null,
+        };
+      }
+
+      const validationError = validateTimeFrames([dto.timeFrame]);
+      if (validationError) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE.code,
+          message: `${API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE.message}: ${validationError}`,
+          data: null,
+        };
+      }
+
+      let normalizedFrames: TimeFrame[];
+      try {
+        normalizedFrames = splitIntoSessionFrames([dto.timeFrame]);
+      } catch (error) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
+          message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message}: ${(error as Error).message}`,
+          data: null,
+        };
+      }
+
+      const replacementFrames = [...dayEntry.timeFrames];
+      replacementFrames.splice(dto.timeFrameIndex, 1, ...normalizedFrames);
+
+      const overlapErr = validateTimeFrames(replacementFrames);
+      if (overlapErr) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.AVAILABILITY_OVERLAP.code,
+          message: `${API_RESPONSE.ERROR.AVAILABILITY_OVERLAP.message}: ${overlapErr}`,
+          data: null,
+        };
+      }
+
+      const updated = current.map(s =>
+        s.day === dto.day ? { ...s, timeFrames: replacementFrames } : s
+      );
+
+      await this.prisma.db.mentorProfile.update({
+        where: { userId },
+        data: {
+          sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
+          availability: JSON.parse(JSON.stringify(updated)),
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.code,
+        message: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.message,
+        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES, availability: updated },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.UPDATE_AVAILABILITY_FAILED.code,
+        message: API_RESPONSE.ERROR.UPDATE_AVAILABILITY_FAILED.message,
         data: null,
       };
     }
@@ -1221,7 +1354,7 @@ export class UserService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.DELETE_AVAILABILITY_SLOT.code,
         message: API_RESPONSE.SUCCESS.DELETE_AVAILABILITY_SLOT.message,
-        data: { sessionDurationMinutes: profile?.sessionDurationMinutes ?? 60, availability: updated },
+        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES, availability: updated },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1249,14 +1382,14 @@ export class UserService {
 
       await this.prisma.db.mentorProfile.update({
         where: { userId },
-        data: { sessionDurationMinutes: dto.sessionDurationMinutes },
+        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES },
       });
 
       return {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.UPDATE_SESSION_DURATION.code,
         message: API_RESPONSE.SUCCESS.UPDATE_SESSION_DURATION.message,
-        data: { sessionDurationMinutes: dto.sessionDurationMinutes },
+        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
