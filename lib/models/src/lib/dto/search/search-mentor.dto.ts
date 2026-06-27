@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -86,13 +86,13 @@ export class SearchMentorDto {
   language?: string;
 
   @ApiPropertyOptional({
-    enum: DaysInWeek,
-    description: 'Filter by availability day',
-    example: DaysInWeek.Monday,
+    description: 'Comma-separated list of days to filter by availability (e.g. monday,tuesday)',
+    example: 'monday,wednesday',
   })
   @IsOptional()
-  @IsEnum(DaysInWeek)
-  availabilityDay?: DaysInWeek;
+  @Transform(({ value }) => (Array.isArray(value) ? value.join(',') : value))
+  @IsString()
+  availabilityDay?: string;
 
   @ApiPropertyOptional({
     description: 'Page number (1-based)',
@@ -149,5 +149,15 @@ export class SearchMentorDto {
     return this.expertise
       ? this.expertise.split(',').map((s) => s.trim()).filter(Boolean)
       : [];
+  }
+
+  /** Parsed availability days array from comma-separated `availabilityDay` query param. */
+  get availabilityDaysArray(): DaysInWeek[] {
+    if (!this.availabilityDay) return [];
+    const validDays = Object.values(DaysInWeek) as string[];
+    return this.availabilityDay
+      .split(',')
+      .map((d) => d.trim().toLowerCase())
+      .filter((d) => validDays.includes(d)) as DaysInWeek[];
   }
 }

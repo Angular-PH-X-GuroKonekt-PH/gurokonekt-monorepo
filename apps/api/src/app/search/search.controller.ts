@@ -21,7 +21,6 @@ import { Request } from 'express';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { SearchService } from './search.service';
 import {
-  DaysInWeek,
   ResponseDto,
   ResponseStatus,
   SearchMentorDto,
@@ -110,7 +109,7 @@ export class SearchController {
   @ApiQuery({ name: 'minYearsExperience', required: false, type: Number, description: 'Minimum years of professional experience', example: 3 })
   @ApiQuery({ name: 'maxYearsExperience', required: false, type: Number, description: 'Maximum years of professional experience', example: 10 })
   @ApiQuery({ name: 'language', required: false, type: String, description: 'Filter by spoken language (case-insensitive)', example: 'English' })
-  @ApiQuery({ name: 'availabilityDay', required: false, enum: DaysInWeek, description: 'Filter mentors available on a specific day of the week', example: DaysInWeek.Monday })
+  @ApiQuery({ name: 'availabilityDay', required: false, type: String, description: 'Comma-separated days to filter by mentor availability (e.g. monday,tuesday)', example: 'monday,wednesday' })
   @ApiQuery({ name: 'sortBy', required: false, enum: SearchSortBy, description: 'Field to sort results by', example: SearchSortBy.NEWEST })
   @ApiQuery({ name: 'sortOrder', required: false, enum: SearchSortOrder, description: 'Sort direction', example: SearchSortOrder.DESC })
   @ApiQuery({ name: 'page', required: false, type: Number, description: 'Page number (1-based)', example: 1 })

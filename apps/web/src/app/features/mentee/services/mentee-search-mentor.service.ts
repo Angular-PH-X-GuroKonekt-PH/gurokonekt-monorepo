@@ -40,7 +40,7 @@ export class MenteeSearchMentorService {
       ...(filters.name?.trim() ? { name: filters.name.trim() } : {}),
       ...(filters.skills.length ? { skills: filters.skills.join(',') } : {}),
       ...(filters.expertise.length ? { expertise: filters.expertise.join(',') } : {}),
-      ...(filters.availabilityDay != null ? { availabilityDay: filters.availabilityDay } : {}),
+      ...(filters.availabilityDay.length ? { availabilityDay: filters.availabilityDay.join(',') } : {}),
       ...(filters.language != null ? { language: filters.language } : {}),
       ...(filters.minYearsExperience != null ? { minYearsExperience: filters.minYearsExperience } : {}),
       ...(filters.maxYearsExperience != null ? { maxYearsExperience: filters.maxYearsExperience } : {}),

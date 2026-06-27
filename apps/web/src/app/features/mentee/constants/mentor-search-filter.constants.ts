@@ -19,7 +19,7 @@ export const MENTOR_SEARCH_RATING_OPTIONS = [
 
 export const MENTOR_SEARCH_AVAILABILITY_OPTIONS: {
   label: string;
-  value: AvailabilityOption | null;
+  value: AvailabilityOption;
 }[] = [
   { label: 'Monday', value: DaysInWeek.Monday },
   { label: 'Tuesday', value: DaysInWeek.Tuesday },

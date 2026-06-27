@@ -91,8 +91,8 @@ export class MenteeFindMentorsPage {
           : [],
       availabilityDay:
         typeof params['availabilityDay'] === 'string'
-          ? (params['availabilityDay'] as AvailabilityOption)
-          : null,
+          ? this.parseAvailabilityDays(params['availabilityDay'])
+          : [],
       language:
         typeof params['language'] === 'string' ? params['language'] : null,
       minYearsExperience: this.parseOptionalPositiveNumber(
@@ -129,6 +129,13 @@ export class MenteeFindMentorsPage {
     }
 
     return Math.floor(parsedValue);
+  }
+
+  private parseAvailabilityDays(value: string): AvailabilityOption[] {
+    return value
+      .split(',')
+      .map((day) => day.trim())
+      .filter(Boolean) as AvailabilityOption[];
   }
 
   private buildLoadingSearchState(
