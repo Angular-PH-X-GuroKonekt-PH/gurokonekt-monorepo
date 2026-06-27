@@ -42,8 +42,14 @@ export class SearchService {
           ? await this.loadMenteeProfile(authenticatedUserId)
           : null;
 
+      // Pre-compute mentor IDs whose skills/expertise match the keyword (case-insensitive).
+      // Prisma's hasSome is case-sensitive on PostgreSQL arrays, so we use a raw query.
+      const keywordMatchIds = dto.name?.trim()
+        ? await this.findMentorIdsByKeyword(dto.name.trim())
+        : [];
+
       // Build the dynamic where clause
-      const where = this.buildWhereClause(dto, menteeProfile);
+      const where = this.buildWhereClause(dto, menteeProfile, keywordMatchIds);
 
       // For native-sortable fields, delegate ordering to Prisma + use DB-level pagination.
       // For profile-level sorts (sessionRate, yearsExperience) we fetch all matches and
@@ -117,12 +123,34 @@ export class SearchService {
   }
 
   // ====================================================
+  // PRIVATE – CASE-INSENSITIVE ARRAY KEYWORD LOOKUP
+  // ====================================================
+
+  private async findMentorIdsByKeyword(keyword: string): Promise<string[]> {
+    try {
+      const rows = await this.prisma.db.$queryRaw<{ user_id: string }[]>`
+        SELECT DISTINCT mp.user_id::text
+        FROM mentor_profiles mp
+        WHERE EXISTS (
+          SELECT 1 FROM unnest(mp.skills) AS s WHERE s ILIKE ${keyword}
+        ) OR EXISTS (
+          SELECT 1 FROM unnest(mp.areas_of_expertise) AS e WHERE e ILIKE ${keyword}
+        )
+      `;
+      return rows.map((r) => r.user_id);
+    } catch {
+      return [];
+    }
+  }
+
+  // ====================================================
   // PRIVATE – WHERE CLAUSE BUILDER
   // ====================================================
 
   private buildWhereClause(
     dto: SearchMentorDto,
     menteeProfile: { learningGoals: string[]; areasOfInterest: string[] } | null,
+    keywordMatchIds: string[],
   ) {
     // Top-level AND conditions applied to the User model
     const topLevelAnd: object[] = [
@@ -137,15 +165,31 @@ export class SearchService {
       topLevelAnd.push({ language: { equals: dto.language, mode: 'insensitive' } });
     }
 
-    // Name filter (partial, case-insensitive)
+    // Keyword filter — case-insensitive match across name, bio, title, skills, and expertise.
+    // Array fields (skills, expertise) are handled via keywordMatchIds from a raw SQL query
+    // because Prisma's hasSome is case-sensitive on PostgreSQL array columns.
     if (dto.name?.trim()) {
-      const name = dto.name.trim();
-      topLevelAnd.push({
-        OR: [
-          { firstName: { contains: name, mode: 'insensitive' } },
-          { lastName: { contains: name, mode: 'insensitive' } },
-        ],
-      });
+      const keyword = dto.name.trim();
+      const orConditions: object[] = [
+        { firstName: { contains: keyword, mode: 'insensitive' } },
+        { lastName: { contains: keyword, mode: 'insensitive' } },
+        {
+          mentorProfiles: {
+            some: {
+              OR: [
+                { bio: { contains: keyword, mode: 'insensitive' } },
+                { title: { contains: keyword, mode: 'insensitive' } },
+              ],
+            },
+          },
+        },
+      ];
+
+      if (keywordMatchIds.length > 0) {
+        orConditions.push({ id: { in: keywordMatchIds } });
+      }
+
+      topLevelAnd.push({ OR: orConditions });
     }
 
     // Profile-level filter conditions
