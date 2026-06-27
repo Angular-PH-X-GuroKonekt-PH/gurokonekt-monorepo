@@ -66,27 +66,6 @@ export interface MentorSearchResultInterface {
   results: MentorSearchItemInterface[];
 }
 
-// Flat shape consumed by BookMentorCard.
-// Produced by toFlatCard() in find-mentors.ts which flattens the nested
-// MentorSearchItemInterface returned by the API.
-//
-// Fields marked PENDING BACKEND are included in the dummy data but not yet
-// exposed by the backend. Remove the comment once the backend adds them
-// to MentorProfileSearch.
-export interface FlatMentorCard {
-  id: string;
-  fullName: string;
-  avatarUrl: string;
-  tagline: string;
-  bio: string;
-  skills: string[];
-  expertise: string[];
-  rating: number;        // PENDING BACKEND
-  reviewCount: number;        // PENDING BACKEND
-  availability: UserAvailabilityInterface[];
-  sessionRate: number | null;
-  yearsOfExperience: number | null;
-}
 
 // Frontend-only types for the mentor search feature.
 // Aligned to the backend SearchMentorDto (search-mentor.dto.ts).
@@ -117,7 +96,7 @@ export interface MentorSearchFilter {
   expertise: string[];       // UI: chip array - API: comma-separated string
   page: number;
   limit: number;
-  availabilityDay: AvailabilityOption | null;
+  availabilityDay: AvailabilityOption[];
   language: string | null;
   minYearsExperience: number | null;
   maxYearsExperience: number | null;
@@ -139,7 +118,7 @@ export interface MentorSearchRequest {
   maxSessionRate?: number;
   minYearsExperience?: number;
   maxYearsExperience?: number;
-  availabilityDay?: DaysInWeek;
+  availabilityDay?: string;
   // minRating?: number;        // PENDING BACKEND
   language?: string;
   sortBy?: SearchSortBy;

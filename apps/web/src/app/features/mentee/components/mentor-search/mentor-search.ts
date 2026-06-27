@@ -33,7 +33,7 @@ export class MentorSearch {
   // Form defaults
   private readonly defaultFilterFormValue = {
     name: '',
-    availabilityDay: null,
+    availabilityDay: [] as AvailabilityOption[],
     language: '',
     minYearsExperience: null,
     maxYearsExperience: null,
@@ -50,7 +50,7 @@ export class MentorSearch {
   // Search form controls
   readonly filterForm = this.fb.group({
     name: [''],
-    availabilityDay: [null as AvailabilityOption | null],
+    availabilityDay: [[] as AvailabilityOption[]],
     language: [''],
     minYearsExperience: [null as number | null],
     maxYearsExperience: [null as number | null],
@@ -140,7 +140,7 @@ export class MentorSearch {
       !!value.name?.trim(),
       this.selectedSkills().length > 0,
       this.selectedExpertise().length > 0,
-      value.availabilityDay != null,
+      (value.availabilityDay?.length ?? 0) > 0,
       !!value.language?.trim(),
       value.minYearsExperience != null,
       value.maxYearsExperience != null,
@@ -193,16 +193,35 @@ export class MentorSearch {
   }
 
   // Availability filter handlers
-  selectAvailabilityDay(value: AvailabilityOption | null): void {
+  selectAvailabilityDay(value: AvailabilityOption): void {
     const control = this.filterForm.controls.availabilityDay;
-    control.setValue(control.value === value ? null : value);
+    const selectedDays = control.value ?? [];
+
+    control.setValue(
+      selectedDays.includes(value)
+        ? selectedDays.filter((day) => day !== value)
+        : [...selectedDays, value]
+    );
   }
 
-  getAvailabilityLabel(value: AvailabilityOption | null): string {
-    return (
-      this.availabilityOptions.find((option) => option.value === value)
-        ?.label ?? 'All'
-    );
+  isAvailabilityDaySelected(value: AvailabilityOption): boolean {
+    return this.filterForm.controls.availabilityDay.value?.includes(value) ?? false;
+  }
+
+  getAvailabilityLabel(values: AvailabilityOption[] | null | undefined): string {
+    const selectedDays = values ?? [];
+
+    if (!selectedDays.length) {
+      return 'All';
+    }
+
+    const firstSelectedLabel =
+      this.availabilityOptions.find((option) => option.value === selectedDays[0])
+        ?.label ?? selectedDays[0];
+
+    return selectedDays.length === 1
+      ? firstSelectedLabel
+      : `${firstSelectedLabel} +${selectedDays.length - 1} more`;
   }
 
   // Experience filter handlers
@@ -260,7 +279,7 @@ export class MentorSearch {
 
     return {
       name: formValue.name ?? null,
-      availabilityDay: formValue.availabilityDay ?? null,
+      availabilityDay: formValue.availabilityDay ?? [],
       language: formValue.language ?? null,
       minYearsExperience: this.getNumberOrNull(formValue.minYearsExperience),
       maxYearsExperience: this.getNumberOrNull(formValue.maxYearsExperience),
@@ -279,7 +298,9 @@ export class MentorSearch {
       name: filters.name || null,
       skills: filters.skills.length ? filters.skills.join(',') : null,
       expertise: filters.expertise.length ? filters.expertise.join(',') : null,
-      availabilityDay: filters.availabilityDay ?? null,
+      availabilityDay: filters.availabilityDay.length
+        ? filters.availabilityDay.join(',')
+        : null,
       language: filters.language || null,
       minYearsExperience: filters.minYearsExperience ?? null,
       maxYearsExperience: filters.maxYearsExperience ?? null,
@@ -300,7 +321,7 @@ export class MentorSearch {
     if (params['availabilityDay']) {
       this.setFilterValue(
         'availabilityDay',
-        params['availabilityDay'] as AvailabilityOption
+        this.getAvailabilityDaysFromUrlParam(params['availabilityDay'])
       );
     }
     this.setNumberFilterFromUrl(params, 'minYearsExperience');
@@ -313,6 +334,17 @@ export class MentorSearch {
     key: string
   ): string[] {
     return params[key]?.split(',').filter(Boolean) ?? [];
+  }
+
+  private getAvailabilityDaysFromUrlParam(value: string): AvailabilityOption[] {
+    const validDays = new Set(
+      this.availabilityOptions.map((option) => option.value)
+    );
+
+    return value
+      .split(',')
+      .map((day) => day.trim() as AvailabilityOption)
+      .filter((day) => validDays.has(day));
   }
 
   private setNumberFilterFromUrl(

@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 import {
   IsEnum,
   IsInt,
@@ -90,6 +90,7 @@ export class SearchMentorDto {
     example: 'monday,wednesday',
   })
   @IsOptional()
+  @Transform(({ value }) => (Array.isArray(value) ? value.join(',') : value))
   @IsString()
   availabilityDay?: string;
 

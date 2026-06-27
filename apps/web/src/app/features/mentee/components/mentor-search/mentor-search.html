@@ -124,7 +124,7 @@
               [class.ring-2]="activeFilterDropdown() === 'availability'"
               [class.ring-blue-200]="activeFilterDropdown() === 'availability'"
             >
-              <span class="truncate">{{ getAvailabilityLabel(filterForm.get('availabilityDay')!.value) }}</span>
+              <span class="truncate">{{ getAvailabilityLabel(filterForm.controls.availabilityDay.value) }}</span>
               <app-icon name="chevron-down" class="h-4 w-4 shrink-0 text-slate-500" />
             </button>
 
@@ -134,16 +134,16 @@
                   @for (opt of availabilityOptions; track opt.label) {
                     <label
                       class="flex cursor-pointer items-center gap-3 rounded-lg border px-3 py-2 text-sm transition"
-                      [class.border-blue-300]="filterForm.get('availabilityDay')!.value === opt.value"
-                      [class.bg-blue-50]="filterForm.get('availabilityDay')!.value === opt.value"
-                      [class.text-blue-800]="filterForm.get('availabilityDay')!.value === opt.value"
-                      [class.border-gray-200]="filterForm.get('availabilityDay')!.value !== opt.value"
-                      [class.text-gray-700]="filterForm.get('availabilityDay')!.value !== opt.value"
+                      [class.border-blue-300]="isAvailabilityDaySelected(opt.value)"
+                      [class.bg-blue-50]="isAvailabilityDaySelected(opt.value)"
+                      [class.text-blue-800]="isAvailabilityDaySelected(opt.value)"
+                      [class.border-gray-200]="!isAvailabilityDaySelected(opt.value)"
+                      [class.text-gray-700]="!isAvailabilityDaySelected(opt.value)"
                     >
                       <input
                         type="checkbox"
                         class="h-4 w-4 rounded border-gray-300 text-blue-700 focus:ring-blue-600"
-                        [checked]="filterForm.get('availabilityDay')!.value === opt.value"
+                        [checked]="isAvailabilityDaySelected(opt.value)"
                         (change)="selectAvailabilityDay(opt.value)"
                       />
                       {{ opt.label }}
