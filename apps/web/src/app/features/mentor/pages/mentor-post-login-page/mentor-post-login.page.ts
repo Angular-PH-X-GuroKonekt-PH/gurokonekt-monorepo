@@ -14,6 +14,7 @@ import { AuthState } from '../../../../core/auth/store/auth.state';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { expertiseOptions } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
+import { isSessionExpiredError } from '../../../../shared/utils/http-error.util';
 import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
 
 @Component({
@@ -291,6 +292,11 @@ export class MentorPostLoginPage implements OnInit {
       this.toastService.success('Mentor profile setup completed successfully!', 'Welcome!');
       await this.router.navigate([APP_ROUTES.DASHBOARD]);
     } catch (error) {
+      if (isSessionExpiredError(error)) {
+        this.isSubmitting.set(false);
+        return;
+      }
+
       const message = (error as { message?: string })?.message;
       this.toastService.error(message || 'Failed to setup mentor profile. Please try again.', 'Error');
       this.isSubmitting.set(false);

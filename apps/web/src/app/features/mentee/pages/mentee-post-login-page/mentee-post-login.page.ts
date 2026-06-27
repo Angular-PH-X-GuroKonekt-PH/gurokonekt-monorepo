@@ -10,7 +10,8 @@ import { ToastService } from '../../../../shared/services/toast.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
-import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
+import { isSessionExpiredError } from '../../../../shared/utils/http-error.util';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 
 @Component({
   selector: 'mentee-post-login-page',
@@ -260,6 +261,11 @@ export class MenteePostLoginPage implements OnInit {
       this.toastService.success('Profile setup completed successfully!', 'Welcome!');
       this.router.navigate([APP_ROUTES.DASHBOARD]);
     } catch (error) {
+      if (isSessionExpiredError(error)) {
+        this.isSubmitting.set(false);
+        return;
+      }
+
       const message = (error as { message?: string })?.message;
       this.toastService.error(
         message || 'Failed to setup profile. Please try again.',

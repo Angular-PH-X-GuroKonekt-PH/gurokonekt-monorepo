@@ -172,7 +172,8 @@ export class ProfileService {
     
     return throwError(() => ({
       message: errorMessage,
-      statusCode: statusCode
+      statusCode: statusCode,
+      originalError: error instanceof HttpErrorResponse ? error : undefined,
     }));
   }
 }

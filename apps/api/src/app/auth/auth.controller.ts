@@ -32,6 +32,7 @@ import {
   ResetPasswordDto,
   VerifyResetPinDto,
   VerifyPasswordChangeDto,
+  RefreshTokenDto,
 } from '@gurokonekt/models';
 
 
@@ -203,6 +204,53 @@ export class AuthController {
       );
     }
     
+    return response;
+  }
+
+  // ====================================================
+  // POST - Refresh Token (public — no JWT required)
+  // ====================================================
+
+  @Post('refresh-token')
+  @ApiOperation({
+    summary: 'Refresh access token',
+    description:
+      'Exchanges a valid Supabase refresh token for a new access token and refresh token. ' +
+      'Supabase refresh tokens are single-use — always replace both tokens in client storage after success.',
+  })
+  @ApiBody({ type: RefreshTokenDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Token refreshed successfully',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Token refreshed successfully',
+        data: {
+          accessToken: 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...',
+          refreshToken: 'v1.MR...',
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Refresh token is invalid or expired.' })
+  async refreshToken(@Body() input: RefreshTokenDto) {
+    const response = await this.authService.refreshToken(input);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.UNAUTHORIZED
+      );
+    }
+
     return response;
   }
 

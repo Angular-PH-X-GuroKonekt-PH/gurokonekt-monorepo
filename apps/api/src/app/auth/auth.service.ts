@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto } from '@gurokonekt/models';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto, RefreshTokenDto } from '@gurokonekt/models';
 import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, UserRole, UserStatus, LogsActionType,
   ResendOTPTypes, REDIRECT_LINKS
 } from '@gurokonekt/models';
@@ -567,6 +567,29 @@ export class AuthService {
         user: userData,
         session: data.session,
         redirectUrl,
+      });
+    } catch (error) {
+      return this.errorHandler.handleUnexpectedError(error, 'INTERNAL_SERVER_ERROR');
+    }
+  }
+
+  /**
+   * Refresh access token using a Supabase refresh token.
+   * Each successful refresh invalidates the previous refresh token.
+   */
+  async refreshToken(input: RefreshTokenDto): Promise<ResponseDto> {
+    try {
+      const { data, error } = await this.supabase.client.auth.refreshSession({
+        refresh_token: input.refreshToken,
+      });
+
+      if (error || !data.session?.access_token || !data.session?.refresh_token) {
+        return AuthResponseFactory.errorByKey('REFRESH_TOKEN_INVALID');
+      }
+
+      return AuthResponseFactory.successByKey('REFRESH_TOKEN', {
+        accessToken: data.session.access_token,
+        refreshToken: data.session.refresh_token,
       });
     } catch (error) {
       return this.errorHandler.handleUnexpectedError(error, 'INTERNAL_SERVER_ERROR');
