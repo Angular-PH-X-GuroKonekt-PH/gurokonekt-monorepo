@@ -607,12 +607,12 @@
 
         <!-- Error Message -->
         @if (submissionState.error()) {
-        <div class="mb-6 p-4 rounded-xl bg-red-50 border border-red-200">
-          <div class="flex items-center gap-2">
+        <div class="mt-6 p-4 rounded-xl bg-red-50 border border-red-200">
+          <div class="flex items-start gap-3">
             <img
               src="assets/icons/alert-triangle.svg"
               alt="Error"
-              class="w-5 h-5"
+              class="w-5 h-5 shrink-0 mt-0.5"
             />
             <p class="text-sm text-red-700 font-medium">
               {{ submissionState.error() }}
@@ -623,7 +623,7 @@
 
         <!-- Step Navigation -->
         <div
-          class="flex items-center justify-between mt-8 pt-6 border-t border-gray-200"
+          class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200"
         >
           <!-- Previous Button -->
           @if (currentStep() > 1) {

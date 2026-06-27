@@ -96,20 +96,6 @@
         (ngSubmit)="onSubmit()"
         (keydown.escape)="closePhoneCountryDropdown()"
       >
-        <!-- Error Message -->
-        @if (submissionState.error()) {
-        <div class="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl">
-          <div class="flex items-center gap-2">
-            <img
-              src="assets/icons/alert-triangle.svg"
-              alt="Error"
-              class="w-5 h-5"
-            />
-            <p class="text-sm text-red-600">{{ submissionState.error() }}</p>
-          </div>
-        </div>
-        }
-
         <!-- Step 1: Personal Information -->
         @if (currentStep() === 1) {
         <div class="space-y-6">
@@ -907,9 +893,25 @@
         </div>
         }
 
+        <!-- Error Message -->
+        @if (submissionState.error()) {
+        <div class="mt-6 p-4 rounded-xl bg-red-50 border border-red-200">
+          <div class="flex items-start gap-3">
+            <img
+              src="assets/icons/alert-triangle.svg"
+              alt="Error"
+              class="w-5 h-5 shrink-0 mt-0.5"
+            />
+            <p class="text-sm text-red-700 font-medium">
+              {{ submissionState.error() }}
+            </p>
+          </div>
+        </div>
+        }
+
         <!-- Navigation Buttons -->
         <div
-          class="flex items-center justify-between mt-10 pt-6 border-t border-gray-200"
+          class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200"
         >
           <!-- Previous Button -->
           @if (currentStep() > 1) {

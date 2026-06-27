@@ -14,6 +14,9 @@ export abstract class BaseStepperRegistrationComponent extends BaseRegistrationC
   
   protected goToStep(step: number): void {
     if (this.canNavigateToStep(step)) {
+      if (step < this.currentStep()) {
+        this.clearSubmissionError();
+      }
       this.currentStep.set(step);
       this.scrollToTop();
     }
@@ -28,6 +31,7 @@ export abstract class BaseStepperRegistrationComponent extends BaseRegistrationC
   
   protected previousStep(): void {
     if (this.currentStep() > 1) {
+      this.clearSubmissionError();
       this.currentStep.update(step => step - 1);
       this.scrollToTop();
     }
