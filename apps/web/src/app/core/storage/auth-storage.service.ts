@@ -2,6 +2,7 @@ import { Injectable } from '@angular/core';
 import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
 
 const TOKEN_KEY = 'auth_token';
+const REFRESH_TOKEN_KEY = 'auth_refresh_token';
 const USER_KEY = 'auth_user';
 const LAST_REGISTERED_EMAIL_KEY = 'last_registered_email';
 
@@ -13,6 +14,18 @@ export class AuthStorageService {
 
   setToken(token: string): void {
     localStorage.setItem(TOKEN_KEY, token);
+  }
+
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  }
+
+  setRefreshToken(token: string): void {
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  }
+
+  clearRefreshToken(): void {
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 
   getUser(): AuthUser | null {
@@ -43,6 +56,7 @@ export class AuthStorageService {
 
   clear(): void {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
   }
 }

@@ -6,7 +6,7 @@ import { AuthResponse } from '@gurokonekt/models/interfaces/auth/auth-response.i
 import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
 import { getAuthErrorMessage, logError } from '../../../shared/utils/http-error.util';
-import type { LoginApiResponse } from '../../../shared/interfaces/auth-api.interface';
+import type { LoginApiResponse, RefreshTokenApiResponse } from '../../../shared/interfaces/auth-api.interface';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 import { API_CONFIG } from '../../config/api.config';
 
@@ -95,9 +95,32 @@ export class AuthService {
             isProfileComplete: response.data.user.isProfileComplete,
           },
           accessToken: response.data.session.access_token,
+          refreshToken: response.data.session.refresh_token,
           token: response.data.session.access_token,
           message: response.message
         } as AuthResponse;
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Refresh access token using a stored refresh token
+   */
+  refreshToken(refreshToken: string): Observable<{ accessToken: string; refreshToken: string }> {
+    return this.http.post<RefreshTokenApiResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.refreshToken),
+      { refreshToken }
+    ).pipe(
+      map((response) => {
+        if (!response.data?.accessToken || !response.data?.refreshToken) {
+          throw new Error(response.message || 'Token refresh failed');
+        }
+
+        return {
+          accessToken: response.data.accessToken,
+          refreshToken: response.data.refreshToken,
+        };
       }),
       catchError(this.handleError)
     );

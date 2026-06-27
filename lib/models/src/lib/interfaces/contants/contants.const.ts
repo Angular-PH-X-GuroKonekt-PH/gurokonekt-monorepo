@@ -55,6 +55,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Confirmation email sent successfully',
     },
+    REFRESH_TOKEN: {
+      code: 200,
+      message: 'Token refreshed successfully',
+    },
 
     UPLOAD_FILES: {
       code: 200,
@@ -389,6 +393,10 @@ export const API_RESPONSE = {
     SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS: {
       code: 429,
       message: 'Too many failed login attempts. Try again later.',
+    },
+    REFRESH_TOKEN_INVALID: {
+      code: 401,
+      message: 'Refresh token is invalid or expired. Please log in again.',
     },
     PASSWORD_INCORRECT: {
       code: 401,

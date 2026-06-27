@@ -13,7 +13,7 @@ export class Login {
 
 export class LoginSuccess {
   static readonly type = '[Auth] Login Success';
-  constructor(public payload: { user: AuthUser; token?: string; message?: string }) {}
+  constructor(public payload: { user: AuthUser; token?: string; refreshToken?: string; message?: string }) {}
 }
 
 export class LoginFailure {
@@ -87,6 +87,10 @@ export class UpdateMentorProfileFailure {
 
 export class Logout {
   static readonly type = '[Auth] Logout';
+}
+
+export class SessionExpired {
+  static readonly type = '[Auth] Session Expired';
 }
 
 export class ClearAuthMessages {

@@ -10,6 +10,8 @@ import { ProfileService } from '../../../core/profile/profile.service';
 import { AuthStateModel, initialAuthState } from '../models/auth.state.model';
 import { AuthStorageService } from '../../storage/auth-storage.service';
 import { APP_ROUTES } from '../../../shared/constants/routes';
+import { ToastService } from '../../../shared/services/toast.service';
+import { isSessionExpiredError, SESSION_EXPIRED_MESSAGE } from '../../../shared/utils/http-error.util';
 import * as AuthActions from './auth.actions';
 
 @State<AuthStateModel>({
@@ -22,6 +24,7 @@ export class AuthState {
   private readonly profileService = inject(ProfileService);
   private readonly storage = inject(AuthStorageService);
   private readonly router = inject(Router);
+  private readonly toastService = inject(ToastService);
 
 
   @Action(AuthActions.Login)
@@ -38,6 +41,7 @@ export class AuthState {
         ctx.dispatch(new AuthActions.LoginSuccess({
           user: response.user,
           token: response.accessToken,
+          refreshToken: response.refreshToken,
           message: response.message
         }));
       }),
@@ -51,6 +55,7 @@ export class AuthState {
   @Action(AuthActions.RestoreSession)
   restoreSession(ctx: StateContext<AuthStateModel>) {
     const token = this.storage.getToken();
+    const refreshToken = this.storage.getRefreshToken();
     const user = this.storage.getUser();
 
     if (!token || !user) {
@@ -63,21 +68,26 @@ export class AuthState {
       return;
     }
 
-    ctx.patchState({ user, token, isAuthenticated: true });
+    ctx.patchState({ user, token, refreshToken, isAuthenticated: true });
   }
 
   @Action(AuthActions.LoginSuccess)
   loginSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.LoginSuccess) {
-    const { user, token, message } = action.payload;
+    const { user, token, refreshToken, message } = action.payload;
 
     if (token) {
       this.storage.setToken(token);
       this.storage.setUser(user);
     }
 
+    if (refreshToken) {
+      this.storage.setRefreshToken(refreshToken);
+    }
+
     ctx.patchState({
       user,
       token: token || null,
+      refreshToken: refreshToken || null,
       isAuthenticated: !!token,
       isLoginLoading: false,
       isLoading: false,
@@ -94,6 +104,7 @@ export class AuthState {
     ctx.patchState({
       user: null,
       token: null,
+      refreshToken: null,
       isAuthenticated: false,
       isLoginLoading: false,
       isLoading: false,
@@ -211,6 +222,11 @@ export class AuthState {
         ctx.dispatch(new AuthActions.UpdateMenteeProfileSuccess('Profile updated successfully!'));
       }),
       catchError((error) => {
+        if (this.isSessionExpiredFailure(error)) {
+          this.dispatchSessionExpiredIfNeeded(ctx);
+          return throwError(() => error);
+        }
+
         ctx.dispatch(new AuthActions.UpdateMenteeProfileFailure(this.getErrorMessage(error)));
         return throwError(() => error);
       })
@@ -251,6 +267,11 @@ export class AuthState {
         ctx.dispatch(new AuthActions.UpdateMentorProfileSuccess('Mentor profile updated successfully!'));
       }),
       catchError((error) => {
+        if (this.isSessionExpiredFailure(error)) {
+          this.dispatchSessionExpiredIfNeeded(ctx);
+          return throwError(() => error);
+        }
+
         ctx.dispatch(new AuthActions.UpdateMentorProfileFailure(this.getErrorMessage(error)));
         return throwError(() => error);
       })
@@ -285,6 +306,14 @@ export class AuthState {
     this.router.navigate([APP_ROUTES.LOGIN]);
   }
 
+  @Action(AuthActions.SessionExpired)
+  sessionExpired(ctx: StateContext<AuthStateModel>) {
+    this.storage.clear();
+    ctx.setState(initialAuthState);
+    this.toastService.error(SESSION_EXPIRED_MESSAGE, 'Session Expired');
+    void this.router.navigate([APP_ROUTES.LOGIN]);
+  }
+
   @Action(AuthActions.ClearAuthMessages)
   clearMessages(ctx: StateContext<AuthStateModel>) {
     ctx.patchState({ successMessage: null, errorMessage: null });
@@ -296,17 +325,30 @@ export class AuthState {
     ctx.setState(initialAuthState);
   }
 
-  private getErrorMessage(error: { status?: number; message?: string; originalError?: unknown; error?: unknown }): string {
-    const originalError = error?.originalError as { status?: number; error?: { message?: string } } | undefined;
-    const payloadError = error?.error as { message?: string } | undefined;
-    const status = error?.status ?? originalError?.status;
+  private getErrorMessage(error: { status?: number; statusCode?: number; message?: string; originalError?: unknown; error?: unknown }): string {
+    const originalError = error?.originalError as { status?: number; url?: string; error?: { message?: string; errorCode?: string } } | undefined;
+    const payloadError = error?.error as { message?: string; errorCode?: string } | undefined;
+    const status = error?.status ?? error?.statusCode ?? originalError?.status;
+    const errorCode = payloadError?.errorCode ?? originalError?.error?.errorCode;
     const serverMessage =
       originalError?.error?.message ||
       payloadError?.message ||
       error?.message;
 
     if (status === 400) return serverMessage || 'Please check your information and try again.';
-    if (status === 401) return 'Invalid email or password. Please try again.';
+    if (status === 401) {
+      if (errorCode === 'SESSION_EXPIRED') {
+        return 'Your session has expired. Please log in again.';
+      }
+
+      const url = originalError?.url ?? '';
+      const isLoginRequest = url.includes('/auth/login');
+      if (!isLoginRequest && url) {
+        return 'Your session has expired. Please log in again.';
+      }
+
+      return 'Invalid email or password. Please try again.';
+    }
     if (status === 403) return 'Please verify your email before logging in.';
     if (status === 409) return 'An account with this email already exists. Please try logging in instead.';
     if (status === 429) return serverMessage || 'Too many login attempts. Please try again later.';
@@ -314,5 +356,15 @@ export class AuthState {
     if (serverMessage) return serverMessage;
 
     return 'An unexpected error occurred. Please try again.';
+  }
+
+  private isSessionExpiredFailure(error: unknown): boolean {
+    return isSessionExpiredError(error);
+  }
+
+  private dispatchSessionExpiredIfNeeded(ctx: StateContext<AuthStateModel>): void {
+    if (ctx.getState().isAuthenticated) {
+      ctx.dispatch(new AuthActions.SessionExpired());
+    }
   }
 }

@@ -1,22 +1,105 @@
 import { HttpErrorResponse } from '@angular/common/http';
 
+const SESSION_EXPIRED_CODE = 'SESSION_EXPIRED';
+export const SESSION_EXPIRED_MESSAGE = 'Your session has expired. Please log in again.';
+
+const PUBLIC_AUTH_PATHS = [
+  '/auth/login',
+  '/auth/register-mentee',
+  '/auth/register-mentor',
+  '/auth/verify-email',
+  '/auth/resend-confirmation-link',
+  '/auth/refresh-token',
+] as const;
+
+function isUnauthorizedProtectedRoute(error: HttpErrorResponse): boolean {
+  const url = error.url ?? '';
+  return !PUBLIC_AUTH_PATHS.some((path) => url.includes(path));
+}
+
+export function isSessionExpiredError(error: unknown): boolean {
+  if (!error || typeof error !== 'object') {
+    return false;
+  }
+
+  const errorCode = getErrorCode(error as Record<string, unknown>);
+  if (errorCode === SESSION_EXPIRED_CODE) {
+    return true;
+  }
+
+  const message = (error as { message?: string }).message;
+  if (message === SESSION_EXPIRED_MESSAGE) {
+    return true;
+  }
+
+  const originalError = (error as { originalError?: HttpErrorResponse }).originalError;
+  if (originalError instanceof HttpErrorResponse && originalError.status === 401) {
+    return isUnauthorizedProtectedRoute(originalError);
+  }
+
+  const statusCode = (error as { statusCode?: number }).statusCode;
+  if (statusCode === 401 && originalError instanceof HttpErrorResponse) {
+    return isUnauthorizedProtectedRoute(originalError);
+  }
+
+  return false;
+}
+
+function getErrorCode(error: HttpErrorResponse | Record<string, unknown>): string | undefined {
+  if (error instanceof HttpErrorResponse) {
+    return error.error?.errorCode;
+  }
+
+  const originalError = error['originalError'] as HttpErrorResponse | undefined;
+  if (originalError instanceof HttpErrorResponse) {
+    return originalError.error?.errorCode;
+  }
+
+  const nestedError = error['error'] as { errorCode?: string } | undefined;
+  return nestedError?.errorCode;
+}
+
 /**
  * Centralized HTTP error handling helper for consistent error messaging
  */
 export function getErrorMessage(error: HttpErrorResponse | any): string {
+  const errorCode = getErrorCode(error);
+
   if (error instanceof HttpErrorResponse) {
     const serverMessage = error.error?.message || error.message;
-    return mapStatusToMessage(error.status, serverMessage);
+    return mapStatusToMessage(error.status, serverMessage, errorCode, error);
   }
 
   if (error && typeof error === 'object' && 'status' in error) {
-    return mapStatusToMessage(error.status, error.message);
+    return mapStatusToMessage(error.status, error.message, errorCode);
+  }
+
+  if (error && typeof error === 'object' && 'statusCode' in error) {
+    const originalError = error.originalError as HttpErrorResponse | undefined;
+    return mapStatusToMessage(error.statusCode, error.message, errorCode, originalError);
   }
 
   return error?.message || 'An unexpected error occurred. Please try again.';
 }
 
-function mapStatusToMessage(status: number, serverMessage?: string): string {
+function mapStatusToMessage(
+  status: number,
+  serverMessage?: string,
+  errorCode?: string,
+  error?: HttpErrorResponse | Record<string, unknown>
+): string {
+  if (status === 401 && errorCode === SESSION_EXPIRED_CODE) {
+    return SESSION_EXPIRED_MESSAGE;
+  }
+
+  if (
+    status === 401 &&
+    error instanceof HttpErrorResponse &&
+    isUnauthorizedProtectedRoute(error)
+  ) {
+    return SESSION_EXPIRED_MESSAGE;
+  }
+
   switch (status) {
     case 400:
       return serverMessage || 'Please check your information and try again.';
@@ -43,6 +126,12 @@ function mapStatusToMessage(status: number, serverMessage?: string): string {
  * Get user-friendly error message for registration errors
  */
 export function getAuthErrorMessage(error: any): string {
+  const errorCode = getErrorCode(error);
+
+  if (error.status === 401 && errorCode === SESSION_EXPIRED_CODE) {
+    return SESSION_EXPIRED_MESSAGE;
+  }
+
   const message = getErrorMessage(error);
 
   if (error.status === 401) {

@@ -3,6 +3,7 @@ import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface
 export interface AuthStateModel {
   user: AuthUser | null;
   token: string | null;
+  refreshToken: string | null;
   isAuthenticated: boolean;
 
   isLoading: boolean;
@@ -19,6 +20,7 @@ export interface AuthStateModel {
 export const initialAuthState: AuthStateModel = {
   user: null,
   token: null,
+  refreshToken: null,
   isAuthenticated: false,
 
   isLoading: false,
