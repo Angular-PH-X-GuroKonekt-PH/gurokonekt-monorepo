@@ -183,6 +183,10 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
   protected handleSubmissionError(message: string): void {
     handleSubmissionError(this.submissionState, message);
   }
+
+  protected clearSubmissionError(): void {
+    this.submissionState.error.set(null);
+  }
   
   protected scrollToTop(): void {
     window.scrollTo(0, 0);
