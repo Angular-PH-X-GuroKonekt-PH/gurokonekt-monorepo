@@ -1,12 +1,16 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { API_RESPONSE, ResponseDto, ResponseStatus, UserRole, UserStatus } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 
 @Injectable()
 export class AdminReportsService {
   private readonly logger = new Logger(AdminReportsService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly supabase: SupabaseService,
+  ) {}
 
   async getOverview(): Promise<ResponseDto> {
     try {
@@ -19,6 +23,7 @@ export class AdminReportsService {
         inactiveMentors,
         bookingGroups,
         mentorProfilesWithRate,
+        unverifiedEmailAccounts,
       ] = await Promise.all([
         this.prisma.db.user.count({ where: { role: UserRole.Mentor } }),
         this.prisma.db.user.count({ where: { role: UserRole.Mentee } }),
@@ -37,6 +42,7 @@ export class AdminReportsService {
           where: { sessionRate: { not: null } },
           select: { sessionRate: true },
         }),
+        this.supabase.countUnverifiedEmailAccounts(),
       ]);
 
       const byStatus: Record<string, number> = {};
@@ -65,6 +71,7 @@ export class AdminReportsService {
             totalMentors,
             totalMentees,
             total: totalMentors + totalMentees,
+            unverifiedEmailAccounts,
             mentors: { approved: approvedMentors, pending: pendingMentors, rejected: rejectedMentors, inactive: inactiveMentors },
           },
           sessions: {

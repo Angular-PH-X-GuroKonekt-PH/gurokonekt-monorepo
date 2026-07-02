@@ -34,4 +34,29 @@ export class SupabaseService {
   get clientAdmin(): SupabaseClient {
     return this.supabaseAdmin;
   }
+
+  /**
+   * Counts auth accounts whose email has not been confirmed yet.
+   * Email confirmation lives in Supabase (auth.users.email_confirmed_at), not
+   * in the local User table, so we paginate the admin user list and tally the
+   * accounts with no confirmation timestamp.
+   */
+  async countUnverifiedEmailAccounts(): Promise<number> {
+    const perPage = 1000;
+    let page = 1;
+    let count = 0;
+
+    for (;;) {
+      const { data, error } = await this.supabaseAdmin.auth.admin.listUsers({ page, perPage });
+      if (error) throw error;
+
+      const users = data?.users ?? [];
+      count += users.filter((u) => !u.email_confirmed_at).length;
+
+      if (users.length < perPage) break;
+      page += 1;
+    }
+
+    return count;
+  }
 }

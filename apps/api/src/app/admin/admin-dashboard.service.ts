@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { API_RESPONSE, ResponseDto, ResponseStatus, UserRole, UserStatus } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 import { GetGrowthChartQueryDto } from '@gurokonekt/models';
 
 type GrowthPeriod = 'daily' | 'weekly' | 'monthly' | 'annually';
@@ -10,7 +11,10 @@ type GrowthWindow = '7d' | '30d' | '3m' | '6m' | '12m';
 export class AdminDashboardService {
   private readonly logger = new Logger(AdminDashboardService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly supabase: SupabaseService,
+  ) {}
 
   async getDashboard(): Promise<ResponseDto> {
     try {
@@ -20,13 +24,16 @@ export class AdminDashboardService {
       const [
         totalMentors,
         totalMentees,
-        pendingVerifications,
+        pendingMentorApprovals,
         activeBookings,
         completedSessions,
         newMentorsThisMonth,
         newMenteesThisMonth,
+        unverifiedEmailAccounts,
       ] = await Promise.all([
-        this.prisma.db.user.count({ where: { role: UserRole.Mentor } }),
+        // "Total Mentors" counts approved mentors only — pending/rejected/inactive
+        // mentors are not yet active on the platform.
+        this.prisma.db.user.count({ where: { role: UserRole.Mentor, status: UserStatus.Approved } }),
         this.prisma.db.user.count({ where: { role: UserRole.Mentee } }),
         this.prisma.db.user.count({
           where: {
@@ -42,6 +49,7 @@ export class AdminDashboardService {
         this.prisma.db.user.count({
           where: { role: UserRole.Mentee, createdAt: { gte: startOfMonth } },
         }),
+        this.supabase.countUnverifiedEmailAccounts(),
       ]);
 
       return {
@@ -52,11 +60,12 @@ export class AdminDashboardService {
           totalMentors,
           totalMentees,
           totalUsers: totalMentors + totalMentees,
-          pendingVerifications,
+          pendingMentorApprovals,
           activeBookings,
           completedSessions,
           newMentorsThisMonth,
           newMenteesThisMonth,
+          unverifiedEmailAccounts,
         },
       };
     } catch (error: any) {

@@ -21,16 +21,16 @@
             <p class="text-xs text-gray-500 mt-1">Total Users</p>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p class="text-2xl font-bold text-gray-900">{{ ov.users.totalMentors }}</p>
-            <p class="text-xs text-gray-500 mt-1">Mentors</p>
+            <p class="text-2xl font-bold text-blue-600">{{ ov.users.mentors.approved }}</p>
+            <p class="text-xs text-gray-500 mt-1">Mentors (Approved)</p>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
             <p class="text-2xl font-bold text-gray-900">{{ ov.users.totalMentees }}</p>
             <p class="text-xs text-gray-500 mt-1">Mentees</p>
           </div>
           <div class="bg-white rounded-xl border border-gray-200 p-4 text-center">
-            <p class="text-2xl font-bold text-blue-600">{{ ov.users.mentors.approved }}</p>
-            <p class="text-xs text-gray-500 mt-1">Approved Mentors</p>
+            <p class="text-2xl font-bold text-red-600">{{ ov.users.unverifiedEmailAccounts ?? 0 }}</p>
+            <p class="text-xs text-gray-500 mt-1">Unverified Emails</p>
           </div>
         </div>
         <div class="grid grid-cols-2 sm:grid-cols-3 gap-4">
