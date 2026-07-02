@@ -9,9 +9,12 @@ export interface DashboardMetrics {
   totalUsers: number;
   totalMentors: number;
   totalMentees: number;
-  totalBookings: number;
-  pendingApprovals: number;
-  activeSessions: number;
+  pendingMentorApprovals: number;
+  activeBookings: number;
+  completedSessions: number;
+  newMentorsThisMonth: number;
+  newMenteesThisMonth: number;
+  unverifiedEmailAccounts: number;
 }
 
 export interface GrowthChartData {

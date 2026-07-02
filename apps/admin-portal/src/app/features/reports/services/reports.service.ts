@@ -10,6 +10,7 @@ export interface OverviewReport {
     totalMentors: number;
     totalMentees: number;
     total: number;
+    unverifiedEmailAccounts: number;
     mentors: { approved: number; pending: number; rejected: number; inactive: number };
   };
   sessions: {

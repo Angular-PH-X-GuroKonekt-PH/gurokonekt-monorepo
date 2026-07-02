@@ -15,6 +15,7 @@ export * from './lib/interfaces/user/mentor-dashboard.model';
 export * from './lib/interfaces/user/mentee-dashboard.model';
 export * from './lib/dto/response/response.dto';
 export * from './lib/dto/constants/select-fields.const';
+export * from './lib/dto/constants/mentor-access.const';
 export * from './lib/dto/storage/storage.dto';
 export * from './lib/dto/auth/signup-mentee.dto';
 export * from './lib/dto/auth/signup-mentor.dto';

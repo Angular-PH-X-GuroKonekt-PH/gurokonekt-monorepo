@@ -12,6 +12,7 @@ import {
   SearchSortBy,
   SearchSortOrder,
   UserRole,
+  MentorAccess,
   SelectFields
 } from '@gurokonekt/models';
 
@@ -153,12 +154,7 @@ export class SearchService {
     keywordMatchIds: string[],
   ) {
     // Top-level AND conditions applied to the User model
-    const topLevelAnd: object[] = [
-      { role: UserRole.Mentor },
-      { status: 'active' },
-      { isMentorApproved: true },
-      { isMentorProfileComplete: true },
-    ];
+    const topLevelAnd: object[] = [MentorAccess.approvedMentorWhere()];
 
     // Language filter (case-insensitive)
     if (dto.language) {
@@ -359,6 +355,7 @@ export class SearchService {
               language: true,
               country: true,
               timezone: true,
+              role: true,
               status: true,
               isMentorApproved: true,
               isMentorProfileComplete: true,
@@ -370,12 +367,7 @@ export class SearchService {
         },
       });
 
-      if (
-        !profile ||
-        profile.user.status !== 'active' ||
-        !profile.user.isMentorApproved ||
-        !profile.user.isMentorProfileComplete
-      ) {
+      if (!profile || !MentorAccess.isApprovedMentor(profile.user)) {
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,

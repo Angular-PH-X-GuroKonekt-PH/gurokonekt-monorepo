@@ -12,7 +12,7 @@
   }
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
     <app-metric-card
-      label="Total Mentors"
+      label="Approved Mentors"
       [value]="metrics()?.totalMentors ?? null"
       icon="academic-cap"
       iconBg="bg-blue-50 text-blue-600"
@@ -25,25 +25,34 @@
       iconBg="bg-green-50 text-green-600"
       [loading]="metricsLoading()"
     />
-    <app-metric-card
-      label="Pending Verifications"
-      [value]="metrics()?.pendingApprovals ?? null"
-      icon="clock"
-      iconBg="bg-yellow-50 text-yellow-600"
-      [loading]="metricsLoading()"
-    />
+    <a [routerLink]="['/', pendingApprovalRoute]" class="block focus:outline-none focus:ring-2 focus:ring-orange-400 rounded-xl">
+      <app-metric-card
+        label="Pending Mentor Approval"
+        [value]="metrics()?.pendingMentorApprovals ?? null"
+        icon="clock"
+        iconBg="bg-yellow-50 text-yellow-600"
+        [loading]="metricsLoading()"
+      />
+    </a>
     <app-metric-card
       label="Active Bookings"
-      [value]="metrics()?.activeSessions ?? null"
+      [value]="metrics()?.activeBookings ?? null"
       icon="calendar-days"
       iconBg="bg-orange-50 text-orange-500"
       [loading]="metricsLoading()"
     />
     <app-metric-card
-      label="Total Bookings"
-      [value]="metrics()?.totalBookings ?? null"
+      label="Completed Sessions"
+      [value]="metrics()?.completedSessions ?? null"
       icon="chart-bar"
       iconBg="bg-purple-50 text-purple-600"
+      [loading]="metricsLoading()"
+    />
+    <app-metric-card
+      label="Unverified Emails"
+      [value]="metrics()?.unverifiedEmailAccounts ?? null"
+      icon="mail"
+      iconBg="bg-red-50 text-red-600"
       [loading]="metricsLoading()"
     />
   </div>

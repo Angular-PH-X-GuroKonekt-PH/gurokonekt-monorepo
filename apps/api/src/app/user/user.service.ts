@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_RESPONSE, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateAvailabilitySlotDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
+import { API_RESPONSE, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorAccess, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateAvailabilitySlotDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
 import { StorageService } from '../storage/storage.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { instanceToPlain } from 'class-transformer';
@@ -442,10 +442,7 @@ export class UserService {
         }),
         this.prisma.db.user.findMany({
           where: {
-            role: UserRole.Mentor,
-            isMentorApproved: true,
-            isMentorProfileComplete: true,
-            status: UserStatus.Approved,
+            ...MentorAccess.approvedMentorWhere(),
             ...(areasOfInterest.length > 0 && {
               mentorProfiles: {
                 some: { areasOfExpertise: { hasSome: areasOfInterest } },
@@ -844,17 +841,74 @@ export class UserService {
     }
   }
 
-  async updateUserRole(dto: UpdateUserRoleDto, userId: string): Promise<ResponseDto> {
+  async updateUserRole(
+    dto: UpdateUserRoleDto,
+    userId: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<ResponseDto> {
       try {
-        const user = await this.prisma.db.user.update({
+        const existing = await this.prisma.db.user.findUnique({
           where: { id: userId },
-          data: {
-            role: dto.role,
-            updatedBy: {
-              connect: { id: dto.updatedById },
+          select: { id: true, role: true },
+        });
+
+        if (!existing) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+            message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+            data: null,
+          };
+        }
+
+        // A role change must also transition the account state, otherwise the
+        // user keeps the previous role's lifecycle status/flags/profile (e.g. a
+        // mentor moved to mentee would keep `pending_approval` + mentor profile).
+        const roleTransitionData: Record<string, unknown> = { role: dto.role };
+        if (dto.role === UserRole.Mentee) {
+          // Clean mentee state — no mentor onboarding leftovers.
+          roleTransitionData.status = UserStatus.Active;
+          roleTransitionData.isMentorApproved = false;
+          roleTransitionData.isMentorProfileComplete = false;
+        } else if (dto.role === UserRole.Mentor) {
+          // Promotion to mentor must go through the approval flow again.
+          roleTransitionData.status = UserStatus.PendingApproval;
+          roleTransitionData.isMentorApproved = false;
+          roleTransitionData.isMentorProfileComplete = false;
+        } else if (dto.role === UserRole.Admin) {
+          roleTransitionData.status = UserStatus.Active;
+        }
+
+        const user = await this.prisma.db.$transaction(async (tx) => {
+          const updated = await tx.user.update({
+            where: { id: userId },
+            data: {
+              ...roleTransitionData,
+              updatedBy: { connect: { id: dto.updatedById } },
             },
+            select: SelectFields.getUserCredentialsSelect(),
+          });
+
+          // Drop the now-irrelevant mentor profile when leaving the mentor role,
+          // mirroring the mentor-downgrade flow.
+          if (existing.role === UserRole.Mentor && dto.role !== UserRole.Mentor) {
+            await tx.mentorProfile.deleteMany({ where: { userId } });
+          }
+
+          return updated;
+        });
+
+        await this.prisma.db.logs.create({
+          data: {
+            actionType: LogsActionType.Update,
+            targetId: userId,
+            details: `${API_RESPONSE.SUCCESS.UPDATE_USER_ROLE.message} (${existing.role} → ${dto.role})`,
+            metadata: { previousRole: existing.role, newRole: dto.role },
+            ipAddress,
+            userAgent,
+            createdById: dto.updatedById,
           },
-          select: SelectFields.getUserCredentialsSelect(),
         });
 
         return {
