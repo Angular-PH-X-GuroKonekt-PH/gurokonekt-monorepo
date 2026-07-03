@@ -141,7 +141,7 @@ export class ProfileService {
     }
 
     values.forEach((value) => {
-      formData.append(key, value);
+      formData.append(`${key}[]`, value);
     });
   }
 
