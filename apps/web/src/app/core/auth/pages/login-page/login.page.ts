@@ -91,9 +91,11 @@ export class LoginPage extends BaseFormComponent implements OnInit {
       const user = this.store.selectSnapshot(AuthSelectors.user);
       if (user) {
         if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
-            this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
+          await this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
+          return;
         }
-        this.router.navigate([APP_ROUTES.DASHBOARD]);
+
+        await this.router.navigate([APP_ROUTES.DASHBOARD]);
       }
     } catch {
       // Error is already reflected in the errorMessage signal via state
