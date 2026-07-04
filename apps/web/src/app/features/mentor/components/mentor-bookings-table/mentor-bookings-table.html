@@ -3,13 +3,13 @@
         <h2 class="text-lg font-bold text-gray-800">Recent Bookings</h2>
 
         <div class="flex gap-1">
-            @for (tab of mentorBookings.bookingTabs; track tab) {
-            <button type="button" (click)="mentorBookings.setActiveTab(tab)"
-                [class.bg-gray-800]="mentorBookings.activeTab() === tab"
-                [class.text-white]="mentorBookings.activeTab() === tab"
-                [class.text-gray-500]="mentorBookings.activeTab() !== tab"
-                [class.hover:text-gray-700]="mentorBookings.activeTab() !== tab"
-                [class.hover:bg-gray-100]="mentorBookings.activeTab() !== tab"
+            @for (tab of bookingTabs; track tab) {
+            <button type="button" (click)="setActiveTab(tab)"
+                [class.bg-gray-800]="activeTab() === tab"
+                [class.text-white]="activeTab() === tab"
+                [class.text-gray-500]="activeTab() !== tab"
+                [class.hover:text-gray-700]="activeTab() !== tab"
+                [class.hover:bg-gray-100]="activeTab() !== tab"
                 class="px-4 py-1.5 rounded-lg text-sm font-medium transition-all">
                 {{ tab }}
             </button>
@@ -39,11 +39,11 @@
                 </tr>
             </thead>
 
-            @if (mentorBookings.isBookingsLoading()) {
+            @if (isLoading()) {
             <app-booking-table-skeleton [count]="5" />
             } @else {
             <tbody class="divide-y divide-gray-50">
-                @for (booking of mentorBookings.filteredBookings(); track booking.id) {
+                @for (booking of displayedBookings(); track booking.id) {
                 <tr class="hover:bg-gray-50 transition-colors">
                     <td class="px-6 py-4">
                         <div class="flex items-center gap-3">
@@ -169,8 +169,13 @@
     }
 
     @if (footerMode() === 'pagination') {
-    <div class="px-6 py-4 border-t border-gray-100 text-center text-sm text-gray-400">
-        Pagination controls go here later.
+    <div class="px-6 py-4 border-t border-gray-100">
+        <gk-pagination
+            [currentPage]="currentPage()"
+            [pageSize]="pageSize()"
+            [totalItems]="totalItems()"
+            (pageChange)="changePage($event)"
+        />
     </div>
     }
 </div>

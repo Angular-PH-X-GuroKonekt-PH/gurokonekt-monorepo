@@ -153,5 +153,10 @@
     </div>
   </div>
 
-  <app-mentor-bookings-table footerMode="viewAll" />
+  <app-mentor-bookings-table
+    footerMode="viewAll"
+    [maxRows]="3"
+    [bookings]="mentorBookings.bookings()"
+    [isLoading]="mentorBookings.isBookingsLoading()"
+  />
 </div>
