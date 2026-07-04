@@ -329,11 +329,13 @@ export class ProfileSettingsPageComponent implements OnInit {
 
     if (!this.isValidAvatarType(file)) {
       this.avatarError.set('Only JPG, JPEG, and PNG formats are allowed');
+      input.value = '';
       return;
     }
 
     if (!this.isValidAvatarSize(file)) {
       this.avatarError.set('File size must be less than 5MB');
+      input.value = '';
       return;
     }
 
@@ -342,6 +344,7 @@ export class ProfileSettingsPageComponent implements OnInit {
     const reader = new FileReader();
     reader.onload = (e) => {
       this.avatarPreview.set(e.target?.result as string);
+      input.value = '';
     };
     reader.readAsDataURL(file);
   }
@@ -354,14 +357,20 @@ export class ProfileSettingsPageComponent implements OnInit {
     return file.size <= ProfileSettingsPageComponent.MAX_AVATAR_SIZE_BYTES;
   }
 
-  removeAvatarPreview(): void {
+  removeAvatarPreview(input?: HTMLInputElement): void {
     this.selectedAvatarFile = null;
     this.avatarPreview.set(null);
     this.avatarError.set(null);
+    if (input) {
+      input.value = '';
+    }
   }
 
-  removeCurrentAvatar(): void {
+  removeCurrentAvatar(input?: HTMLInputElement): void {
     this.currentAvatarUrl.set(null);
+    if (input) {
+      input.value = '';
+    }
   }
 
   // Availability Management

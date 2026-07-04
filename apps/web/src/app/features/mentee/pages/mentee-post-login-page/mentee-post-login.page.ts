@@ -148,11 +148,13 @@ export class MenteePostLoginPage implements OnInit {
 
     if (!this.isValidAvatarType(file)) {
       this.avatarError.set('Only JPG, JPEG, and PNG formats are allowed');
+      input.value = '';
       return;
     }
 
     if (!this.isValidAvatarSize(file)) {
       this.avatarError.set('File size must be less than 5MB');
+      input.value = '';
       return;
     }
 
@@ -161,6 +163,7 @@ export class MenteePostLoginPage implements OnInit {
     const reader = new FileReader();
     reader.onload = (e) => {
       this.avatarPreview.set(e.target?.result as string);
+      input.value = '';
     };
     reader.readAsDataURL(file);
   }
@@ -173,10 +176,13 @@ export class MenteePostLoginPage implements OnInit {
     return file.size <= MenteePostLoginPage.MAX_AVATAR_SIZE_BYTES;
   }
 
-  removeAvatar(): void {
+  removeAvatar(input?: HTMLInputElement): void {
     this.selectedAvatarFile = null;
     this.avatarPreview.set(null);
     this.avatarError.set(null);
+    if (input) {
+      input.value = '';
+    }
   }
 
   // Step Navigation

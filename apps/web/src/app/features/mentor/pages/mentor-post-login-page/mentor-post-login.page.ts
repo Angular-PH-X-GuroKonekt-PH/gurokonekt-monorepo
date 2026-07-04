@@ -137,11 +137,13 @@ export class MentorPostLoginPage implements OnInit {
 
     if (!MentorPostLoginPage.ALLOWED_AVATAR_TYPES.includes(file.type)) {
       this.avatarError.set('Only JPG, JPEG, and PNG formats are allowed');
+      input.value = '';
       return;
     }
 
     if (file.size > MentorPostLoginPage.MAX_AVATAR_SIZE_BYTES) {
       this.avatarError.set('File size must be less than 5MB');
+      input.value = '';
       return;
     }
 
@@ -149,14 +151,18 @@ export class MentorPostLoginPage implements OnInit {
     const reader = new FileReader();
     reader.onload = (loadEvent) => {
       this.avatarPreview.set(loadEvent.target?.result as string);
+      input.value = '';
     };
     reader.readAsDataURL(file);
   }
 
-  removeAvatar(): void {
+  removeAvatar(input?: HTMLInputElement): void {
     this.selectedAvatarFile = null;
     this.avatarPreview.set(null);
     this.avatarError.set(null);
+    if (input) {
+      input.value = '';
+    }
   }
 
   toggleDay(day: DaysInWeek): void {
