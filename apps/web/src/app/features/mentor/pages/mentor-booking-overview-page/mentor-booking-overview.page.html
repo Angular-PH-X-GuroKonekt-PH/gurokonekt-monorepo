@@ -6,6 +6,15 @@
         />        
     </div>
     <div>
-        <app-mentor-bookings-table footerMode="pagination" />
+        <app-mentor-bookings-table
+          footerMode="pagination"
+          [bookings]="mentorBookings.bookings()"
+          [isLoading]="mentorBookings.isBookingsLoading()"
+          [currentPage]="mentorBookings.currentPage()"
+          [pageSize]="mentorBookings.pageSize"
+          [totalItems]="mentorBookings.totalBookings()"
+          (pageChange)="mentorBookings.setPage($event)"
+          (tabChange)="mentorBookings.setActiveTab($event)"
+        />
     </div>
 </div>

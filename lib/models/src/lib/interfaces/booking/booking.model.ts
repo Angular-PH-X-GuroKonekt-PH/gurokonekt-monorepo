@@ -88,3 +88,17 @@ export interface ActiveBookingSummaryInterface {
   time: string;
   status: BookingStatus;
 }
+
+export interface BookingListResponse {
+  data: BookingCardInterface[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export interface MentorBookingQuery {
+  status?: BookingStatus;
+  page?: number;
+  limit?: number;
+}

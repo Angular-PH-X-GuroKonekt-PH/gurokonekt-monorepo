@@ -91,8 +91,8 @@ export class Pagination {
       'inline-flex h-10 min-w-10 items-center justify-center rounded-lg border px-3 text-sm font-semibold transition';
 
     return this.isCurrentPage(page)
-      ? `${base} border-blue-600 bg-blue-600 text-white`
-      : `${base} border-slate-200 text-slate-700 hover:border-blue-300 hover:text-blue-700`;
+      ? `${base} border-orange-500 bg-orange-500 text-white`
+      : `${base} border-slate-200 text-slate-700 hover:border-orange-300 hover:text-orange-600`;
   }
 
   trackPageItem(index: number, item: PaginationItem): string {
