@@ -532,6 +532,40 @@ export class AuthService {
         select: SelectFields.getUserCredentialsSelect(),
       });
 
+      // Gate mentor sign-in on approval status. Pending mentors are still under
+      // review; rejected mentors are not permitted to sign in. Approved mentors
+      // continue through the normal flow.
+      if (userData?.role === UserRole.Mentor) {
+        if (
+          userData.status === UserStatus.PendingApproval ||
+          userData.status === UserStatus.PendingReview
+        ) {
+          await this.logging.log({
+            actionType: LogsActionType.SignIn,
+            targetId: user.id,
+            details: API_RESPONSE.ERROR.SIGNIN_MENTOR_PENDING_REVIEW.message,
+            metadata: { email: input.email, status: userData.status },
+            ipAddress,
+            userAgent,
+            createdById: user.id,
+          });
+          return AuthResponseFactory.errorByKey('SIGNIN_MENTOR_PENDING_REVIEW');
+        }
+
+        if (userData.status === UserStatus.Rejected) {
+          await this.logging.log({
+            actionType: LogsActionType.SignIn,
+            targetId: user.id,
+            details: API_RESPONSE.ERROR.SIGNIN_MENTOR_REJECTED.message,
+            metadata: { email: input.email, status: userData.status },
+            ipAddress,
+            userAgent,
+            createdById: user.id,
+          });
+          return AuthResponseFactory.errorByKey('SIGNIN_MENTOR_REJECTED');
+        }
+      }
+
       if (userData?.role === UserRole.Mentee) {
         const menteeProfile = await this.prisma.db.menteeProfile.findUnique({
           where: { userId: userData.id },

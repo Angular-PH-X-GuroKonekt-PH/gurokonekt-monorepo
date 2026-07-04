@@ -394,6 +394,16 @@ export const API_RESPONSE = {
       code: 429,
       message: 'Too many failed login attempts. Try again later.',
     },
+    SIGNIN_MENTOR_PENDING_REVIEW: {
+      code: 403,
+      message:
+        'Your application is still being reviewed by the admins. Please wait for an update — an email will be sent to you.',
+    },
+    SIGNIN_MENTOR_REJECTED: {
+      code: 403,
+      message:
+        'Your mentor application has been rejected. Please contact support if you believe this is a mistake.',
+    },
     REFRESH_TOKEN_INVALID: {
       code: 401,
       message: 'Refresh token is invalid or expired. Please log in again.',
