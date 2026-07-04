@@ -349,7 +349,9 @@ export class AuthState {
 
       return 'Invalid email or password. Please try again.';
     }
-    if (status === 403) return 'Please verify your email before logging in.';
+    if (status === 403) {
+      return serverMessage || 'Please verify your email before logging in.';
+    }
     if (status === 409) return 'An account with this email already exists. Please try logging in instead.';
     if (status === 429) return serverMessage || 'Too many login attempts. Please try again later.';
     if (status === 500) return 'Server error. Please try again in a few moments.';
