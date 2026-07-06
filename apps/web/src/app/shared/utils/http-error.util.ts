@@ -140,7 +140,7 @@ export function getAuthErrorMessage(error: any): string {
   }
 
   if (status === 403) {
-    return 'Please verify your email before logging in.';
+    return error?.error?.message || error?.message || 'Please verify your email before logging in.';
   }
 
   return message;

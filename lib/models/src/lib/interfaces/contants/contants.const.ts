@@ -397,7 +397,7 @@ export const API_RESPONSE = {
     SIGNIN_MENTOR_PENDING_REVIEW: {
       code: 403,
       message:
-        'Your application is still being reviewed by the admins. Please wait for an update — an email will be sent to you.',
+        'Your application is still being reviewed by the admins. Please wait for an update, an email will be sent to you.',
     },
     SIGNIN_MENTOR_REJECTED: {
       code: 403,
