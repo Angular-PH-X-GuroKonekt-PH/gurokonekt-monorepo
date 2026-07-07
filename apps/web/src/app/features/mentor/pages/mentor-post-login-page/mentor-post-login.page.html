@@ -177,46 +177,17 @@
               }
             </div>
 
-            <div>
-              <div class="block text-sm font-semibold text-gray-700 mb-3">
-                Additional Skills <span class="text-red-500">*</span>
-              </div>
-              <p class="text-sm text-gray-600 mb-4">Add specific skills you can mentor (max 8)</p>
-
-              <div class="space-y-3">
-                @for (skill of skills.controls; track $index) {
-                  <div class="flex gap-2">
-                    <input
-                      [formControl]="$any(skill)"
-                      type="text"
-                      placeholder="E.g., CV review, React architecture, interview coaching"
-                      class="flex-1 px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-                      [class.border-red-500]="skill.invalid && skill.touched"
-                    />
-                    @if (skills.length > 1) {
-                      <button
-                        type="button"
-                        (click)="removeSkill($index)"
-                        class="px-3 py-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      >
-                        <app-icon name="close" class="w-5 h-5"></app-icon>
-                      </button>
-                    }
-                  </div>
-                }
-              </div>
-
-              @if (skills.length < 8) {
-                <button
-                  type="button"
-                  (click)="addSkill()"
-                  class="mt-3 px-4 py-2 text-orange-600 hover:bg-orange-50 rounded-lg transition-colors flex items-center gap-2"
-                >
-                  <span class="text-xl font-bold">+</span>
-                  Add Skill
-                </button>
-              }
-            </div>
+            <app-form-array-text-list
+              [formArray]="skills"
+              listId="additional-skill"
+              label="Additional Skills"
+              description="Add specific skills you can mentor (max 8)"
+              addButtonLabel="Add Skill"
+              itemSingularLabel="skill"
+              [maxItems]="maxSkills"
+              placeholder="E.g., CV review, React architecture, interview coaching"
+              helperText="Type a skill and press Enter or click + to add another. Each skill needs at least 2 characters."
+            />
 
             <div class="flex justify-between pt-6">
               <button

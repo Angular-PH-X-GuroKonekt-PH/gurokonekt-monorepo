@@ -8,6 +8,7 @@ import { MenteePreferredSessionType } from '@gurokonekt/models/interfaces/user/u
 import type { UpdateMenteeProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { FormArrayTextListComponent, createFormArrayTextControl } from '../../../../shared/components/form-array-text-list/form-array-text-list.component';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { isSessionExpiredError } from '../../../../shared/utils/http-error.util';
@@ -16,7 +17,7 @@ import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 @Component({
   selector: 'mentee-post-login-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormArrayTextListComponent],
   templateUrl: './mentee-post-login.page.html'
 })
 export class MenteePostLoginPage implements OnInit {
@@ -59,6 +60,8 @@ export class MenteePostLoginPage implements OnInit {
     'Career Development',
   ];
 
+  protected readonly maxLearningGoals = MenteePostLoginPage.MAX_LEARNING_GOALS;
+
   protected profileForm!: FormGroup;
 
   ngOnInit(): void {
@@ -68,33 +71,15 @@ export class MenteePostLoginPage implements OnInit {
   private initializeForm(): void {
     this.profileForm = this.fb.group({
       bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
-      learningGoals: this.fb.array([], Validators.required),
+      learningGoals: this.fb.array([createFormArrayTextControl(this.fb)], Validators.required),
       areasOfInterest: this.fb.array([], Validators.required),
       preferredSessionType: this.fb.array([], Validators.required),
     });
-
-    // Add initial learning goal field
-    this.addLearningGoal();
   }
 
-  // Learning Goals Management
   get learningGoals(): FormArray {
     return this.profileForm.get('learningGoals') as FormArray;
   }
-
-  addLearningGoal(): void {
-    if (this.learningGoals.length < MenteePostLoginPage.MAX_LEARNING_GOALS) {
-      this.learningGoals.push(this.fb.control('', [Validators.required, Validators.minLength(2)]));
-    }
-  }
-
-  removeLearningGoal(index: number): void {
-    if (this.learningGoals.length > 1) {
-      this.learningGoals.removeAt(index);
-    }
-  }
-
-  // Areas of Interest Management
   get areasOfInterest(): FormArray {
     return this.profileForm.get('areasOfInterest') as FormArray;
   }
@@ -235,7 +220,9 @@ export class MenteePostLoginPage implements OnInit {
 
   // Form Submission
   async onSubmit(): Promise<void> {
-    if (this.profileForm.invalid || this.isSubmitting()) return;
+    if (this.currentStep() !== this.totalSteps || this.profileForm.invalid || this.isSubmitting()) {
+      return;
+    }
 
     if (!this.validateSubmissionPrerequisites()) {
       return;

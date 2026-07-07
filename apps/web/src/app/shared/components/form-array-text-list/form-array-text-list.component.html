@@ -1,0 +1,64 @@
+<div>
+  <div class="flex items-center justify-between mb-3">
+    <div class="block text-sm font-semibold text-gray-700">
+      {{ label() }}
+      @if (required()) {
+        <span class="text-red-500">*</span>
+      }
+    </div>
+    @if (formArray().length < maxItems()) {
+      <button
+        type="button"
+        (click)="addItem(true)"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100 hover:border-orange-300 rounded-lg transition-colors"
+      >
+        <app-icon name="plus" class="w-4 h-4"></app-icon>
+        {{ addButtonLabel() }}
+      </button>
+    }
+  </div>
+
+  <p class="text-sm text-gray-600 mb-4">{{ description() }}</p>
+
+  <div class="space-y-3">
+    @for (control of formArray().controls; track $index) {
+      <div class="flex gap-2">
+        <input
+          [formControl]="$any(control)"
+          type="text"
+          [attr.data-form-array-text-input]="listId() + '-' + $index"
+          [placeholder]="placeholder()"
+          class="flex-1 px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+          [class.border-red-500]="control.invalid && control.touched"
+          (keydown.enter)="onItemEnter($index, $event)"
+        />
+        @if ($index === formArray().length - 1 && formArray().length < maxItems()) {
+          <button
+            type="button"
+            (click)="onAddItemClick($index)"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-orange-500 bg-orange-50 text-orange-600 shadow-sm hover:bg-orange-500 hover:text-white hover:shadow-md transition-all"
+            [title]="'Add this ' + itemSingularLabel()"
+            [attr.aria-label]="'Add this ' + itemSingularLabel()"
+          >
+            <app-icon name="plus" class="w-5 h-5"></app-icon>
+          </button>
+        }
+        @if (formArray().length > 1) {
+          <button
+            type="button"
+            (click)="removeItem($index)"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-red-200 bg-red-50 text-red-600 shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-md transition-all"
+            [title]="'Remove this ' + itemSingularLabel()"
+            [attr.aria-label]="'Remove this ' + itemSingularLabel()"
+          >
+            <app-icon name="trash" class="w-5 h-5"></app-icon>
+          </button>
+        }
+      </div>
+    }
+  </div>
+
+  @if (helperText()) {
+    <p class="text-sm text-gray-500 mt-3">{{ helperText() }}</p>
+  }
+</div>
