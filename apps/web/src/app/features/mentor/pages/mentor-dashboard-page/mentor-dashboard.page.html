@@ -154,6 +154,8 @@
   </div>
 
   <app-mentor-bookings-table
+    title="Recent Bookings"
+    [tabs]="bookingTabs"
     footerMode="viewAll"
     [maxRows]="3"
     [bookings]="mentorBookings.bookings()"

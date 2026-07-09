@@ -7,13 +7,16 @@
     </div>
     <div>
         <app-mentor-bookings-table
+          title="Recent Bookings"
+          [tabs]="bookingTabs"
           footerMode="pagination"
           [bookings]="mentorBookings.bookings()"
           [isLoading]="mentorBookings.isBookingsLoading()"
           [currentPage]="mentorBookings.currentPage()"
-          [pageSize]="mentorBookings.pageSize"
+          [pageSize]="mentorBookings.pageSize()"
           [totalItems]="mentorBookings.totalBookings()"
           (pageChange)="mentorBookings.setPage($event)"
+          (pageSizeChange)="mentorBookings.setPageSize($event)"
           (tabChange)="mentorBookings.setActiveTab($event)"
         />
     </div>

@@ -25,33 +25,35 @@ export class MentorBookingService {
   userId = computed(() => this.authUser()?.id);
 
   private readonly requestedPage = signal(1);
+  private readonly requestedPageSize = signal(10);
   private readonly requestedStatus = signal<BookingStatus | undefined>(
     undefined
   );
 
-  readonly pageSize = 10;
+  readonly pageSize = computed(() => this.requestedPageSize());
 
   private readonly bookingQuery = computed(() => ({
     userId: this.userId(),
     page: this.requestedPage(),
+    limit: this.requestedPageSize(),
     status: this.requestedStatus(),
   }));
 
   bookingPage = toSignal<BookingListResponse | null>(
     toObservable(this.bookingQuery).pipe(
-      switchMap(({ userId, page, status }) => {
+      switchMap(({ userId, page, limit, status }) => {
         if (!userId) {
           return of<BookingListResponse>({
             data: [],
             total: 0,
             page,
-            limit: this.pageSize,
+            limit,
             totalPages: 0,
           });
         }
 
         return this.bookingService
-          .getMentorBookings({ page, limit: this.pageSize, status })
+          .getMentorBookings({ page, limit, status })
           .pipe(startWith(null));
       })
     ),
@@ -112,6 +114,11 @@ export class MentorBookingService {
     this.requestedPage.set(Math.max(1, page));
   }
 
+  setPageSize(pageSize: number): void {
+    this.requestedPageSize.set(Math.max(1, pageSize));
+    this.requestedPage.set(1);
+  }
+
   setActiveTab(tab: BookingTab): void {
     this.requestedStatus.set(
       tab === 'All' ? undefined : (tab.toUpperCase() as BookingStatus)
@@ -122,5 +129,6 @@ export class MentorBookingService {
   resetPagination(): void {
     this.requestedStatus.set(undefined);
     this.requestedPage.set(1);
+    this.requestedPageSize.set(10);
   }
 }
