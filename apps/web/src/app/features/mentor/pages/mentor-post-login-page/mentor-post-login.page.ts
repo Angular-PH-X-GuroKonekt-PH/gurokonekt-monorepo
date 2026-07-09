@@ -10,6 +10,7 @@ import type { UpdateMentorProfileInterface } from '@gurokonekt/models/interfaces
 import type { DayAvailability, TimeFrame } from '../../../../shared/interfaces/post-login.interface';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { FormArrayTextListComponent, createFormArrayTextControl } from '../../../../shared/components/form-array-text-list/form-array-text-list.component';
 import { AuthState } from '../../../../core/auth/store/auth.state';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { expertiseOptions } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
@@ -20,7 +21,7 @@ import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
 @Component({
   selector: 'app-mentor-post-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent],
+  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormArrayTextListComponent],
   templateUrl: './mentor-post-login.page.html',
 })
 export class MentorPostLoginPage implements OnInit {
@@ -45,6 +46,8 @@ export class MentorPostLoginPage implements OnInit {
   protected readonly avatarPreview = signal<string | null>(null);
   protected readonly avatarError = signal<string | null>(null);
 
+  protected readonly maxSkills = MentorPostLoginPage.MAX_SKILLS;
+
   protected selectedAvatarFile: File | null = null;
   protected profileForm!: FormGroup;
   protected availabilitySchedule = signal<DayAvailability[]>([]);
@@ -58,10 +61,8 @@ export class MentorPostLoginPage implements OnInit {
     this.profileForm = this.fb.group({
       bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
       areasOfExpertise: this.fb.array([], Validators.required),
-      skills: this.fb.array([], Validators.required),
+      skills: this.fb.array([createFormArrayTextControl(this.fb)], Validators.required),
     });
-
-    this.addSkill();
   }
 
   private initializeAvailability(): void {
@@ -94,22 +95,6 @@ export class MentorPostLoginPage implements OnInit {
 
   get skills(): FormArray {
     return this.profileForm.get('skills') as FormArray;
-  }
-
-  addSkill(): void {
-    if (this.skills.length >= MentorPostLoginPage.MAX_SKILLS) {
-      return;
-    }
-
-    this.skills.push(this.fb.control('', [Validators.required, Validators.minLength(2)]));
-  }
-
-  removeSkill(index: number): void {
-    if (this.skills.length <= 1) {
-      return;
-    }
-
-    this.skills.removeAt(index);
   }
 
   toggleExpertise(area: string): void {
@@ -266,7 +251,7 @@ export class MentorPostLoginPage implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.profileForm.invalid || this.isSubmitting()) {
+    if (this.currentStep() !== this.totalSteps || this.profileForm.invalid || this.isSubmitting()) {
       return;
     }
 
