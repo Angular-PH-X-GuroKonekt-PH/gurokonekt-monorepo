@@ -1,0 +1,136 @@
+<div class="rounded-2xl bg-white shadow-sm">
+  <div class="flex flex-col gap-3 border-b border-gray-100 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+    <h2 class="text-lg font-bold text-gray-800">{{ title() }}</h2>
+
+    @if (tabs().length) {
+    <div class="flex flex-wrap gap-1">
+      @for (tab of tabs(); track tab) {
+      <button
+        type="button"
+        (click)="selectTab(tab)"
+        [class.bg-gray-800]="activeTab() === tab"
+        [class.text-white]="activeTab() === tab"
+        [class.text-gray-500]="activeTab() !== tab"
+        [class.hover:text-gray-700]="activeTab() !== tab"
+        [class.hover:bg-gray-100]="activeTab() !== tab"
+        class="rounded-lg px-4 py-1.5 text-sm font-medium transition-all"
+      >
+        {{ tab }}
+      </button>
+      }
+    </div>
+    }
+  </div>
+
+  <div>
+    <table class="w-full table-fixed text-left text-sm">
+      <thead>
+        <tr class="border-b border-gray-100">
+          <th class="w-[22%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
+            {{ getCounterpartyLabel().toUpperCase() }}
+          </th>
+          <th class="w-[28%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">SESSION NOTES</th>
+          <th class="w-[22%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">DATE &amp; TIME</th>
+          <th class="w-[18%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">STATUS</th>
+          <th class="w-[10%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">ACTIONS</th>
+        </tr>
+      </thead>
+
+      @if (isLoading()) {
+      <app-booking-table-skeleton [count]="maxRows() ?? pageSize()" />
+      } @else {
+      <tbody class="divide-y divide-gray-50">
+        @for (booking of displayedBookings(); track booking.id) {
+        <tr class="transition-colors hover:bg-gray-50">
+          <td class="px-6 py-4">
+            @if (getCounterparty(booking); as participant) {
+            <div class="flex items-center gap-3">
+              <img
+                [src]="participant.avatarAttachments?.[0]?.publicUrl || 'assets/img/no_profile_avatar.png'"
+                [alt]="participant.firstName + ' ' + participant.lastName"
+                class="h-10 w-10 rounded-full border-2 border-gray-100 object-cover"
+              />
+              <div class="min-w-0">
+                <p class="truncate font-semibold text-gray-800">{{ participant.firstName }} {{ participant.lastName }}</p>
+                <p class="text-xs text-gray-400">{{ getCounterpartyLabel() }}</p>
+              </div>
+            </div>
+            } @else {
+            <span class="text-gray-400">{{ getCounterpartyLabel() }}</span>
+            }
+          </td>
+          <td class="px-6 py-4 font-medium text-gray-700">{{ booking.notes || 'Mentoring Session' }}</td>
+          <td class="px-6 py-4">
+            <p class="font-medium text-gray-800">{{ booking.sessionDateTime | date:'MMM d, y' }}</p>
+            <p class="text-xs text-gray-400">{{ booking.sessionDateTime | date:'h:mm a' }}</p>
+          </td>
+          <td class="px-6 py-4">
+            <span
+              class="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold tracking-wide"
+              [class.bg-green-50]="booking.status === 'APPROVED'"
+              [class.text-green-600]="booking.status === 'APPROVED'"
+              [class.border-green-200]="booking.status === 'APPROVED'"
+              [class.bg-orange-50]="booking.status === 'PENDING'"
+              [class.text-orange-500]="booking.status === 'PENDING'"
+              [class.border-orange-200]="booking.status === 'PENDING'"
+              [class.bg-blue-50]="booking.status === 'COMPLETED'"
+              [class.text-blue-600]="booking.status === 'COMPLETED'"
+              [class.border-blue-200]="booking.status === 'COMPLETED'"
+              [class.bg-red-50]="booking.status === 'CANCELLED'"
+              [class.text-red-500]="booking.status === 'CANCELLED'"
+              [class.border-red-200]="booking.status === 'CANCELLED'"
+              [class.bg-gray-100]="booking.status === 'REJECTED'"
+              [class.text-gray-600]="booking.status === 'REJECTED'"
+              [class.border-gray-300]="booking.status === 'REJECTED'"
+            >{{ booking.status }}</span>
+          </td>
+          <td class="px-6 py-4">
+            @if (actionsTemplate(); as actions) {
+            <ng-container
+              [ngTemplateOutlet]="actions"
+              [ngTemplateOutletContext]="{ $implicit: booking }"
+            />
+            }
+          </td>
+        </tr>
+        } @empty {
+        <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400">No bookings found.</td></tr>
+        }
+      </tbody>
+      }
+    </table>
+  </div>
+
+  @if (footerMode() === 'viewAll') {
+  <div class="border-t border-gray-100 px-6 py-4 text-center">
+    <a [routerLink]="viewAllLink()"
+      class="inline-flex items-center gap-1 text-sm font-semibold text-gray-700 transition-colors hover:text-orange-500">
+      View All Bookings <span aria-hidden="true">&rarr;</span>
+    </a>
+  </div>
+  }
+
+  @if (footerMode() === 'pagination') {
+  <div class="flex flex-col gap-4 border-t border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+    <label class="flex items-center gap-2 text-sm text-gray-600">
+      Rows per page
+      <select
+        class="rounded-lg border border-gray-200 bg-white px-3 py-2 pr-8 text-sm text-gray-700"
+        [value]="pageSize()"
+        (change)="changePageSize($event)"
+      >
+        @for (option of pageSizeOptions(); track option) {
+        <option [value]="option">{{ option }}</option>
+        }
+      </select>
+    </label>
+
+    <gk-pagination
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalItems]="totalItems()"
+      (pageChange)="pageChange.emit($event)"
+    />
+  </div>
+  }
+</div>

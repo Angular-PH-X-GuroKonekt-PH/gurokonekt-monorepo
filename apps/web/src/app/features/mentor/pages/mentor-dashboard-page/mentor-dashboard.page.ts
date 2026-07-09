@@ -5,6 +5,7 @@ import { MentorBookingsTable } from '../../components/mentor-bookings-table/ment
 import { MentorBookingService } from '../../services/mentor-booking.service';
 import { Store } from '@ngxs/store';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
+import { BookingTab } from '@gurokonekt/models/interfaces/booking/booking.model';
 @Component({
   selector: 'app-mentor-dashboard-page',
   imports: [DatePipe, MentorBookingsTable],
@@ -14,6 +15,12 @@ export class MentorDashboardPage {
   store = inject(Store);
   authUser = this.store.selectSignal(AuthSelectors.user);
   mentorBookings = inject(MentorBookingService);
+  readonly bookingTabs: BookingTab[] = [
+    'All',
+    'Pending',
+    'Approved',
+    'Completed',
+  ];
 
   fullName = computed(() => {
     const value = this.authUser()?.['fullName'];
