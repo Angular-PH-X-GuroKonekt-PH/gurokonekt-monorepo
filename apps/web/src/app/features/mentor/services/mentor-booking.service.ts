@@ -1,13 +1,14 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
-import { of, switchMap } from 'rxjs';
+import { of, startWith, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
   BookingStatus,
   BookingTab,
   UpcomingSession,
+  BookingListResponse
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { AuthSelectors } from '../../../core/auth/store/auth.selectors';
@@ -23,41 +24,52 @@ export class MentorBookingService {
   authUser = this.store.selectSignal(AuthSelectors.user);
   userId = computed(() => this.authUser()?.id);
 
-  bookingTabs: BookingTab[] = [
-    'All',
-    'Pending',
-    'Approved',
-    'Completed',
-    'Cancelled',
-    'Rejected',
-  ];
+  private readonly requestedPage = signal(1);
+  private readonly requestedPageSize = signal(10);
+  private readonly requestedStatus = signal<BookingStatus | undefined>(
+    undefined
+  );
 
-  activeTab = signal<BookingTab>('All');
+  readonly pageSize = computed(() => this.requestedPageSize());
 
-  bookings = toSignal<BookingCardInterface[] | null>(
-    toObservable(this.userId).pipe(
-      switchMap((userId) => {
-        if (!userId) return of([] as BookingCardInterface[]);
-        return this.bookingService.getMentorBookings();
+  private readonly bookingQuery = computed(() => ({
+    userId: this.userId(),
+    page: this.requestedPage(),
+    limit: this.requestedPageSize(),
+    status: this.requestedStatus(),
+  }));
+
+  bookingPage = toSignal<BookingListResponse | null>(
+    toObservable(this.bookingQuery).pipe(
+      switchMap(({ userId, page, limit, status }) => {
+        if (!userId) {
+          return of<BookingListResponse>({
+            data: [],
+            total: 0,
+            page,
+            limit,
+            totalPages: 0,
+          });
+        }
+
+        return this.bookingService
+          .getMentorBookings({ page, limit, status })
+          .pipe(startWith(null));
       })
     ),
     { initialValue: null }
   );
 
-  isBookingsLoading = computed(() => this.bookings() === null);
+  bookings = computed<BookingCardInterface[] | null>(
+    () => this.bookingPage()?.data ?? null
+  );
 
-  filteredBookings = computed(() => {
-    const bookings = this.bookings() ?? [];
-    const tab = this.activeTab();
-
-    if (tab === 'Pending') return bookings.filter((b) => b.status === BookingStatus.PENDING);
-    if (tab === 'Approved') return bookings.filter((b) => b.status === BookingStatus.APPROVED);
-    if (tab === 'Completed') return bookings.filter((b) => b.status === BookingStatus.COMPLETED);
-    if (tab === 'Cancelled') return bookings.filter((b) => b.status === BookingStatus.CANCELLED);
-    if (tab === 'Rejected') return bookings.filter((b) => b.status === BookingStatus.REJECTED);
-
-    return bookings;
-  });
+  isBookingsLoading = computed(() => this.bookingPage() === null);
+  currentPage = computed(
+    () => this.bookingPage()?.page ?? this.requestedPage()
+  );
+  totalBookings = computed(() => this.bookingPage()?.total ?? 0);
+  totalPages = computed(() => this.bookingPage()?.totalPages ?? 0);
 
   pendingRequests = computed(
     () => (this.bookings() ?? []).filter((b) => b.status === BookingStatus.PENDING).length
@@ -98,7 +110,25 @@ export class MentorBookingService {
     };
   });
 
+  setPage(page: number): void {
+    this.requestedPage.set(Math.max(1, page));
+  }
+
+  setPageSize(pageSize: number): void {
+    this.requestedPageSize.set(Math.max(1, pageSize));
+    this.requestedPage.set(1);
+  }
+
   setActiveTab(tab: BookingTab): void {
-    this.activeTab.set(tab);
+    this.requestedStatus.set(
+      tab === 'All' ? undefined : (tab.toUpperCase() as BookingStatus)
+    );
+    this.requestedPage.set(1);
+  }
+
+  resetPagination(): void {
+    this.requestedStatus.set(undefined);
+    this.requestedPage.set(1);
+    this.requestedPageSize.set(10);
   }
 }

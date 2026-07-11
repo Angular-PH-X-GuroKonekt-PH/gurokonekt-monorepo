@@ -127,19 +127,20 @@ function mapStatusToMessage(
  */
 export function getAuthErrorMessage(error: any): string {
   const errorCode = getErrorCode(error);
+  const status = error?.status ?? error?.statusCode;
 
-  if (error.status === 401 && errorCode === SESSION_EXPIRED_CODE) {
+  if (status === 401 && errorCode === SESSION_EXPIRED_CODE) {
     return SESSION_EXPIRED_MESSAGE;
   }
 
   const message = getErrorMessage(error);
 
-  if (error.status === 401) {
+  if (status === 401) {
     return 'Invalid email or password. Please try again.';
   }
 
-  if (error.status === 403) {
-    return 'Please verify your email before logging in.';
+  if (status === 403) {
+    return error?.error?.message || error?.message || 'Please verify your email before logging in.';
   }
 
   return message;

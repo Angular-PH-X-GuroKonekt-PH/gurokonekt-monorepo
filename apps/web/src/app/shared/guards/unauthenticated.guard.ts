@@ -4,12 +4,17 @@ import { Store } from '@ngxs/store';
 
 import { AuthState } from '../../core/auth/store/auth.state';
 import { requiresProfileSetup } from '../utils/profile-completion.util';
+import { hasEmailVerificationCallbackHash } from '../utils/email-verification.util';
 import { APP_ROUTES } from '../constants/routes';
 import { AuthSelectors } from '../../core/auth/store/auth.selectors';
 
 export const unauthenticatedGuard: CanActivateFn = (): boolean | UrlTree => {
   const store = inject(Store);
   const router = inject(Router);
+
+  if (hasEmailVerificationCallbackHash()) {
+    return true;
+  }
 
   const user = store.selectSnapshot(AuthSelectors.user);
 

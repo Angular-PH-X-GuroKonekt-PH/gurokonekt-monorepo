@@ -1,4 +1,4 @@
-import { HttpClient } from '@angular/common/http';
+import { HttpClient, HttpParams } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable } from 'rxjs';
 
@@ -7,6 +7,8 @@ import {
   BookingStatus,
   BookingCardInterface,
   CreateBookingRequestInterface,
+  BookingListResponse,
+  MentorBookingQuery
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import {
   handleApiError,
@@ -49,16 +51,17 @@ export class BookingService {
 
   getBookingsByUserId(userId: string): Observable<BookingCardInterface[]> {
     return this.http
-      .get<ApiResponse<BookingCardInterface[]>>(
+      .get<ApiResponse<BookingListResponse>>(
         buildApiUrl(`/booking/user/${userId}`)
       )
       .pipe(
         map((response) =>
-          validateApiResponse<BookingCardInterface[]>(
+          validateApiResponse<BookingListResponse>(
             response,
             'Failed to fetch bookings.'
           )
         ),
+        map((result) => result.data),
         map((bookings) =>
           bookings.filter(
             (booking) =>
@@ -88,36 +91,50 @@ export class BookingService {
     );
   }
 
-  getMentorBookings(status?: BookingStatus): Observable<BookingCardInterface[]> {
-    const query = status ? `?status=${status}` : '';
+  getMentorBookings(
+    query: MentorBookingQuery = {}
+  ): Observable<BookingListResponse> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    let params = new HttpParams()
+      .set('page', page)
+      .set('limit', limit);
+
+    if (query.status) {
+      params = params.set('status', query.status);
+    }
 
     return this.http
-      .get<ApiResponse<BookingCardInterface[]>>(
-        buildApiUrl(`/booking/mentor${query}`)
+      .get<ApiResponse<BookingListResponse>>(
+        buildApiUrl('/booking/mentor'),
+        { params }
       )
       .pipe(
         map((response) =>
-          validateApiResponse<BookingCardInterface[]>(
+          validateApiResponse<BookingListResponse>(
             response,
             'Failed to fetch mentor bookings.'
           )
         ),
-        map((bookings) =>
-          bookings.filter(
-            (booking) =>
-              booking.status !== BookingStatus.DELETED && !booking.isDeleted
-          )
-        ),
-        map((bookings) =>
-          bookings.map((booking) => ({
-            ...booking,
-            sessionDateTime: new Date(booking.sessionDateTime),
-            createdAt: new Date(booking.createdAt),
-            updatedAt: new Date(booking.updatedAt),
-          }))
-        ),
+        map((result) => ({
+          ...result,
+          data: result.data
+            .filter(
+              (booking) =>
+                booking.status !== BookingStatus.DELETED && !booking.isDeleted
+            )
+            .map((booking) => ({
+              ...booking,
+              sessionDateTime: new Date(booking.sessionDateTime),
+              createdAt: new Date(booking.createdAt),
+              updatedAt: new Date(booking.updatedAt),
+            })),
+        })),
         catchError(
-          handleApiErrorWithFallback([], 'Failed to fetch mentor bookings')
+          handleApiErrorWithFallback(
+            { data: [], total: 0, page, limit, totalPages: 0 },
+            'Failed to fetch mentor bookings'
+          )
         )
       );
   }

@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_RESPONSE, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorAccess, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateAvailabilitySlotDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
+import { API_RESPONSE, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorAccess, MenteePreferredSessionType, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateAvailabilitySlotDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
 import { StorageService } from '../storage/storage.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { instanceToPlain } from 'class-transformer';
@@ -609,22 +609,23 @@ export class UserService {
       const effectiveDto: UpdateMenteeProfileDto | UpdateMentorProfileDto = role === UserRole.Mentee
         ? (() => {
             const currentDto = dto as UpdateMenteeProfileDto;
-            const normalizeToArray = (value: unknown): string[] | undefined => {
-              if (Array.isArray(value)) return value as string[];
-              if (typeof value === 'string' && value.trim().length > 0) return [value];
+            const normalizeToArray = <T extends string>(value: unknown): T[] | undefined => {
+              if (Array.isArray(value)) return value as T[];
+              if (typeof value === 'string' && value.trim().length > 0) return [value as T];
               return undefined;
             };
             return {
               ...currentDto,
               learningGoals: normalizeToArray(currentDto.learningGoals),
               areasOfInterest: normalizeToArray(currentDto.areasOfInterest),
+              preferredSessionType: normalizeToArray<MenteePreferredSessionType>(currentDto.preferredSessionType),
             };
           })()
         : (() => {
             const currentDto = dto as UpdateMentorProfileDto;
-            const normalizeToArray = (value: unknown): string[] | undefined => {
-              if (Array.isArray(value)) return value as string[];
-              if (typeof value === 'string' && value.trim().length > 0) return [value];
+            const normalizeToArray = <T extends string>(value: unknown): T[] | undefined => {
+              if (Array.isArray(value)) return value as T[];
+              if (typeof value === 'string' && value.trim().length > 0) return [value as T];
               return undefined;
             };
             const normalizeAvailability = (value: unknown): UpdateMentorProfileDto['availability'] => {
@@ -715,11 +716,17 @@ export class UserService {
           role
         );
         const currentDto = effectiveDto as UpdateMenteeProfileDto;
+        const rawPreferredSessionType = currentDto.preferredSessionType as unknown;
+        const normalizedPreferredSessionType = Array.isArray(rawPreferredSessionType)
+          ? rawPreferredSessionType as MenteePreferredSessionType[]
+          : typeof rawPreferredSessionType === 'string' && rawPreferredSessionType.trim().length > 0
+            ? [rawPreferredSessionType as MenteePreferredSessionType]
+            : undefined;
         const payload = {
           bio: currentDto.bio,
           learningGoals: currentDto.learningGoals,
           areasOfInterest: currentDto.areasOfInterest,
-          preferredSessionType: currentDto.preferredSessionType!,
+          preferredSessionType: normalizedPreferredSessionType,
           updatedById: currentDto.updatedById,
         };
         await this.prisma.db.$transaction(async (tx) => {

@@ -6,7 +6,10 @@ import { AuthResponse } from '@gurokonekt/models/interfaces/auth/auth-response.i
 import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
 import { getAuthErrorMessage, logError } from '../../../shared/utils/http-error.util';
-import type { LoginApiResponse, RefreshTokenApiResponse } from '../../../shared/interfaces/auth-api.interface';
+import type {
+  LoginApiResponse,
+  RefreshTokenApiResponse,
+} from '../../../shared/interfaces/auth-api.interface';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 import { API_CONFIG } from '../../config/api.config';
 
@@ -81,22 +84,39 @@ export class AuthService {
       credentials
     ).pipe(
       map((response) => {
-        // Transform ResponseDto to AuthResponse
-        if (!response.data || !response.data.user || !response.data.session) {
-          throw new Error(response.message || 'Login failed');
+        if (response.statusCode >= 400) {
+          throw {
+            message: response.message || 'Login failed',
+            statusCode: response.statusCode,
+          };
+        }
+
+        const data = response.data;
+        const user = data?.user ?? data?.auth?.user;
+        const session = data?.session ?? data?.auth?.session;
+        const accessToken = session?.access_token ?? data?.accessToken;
+        const refreshToken = session?.refresh_token ?? data?.refreshToken;
+
+        // Accept both the current session payload and older token-based payloads.
+        if (!data || !user || !accessToken) {
+          throw {
+            message: response.message || 'Login failed',
+            statusCode: response.statusCode || 500,
+          };
         }
 
         return {
           user: {
-            id: response.data.user.id,
-            email: response.data.user.email,
-            fullName: `${response.data.user.firstName} ${response.data.user.lastName}`,
-            role: response.data.user.role,
-            isProfileComplete: response.data.user.isProfileComplete,
+            id: user.id,
+            email: user.email,
+            fullName: `${user.firstName} ${user.lastName}`,
+            role: user.role,
+            isProfileComplete: user.isProfileComplete,
+            isMentorProfileComplete: user.isMentorProfileComplete,
           },
-          accessToken: response.data.session.access_token,
-          refreshToken: response.data.session.refresh_token,
-          token: response.data.session.access_token,
+          accessToken,
+          refreshToken,
+          token: accessToken,
           message: response.message
         } as AuthResponse;
       }),

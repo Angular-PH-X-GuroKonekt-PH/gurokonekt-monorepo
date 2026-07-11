@@ -1,17 +1,10 @@
-import { DatePipe } from '@angular/common';
-import { Component, inject, input, signal } from '@angular/core';
+import { Component, computed, inject, input, output, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { RouterLink } from '@angular/router';
+import { BookingCardInterface, BookingStatus, BookingTab } from '@gurokonekt/models/interfaces/booking/booking.model';
 
-import {
-  BookingCardInterface,
-  BookingStatus,
-} from '@gurokonekt/models/interfaces/booking/booking.model';
-
-import { BookingTableSkeleton } from '../../../../shared/components/skeleton-loaders/booking-table-skeleton/booking-table-skeleton.component';
+import { BookingsTable } from '../../../../shared/components/bookings-table/bookings-table';
 import { BookingService } from '../../../../shared/services/booking.service';
 import { ToastService } from '../../../../shared/services/toast.service';
-import { MentorBookingService } from '../../services/mentor-booking.service';
 import { BookingDetailsModal } from '../../../mentor/components/mentor-bookings-table/booking-details-modal/booking-details-modal';
 import { ApproveBookingModal } from '../../../mentor/components/mentor-bookings-table/approve-booking-modal/approve-booking-modal';
 import { RejectBookingModal } from '../../../mentor/components/mentor-bookings-table/reject-booking-modal/reject-booking-modal';
@@ -20,23 +13,58 @@ import { UpdateBookingModal } from '../../../mentor/components/mentor-bookings-t
 @Component({
   selector: 'app-mentor-bookings-table',
   imports: [
-    DatePipe, 
-    FormsModule, 
-    RouterLink, 
-    BookingTableSkeleton,
+    FormsModule,
+    BookingsTable,
     BookingDetailsModal,
     ApproveBookingModal,
     RejectBookingModal,
-    UpdateBookingModal,    
+    UpdateBookingModal,
   ],
   templateUrl: './mentor-bookings-table.html',
 })
 export class MentorBookingsTable {
+  title = input('Recent Bookings');
+  tabs = input<BookingTab[]>([
+    'All',
+    'Pending',
+    'Approved',
+    'Completed',
+    'Cancelled',
+    'Rejected',
+  ]);
   footerMode = input<'viewAll' | 'pagination' | 'none'>('none');
+  bookings = input<BookingCardInterface[] | null>(null);
+  isLoading = input(false);
+  maxRows = input<number | null>(null);
+  currentPage = input(1);
+  pageSize = input(10);
+  totalItems = input(0);
+  pageSizeOptions = input<number[]>([10, 20, 50]);
 
-  mentorBookings = inject(MentorBookingService);
+  pageChange = output<number>();
+  pageSizeChange = output<number>();
+  tabChange = output<BookingTab>();
+
   bookingService = inject(BookingService);
   toastService = inject(ToastService);
+
+  activeTab = signal<BookingTab>('All');
+
+  filteredBookings = computed(() => {
+    const bookings = this.bookings() ?? [];
+
+    if (this.footerMode() === 'pagination') {
+      return bookings;
+    }
+
+    const tab = this.activeTab();
+
+    if (tab === 'All') return bookings;
+
+    return bookings.filter(
+      (booking) => booking.status === (tab.toUpperCase() as BookingStatus)
+    );
+  });
 
   selectedBooking = signal<BookingCardInterface | null>(null);
   openActionBookingId = signal<string | null>(null);
@@ -53,6 +81,23 @@ export class MentorBookingsTable {
   updateNotes = signal('');
 
   submitting = signal(false);
+
+  setActiveTab(tab: string): void {
+    const bookingTab = tab as BookingTab;
+
+    if (!this.tabs().includes(bookingTab)) return;
+
+    this.activeTab.set(bookingTab);
+    this.tabChange.emit(bookingTab);
+  }
+
+  changePage(page: number): void {
+    this.pageChange.emit(page);
+  }
+
+  changePageSize(pageSize: number): void {
+    this.pageSizeChange.emit(pageSize);
+  }
 
   toggleActionMenu(bookingId: string): void {
     this.openActionBookingId.update((current) =>

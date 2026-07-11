@@ -7,11 +7,17 @@ export interface LoginApiUser {
   lastName: string;
   role: string;
   isProfileComplete?: boolean;
+  isMentorProfileComplete?: boolean;
 }
 
 export interface LoginApiSession {
   access_token: string;
-  refresh_token: string;
+  refresh_token?: string;
+}
+
+export interface LoginApiAuthPayload {
+  user?: LoginApiUser;
+  session?: LoginApiSession;
 }
 
 export interface RefreshTokenApiData {
@@ -22,8 +28,11 @@ export interface RefreshTokenApiData {
 export type RefreshTokenApiResponse = ApiResponse<RefreshTokenApiData>;
 
 export interface LoginApiData {
-  user: LoginApiUser;
-  session: LoginApiSession;
+  user?: LoginApiUser;
+  session?: LoginApiSession;
+  accessToken?: string;
+  refreshToken?: string;
+  auth?: LoginApiAuthPayload;
 }
 
 export type LoginApiResponse = ApiResponse<LoginApiData>;
