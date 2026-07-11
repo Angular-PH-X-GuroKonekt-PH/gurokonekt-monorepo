@@ -15,6 +15,7 @@ import {
   ResponseStatus,
   UpdateBookingDto,
   UserRole,
+  MentorAccess,
 } from '@gurokonekt/models';
 import {
   NOTIFICATION_EVENTS,
@@ -49,6 +50,22 @@ export class BookingService {
     menteeId: string,
   ): Promise<ResponseDto<BookingInterface>> {
     try {
+      // Only approved mentors are bookable — the mentorId may come from any
+      // client, so validate it here rather than relying on search filtering.
+      const mentor = await this.prisma.db.user.findUnique({
+        where: { id: dto.mentorId },
+        select: { role: true, status: true, isMentorApproved: true, isMentorProfileComplete: true },
+      });
+
+      if (!MentorAccess.isApprovedMentor(mentor)) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.code,
+          message: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.message,
+          data: null,
+        };
+      }
+
       const conflict = await this.checkBookingConflict(dto.mentorId, new Date(dto.sessionDateTime));
       if (conflict) return conflict as ResponseDto<BookingInterface>;
 

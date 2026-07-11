@@ -1,4 +1,5 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
+import { RouterLink } from '@angular/router';
 import { createSelectMap } from '@ngxs/store';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 import { DashboardService, DashboardMetrics } from '../../services/dashboard.service';
@@ -9,7 +10,7 @@ import { APP_ROUTES } from '../../../../shared/constants/routes';
 
 @Component({
   selector: 'app-admin-dashboard-page',
-  imports: [MetricCardComponent, ShortcutCardComponent, GrowthChartComponent],
+  imports: [MetricCardComponent, ShortcutCardComponent, GrowthChartComponent, RouterLink],
   templateUrl: './admin-dashboard.page.html',
 })
 export class AdminDashboardPage implements OnInit {
@@ -18,6 +19,8 @@ export class AdminDashboardPage implements OnInit {
   protected readonly selectors = createSelectMap({
     user: AuthSelectors.user,
   });
+
+  protected readonly pendingApprovalRoute = APP_ROUTES.MENTOR_MANAGEMENT;
 
   protected metrics = signal<DashboardMetrics | null>(null);
   protected metricsLoading = signal(true);

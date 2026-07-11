@@ -426,8 +426,10 @@ export class UserController {
   async updateUserRole(
     @Param('userId') userId: string,
     @Body() dto: UpdateUserRoleDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
   ) {
-    const response = await this.userService.updateUserRole(dto, userId);
+    const response = await this.userService.updateUserRole(dto, userId, ipAddress, userAgent);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
