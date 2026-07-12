@@ -1,0 +1,46 @@
+<div class="space-y-8">
+  <div class="text-center">
+    <h2 class="text-2xl font-bold text-gray-900">Set Weekly Availability</h2>
+    <p class="mt-2 text-gray-600">Define when mentees can book sessions with you</p>
+  </div>
+
+  <div class="flex justify-end">
+    <button
+      type="button"
+      class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+      (click)="openAddAvailability()"
+    >
+      + Add Availability
+    </button>
+  </div>
+
+  <app-availability-table
+    title="Weekly Availability"
+    [availabilities]="getEnabledAvailability()"
+    [selectedWeekValue]="selectedWeekValue"
+    [showWeekPicker]="false"
+    [showBookingDetails]="false"
+    (editDay)="openEditAvailability($event)"
+    (deleteDay)="deleteDay($event)"
+    (editTimeFrame)="openEditTimeFrame($event)"
+    (deleteTimeFrame)="deleteTimeFrame($event)"
+  />
+
+  <div class="flex items-start gap-3 rounded-lg border-2 border-blue-200 bg-blue-50 p-4 mt-2">
+    <app-icon name="alert-info" class="h-5 w-5 text-blue-600" />
+    <p class="text-sm text-blue-800">Please select at least one day and time slot for mentor sessions.</p>
+  </div>
+
+  @if (showSlotModal()) {
+    <app-availability-slot-modal
+      [days]="days"
+      [editingDay]="editingDay()"
+      [sessionDurationMinutes]="sessionDurationMinutes()"
+      [(day)]="slotForm.day"
+      [(from)]="slotForm.from"
+      [(to)]="slotForm.to"
+      (closed)="closeSlotModal()"
+      (saved)="saveSlot()"
+    />
+  }
+</div>

@@ -674,6 +674,38 @@ export class UserService {
         }
       }
 
+      if (role === UserRole.Mentor) {
+        const mentorDto = effectiveDto as UpdateMentorProfileDto;
+        const availability = (mentorDto.availability ?? []) as AvailabilitySlot[];
+        const days = availability.map((entry) => entry.day);
+
+        if (new Set(days).size !== days.length) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.AVAILABILITY_DUPLICATE_DAY.code,
+            message: API_RESPONSE.ERROR.AVAILABILITY_DUPLICATE_DAY.message,
+            data: null,
+          };
+        }
+
+        for (const entry of availability) {
+          const validationError = validateTimeFrames(entry.timeFrames);
+
+          if (validationError) {
+            const response = validationError.startsWith('Overlapping slots')
+              ? API_RESPONSE.ERROR.AVAILABILITY_OVERLAP
+              : API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE;
+
+            return {
+              status: ResponseStatus.Error,
+              statusCode: response.code,
+              message: `${response.message} (${entry.day}): ${validationError}`,
+              data: null,
+            };
+          }
+        }
+      }
+
       
       const userUpdateData = UserProfileValidator.buildUserUpdateData(
         effectiveDto,

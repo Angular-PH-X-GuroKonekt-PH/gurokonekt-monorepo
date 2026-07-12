@@ -10,6 +10,7 @@ import {
   BookingStatus,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { EventInput } from '@fullcalendar/core';
+import { timeToMinutes } from '../../utils/availability-validation.util';
 
 const DAY_OF_WEEK_MAP: Record<DaysInWeek, number> = {
   [DaysInWeek.Monday]: 1,
@@ -70,11 +71,6 @@ export function formatTimeRange(frame: TimeFrameInterface): string {
   };
 
   return `${fmt(frame.from)} - ${fmt(frame.to)}`;
-}
-
-export function timeToMinutes(time: string): number {
-  const [hours, minutes] = time.split(':').map(Number);
-  return hours * 60 + minutes;
 }
 
 export function formatDateLabel(date: Date): string {

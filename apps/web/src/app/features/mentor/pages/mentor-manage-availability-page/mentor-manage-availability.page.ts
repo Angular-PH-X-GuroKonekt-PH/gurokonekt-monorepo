@@ -10,12 +10,10 @@ import listPlugin from '@fullcalendar/list';
 import {
   DeleteAvailabilityTargetInterface,
   DaysInWeek,
-  TimeFrameAvailabilityStatus,
   TimeFrameInterface,
   UserAvailabilityInterface,
 } from '@gurokonekt/models/interfaces/user/user.model';
 import {
-  ActiveBookingSummaryInterface,
   BookingCardInterface,
   BookingStatus,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
@@ -26,26 +24,19 @@ import { BookingService } from '../../../../shared/services/booking.service';
 import { Button } from '@gurokonekt/ui';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import {
-  formatBookingTime,
-  formatDateLabel,
-  formatTimeRange,
-  getActiveBookingForFrame,
-  getActiveBookingSummariesForDay,
-  getAvailableSlotCount,
-  getBookingBadgeClasses,
-  getBookingSummaryLabel,
-  getDateForDay,
-  getTimeFrameStatus,
   mapAvailabilityToCalendarEvents,
-  timeToMinutes,
   toWeekInputValue,
 } from './availability.helpers';
+import {
+  timeToMinutes,
+  validateAvailabilityFrames,
+} from '../../utils/availability-validation.util';
 import { AvailabilityService } from '../../services/availability.service';
-import { WeekPicker } from '../../../../shared/components/week-picker/week-picker';
 import { SectionTitle } from '../../../../shared/components/section-title/section-title.component';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { AvailabilitySlotModal } from './availability-slot-modal/availability-slot-modal';
 import { DeleteAvailabilityModal } from './delete-availability-modal/delete-availability-modal';
+import { AvailabilityTable } from '../../components/availability-table/availability-table';
 
 @Component({
   selector: 'app-mentor-manage-availability-page',
@@ -55,10 +46,10 @@ import { DeleteAvailabilityModal } from './delete-availability-modal/delete-avai
     FullCalendarModule,
     Button,
     IconComponent,
-    WeekPicker,
     SectionTitle,
     AvailabilitySlotModal,
     DeleteAvailabilityModal,
+    AvailabilityTable,
   ],
   templateUrl: './mentor-manage-availability.page.html',
   styleUrl: './mentor-manage-availability.page.scss',
@@ -129,8 +120,6 @@ export class MentorManageAvailabilityPage implements OnInit {
     height: 'auto',
     allDaySlot: false,
   };
-
-  formatTimeRange = formatTimeRange;
 
   ngOnInit(): void {
     const userId = this.currentUserId;
@@ -229,27 +218,7 @@ export class MentorManageAvailabilityPage implements OnInit {
     const userId = this.currentUserId;
     if (!userId) return;
 
-    if (timeToMinutes(this.slotForm.from) >= timeToMinutes(this.slotForm.to)) {
-      this.toastService.warning('Start time must be before end time.');
-      return;
-    }
-
     const sessionDurationMinutes = this.selectors.sessionDurationMinutes();
-    const frameDuration =
-      timeToMinutes(this.slotForm.to) - timeToMinutes(this.slotForm.from);
-
-    if (frameDuration < sessionDurationMinutes) {
-      this.toastService.warning(`Time range must be at least ${sessionDurationMinutes} minutes.`);
-      return;
-    }
-
-    if (frameDuration % sessionDurationMinutes !== 0) {
-      this.toastService.warning(
-        `Time range must be divisible into ${sessionDurationMinutes}-minute sessions.`
-      );
-      return;
-    }
-
     const frame: TimeFrameInterface = {
       from: this.slotForm.from,
       to: this.slotForm.to,
@@ -257,6 +226,27 @@ export class MentorManageAvailabilityPage implements OnInit {
 
     const editingDay = this.editingDay();
     const editingTimeFrameIndex = this.editingTimeFrameIndex();
+    const targetDay = editingDay ?? this.slotForm.day;
+    const existingDay = this.selectors
+      .availabilities()
+      .find((slot) => slot.day === targetDay);
+    const framesToValidate =
+      editingDay && editingTimeFrameIndex !== null
+        ? (existingDay?.timeFrames ?? []).map((currentFrame, index) =>
+            index === editingTimeFrameIndex ? frame : currentFrame
+          )
+        : editingDay
+          ? [frame]
+          : [...(existingDay?.timeFrames ?? []), frame];
+    const validationError = validateAvailabilityFrames(
+      framesToValidate,
+      sessionDurationMinutes
+    );
+
+    if (validationError) {
+      this.toastService.warning(validationError);
+      return;
+    }
 
     if (editingDay && editingTimeFrameIndex !== null) {
       this.availabilityService
@@ -367,66 +357,4 @@ export class MentorManageAvailabilityPage implements OnInit {
       });
   }
 
-  getAvailabilityForDay(day: DaysInWeek): UserAvailabilityInterface | null {
-    return this.selectors.availabilities().find((slot) => slot.day === day) ?? null;
-  }
-
-  getDateForDay(day: DaysInWeek): Date {
-    return getDateForDay(day, this.days, this.selectedWeekValue);
-  }
-
-  getDateLabelForDay(day: DaysInWeek): string {
-    return formatDateLabel(this.getDateForDay(day));
-  }
-
-  getActiveBookingSummariesForDay(day: DaysInWeek): ActiveBookingSummaryInterface[] {
-    const slot = this.getAvailabilityForDay(day);
-    return getActiveBookingSummariesForDay(
-      slot,
-      this.getDateForDay(day),
-      this.blockedBookings(),
-      this.selectors.sessionDurationMinutes()
-    );
-  }
-
-  getAvailableSlotCount(day: DaysInWeek): number {
-    const slot = this.getAvailabilityForDay(day);
-    return getAvailableSlotCount(
-      slot,
-      this.getDateForDay(day),
-      this.blockedBookings(),
-      this.selectors.sessionDurationMinutes()
-    );
-  }
-
-  getBookingSummaryLabel(day: DaysInWeek): string {
-    return getBookingSummaryLabel(this.getActiveBookingSummariesForDay(day));
-  }
-
-  getBlockedTimeForFrame(day: DaysInWeek, frame: TimeFrameInterface): string | null {
-    const booking = this.getActiveBookingForFrame(day, frame);
-    return booking
-      ? formatBookingTime(booking, this.selectors.sessionDurationMinutes())
-      : null;
-  }
-
-  getActiveBookingForFrame(
-    day: DaysInWeek,
-    frame: TimeFrameInterface
-  ): BookingCardInterface | null {
-    return getActiveBookingForFrame(
-      frame,
-      this.getDateForDay(day),
-      this.blockedBookings(),
-      this.selectors.sessionDurationMinutes()
-    );
-  }
-
-  getBookingBadgeClasses(status: BookingStatus): string {
-    return getBookingBadgeClasses(status);
-  }
-
-  getTimeFrameStatus(day: DaysInWeek, frame: TimeFrameInterface): TimeFrameAvailabilityStatus {
-    return getTimeFrameStatus(this.getActiveBookingForFrame(day, frame));
-  }
 }
