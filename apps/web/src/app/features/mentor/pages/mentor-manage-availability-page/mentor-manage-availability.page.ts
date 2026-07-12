@@ -25,9 +25,12 @@ import { Button } from '@gurokonekt/ui';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import {
   mapAvailabilityToCalendarEvents,
-  timeToMinutes,
   toWeekInputValue,
 } from './availability.helpers';
+import {
+  timeToMinutes,
+  validateAvailabilityFrames,
+} from '../../utils/availability-validation.util';
 import { AvailabilityService } from '../../services/availability.service';
 import { SectionTitle } from '../../../../shared/components/section-title/section-title.component';
 import { ToastService } from '../../../../shared/services/toast.service';
@@ -215,27 +218,7 @@ export class MentorManageAvailabilityPage implements OnInit {
     const userId = this.currentUserId;
     if (!userId) return;
 
-    if (timeToMinutes(this.slotForm.from) >= timeToMinutes(this.slotForm.to)) {
-      this.toastService.warning('Start time must be before end time.');
-      return;
-    }
-
     const sessionDurationMinutes = this.selectors.sessionDurationMinutes();
-    const frameDuration =
-      timeToMinutes(this.slotForm.to) - timeToMinutes(this.slotForm.from);
-
-    if (frameDuration < sessionDurationMinutes) {
-      this.toastService.warning(`Time range must be at least ${sessionDurationMinutes} minutes.`);
-      return;
-    }
-
-    if (frameDuration % sessionDurationMinutes !== 0) {
-      this.toastService.warning(
-        `Time range must be divisible into ${sessionDurationMinutes}-minute sessions.`
-      );
-      return;
-    }
-
     const frame: TimeFrameInterface = {
       from: this.slotForm.from,
       to: this.slotForm.to,
@@ -243,6 +226,27 @@ export class MentorManageAvailabilityPage implements OnInit {
 
     const editingDay = this.editingDay();
     const editingTimeFrameIndex = this.editingTimeFrameIndex();
+    const targetDay = editingDay ?? this.slotForm.day;
+    const existingDay = this.selectors
+      .availabilities()
+      .find((slot) => slot.day === targetDay);
+    const framesToValidate =
+      editingDay && editingTimeFrameIndex !== null
+        ? (existingDay?.timeFrames ?? []).map((currentFrame, index) =>
+            index === editingTimeFrameIndex ? frame : currentFrame
+          )
+        : editingDay
+          ? [frame]
+          : [...(existingDay?.timeFrames ?? []), frame];
+    const validationError = validateAvailabilityFrames(
+      framesToValidate,
+      sessionDurationMinutes
+    );
+
+    if (validationError) {
+      this.toastService.warning(validationError);
+      return;
+    }
 
     if (editingDay && editingTimeFrameIndex !== null) {
       this.availabilityService

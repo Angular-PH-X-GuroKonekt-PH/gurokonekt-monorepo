@@ -1,11 +1,32 @@
-import { Component, OnInit, inject, input, output, signal } from '@angular/core';
-import { DaysInWeek, TimeFrameInterface, UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/user.model';
+import {
+  Component,
+  OnInit,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
+import {
+  DaysInWeek,
+  TimeFrameInterface,
+  UserAvailabilityInterface,
+} from '@gurokonekt/models/interfaces/user/user.model';
+
 import { IconComponent } from '../../../../../shared/components/icon/icon.component';
-import type { DayAvailability, TimeFrame } from '../../../../../shared/interfaces/post-login.interface';
+import type {
+  DayAvailability,
+  TimeFrame,
+} from '../../../../../shared/interfaces/post-login.interface';
 import { ToastService } from '../../../../../shared/services/toast.service';
 import { AvailabilitySlotModal } from '../../mentor-manage-availability-page/availability-slot-modal/availability-slot-modal';
-import { timeToMinutes, toWeekInputValue } from '../../mentor-manage-availability-page/availability.helpers';
-import { AvailabilityTable, AvailabilityTimeFrameAction } from '../../../components/availability-table/availability-table';
+import {
+  toWeekInputValue,
+} from '../../mentor-manage-availability-page/availability.helpers';
+import {
+  AvailabilityTable,
+  AvailabilityTimeFrameAction,
+} from '../../../components/availability-table/availability-table';
+import { validateAvailabilityFrames } from '../../../utils/availability-validation.util';
 
 @Component({
   selector: 'app-mentor-weekly-availability',
@@ -101,11 +122,6 @@ export class MentorWeeklyAvailability implements OnInit {
   }
 
   saveSlot(): void {
-    if (timeToMinutes(this.slotForm.from) >= timeToMinutes(this.slotForm.to)) {
-      this.toastService.warning('Start time must be before end time.');
-      return;
-    }
-
     const frame: TimeFrameInterface = {
       from: this.slotForm.from,
       to: this.slotForm.to,
@@ -122,10 +138,13 @@ export class MentorWeeklyAvailability implements OnInit {
       frameIndex
     );
 
-    if (this.hasOverlappingFrames(framesToValidate)) {
-      this.toastService.warning(
-        'This time slot overlaps another availability slot on the same day.'
-      );
+    const validationError = validateAvailabilityFrames(
+      framesToValidate,
+      this.sessionDurationMinutes()
+    );
+
+    if (validationError) {
+      this.toastService.warning(validationError);
       return;
     }
 
@@ -211,21 +230,6 @@ export class MentorWeeklyAvailability implements OnInit {
     return daySchedule.enabled
       ? [...daySchedule.timeFrames, frame]
       : [frame];
-  }
-
-  hasOverlappingFrames(frames: TimeFrameInterface[]): boolean {
-    const sortedFrames = [...frames].sort(
-      (first, second) =>
-        timeToMinutes(first.from) - timeToMinutes(second.from)
-    );
-
-    return sortedFrames.some((frame, index) => {
-      const nextFrame = sortedFrames[index + 1];
-      return (
-        nextFrame !== undefined &&
-        timeToMinutes(nextFrame.from) < timeToMinutes(frame.to)
-      );
-    });
   }
 
   createDefaultTimeFrame(): TimeFrame {
