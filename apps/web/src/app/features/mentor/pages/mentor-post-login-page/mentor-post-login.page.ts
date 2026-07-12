@@ -4,10 +4,11 @@ import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } fr
 import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
-import { DaysInWeek } from '@gurokonekt/models/interfaces/user/user.model';
-import type { UpdateMentorProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
+import type {
+  UpdateMentorProfileInterface,
+  UserAvailabilityInterface,
+} from '@gurokonekt/models/interfaces/user/user.model';
 
-import type { DayAvailability, TimeFrame } from '../../../../shared/interfaces/post-login.interface';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { FormArrayTextListComponent, createFormArrayTextControl } from '../../../../shared/components/form-array-text-list/form-array-text-list.component';
@@ -17,17 +18,23 @@ import { expertiseOptions } from 'apps/web/src/app/shared/helpers/expertise-sele
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { isSessionExpiredError } from '../../../../shared/utils/http-error.util';
 import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
+import { MentorWeeklyAvailability } from './mentor-weekly-availability/mentor-weekly-availability';
 
 @Component({
   selector: 'app-mentor-post-login',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent, FormArrayTextListComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    IconComponent,
+    FormArrayTextListComponent,
+    MentorWeeklyAvailability,
+  ],
   templateUrl: './mentor-post-login.page.html',
 })
 export class MentorPostLoginPage implements OnInit {
   private static readonly MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
   private static readonly ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
-  private static readonly MAX_TIME_FRAMES_PER_DAY = 3;
   private static readonly MAX_SKILLS = 8;
 
   private readonly fb = inject(FormBuilder);
@@ -39,7 +46,6 @@ export class MentorPostLoginPage implements OnInit {
   protected readonly totalSteps = 3;
   protected readonly isSubmitting = signal(false);
 
-  protected readonly daysOfWeek = Object.values(DaysInWeek);
   protected readonly expertiseOptions = expertiseOptions;
 
   protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
@@ -50,11 +56,10 @@ export class MentorPostLoginPage implements OnInit {
 
   protected selectedAvatarFile: File | null = null;
   protected profileForm!: FormGroup;
-  protected availabilitySchedule = signal<DayAvailability[]>([]);
+  protected readonly availability = signal<UserAvailabilityInterface[]>([]);
 
   ngOnInit(): void {
     this.initializeForm();
-    this.initializeAvailability();
   }
 
   private initializeForm(): void {
@@ -63,30 +68,6 @@ export class MentorPostLoginPage implements OnInit {
       areasOfExpertise: this.fb.array([], Validators.required),
       skills: this.fb.array([createFormArrayTextControl(this.fb)], Validators.required),
     });
-  }
-
-  private initializeAvailability(): void {
-    const schedule: DayAvailability[] = this.daysOfWeek.map((day) => ({
-      day,
-      enabled: false,
-      timeFrames: [this.createDefaultTimeFrame()],
-    }));
-    this.availabilitySchedule.set(schedule);
-  }
-
-  private createDefaultTimeFrame(): TimeFrame {
-    return { from: '09:00', to: '17:00' };
-  }
-
-  private updateScheduleForDay(day: DaysInWeek, update: (daySchedule: DayAvailability) => void): void {
-    const schedule = this.availabilitySchedule();
-    const dayIndex = schedule.findIndex((entry) => entry.day === day);
-    if (dayIndex < 0) {
-      return;
-    }
-
-    update(schedule[dayIndex]);
-    this.availabilitySchedule.set([...schedule]);
   }
 
   get areasOfExpertise(): FormArray {
@@ -150,41 +131,6 @@ export class MentorPostLoginPage implements OnInit {
     }
   }
 
-  toggleDay(day: DaysInWeek): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      daySchedule.enabled = !daySchedule.enabled;
-    });
-  }
-
-  addTimeFrame(day: DaysInWeek): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (daySchedule.timeFrames.length < MentorPostLoginPage.MAX_TIME_FRAMES_PER_DAY) {
-        daySchedule.timeFrames.push(this.createDefaultTimeFrame());
-      }
-    });
-  }
-
-  removeTimeFrame(day: DaysInWeek, timeFrameIndex: number): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (daySchedule.timeFrames.length > 1) {
-        daySchedule.timeFrames.splice(timeFrameIndex, 1);
-      }
-    });
-  }
-
-  updateTimeFrame(day: DaysInWeek, timeFrameIndex: number, field: 'from' | 'to', value: string): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (!daySchedule.timeFrames[timeFrameIndex]) {
-        return;
-      }
-      daySchedule.timeFrames[timeFrameIndex][field] = value;
-    });
-  }
-
-  getDaySchedule(day: DaysInWeek): DayAvailability | undefined {
-    return this.availabilitySchedule().find((schedule) => schedule.day === day);
-  }
-
   nextStep(): void {
     if (this.currentStep() < this.totalSteps) {
       this.currentStep.update((step) => step + 1);
@@ -213,16 +159,7 @@ export class MentorPostLoginPage implements OnInit {
   }
 
   private hasAtLeastOneAvailability(): boolean {
-    return this.availabilitySchedule().some((day) => day.enabled && day.timeFrames.length > 0);
-  }
-
-  private buildAvailabilityPayload(): Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }> {
-    return this.availabilitySchedule()
-      .filter((day) => day.enabled)
-      .map((day) => ({
-        day: day.day,
-        timeFrames: day.timeFrames,
-      }));
+    return this.availability().some((day) => day.timeFrames.length > 0);
   }
 
   private buildProfileData(): Partial<UpdateMentorProfileInterface> {
@@ -230,7 +167,7 @@ export class MentorPostLoginPage implements OnInit {
       bio: this.profileForm.value.bio,
       areasOfExpertise: this.areasOfExpertise.value,
       skills: this.skills.value,
-      availability: this.buildAvailabilityPayload(),
+      availability: this.availability(),
     };
   }
 
