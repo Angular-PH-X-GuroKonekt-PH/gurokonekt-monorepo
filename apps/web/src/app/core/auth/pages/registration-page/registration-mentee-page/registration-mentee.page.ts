@@ -1,24 +1,45 @@
-import { Component, effect, inject, OnInit } from '@angular/core';
-import { ReactiveFormsModule } from '@angular/forms';
-import { FormGroup } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, OnInit, output } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
 import { ToastService } from '../../../../../shared/services/toast.service';
 import { BaseStepperRegistrationComponent } from 'apps/web/src/app/shared/base-form/base-stepper-registration.component';
-import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';
-import { FORM_FIELD_VALIDATORS } from 'apps/web/src/app/shared/constants';
+import { createFormConfig } from 'apps/web/src/app/shared/constants';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { buildVerifyEmailRedirectUrl } from 'apps/web/src/app/shared/utils/email-verification.util';
-import { CustomValidators } from 'apps/web/src/app/shared/validators/custom-validators';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
-import { ClearAuthMessages, RegisterMentee } from '../../../store/auth.actions';
+import { RegisterMentee } from '../../../store/auth.actions';
 import { AuthSelectors } from '../../../store/auth.selectors';
+import { watchRegistrationOutcome } from '../../../helpers/registration-outcome.helper';
+import { RegistrationStepNavComponent } from '../registration-step-nav/registration-step-nav.component';
+import { RegistrationShellComponent } from '../registration-shell/registration-shell.component';
+import { RegistrationStepperComponent } from '../registration-stepper/registration-stepper.component';
+import { RegistrationLoginLinkComponent } from '../registration-login-link/registration-login-link.component';
+import { RegistrationPasswordFieldsComponent } from '../registration-password-fields/registration-password-fields.component';
+import { RegistrationNameFieldsComponent } from '../registration-name-fields/registration-name-fields.component';
+import { RegistrationPhoneFieldComponent } from '../registration-phone-field/registration-phone-field.component';
+import { RegistrationLocationFieldsComponent } from '../registration-location-fields/registration-location-fields.component';
+import { RegistrationEmailFieldComponent } from '../registration-email-field/registration-email-field.component';
+import { RegistrationReviewStepComponent } from '../registration-review-step/registration-review-step.component';
 
 @Component({
   selector: 'app-registration-mentee-page',
   standalone: true,
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [
+    ReactiveFormsModule,
+    RegistrationStepNavComponent,
+    RegistrationShellComponent,
+    RegistrationStepperComponent,
+    RegistrationLoginLinkComponent,
+    RegistrationPasswordFieldsComponent,
+    RegistrationNameFieldsComponent,
+    RegistrationEmailFieldComponent,
+    RegistrationPhoneFieldComponent,
+    RegistrationLocationFieldsComponent,
+    RegistrationReviewStepComponent,
+  ],
   templateUrl: './registration-mentee.page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistrationMenteePage
   extends BaseStepperRegistrationComponent
@@ -27,22 +48,24 @@ export class RegistrationMenteePage
   private readonly store = inject(Store);
   private readonly toastService = inject(ToastService);
 
+  readonly backToRole = output<void>();
+
   protected readonly isMenteeRegisterLoading = this.store.selectSignal(
     AuthSelectors.isMenteeRegisterLoading
-  );
-  protected readonly errorMessage = this.store.selectSignal(
-    AuthSelectors.errorMessage
-  );
-  protected readonly successMessage = this.store.selectSignal(
-    AuthSelectors.successMessage
   );
 
   protected readonly totalSteps = 4;
   protected readonly stepTitles = [
     'Personal Information',
-    'Contact Details',
+    'Account Security',
     'Location & Language',
     'Confirmation',
+  ];
+  protected readonly stepDescriptions = [
+    'Tell us about yourself',
+    'Create a secure password',
+    'Location & preferences',
+    'Review and accept terms',
   ];
 
   protected readonly registerForm: FormGroup;
@@ -50,60 +73,30 @@ export class RegistrationMenteePage
   constructor() {
     super();
 
-    let lastSuccessNotified: string | null = null;
-    let lastErrorNotified: string | null = null;
+    const formConfig = createFormConfig('MENTEE_REGISTER');
+    this.registerForm = this.fb.group(formConfig.fields, formConfig.options);
 
-    effect(() => {
-      const successMsg = this.successMessage();
-      const errorMsg = this.errorMessage();
-
-      if (successMsg && successMsg !== lastSuccessNotified) {
-        lastSuccessNotified = successMsg;
-        this.handleSubmissionSuccess();
-        this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
-        this.store.dispatch(new ClearAuthMessages());
-        this.router.navigate([APP_ROUTES.REGISTER_MENTEE_CONFIRMATION]);
-      }
-
-      if (errorMsg && errorMsg !== lastErrorNotified) {
-        lastErrorNotified = errorMsg;
-        this.handleSubmissionError(errorMsg);
-        this.toastService.error(errorMsg, 'Registration Failed');
-        this.store.dispatch(new ClearAuthMessages());
-      }
-
-      if (!successMsg) {
-        lastSuccessNotified = null;
-      }
-      if (!errorMsg) {
-        lastErrorNotified = null;
-      }
-    });
-
-    this.registerForm = this.fb.group(
-      {
-        firstName: ['', FORM_FIELD_VALIDATORS.FIRST_NAME],
-        middleName: ['', FORM_FIELD_VALIDATORS.MIDDLE_NAME],
-        lastName: ['', FORM_FIELD_VALIDATORS.LAST_NAME],
-        suffix: ['', FORM_FIELD_VALIDATORS.SUFFIX],
-        email: ['', FORM_FIELD_VALIDATORS.EMAIL],
-        phoneNumber: ['', FORM_FIELD_VALIDATORS.PHONE_NUMBER],
-        password: ['', FORM_FIELD_VALIDATORS.PASSWORD],
-        confirmPassword: ['', FORM_FIELD_VALIDATORS.CONFIRM_PASSWORD],
-        country: ['PH', FORM_FIELD_VALIDATORS.COUNTRY],
-        timezone: ['Asia/Manila', FORM_FIELD_VALIDATORS.TIMEZONE],
-        language: ['en'],
-        acceptTerms: [false, FORM_FIELD_VALIDATORS.ACCEPT_TERMS],
-      },
-      { validators: CustomValidators.passwordMatchValidator }
-    );
-
-    // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
+
+    watchRegistrationOutcome({
+      successMessage: this.store.selectSignal(AuthSelectors.successMessage),
+      errorMessage: this.store.selectSignal(AuthSelectors.errorMessage),
+      confirmationRoute: APP_ROUTES.REGISTER_MENTEE_CONFIRMATION,
+      store: this.store,
+      toastService: this.toastService,
+      router: this.router,
+      onSuccess: () => this.handleSubmissionSuccess(),
+      onError: (message) => this.handleSubmissionError(message),
+    });
   }
 
   ngOnInit(): void {
     this.scrollToTop();
+  }
+
+  protected goBackToRoleSelection(): void {
+    this.clearSubmissionError();
+    this.backToRole.emit();
   }
 
   protected override isCurrentStepValid(): boolean {
@@ -112,11 +105,14 @@ export class RegistrationMenteePage
 
     switch (currentStep) {
       case 1:
-        return !!form.get('firstName')?.valid && !!form.get('lastName')?.valid;
+        return (
+          !!form.get('firstName')?.valid &&
+          !!form.get('lastName')?.valid &&
+          !!form.get('email')?.valid &&
+          !!form.get('phoneNumber')?.valid
+        );
       case 2:
         return (
-          !!form.get('email')?.valid &&
-          !!form.get('phoneNumber')?.valid &&
           !!form.get('password')?.valid &&
           !!form.get('confirmPassword')?.valid &&
           this.passwordsMatch()

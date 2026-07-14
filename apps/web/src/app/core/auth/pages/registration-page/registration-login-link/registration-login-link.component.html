@@ -1,0 +1,14 @@
+<div class="mt-8 text-center pt-6 border-t border-gray-200">
+  <p class="text-sm text-gray-600">
+    Already have an account?
+    <button
+      type="button"
+      (click)="loginClicked.emit()"
+      (keyup.enter)="loginClicked.emit()"
+      (keyup.space)="loginClicked.emit()"
+      class="text-orange-600 hover:text-orange-700 font-semibold ml-1"
+    >
+      Log in
+    </button>
+  </p>
+</div>
