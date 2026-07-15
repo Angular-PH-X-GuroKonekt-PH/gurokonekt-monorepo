@@ -26,7 +26,10 @@ import {
   AvailabilityTable,
   AvailabilityTimeFrameAction,
 } from '../../../components/availability-table/availability-table';
-import { validateAvailabilityFrames } from '../../../utils/availability-validation.util';
+import {
+  splitAvailabilityFrame,
+  validateAvailabilityFrames,
+} from '../../../utils/availability-validation.util';
 
 @Component({
   selector: 'app-mentor-weekly-availability',
@@ -34,7 +37,6 @@ import { validateAvailabilityFrames } from '../../../utils/availability-validati
   templateUrl: './mentor-weekly-availability.html',
 })
 export class MentorWeeklyAvailability implements OnInit {
-  private static readonly MAX_TIME_FRAMES_PER_DAY = 3;
   toastService = inject(ToastService);
 
   initialAvailability = input<UserAvailabilityInterface[]>([]);
@@ -58,7 +60,9 @@ export class MentorWeeklyAvailability implements OnInit {
     const initialByDay = new Map(
       this.initialAvailability().map((availability) => [
         availability.day,
-        availability.timeFrames,
+        availability.timeFrames.flatMap((frame) =>
+          splitAvailabilityFrame(frame, this.sessionDurationMinutes())
+        ),
       ])
     );
 
@@ -148,25 +152,21 @@ export class MentorWeeklyAvailability implements OnInit {
       return;
     }
 
-    if (
-      !this.editingDay() &&
-      daySchedule.enabled &&
-      daySchedule.timeFrames.length >= MentorWeeklyAvailability.MAX_TIME_FRAMES_PER_DAY
-    ) {
-      this.toastService.warning('A day can have up to 3 time slots.');
-      return;
-    }
+    const sessionFrames = splitAvailabilityFrame(
+      frame,
+      this.sessionDurationMinutes()
+    );
 
     this.updateDay(day, (draft) => {
       if (frameIndex !== null) {
-        draft.timeFrames[frameIndex] = frame;
+        draft.timeFrames.splice(frameIndex, 1, ...sessionFrames);
       } else if (this.editingDay()) {
-        draft.timeFrames = [frame];
+        draft.timeFrames = sessionFrames;
       } else if (draft.enabled) {
-        draft.timeFrames = [...draft.timeFrames, frame];
+        draft.timeFrames = [...draft.timeFrames, ...sessionFrames];
       } else {
         draft.enabled = true;
-        draft.timeFrames = [frame];
+        draft.timeFrames = sessionFrames;
       }
     });
 

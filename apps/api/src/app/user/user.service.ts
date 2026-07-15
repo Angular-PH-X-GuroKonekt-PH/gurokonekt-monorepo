@@ -677,6 +677,7 @@ export class UserService {
       if (role === UserRole.Mentor) {
         const mentorDto = effectiveDto as UpdateMentorProfileDto;
         const availability = (mentorDto.availability ?? []) as AvailabilitySlot[];
+        const normalizedAvailability: AvailabilitySlot[] = [];
         const days = availability.map((entry) => entry.day);
 
         if (new Set(days).size !== days.length) {
@@ -703,7 +704,23 @@ export class UserService {
               data: null,
             };
           }
+
+          try {
+            normalizedAvailability.push({
+              day: entry.day,
+              timeFrames: splitIntoSessionFrames(entry.timeFrames),
+            });
+          } catch (error) {
+            return {
+              status: ResponseStatus.Error,
+              statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
+              message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message} (${entry.day}): ${(error as Error).message}`,
+              data: null,
+            };
+          }
         }
+
+        mentorDto.availability = normalizedAvailability;
       }
 
       
