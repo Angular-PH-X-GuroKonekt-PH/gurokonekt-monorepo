@@ -36,6 +36,9 @@ export abstract class BaseStepperRegistrationComponent extends BaseRegistrationC
       this.scrollToTop();
     }
   }
+
+  /** Implemented by pages that expose an `output()` for returning to role selection. */
+  protected abstract goBackToRoleSelection(): void;
   
   protected getProgress(): number {
     return Math.round((this.currentStep() / this.totalSteps) * 100);
@@ -45,6 +48,10 @@ export abstract class BaseStepperRegistrationComponent extends BaseRegistrationC
     // Only allow navigation to current or previous steps, not future steps
     return step >= 1 && step <= this.currentStep() && step <= this.totalSteps;
   }
+
+  /** Bound for child components that need a function input. */
+  protected readonly isStepNavigable = (step: number): boolean =>
+    this.canNavigateToStep(step);
   
   protected canProceedToNextStep(): boolean {
     return this.isCurrentStepValid() && !this.isLastStep();

@@ -32,8 +32,9 @@ export const appRoutes: Route[] = [
     canActivate: [unauthenticatedGuard, registrationConfirmationGuard('mentor')],
     loadComponent: () =>
       import(
-        './core/auth/pages/registration-page/registration-mentor-confirmation-page/registration-mentor-confirmation.page'
-      ).then((m) => m.RegistrationMentorConfirmationPage),
+        './core/auth/pages/registration-page/registration-confirmation-page/registration-confirmation.page'
+      ).then((m) => m.RegistrationConfirmationPage),
+    data: { role: 'mentor' },
     title: 'Mentor Registration Confirmation',
   },
   {
@@ -41,10 +42,10 @@ export const appRoutes: Route[] = [
     canActivate: [unauthenticatedGuard, registrationConfirmationGuard('mentee')],
     loadComponent: () =>
       import(
-        './core/auth/pages/registration-page/registration-mentee-confirmation-page/registration-mentee-confirmation.page'
-      ).then((m) => m.RegistrationMenteeConfirmationPage),
+        './core/auth/pages/registration-page/registration-confirmation-page/registration-confirmation.page'
+      ).then((m) => m.RegistrationConfirmationPage),
+    data: { role: 'mentee' },
     title: 'Mentee Registration Confirmation',
-    
   },
   {
     path: APP_ROUTES.VERIFY_EMAIL,

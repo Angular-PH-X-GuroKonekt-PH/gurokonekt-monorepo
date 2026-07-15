@@ -1,4 +1,4 @@
-import { Component, signal, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, signal, output } from '@angular/core';
 import { Role } from '@gurokonekt/models/interfaces/auth/user.types';
 import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';
 
@@ -7,6 +7,7 @@ import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.comp
   standalone: true,
   imports: [IconComponent],
   templateUrl: './registration-role-selection.page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistrationRoleSelectionPage {
   protected readonly selectedRole = signal<Role | null>(null);

@@ -1,5 +1,6 @@
-import { Component, effect, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { NgOptimizedImage } from '@angular/common';
 import { createSelectMap, Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
 
@@ -7,10 +8,9 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { createPasswordVisibilityState } from '../../../../shared/utils';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BaseFormComponent } from '../../../../shared/base-form/base-form.component';
-import { AuthState } from '../../store/auth.state';
 import * as AuthActions from '../../store/auth.actions';
 import { preSubmissionValidation } from '../../../../shared/helpers/form-submission.helper';
-import { Router } from '@angular/router'; 
+import { Router } from '@angular/router';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { requiresProfileSetup } from 'apps/web/src/app/shared/utils/profile-completion.util';
 import { AuthSelectors } from '../../store/auth.selectors';
@@ -21,9 +21,9 @@ import {
 
 @Component({
   selector: 'app-login-page',
-  standalone: true,
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [ReactiveFormsModule, IconComponent, NgOptimizedImage],
   templateUrl: './login.page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class LoginPage extends BaseFormComponent implements OnInit {
   private readonly store = inject(Store);
@@ -38,19 +38,13 @@ export class LoginPage extends BaseFormComponent implements OnInit {
     isLoginLoading: AuthSelectors.isLoginLoading,
     errorMessage: AuthSelectors.errorMessage,
     successMessage: AuthSelectors.successMessage,
-  })
+  });
 
-  protected readonly loginForm: FormGroup = this.fb.group({
+  protected readonly loginForm = this.fb.nonNullable.group({
     email: ['', [Validators.required, Validators.email]],
     password: ['', [Validators.required, Validators.minLength(1)]],
   });
   protected readonly form: FormGroup = this.loginForm;
-
-  ngOnInit(): void {
-    if (hasEmailVerificationCallbackHash()) {
-      redirectToVerifyEmailCallback();
-    }
-  }
 
   constructor() {
     super();
@@ -71,6 +65,10 @@ export class LoginPage extends BaseFormComponent implements OnInit {
     });
   }
 
+  ngOnInit(): void {
+    this.redirectEmailVerificationCallbackIfPresent();
+  }
+
   protected togglePasswordVisibility(): void {
     this.passwordHelper.toggleVisibility();
   }
@@ -81,11 +79,10 @@ export class LoginPage extends BaseFormComponent implements OnInit {
     }
 
     try {
+      const { email, password } = this.loginForm.getRawValue();
+
       await firstValueFrom(
-        this.store.dispatch(new AuthActions.Login({
-          email: this.loginForm.value.email,
-          password: this.loginForm.value.password,
-        }))
+        this.store.dispatch(new AuthActions.Login({ email, password }))
       );
 
       const user = this.store.selectSnapshot(AuthSelectors.user);
@@ -109,5 +106,11 @@ export class LoginPage extends BaseFormComponent implements OnInit {
 
   protected navigateToForgotPassword(): void {
     this.toastService.info('Forgot password is not available yet.');
+  }
+
+  private redirectEmailVerificationCallbackIfPresent(): void {
+    if (hasEmailVerificationCallbackHash()) {
+      redirectToVerifyEmailCallback();
+    }
   }
 }
