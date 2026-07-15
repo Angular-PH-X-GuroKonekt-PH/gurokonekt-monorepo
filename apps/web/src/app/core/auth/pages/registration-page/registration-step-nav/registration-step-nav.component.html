@@ -1,0 +1,63 @@
+<div
+  class="flex items-center justify-between mt-6 pt-6 border-t border-gray-200"
+>
+  @if (currentStep() > 1) {
+  <button
+    type="button"
+    (click)="previous.emit()"
+    (keyup.enter)="previous.emit()"
+    (keyup.space)="previous.emit()"
+    [disabled]="isLoading()"
+    class="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    <app-icon name="chevron-left" class="w-5 h-5"></app-icon>
+    Previous
+  </button>
+  } @else {
+  <button
+    type="button"
+    (click)="backToRole.emit()"
+    (keyup.enter)="backToRole.emit()"
+    (keyup.space)="backToRole.emit()"
+    [disabled]="isLoading()"
+    class="flex items-center gap-2 px-6 py-3 rounded-xl border-2 border-gray-300 text-gray-700 font-semibold hover:border-gray-400 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+  >
+    <app-icon name="chevron-left" class="w-5 h-5"></app-icon>
+    Change role
+  </button>
+  }
+
+  <div class="text-sm text-gray-500">
+    Step {{ currentStep() }} of {{ totalSteps() }}
+  </div>
+
+  @if (currentStep() < totalSteps()) {
+  <button
+    type="button"
+    (click)="next.emit()"
+    (keyup.enter)="next.emit()"
+    (keyup.space)="next.emit()"
+    [disabled]="!canProceed()"
+    class="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-orange-500 to-orange-400 text-white font-semibold hover:shadow-lg transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed"
+  >
+    Next
+    <app-icon name="chevron-right" class="w-5 h-5"></app-icon>
+  </button>
+  } @else {
+  <button
+    type="submit"
+    class="flex items-center gap-2 px-6 py-3 rounded-xl bg-gradient-to-r from-green-500 to-green-400 text-white font-bold hover:shadow-lg transition-all disabled:from-gray-300 disabled:to-gray-300 disabled:cursor-not-allowed"
+    [disabled]="isSubmitDisabled()"
+  >
+    @if (isLoading()) {
+    <span
+      class="inline-block w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin"
+    ></span>
+    {{ submitLoadingLabel() }}
+    } @else {
+    <app-icon name="check-mark" class="w-5 h-5"></app-icon>
+    {{ submitLabel() }}
+    }
+  </button>
+  }
+</div>

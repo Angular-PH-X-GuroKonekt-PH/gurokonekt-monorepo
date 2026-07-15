@@ -1,14 +1,13 @@
-import { Component, effect, inject, OnInit } from '@angular/core';
-import { FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, inject, OnInit, output } from '@angular/core';
+import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
-import { ClearAuthMessages, RegisterMentor } from '../../../store/auth.actions';
+import { RegisterMentor } from '../../../store/auth.actions';
 
 import { IconComponent } from '../../../../../shared/components/icon/icon.component';
 import { BaseStepperRegistrationComponent } from '../../../../../shared/base-form/base-stepper-registration.component';
-import { CustomValidators } from '../../../../../shared/validators/custom-validators';
 import { ToastService } from '../../../../../shared/services/toast.service';
-import { FORM_FIELD_VALIDATORS, VALIDATION_PATTERNS } from 'apps/web/src/app/shared/constants';
+import { createFormConfig } from 'apps/web/src/app/shared/constants';
 import { getCountryDisplayName, getLanguageDisplayName } from 'apps/web/src/app/shared/utils';
 import {
   expertiseOptions,
@@ -19,12 +18,37 @@ import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { buildVerifyEmailRedirectUrl } from 'apps/web/src/app/shared/utils/email-verification.util';
 import { AuthSelectors } from '../../../store/auth.selectors';
+import { watchRegistrationOutcome } from '../../../helpers/registration-outcome.helper';
+import { RegistrationStepNavComponent } from '../registration-step-nav/registration-step-nav.component';
+import { RegistrationShellComponent } from '../registration-shell/registration-shell.component';
+import { RegistrationStepperComponent } from '../registration-stepper/registration-stepper.component';
+import { RegistrationLoginLinkComponent } from '../registration-login-link/registration-login-link.component';
+import { RegistrationPasswordFieldsComponent } from '../registration-password-fields/registration-password-fields.component';
+import { RegistrationNameFieldsComponent } from '../registration-name-fields/registration-name-fields.component';
+import { RegistrationPhoneFieldComponent } from '../registration-phone-field/registration-phone-field.component';
+import { RegistrationLocationFieldsComponent } from '../registration-location-fields/registration-location-fields.component';
+import { RegistrationEmailFieldComponent } from '../registration-email-field/registration-email-field.component';
+import { RegistrationReviewStepComponent } from '../registration-review-step/registration-review-step.component';
 
 @Component({
   selector: 'app-registration-mentor-page',
   standalone: true,
-  imports: [ReactiveFormsModule, IconComponent],
+  imports: [
+    ReactiveFormsModule,
+    IconComponent,
+    RegistrationStepNavComponent,
+    RegistrationShellComponent,
+    RegistrationStepperComponent,
+    RegistrationLoginLinkComponent,
+    RegistrationPasswordFieldsComponent,
+    RegistrationNameFieldsComponent,
+    RegistrationEmailFieldComponent,
+    RegistrationPhoneFieldComponent,
+    RegistrationLocationFieldsComponent,
+    RegistrationReviewStepComponent,
+  ],
   templateUrl: './registration-mentor.page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class RegistrationMentorPage
   extends BaseStepperRegistrationComponent
@@ -33,14 +57,10 @@ export class RegistrationMentorPage
   private readonly store = inject(Store);
   private readonly toastService = inject(ToastService);
 
+  readonly backToRole = output<void>();
+
   protected readonly isMentorRegisterLoading = this.store.selectSignal(
     AuthSelectors.isMentorRegisterLoading
-  );
-  protected readonly errorMessage = this.store.selectSignal(
-    AuthSelectors.errorMessage
-  );
-  protected readonly successMessage = this.store.selectSignal(
-    AuthSelectors.successMessage
   );
 
   protected readonly totalSteps = 5;
@@ -51,6 +71,13 @@ export class RegistrationMentorPage
     'Professional Details',
     'Review & Confirm',
   ];
+  protected readonly stepDescriptions = [
+    'Basic details & contact',
+    'Set your password',
+    'Country & timezone',
+    'Share your expertise',
+    'Review & accept terms',
+  ];
 
   protected readonly registerForm: FormGroup;
   protected readonly expertiseOptions = expertiseOptions;
@@ -59,67 +86,30 @@ export class RegistrationMentorPage
   constructor() {
     super();
 
-    this.registerForm = this.fb.group(
-      {
-        firstName: ['', FORM_FIELD_VALIDATORS.FIRST_NAME],
-        middleName: ['', FORM_FIELD_VALIDATORS.MIDDLE_NAME],
-        lastName: ['', FORM_FIELD_VALIDATORS.LAST_NAME],
-        suffix: ['', FORM_FIELD_VALIDATORS.SUFFIX],
-        email: ['', FORM_FIELD_VALIDATORS.EMAIL],
-        phoneNumber: ['', FORM_FIELD_VALIDATORS.PHONE_NUMBER],
-        password: ['', FORM_FIELD_VALIDATORS.PASSWORD],
-        confirmPassword: ['', FORM_FIELD_VALIDATORS.CONFIRM_PASSWORD],
-        country: ['PH', FORM_FIELD_VALIDATORS.COUNTRY],
-        timezone: ['Asia/Manila', FORM_FIELD_VALIDATORS.TIMEZONE],
-        language: ['en'],
-        areasOfExpertise: [[], [Validators.required, Validators.minLength(1)]],
-        yearsOfExperience: [
-          null,
-          [Validators.required, Validators.min(1), Validators.max(60)],
-        ],
-        linkedInUrl: ['', [Validators.pattern(VALIDATION_PATTERNS.LINKEDIN_URL)]],
-        files: [[]],
-        acceptTerms: [false, FORM_FIELD_VALIDATORS.ACCEPT_TERMS],
-      },
-      { validators: CustomValidators.passwordMatchValidator }
-    );
+    const formConfig = createFormConfig('MENTOR_REGISTER');
+    this.registerForm = this.fb.group(formConfig.fields, formConfig.options);
 
-    // Setup intelligent form auto-population: phone → country → timezone
     this.setupFormAutoPopulation();
 
-    let lastSuccessNotified: string | null = null;
-    let lastErrorNotified: string | null = null;
-
-    effect(() => {
-      const successMsg = this.successMessage();
-      const errorMsg = this.errorMessage();
-
-      if (successMsg && successMsg !== lastSuccessNotified) {
-        lastSuccessNotified = successMsg;
-        this.handleSubmissionSuccess();
-        this.toastService.success(successMsg, 'Welcome to GuroKonekt!');
-        this.store.dispatch(new ClearAuthMessages());
-        this.router.navigate([APP_ROUTES.REGISTER_MENTOR_CONFIRMATION]);
-      }
-
-      if (errorMsg && errorMsg !== lastErrorNotified) {
-        lastErrorNotified = errorMsg;
-        this.handleSubmissionError(errorMsg);
-        this.toastService.error(errorMsg, 'Registration Failed');
-        this.store.dispatch(new ClearAuthMessages());
-      }
-
-      if (!successMsg) {
-        lastSuccessNotified = null;
-      }
-      if (!errorMsg) {
-        lastErrorNotified = null;
-      }
+    watchRegistrationOutcome({
+      successMessage: this.store.selectSignal(AuthSelectors.successMessage),
+      errorMessage: this.store.selectSignal(AuthSelectors.errorMessage),
+      confirmationRoute: APP_ROUTES.REGISTER_MENTOR_CONFIRMATION,
+      store: this.store,
+      toastService: this.toastService,
+      router: this.router,
+      onSuccess: () => this.handleSubmissionSuccess(),
+      onError: (message) => this.handleSubmissionError(message),
     });
   }
 
   ngOnInit(): void {
     this.scrollToTop();
+  }
+
+  protected goBackToRoleSelection(): void {
+    this.clearSubmissionError();
+    this.backToRole.emit();
   }
 
   protected override isCurrentStepValid(): boolean {
@@ -171,16 +161,14 @@ export class RegistrationMentorPage
   protected onFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
     if (input.files && input.files.length > 0) {
-      // Only take the first file (single upload)
       const file = input.files[0];
 
-      // Validate file size (max 10MB)
-      const maxSize = 10 * 1024 * 1024; // 10MB in bytes
+      const maxSize = 10 * 1024 * 1024;
       if (file.size > maxSize) {
         this.handleSubmissionError(
           'File size exceeds 10MB limit. Please choose a smaller file.'
         );
-        input.value = ''; // Clear the input
+        input.value = '';
         this.selectedFiles = [];
         return;
       }
@@ -188,6 +176,11 @@ export class RegistrationMentorPage
       this.selectedFiles = [file];
       this.registerForm.patchValue({ files: this.selectedFiles });
     }
+  }
+
+  protected clearSelectedFiles(): void {
+    this.selectedFiles = [];
+    this.registerForm.patchValue({ files: [] });
   }
 
   protected async onSubmit(): Promise<void> {
