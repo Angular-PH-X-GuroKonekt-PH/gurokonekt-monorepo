@@ -5,6 +5,45 @@ export function timeToMinutes(time: string): number {
   return hours * 60 + minutes;
 }
 
+function minutesToTime(totalMinutes: number): string {
+  const hours = Math.floor(totalMinutes / 60);
+  const minutes = totalMinutes % 60;
+
+  return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}`;
+}
+
+export function splitAvailabilityFrame(
+  frame: TimeFrameInterface,
+  sessionDurationMinutes: number
+): TimeFrameInterface[] {
+  const start = timeToMinutes(frame.from);
+  const end = timeToMinutes(frame.to);
+  const duration = end - start;
+
+  if (
+    sessionDurationMinutes <= 0 ||
+    duration < sessionDurationMinutes ||
+    duration % sessionDurationMinutes !== 0
+  ) {
+    return [{ ...frame }];
+  }
+
+  const sessionFrames: TimeFrameInterface[] = [];
+
+  for (
+    let sessionStart = start;
+    sessionStart < end;
+    sessionStart += sessionDurationMinutes
+  ) {
+    sessionFrames.push({
+      from: minutesToTime(sessionStart),
+      to: minutesToTime(sessionStart + sessionDurationMinutes),
+    });
+  }
+
+  return sessionFrames;
+}
+
 export function validateAvailabilityFrames(
   frames: TimeFrameInterface[],
   sessionDurationMinutes: number

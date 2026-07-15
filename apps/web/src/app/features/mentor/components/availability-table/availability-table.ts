@@ -44,8 +44,7 @@ export class AvailabilityTable {
   sessionDurationMinutes = input(60);
   selectedWeekValue = input.required<string>();
   showWeekPicker = input(true);
-  showBookingDetails = input(true);
-
+  viewMode = input<'setup' | 'management'>('management');
   selectedWeekChange = output<string>();
   editDay = output<UserAvailabilityInterface>();
   deleteDay = output<UserAvailabilityInterface>();
@@ -74,7 +73,7 @@ export class AvailabilityTable {
     this.expandedDays.update((expandedDays) =>
       expandedDays.includes(day)
         ? expandedDays.filter((expandedDay) => expandedDay !== day)
-        : [...expandedDays, day]
+        : [...expandedDays, day],
     );
   }
 
@@ -95,7 +94,7 @@ export class AvailabilityTable {
       this.getAvailabilityForDay(day),
       this.getDateForDay(day),
       this.blockedBookings(),
-      this.sessionDurationMinutes()
+      this.sessionDurationMinutes(),
     );
   }
 
@@ -105,7 +104,7 @@ export class AvailabilityTable {
         this.getAvailabilityForDay(day),
         this.getDateForDay(day),
         this.blockedBookings(),
-        this.sessionDurationMinutes()
+        this.sessionDurationMinutes(),
       );
 
     return getBookingSummaryLabel(bookings);
@@ -113,19 +112,19 @@ export class AvailabilityTable {
 
   getActiveBookingForFrame(
     day: DaysInWeek,
-    frame: TimeFrameInterface
+    frame: TimeFrameInterface,
   ): BookingCardInterface | null {
     return getActiveBookingForFrame(
       frame,
       this.getDateForDay(day),
       this.blockedBookings(),
-      this.sessionDurationMinutes()
+      this.sessionDurationMinutes(),
     );
   }
 
   getBlockedTimeForFrame(
     day: DaysInWeek,
-    frame: TimeFrameInterface
+    frame: TimeFrameInterface,
   ): string | null {
     const booking = this.getActiveBookingForFrame(day, frame);
     return booking
@@ -135,7 +134,7 @@ export class AvailabilityTable {
 
   getTimeFrameStatus(
     day: DaysInWeek,
-    frame: TimeFrameInterface
+    frame: TimeFrameInterface,
   ): TimeFrameAvailabilityStatus {
     return getTimeFrameStatus(this.getActiveBookingForFrame(day, frame));
   }
@@ -148,7 +147,7 @@ export class AvailabilityTable {
     action: 'edit' | 'delete',
     slot: UserAvailabilityInterface,
     timeFrame: TimeFrameInterface,
-    timeFrameIndex: number
+    timeFrameIndex: number,
   ): void {
     const payload = { slot, timeFrame, timeFrameIndex };
     if (action === 'edit') {

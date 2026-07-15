@@ -1,4 +1,25 @@
-import { validateAvailabilityFrames } from './availability-validation.util';
+import {
+  splitAvailabilityFrame,
+  validateAvailabilityFrames,
+} from './availability-validation.util';
+
+describe('splitAvailabilityFrame', () => {
+  it('splits a range using the session duration', () => {
+    expect(
+      splitAvailabilityFrame({ from: '09:00', to: '12:00' }, 60)
+    ).toEqual([
+      { from: '09:00', to: '10:00' },
+      { from: '10:00', to: '11:00' },
+      { from: '11:00', to: '12:00' },
+    ]);
+  });
+
+  it('keeps an invalid legacy range unchanged', () => {
+    expect(
+      splitAvailabilityFrame({ from: '09:00', to: '10:30' }, 60)
+    ).toEqual([{ from: '09:00', to: '10:30' }]);
+  });
+});
 
 describe('validateAvailabilityFrames', () => {
   it('accepts adjacent session frames', () => {
