@@ -1,0 +1,76 @@
+<ng-template #menteeActions let-booking>
+  <div class="relative">
+    <button
+      type="button"
+      (click)="$event.stopPropagation(); toggleActionMenu(booking.id)"
+      class="rounded-lg p-2 text-gray-400 transition-colors hover:bg-gray-100 hover:text-gray-700"
+      aria-label="Open booking actions"
+    >
+      <svg class="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden="true">
+        <circle cx="12" cy="5" r="1.5" />
+        <circle cx="12" cy="12" r="1.5" />
+        <circle cx="12" cy="19" r="1.5" />
+      </svg>
+    </button>
+
+    @if (openActionBookingId() === booking.id) {
+      <div class="absolute right-0 top-11 z-30 w-48 rounded-xl border border-gray-100 bg-white py-2 shadow-lg">
+        <button type="button" (click)="viewDetails(booking)"
+          class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-gray-700 hover:bg-gray-50">
+          <app-icon name="book-open" class="h-4 w-4 text-blue-900" />
+          View details
+        </button>
+
+        @if (canCancelRequest(booking)) {
+          <button type="button" (click)="cancelRequest(booking)"
+            class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-red-600 hover:bg-red-50">
+            <app-icon name="alert-circle" class="h-4 w-4 text-red-500" />
+            Cancel request
+          </button>
+        }
+
+        @if (canJoinSession(booking)) {
+          <a [href]="booking.sessionLink" target="_blank" rel="noopener noreferrer"
+            (click)="closeActionMenu()"
+            class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-blue-700 hover:bg-blue-50">
+            <app-icon name="video-camera" class="h-4 w-4 text-blue-700" />
+            Join session
+          </a>
+        }
+
+        @if (canAddReview(booking)) {
+          <button type="button" (click)="addReview()"
+            class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50">
+            <app-icon name="star" class="h-4 w-4 text-orange-500" />
+            Add review
+          </button>
+        }
+      </div>
+    }
+  </div>
+</ng-template>
+
+<app-bookings-table
+  [title]="title()"
+  [tabs]="tabs()"
+  [activeTab]="activeTab()"
+  [bookings]="filteredBookings()"
+  [isLoading]="isLoading()"
+  counterparty="mentor"
+  [actionsTemplate]="menteeActions"
+  footerMode="none"
+  (tabChange)="setActiveTab($event)"
+/>
+
+@if (selectedBooking(); as booking) {
+  <app-mentee-booking-details-modal [booking]="booking" (closed)="closeDetails()" />
+}
+
+@if (cancelBookingTarget(); as booking) {
+  <app-cancel-booking-modal
+    [booking]="booking"
+    [submitting]="submitting()"
+    (closed)="closeCancelModal()"
+    (confirmed)="confirmCancellation()"
+  />
+}
