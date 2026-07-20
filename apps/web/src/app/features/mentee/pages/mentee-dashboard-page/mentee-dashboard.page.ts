@@ -3,7 +3,6 @@ import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 
-import { AuthState } from '../../../../core/auth/store/auth.state';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { BookingService } from '../../../../shared/services/booking.service';
 import {
@@ -12,34 +11,22 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { of, switchMap } from 'rxjs';
 import { MentorService } from '../../../mentor/services/mentor.service';
-import { CommonModule } from '@angular/common';
 import { MentorSearchItemInterface } from '@gurokonekt/models/interfaces/search/search.model';
 import { MentorCardListSkeleton } from '../../components/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
-import { BookingCardListSkeleton } from '../../../../shared/components/skeleton-loaders/booking-card-list-skeleton/booking-card-list-skeleton.component';
-import { GreetingCard } from 'apps/web/src/app/shared/components/greeting-card/greeting-card.component';
-import { IconComponent } from 'apps/web/src/app/shared/components/icon/icon.component';
-import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card.component';
-import { SectionTitle } from 'apps/web/src/app/shared/components/section-title/section-title.component';
-import { ViewAllButton } from 'apps/web/src/app/shared/components/view-all-button/view-all-button.component';
+import { GreetingCard } from '../../../../shared/components/greeting-card/greeting-card.component';
+import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { MentorRecommendedCard } from '../../../mentor/components/mentor-recommended-card/mentor-recommended-card';
-import { MenteeCompletedBookingCard } from '../../components/mentee-completed-booking-card/mentee-completed-booking-card';
-import { MenteeSessionBookingCard } from '../../components/mentee-session-booking-card/mentee-session-booking-card';
-import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
+import { MenteeDashboardBookingWidget } from '../../components/mentee-dashboard-booking-widget/mentee-dashboard-booking-widget';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 
 @Component({
   selector: 'app-mentee-dashboard-page',
   imports: [
-    SectionCard,
     GreetingCard,
-    CommonModule,
     MentorRecommendedCard,
-    SectionTitle,
-    ViewAllButton,
     IconComponent,
     MentorCardListSkeleton,
-    BookingCardListSkeleton,
-    MenteeSessionBookingCard,
-    MenteeCompletedBookingCard
+    MenteeDashboardBookingWidget,
   ],
   templateUrl: './mentee-dashboard.page.html',
 })
@@ -57,101 +44,81 @@ export class MenteeDashboardPage {
     return typeof value === 'string' && value.trim() ? value : 'Mentee';
   });
 
-  protected readonly currentMentorSlide = signal(0);
-
   //FETCH BOOKINGS
 
   protected readonly upcomingSessions = toSignal<BookingCardInterface[] | null>(
-   toObservable(this.userId).pipe(
-    switchMap((userId) => {
-      if (!userId) {
-        return of([]);
-      }
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of([]);
+        }
 
-      return this.bookingService.getBookingsByStatuses(userId, [
-        BookingStatus.PENDING,
-        BookingStatus.APPROVED,
-      ]);
-
-    }),
-   ),
-   { initialValue: null }
+        return this.bookingService.getBookingsByStatuses(userId, [
+          BookingStatus.PENDING,
+          BookingStatus.APPROVED,
+        ]);
+      }),
+    ),
+    { initialValue: null },
   );
   protected readonly upcomingSessionLoading = computed(() => {
     return this.upcomingSessions() === null;
   });
   protected readonly upcomingSessionsCount = computed(
-    () => this.upcomingSessions()?.length ?? 0
+    () => this.upcomingSessions()?.length ?? 0,
   );
-
+  protected readonly upcomingSessionPreview = computed(() =>
+    [...(this.upcomingSessions() ?? [])]
+      .sort((a, b) => a.sessionDateTime.getTime() - b.sessionDateTime.getTime())
+      .slice(0, 3),
+  );
 
   // FETCH COMPLETED SESSIONS
   protected readonly completedSessionsCount = computed(
-    () => this.completedSessionHistory().length
+    () => this.completedSessionHistory().length,
   );
   protected readonly completedSessionLoading = computed(() => {
     return this.completedSessions() === null;
   });
-  protected readonly completedSessions = toSignal<BookingCardInterface [] | null>(
-   toObservable(this.userId).pipe(
-    switchMap((userId) => {
-      if (!userId) {
-        return of([]);
-      }
-      return this.bookingService.getBookingsByStatuses(userId, [
-        BookingStatus.COMPLETED,
-      ]);
-    }),
-   ),
-   { initialValue: null }
+  protected readonly completedSessions = toSignal<
+    BookingCardInterface[] | null
+  >(
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of([]);
+        }
+        return this.bookingService.getBookingsByStatuses(userId, [
+          BookingStatus.COMPLETED,
+        ]);
+      }),
+    ),
+    { initialValue: null },
   );
   protected readonly completedSessionHistory = computed(() =>
     [...(this.completedSessions() ?? [])]
-      .sort(
-        (a, b) =>
-          b.sessionDateTime.getTime() - a.sessionDateTime.getTime()
-      )
-      .slice(0, 5)
+      .sort((a, b) => b.sessionDateTime.getTime() - a.sessionDateTime.getTime())
+      .slice(0, 5),
   );
-
-
 
   //RECOMMENDED MENTORS
-  protected readonly recommendedMentors = toSignal<MentorSearchItemInterface[] | null>(
-    this.mentorService.getRecommendedMentors(6),
-    { initialValue: null }
-  );
+  protected readonly recommendedMentors = toSignal<
+    MentorSearchItemInterface[] | null
+  >(this.mentorService.getRecommendedMentors(6), { initialValue: null });
   protected readonly recommendedMentorsLoading = computed(
-    () => this.recommendedMentors() === null
+    () => this.recommendedMentors() === null,
   );
+  protected readonly currentMentorSlide = signal(0);
 
-
-
-
-
-
-
-
-
-
-  // CAROUSEL SLIDER FUNCTIONS
-  protected nextMentorSlide(totalSlides: number): void {
-    if (totalSlides <= 0) {
-      return;
-    }
-
-    this.currentMentorSlide.update((currentSlide) =>
-      currentSlide >= totalSlides ? 0 : currentSlide + 1
+  protected nextMentorSlide(maxSlide: number): void {
+    this.currentMentorSlide.update((current) =>
+      current >= maxSlide ? 0 : current + 1,
     );
   }
 
-  protected previousMentorSlide(totalSlides: number): void {
-    if (totalSlides <= 0) {
-      return;
-    }
-
-    this.currentMentorSlide.update((currentSlide) =>
-      currentSlide === 0 ? totalSlides : currentSlide - 1
+  protected previousMentorSlide(maxSlide: number): void {
+    this.currentMentorSlide.update((current) =>
+      current <= 0 ? maxSlide : current - 1,
     );
   }
 
@@ -166,7 +133,7 @@ export class MenteeDashboardPage {
   protected getMentorSlideIndexes(totalMentors: number): number[] {
     return Array.from(
       { length: this.getMaxMentorSlide(totalMentors) + 1 },
-      (_, index) => index
+      (_, index) => index,
     );
   }
 
@@ -176,16 +143,13 @@ export class MenteeDashboardPage {
     });
   }
 
-  protected onCancelRequest(booking: BookingCardInterface): void {
-    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
-      queryParams: { bookingId: booking.id, action: 'cancel' },
-    });
+  protected viewAllUpcomingSessions(): void {
+    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW]);
   }
 
-  protected onAddReview(booking: BookingCardInterface): void {
+  protected viewAllCompletedSessions(): void {
     void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
-      queryParams: { bookingId: booking.id, action: 'review' },
+      queryParams: { tab: 'Completed' },
     });
   }
-
 }
