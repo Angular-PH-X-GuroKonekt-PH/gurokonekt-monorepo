@@ -1,51 +1,53 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { Router } from '@angular/router';
+import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { of, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
-  BookingFilter,
-  BookingStatus,
+  BookingTab,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { BookingService } from '../../../../shared/services/booking.service';
-import { BookingCardListSkeleton } from '../../../../shared/components/skeleton-loaders/booking-card-list-skeleton/booking-card-list-skeleton.component';
-import { AuthState } from 'apps/web/src/app/core/auth/store/auth.state';
-import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
-import { FilterButton } from 'apps/web/src/app/shared/components/filter-button/filter-button.component';
-import { SectionCard } from 'apps/web/src/app/shared/components/section-card/section-card.component';
-import { SectionTitle } from 'apps/web/src/app/shared/components/section-title/section-title.component';
-import { MenteeSessionBookingCard } from '../../components/mentee-session-booking-card/mentee-session-booking-card';
-import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
+import { SectionCard } from '../../../../shared/components/section-card/section-card.component';
+import { SectionTitle } from '../../../../shared/components/section-title/section-title.component';
+import { MenteeBookingsTable } from '../../components/mentee-bookings-table/mentee-bookings-table';
 
 @Component({
   selector: 'app-mentee-booking-overview-page',
   imports: [
     CommonModule,
-    BookingCardListSkeleton,
-    FilterButton,
+    MenteeBookingsTable,
     SectionCard,
     SectionTitle,
-    MenteeSessionBookingCard,
   ],
   templateUrl: './mentee-booking-overview.page.html',
 })
 export class MenteeBookingOverviewPage {
   private readonly bookingService = inject(BookingService);
   private readonly store = inject(Store);
-  private readonly router = inject(Router);
+  private readonly route = inject(ActivatedRoute);
 
   protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
-  protected readonly bookingStatus = BookingStatus;
-  protected readonly selectedFilter = signal<BookingFilter>('ALL');
+  protected readonly initialBookingId =
+    this.route.snapshot.queryParamMap.get('bookingId');
+  protected readonly initialTab: BookingTab =
+    this.route.snapshot.queryParamMap.get('tab') === 'Completed'
+      ? 'Completed'
+      : 'All';
+  private readonly bookingRefresh = signal(0);
+  private readonly bookingRequest = computed(() => ({
+    userId: this.userId(),
+    refresh: this.bookingRefresh(),
+  }));
 
   protected readonly fetchBookings = toSignal<BookingCardInterface[] | null>(
-    toObservable(this.userId).pipe(
-      switchMap((userId) => {
+    toObservable(this.bookingRequest).pipe(
+      switchMap(({ userId }) => {
         if (!userId) {
           return of([] as BookingCardInterface[]);
         }
@@ -64,59 +66,7 @@ export class MenteeBookingOverviewPage {
     () => this.fetchBookings() ?? []
   );
 
-  protected readonly displayedBookings = computed<BookingCardInterface[]>(() => {
-    const bookings = this.bookings();
-    const filter = this.selectedFilter();
-
-    if (filter === 'ALL') {
-      return bookings;
-    }
-
-    return bookings.filter((booking) => booking.status === filter);
-  });
-
-  protected readonly bookingCounts = computed(() => {
-    const bookings = this.bookings();
-
-    return {
-      ALL: bookings.length,
-      UPCOMING: bookings.filter(
-        (booking) => booking.status === BookingStatus.APPROVED
-      ).length,
-      PENDING: bookings.filter(
-        (booking) => booking.status === BookingStatus.PENDING
-      ).length,
-      CANCELLED: bookings.filter(
-        (booking) => booking.status === BookingStatus.CANCELLED
-      ).length,
-      REJECTED: bookings.filter(
-        (booking) => booking.status === BookingStatus.REJECTED
-      ).length,
-      COMPLETED: bookings.filter(
-        (booking) => booking.status === BookingStatus.COMPLETED
-      ).length,
-    };
-  });
-
-  protected setFilter(filter: BookingFilter): void {
-    this.selectedFilter.set(filter);
-  }
-
-  protected onViewDetails(booking: BookingCardInterface): void {
-    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
-      queryParams: { bookingId: booking.id },
-    });
-  }
-
-  protected onCancelRequest(booking: BookingCardInterface): void {
-    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
-      queryParams: { bookingId: booking.id, action: 'cancel' },
-    });
-  }
-
-  protected onAddReview(booking: BookingCardInterface): void {
-    void this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
-      queryParams: { bookingId: booking.id, action: 'review' },
-    });
+  protected refreshBookings(): void {
+    this.bookingRefresh.update((value) => value + 1);
   }
 }

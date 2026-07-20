@@ -7,6 +7,7 @@ import {
 import { UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/user.model';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { APP_ROUTES } from '../../../../shared/constants/routes';
 
 @Component({
   selector: 'app-mentor-recommended-card',
@@ -15,6 +16,8 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 })
 export class MentorRecommendedCard {
   mentor = input<MentorSearchItemInterface | null>(null);
+
+  protected readonly mentorProfileRoute = APP_ROUTES.MENTOR_PROFILE;
 
   getSubtitle(mentor: MentorSearchItemInterface): string {
     const profile = this.getProfile(mentor);
@@ -30,12 +33,8 @@ export class MentorRecommendedCard {
     return 'Mentor';
   }
 
-  getPrimaryExpertise(areasOfExpertise: string[]): string[] {
-    return areasOfExpertise.slice(0, 3);
-  }
-
   getPrimarySkills(skills: string[]): string[] {
-    return skills.slice(0, 4);
+    return skills.slice(0, 3);
   }
 
   getAvailabilityLabel(mentor: MentorSearchItemInterface): string {
@@ -54,23 +53,13 @@ export class MentorRecommendedCard {
     return `${this.capitalize(firstAvailability.day)} - ${this.formatTo12Hour(firstTimeFrame.from)}`;
   }
 
-  getMetaSummary(mentor: MentorSearchItemInterface): string[] {
-    const profile = this.getProfile(mentor);
-
-    return [
-      profile?.yearsOfExperience
-        ? `${profile.yearsOfExperience}+ yrs experience`
-        : '',
-      mentor.language || '',
-      mentor.country || '',
-    ].filter(Boolean);
-  }
-
   getProfile(mentor: MentorSearchItemInterface): MentorProfileSearch | null {
     return mentor.mentorProfiles[0] ?? null;
   }
 
-  getAvailability(mentor: MentorSearchItemInterface): UserAvailabilityInterface[] {
+  getAvailability(
+    mentor: MentorSearchItemInterface,
+  ): UserAvailabilityInterface[] {
     const availability = this.getProfile(mentor)?.availability;
 
     return Array.isArray(availability)

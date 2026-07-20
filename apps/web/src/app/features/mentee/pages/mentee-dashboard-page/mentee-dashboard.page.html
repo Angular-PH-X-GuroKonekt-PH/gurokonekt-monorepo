@@ -1,167 +1,140 @@
 <div class="flex flex-col gap-8">
   <section class="grid grid-cols-1 mt-6 gap-6 xl:grid-cols-12 xl:items-stretch">
-
     <div class="xl:col-span-12">
       <app-greeting-card [name]="fullName()" />
     </div>
   </section>
 
-  <section class="grid grid-cols-1 gap-6">
-    <app-section-card>
+  <section class="grid grid-cols-1 items-stretch gap-6 lg:grid-cols-2">
+    <app-mentee-dashboard-booking-widget
+      class="block h-full"
+      mode="upcoming"
+      [bookings]="upcomingSessionPreview()"
+      [totalCount]="upcomingSessionsCount()"
+      [loading]="upcomingSessionLoading()"
+      (viewDetails)="onViewDetails($event)"
+      (viewAll)="viewAllUpcomingSessions()"
+    />
 
-      <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <app-section-title title="Upcoming Sessions" [count]="upcomingSessionsCount()"
-          subtitle="Stay on top of your scheduled mentoring sessions."></app-section-title>
-        <app-view-all-button link="/booking-overview" label="View all sessions"></app-view-all-button>
-      </div>
-
-      @if (upcomingSessionLoading()) {
-      <app-booking-card-list-skeleton [count]="2" />
-      } @else if (upcomingSessionsCount() > 0) {
-      <app-mentee-session-booking-card
-        [bookingList]="upcomingSessions() ?? []"
-        (viewDetails)="onViewDetails($event)"
-        (cancelRequest)="onCancelRequest($event)"
-        (addReview)="onAddReview($event)"
-      />
-      } @else {
-      <div
-        class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
-        <div
-          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-orange-50 ring-1 ring-orange-100">
-          <app-icon name="calendar-days" class="h-7 w-7 text-orange-500"></app-icon>
-        </div>
-
-        <h3 class="text-base font-semibold text-heading">No bookings yet</h3>
-        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
-          You do not have any bookings at the moment. Once you schedule a mentoring
-          session, it will appear here for easy tracking and follow-up.
-        </p>
-      </div>
-      }
-    </app-section-card>
+    <app-mentee-dashboard-booking-widget
+      class="block h-full"
+      mode="history"
+      [bookings]="completedSessionHistory()"
+      [totalCount]="completedSessionsCount()"
+      [loading]="completedSessionLoading()"
+      (viewDetails)="onViewDetails($event)"
+      (viewAll)="viewAllCompletedSessions()"
+    />
   </section>
 
-  <section class="grid grid-cols-1 gap-6 ">
-    <app-section-card>
-      <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-        <app-section-title title="Sessions history" [count]="completedSessionsCount()"
-          subtitle="Your last 5 completed mentoring sessions."></app-section-title>
-        <app-view-all-button link="/booking-overview" label="View session history"></app-view-all-button>
-      </div>
-     
-      @if (completedSessionLoading()) {
-      <app-booking-card-list-skeleton [count]="2" />
-      } @else if(completedSessionsCount() > 0) {
-      <div class="grid grid-cols-1 gap-6 md:grid-cols-2">
-        @for (booking of completedSessionHistory(); track booking.id) {
-        <app-mentee-completed-booking-card [completedBooking]="booking" />
-        }
-      </div>
-      } @else {
-      <div
-        class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
-        <div
-          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
-          <app-icon name="clock" class="h-7 w-7 text-blue-900"></app-icon>
+  <section
+    class="overflow-hidden rounded-3xl border border-slate-200/80 bg-white shadow-[0_16px_40px_rgba(15,23,42,0.06)]"
+  >
+    <header
+      class="flex items-start justify-between gap-4 border-b border-slate-100 px-5 py-5 sm:px-6"
+    >
+      <div class="min-w-0">
+        <div class="flex items-center gap-2">
+          <h2 class="truncate text-lg font-bold text-blue-950">
+            Recommended Mentors
+          </h2>
+          <span
+            class="rounded-full bg-blue-50 px-2.5 py-1 text-xs font-bold text-blue-900"
+          >
+            {{ recommendedMentors()?.length ?? 0 }}
+          </span>
         </div>
-
-        <h3 class="text-base font-semibold text-heading">No completed sessions yet</h3>
-        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
-          Your completed mentoring sessions will appear here after you finish a session.
+        <p class="mt-1 text-sm text-slate-500">
+          Mentors matched to your interests and goals.
         </p>
       </div>
-      }
 
+      <a
+        routerLink="/find-mentors"
+        class="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-orange-600 transition hover:text-orange-700"
+      >
+        View all
+        <app-icon name="chevron-right" class="h-4 w-4" />
+      </a>
+    </header>
 
+    @let mentors = recommendedMentors() ?? [];
 
-    </app-section-card>
-
-
-  </section>
-
-  <section class="grid grid-cols-1 gap-6 ">
-    <app-section-card>
-
-      <div class="mb-5 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
-
-        <app-section-title title="Recommended Mentors"
-          subtitle="Mentors that matches your interest."></app-section-title>
-        <app-view-all-button link="/find-mentors" label="View all mentors"></app-view-all-button>
-
-      </div>
-
-      @let mentors = recommendedMentors() ?? [];
-
+    <div class="px-5 py-5 sm:px-6">
       @if (recommendedMentorsLoading()) {
       <app-mentor-card-list-skeleton [count]="3" />
       } @else if (mentors.length === 0) {
       <div
-        class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
+        class="flex flex-col items-center justify-center px-4 py-10 text-center"
+      >
         <div
-          class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
-          <app-icon name="users" class="h-7 w-7 text-blue-900"></app-icon>
+          class="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-50"
+        >
+          <app-icon name="users" class="h-6 w-6 text-orange-500" />
         </div>
-
-        <h3 class="text-base font-semibold text-heading">No mentor recommendations yet</h3>
-        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
-          We could not find available mentor recommendations at the moment. Try updating your
-          interests or browse all mentors to discover more options.
+        <h3 class="mt-4 text-sm font-bold text-blue-950">
+          No mentor recommendations yet
+        </h3>
+        <p class="mt-1 max-w-sm text-xs leading-5 text-slate-500">
+          Browse all mentors to find someone who matches your learning goals.
         </p>
       </div>
       } @else {
-      <div class="space-y-5">
-        <div class="overflow-x-auto py-2 lg:overflow-hidden">
-          <div class="flex snap-x snap-mandatory gap-4 transition-transform duration-500 ease-out lg:gap-0"
-            [style.transform]="'translateX(-' + (currentMentorSlide() * (100 / 3)) + '%)'">
-            @for (mentor of mentors; track mentor.id) {
-            <div class="w-[85%] shrink-0 snap-start md:w-[48%] lg:w-1/3 lg:px-3">
-              <app-mentor-recommended-card [mentor]="mentor" />
-            </div>
-            }
+      <div class="overflow-x-auto pb-2 lg:overflow-hidden">
+        <div
+          class="flex snap-x snap-mandatory gap-4 transition-transform duration-500 ease-out lg:gap-0"
+          [style.transform]="'translateX(-' + currentMentorSlide() * (100 / 3) + '%)'"
+        >
+          @for (mentor of mentors; track mentor.id) {
+          <div class="w-[86%] shrink-0 snap-start sm:w-[48%] lg:w-1/3 lg:px-2">
+            <app-mentor-recommended-card
+              class="block h-full"
+              [mentor]="mentor"
+            />
           </div>
+          }
         </div>
-
-        @if (mentors.length > 3) {
-        <div class="hidden grid-cols-3 items-center lg:grid">
-          <div class="flex justify-start">
-            <button
-              type="button"
-              (click)="previousMentorSlide(getMaxMentorSlide(mentors.length))"
-              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-default-medium bg-white px-4 py-2.5 text-sm font-medium text-heading shadow-xs transition hover:bg-neutral-secondary-medium focus:outline-none focus:ring-4 focus:ring-brand-subtle"
-            >
-              Previous
-            </button>
-          </div>
-
-          <div class="flex items-center justify-center gap-2">
-            @for (slideIndex of getMentorSlideIndexes(mentors.length); track slideIndex) {
-            <button type="button" (click)="setMentorSlide(slideIndex)"
-              class="h-2.5 w-8 rounded-full transition-all duration-300"
-              [class.bg-orange-500]="currentMentorSlide() === slideIndex"
-              [class.bg-slate-200]="currentMentorSlide() !== slideIndex"
-              [attr.aria-label]="'Go to mentor slide ' + (slideIndex + 1)"></button>
-            }
-          </div>
-
-          <div class="flex justify-end">
-            <button
-              type="button"
-              (click)="nextMentorSlide(getMaxMentorSlide(mentors.length))"
-              class="inline-flex min-h-11 items-center justify-center rounded-xl border border-default-medium bg-white px-4 py-2.5 text-sm font-medium text-heading shadow-xs transition hover:bg-neutral-secondary-medium focus:outline-none focus:ring-4 focus:ring-brand-subtle"
-            >
-              Next
-            </button>
-          </div>
-        </div>
-        }
       </div>
-      }
 
-    </app-section-card>
+      @if (mentors.length > 3) {
+      <div class="mt-5 hidden grid-cols-3 items-center lg:grid">
+        <button
+          type="button"
+          (click)="previousMentorSlide(getMaxMentorSlide(mentors.length))"
+          class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-950 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+          aria-label="Previous recommended mentors"
+        >
+          <app-icon name="chevron-left" class="h-4 w-4" />
+        </button>
 
+        <div class="flex items-center justify-center gap-2">
+          @for (slideIndex of getMentorSlideIndexes(mentors.length); track
+          slideIndex) {
+          <button
+            type="button"
+            (click)="setMentorSlide(slideIndex)"
+            class="h-2 rounded-full transition-all duration-300"
+            [class.w-7]="currentMentorSlide() === slideIndex"
+            [class.w-2]="currentMentorSlide() !== slideIndex"
+            [class.bg-orange-500]="currentMentorSlide() === slideIndex"
+            [class.bg-slate-200]="currentMentorSlide() !== slideIndex"
+            [attr.aria-label]="'Show recommended mentor group ' + (slideIndex + 1)"
+          ></button>
+          }
+        </div>
 
+        <div class="flex justify-end">
+          <button
+            type="button"
+            (click)="nextMentorSlide(getMaxMentorSlide(mentors.length))"
+            class="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-slate-200 bg-white text-blue-950 transition hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
+            aria-label="Next recommended mentors"
+          >
+            <app-icon name="chevron-right" class="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+      } }
+    </div>
   </section>
-
-
 </div>
