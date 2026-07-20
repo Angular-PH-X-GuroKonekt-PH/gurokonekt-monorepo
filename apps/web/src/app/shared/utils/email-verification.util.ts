@@ -30,6 +30,11 @@ export function resolveEmailVerificationOutcome(
   const accessToken = params.get('access_token');
   const type = params.get('type');
 
+  // Password recovery callbacks belong to the reset-password flow.
+  if (type === 'recovery') {
+    return null;
+  }
+
   if (accessToken && !error) {
     return 'success';
   }
@@ -83,11 +88,29 @@ export function hasEmailVerificationCallbackHash(
   }
 
   const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+  if (params.get('type') === 'recovery') {
+    return false;
+  }
+
   return (
     params.has('access_token') ||
     params.has('error') ||
     (params.get('type') === 'signup' && params.has('token_hash'))
   );
+}
+
+/**
+ * True when Supabase returned a password-recovery callback in the URL hash.
+ */
+export function hasPasswordRecoveryCallbackHash(
+  hash = typeof window !== 'undefined' ? window.location.hash : ''
+): boolean {
+  if (!hash || hash.length <= 1) {
+    return false;
+  }
+
+  const params = new URLSearchParams(hash.startsWith('#') ? hash.slice(1) : hash);
+  return params.get('type') === 'recovery';
 }
 
 /**
@@ -97,6 +120,14 @@ export function hasEmailVerificationCallbackHash(
 export function redirectToVerifyEmailCallback(): void {
   const hash = window.location.hash;
   window.location.replace(`/${APP_ROUTES.VERIFY_EMAIL}${hash}`);
+}
+
+/**
+ * Sends a recovery callback to the reset-password route with its hash intact.
+ */
+export function redirectToPasswordRecoveryCallback(): void {
+  const hash = window.location.hash;
+  window.location.replace(`/${APP_ROUTES.RESET_PASSWORD}${hash}`);
 }
 
 /**

@@ -16,6 +16,8 @@ import { requiresProfileSetup } from 'apps/web/src/app/shared/utils/profile-comp
 import { AuthSelectors } from '../../store/auth.selectors';
 import {
   hasEmailVerificationCallbackHash,
+  hasPasswordRecoveryCallbackHash,
+  redirectToPasswordRecoveryCallback,
   redirectToVerifyEmailCallback,
 } from '../../../../shared/utils/email-verification.util';
 
@@ -105,10 +107,16 @@ export class LoginPage extends BaseFormComponent implements OnInit {
   }
 
   protected navigateToForgotPassword(): void {
-    this.toastService.info('Forgot password is not available yet.');
+  this.store.dispatch(new AuthActions.ClearAuthMessages());
+  this.router.navigate([APP_ROUTES.FORGOT_PASSWORD]);
   }
 
   private redirectEmailVerificationCallbackIfPresent(): void {
+    if (hasPasswordRecoveryCallbackHash()) {
+      redirectToPasswordRecoveryCallback();
+      return;
+    }
+
     if (hasEmailVerificationCallbackHash()) {
       redirectToVerifyEmailCallback();
     }

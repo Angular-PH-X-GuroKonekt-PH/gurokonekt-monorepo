@@ -1,6 +1,7 @@
 import { IsEmail, IsNotEmpty, IsString, Matches } from 'class-validator';
 import {
   ForgotPasswordInterface,
+  CompletePasswordResetInterface,
   REGEX,
   ResetPasswordInterface,
   UpdatePasswordInterface,
@@ -32,6 +33,20 @@ export class UpdatePasswordDto implements UpdatePasswordInterface {
 export class ForgotPasswordDto implements ForgotPasswordInterface {
   @IsEmail({}, { message: 'Email must be a valid email address' })
   email!: string;
+}
+
+export class CompletePasswordResetDto implements CompletePasswordResetInterface {
+  @IsString()
+  @IsNotEmpty({ message: 'Recovery token cannot be empty' })
+  accessToken!: string;
+
+  @IsString()
+  @Matches(REGEX.PASSWORD, { message: PASSWORD_VALIDATION_MESSAGE })
+  newPassword!: string;
+
+  @IsString()
+  @IsNotEmpty({ message: 'Confirm password cannot be empty' })
+  confirmPassword!: string;
 }
 
 export class ResetPasswordDto implements ResetPasswordInterface {

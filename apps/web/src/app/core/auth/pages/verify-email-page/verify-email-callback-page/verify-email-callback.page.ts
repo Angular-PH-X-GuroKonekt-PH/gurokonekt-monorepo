@@ -5,6 +5,8 @@ import { Store } from '@ngxs/store';
 import { APP_ROUTES } from '../../../../../shared/constants/routes';
 import {
   getEmailVerificationParams,
+  hasPasswordRecoveryCallbackHash,
+  redirectToPasswordRecoveryCallback,
   resolveEmailVerificationOutcome,
 } from '../../../../../shared/utils/email-verification.util';
 import { AuthStorageService } from '../../../../storage/auth-storage.service';
@@ -30,6 +32,11 @@ export class VerifyEmailCallbackPage implements OnInit {
   private readonly authStorage = inject(AuthStorageService);
 
   ngOnInit(): void {
+    if (hasPasswordRecoveryCallbackHash()) {
+      redirectToPasswordRecoveryCallback();
+      return;
+    }
+
     const params = getEmailVerificationParams();
     const outcome = resolveEmailVerificationOutcome(params);
 

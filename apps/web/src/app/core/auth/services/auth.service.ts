@@ -12,6 +12,7 @@ import type {
 } from '../../../shared/interfaces/auth-api.interface';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 import { API_CONFIG } from '../../config/api.config';
+import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -168,4 +169,26 @@ export class AuthService {
 
     return throwError(() => ({ message: errorMessage, originalError: error }));
   };
+
+  forgotPassword(email: string): Observable<ApiResponse<null>> {
+    return this.http
+      .post<ApiResponse<null>>(
+        buildApiUrl(API_CONFIG.endpoints.auth.forgotPassword),
+        { email }
+      )
+      .pipe(catchError(this.handleError));
+  }
+
+  completePasswordReset(payload: {
+    accessToken: string;
+    newPassword: string;
+    confirmPassword: string;
+  }): Observable<ApiResponse<null>> {
+    return this.http
+      .post<ApiResponse<null>>(
+        buildApiUrl(API_CONFIG.endpoints.auth.completePasswordReset),
+        payload
+      )
+      .pipe(catchError(this.handleError));
+  }
 }

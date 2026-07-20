@@ -6,6 +6,8 @@ export const API_ENDPOINTS = {
     refreshToken: '/auth/refresh-token',
     verifyEmail: '/auth/verify-email',
     resendConfirmation: '/auth/resend-confirmation-link',
+    forgotPassword: '/auth/forgot-password',
+    completePasswordReset: '/auth/complete-password-reset',
   },
   user: {
     profile: '/user/profile',

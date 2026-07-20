@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto, RefreshTokenDto } from '@gurokonekt/models';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, CompletePasswordResetDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto, RefreshTokenDto } from '@gurokonekt/models';
 import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, UserRole, UserStatus, LogsActionType,
   ResendOTPTypes, REDIRECT_LINKS
 } from '@gurokonekt/models';
@@ -893,7 +893,102 @@ export class AuthService {
   }
 
   /**
-   * Reset Password — validates the new password then sends a PIN to the user's email.
+   * Completes a password reset using the recovery access token issued by Supabase.
+   * The token proves access to the reset email, so no additional PIN is required.
+   */
+  async completePasswordReset(
+    dto: CompletePasswordResetDto,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<ResponseDto> {
+    try {
+      if (dto.newPassword !== dto.confirmPassword) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.PASSWORD_MISMATCH.code,
+          message: API_RESPONSE.ERROR.PASSWORD_MISMATCH.message,
+          data: null,
+        };
+      }
+
+      const { data, error } = await this.supabase.client.auth.getUser(dto.accessToken);
+
+      if (error || !data.user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.RESET_PASSWORD.code,
+          message: 'The password reset link is invalid or has expired.',
+          data: null,
+        };
+      }
+
+      const user = await this.prisma.db.user.findUnique({
+        where: { id: data.user.id },
+        select: { id: true },
+      });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      const { error: updateError } =
+        await this.supabase.clientAdmin.auth.admin.updateUserById(data.user.id, {
+          password: dto.newPassword,
+        });
+
+      if (updateError) {
+        this.logger.error(updateError.message, updateError.stack);
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+          data: null,
+        };
+      }
+
+      const hashPassword = await bcrypt.hash(dto.newPassword, 10);
+
+      await this.prisma.db.user.update({
+        where: { id: data.user.id },
+        data: { hashPassword },
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.ResetPassword,
+          targetId: data.user.id,
+          details: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
+          metadata: { email: data.user.email },
+          ipAddress,
+          userAgent,
+          createdById: data.user.id,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.code,
+        message: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
+        data: null,
+      };
+    } catch (error: any) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.RESET_PASSWORD.code,
+        message: API_RESPONSE.ERROR.RESET_PASSWORD.message,
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * Legacy PIN flow: validates the new password then sends a PIN to the user's email.
    * Called after the user clicks the reset link and fills in the new password form.
    * Flow:
    * 1. Validate confirmPassword matches newPassword
@@ -970,7 +1065,7 @@ export class AuthService {
   }
 
   /**
-   * Verify Reset PIN — validates the PIN (OTP) and updates the password.
+   * Legacy PIN flow: validates the PIN (OTP) and updates the password.
    * Flow:
    * 1. Validate confirmPassword matches newPassword
    * 2. Verify OTP via Supabase verifyOtp
