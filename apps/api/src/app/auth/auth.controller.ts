@@ -19,6 +19,7 @@ import {
 } from '@nestjs/common';
 import {
   ForgotPasswordDto,
+  CompletePasswordResetDto,
   MentorDocumentsInterceptor,
   RegisterMenteeDto,
   RegisterMentorDto,
@@ -514,6 +515,49 @@ export class AuthController {
       );
     }
     
+    return response;
+  }
+
+  // ====================================================
+  // POST - Complete Password Reset using recovery token
+  // ====================================================
+
+  @Post('complete-password-reset')
+  @ApiOperation({
+    summary: 'Complete a password reset using a Supabase recovery token',
+    description:
+      'Validates the recovery token from the reset link and updates the password in Supabase and the local database.',
+  })
+  @ApiBody({ type: CompletePasswordResetDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Password reset successfully.',
+    type: ResponseDto,
+  })
+  @ApiResponse({ status: 400, description: 'Recovery link is invalid or expired.' })
+  async completePasswordReset(
+    @Body() input: CompletePasswordResetDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const response = await this.authService.completePasswordReset(
+      input,
+      ipAddress,
+      userAgent,
+    );
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
     return response;
   }
 

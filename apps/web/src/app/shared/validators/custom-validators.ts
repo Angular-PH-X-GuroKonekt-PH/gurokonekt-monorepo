@@ -1,4 +1,4 @@
-import { AbstractControl, FormGroup, ValidationErrors, ValidatorFn } from '@angular/forms';
+import { AbstractControl, ValidationErrors, ValidatorFn } from '@angular/forms';
 import { VALIDATION_PATTERNS } from '../constants/validation-patterns.constants';
 import { isValidPhoneLengthForCountry } from '../utils/phone.util';
 
@@ -10,7 +10,7 @@ export class CustomValidators {
   /**
    * Password match validator for reactive forms
    */
-  static passwordMatchValidator(group: FormGroup): ValidationErrors | null {
+  static passwordMatchValidator(group: AbstractControl): ValidationErrors | null {
     const password = group.get('password')?.value;
     const confirmPassword = group.get('confirmPassword')?.value;
     return password === confirmPassword ? null : { passwordMismatch: true };

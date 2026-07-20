@@ -28,6 +28,24 @@ export const appRoutes: Route[] = [
     title: 'Login',
   },
   {
+    path: APP_ROUTES.FORGOT_PASSWORD,
+    canActivate: [unauthenticatedGuard],
+    loadComponent: () =>
+      import(
+        './core/auth/pages/forget-password-page/forget-password-page'
+      ).then((m) => m.ForgetPasswordPage),
+    title: 'Forgot Password',
+  },
+  {
+    path: APP_ROUTES.RESET_PASSWORD,
+    canActivate: [unauthenticatedGuard],
+    loadComponent: () =>
+      import('./core/auth/pages/reset-password-page/reset-password-page').then(
+        (m) => m.ResetPasswordPage
+      ),
+    title: 'Reset Password',
+  },
+  {
     path: APP_ROUTES.REGISTER_MENTOR_CONFIRMATION,
     canActivate: [unauthenticatedGuard, registrationConfirmationGuard('mentor')],
     loadComponent: () =>

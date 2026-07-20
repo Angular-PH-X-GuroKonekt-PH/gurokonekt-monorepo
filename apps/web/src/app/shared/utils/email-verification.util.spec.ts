@@ -1,5 +1,6 @@
 import {
   hasEmailVerificationCallbackHash,
+  hasPasswordRecoveryCallbackHash,
   resolveEmailVerificationOutcome,
 } from './email-verification.util';
 
@@ -39,6 +40,14 @@ describe('resolveEmailVerificationOutcome', () => {
   it('returns null when no auth params are present', () => {
     expect(resolveEmailVerificationOutcome(new URLSearchParams())).toBeNull();
   });
+
+  it('does not treat a recovery callback as email verification', () => {
+    const params = new URLSearchParams(
+      'access_token=abc&type=recovery&token_type=bearer'
+    );
+
+    expect(resolveEmailVerificationOutcome(params)).toBeNull();
+  });
 });
 
 describe('hasEmailVerificationCallbackHash', () => {
@@ -50,5 +59,25 @@ describe('hasEmailVerificationCallbackHash', () => {
 
   it('returns false when hash is empty', () => {
     expect(hasEmailVerificationCallbackHash('')).toBe(false);
+  });
+
+  it('returns false for a password recovery callback', () => {
+    expect(
+      hasEmailVerificationCallbackHash('#access_token=abc&type=recovery')
+    ).toBe(false);
+  });
+});
+
+describe('hasPasswordRecoveryCallbackHash', () => {
+  it('returns true for a recovery callback', () => {
+    expect(
+      hasPasswordRecoveryCallbackHash('#access_token=abc&type=recovery')
+    ).toBe(true);
+  });
+
+  it('returns false for a signup callback', () => {
+    expect(
+      hasPasswordRecoveryCallbackHash('#access_token=abc&type=signup')
+    ).toBe(false);
   });
 });

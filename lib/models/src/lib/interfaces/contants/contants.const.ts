@@ -1041,9 +1041,9 @@ Sends a password reset email to the given address if an account exists for it.
 
 **Flow after this call:**
 1. User receives an email with a reset link.
-2. Frontend navigates the user to the reset-password page (link contains context).
-3. User submits new password → \`POST /auth/reset-password\` → receives a PIN by email.
-4. User submits the PIN → \`POST /auth/verify-reset-pin\` → password is updated.
+2. Supabase redirects the user to the reset-password page with a recovery token.
+3. User submits the recovery token and new password to \`POST /auth/complete-password-reset\`.
+4. The token is validated and the password is updated in Supabase and the local database.
 
 **Note:** the endpoint always returns \`200\` regardless of whether the email exists (prevents user enumeration).
 `,

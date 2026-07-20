@@ -9,6 +9,12 @@ export interface ForgotPasswordInterface {
   email: string;
 }
 
+export interface CompletePasswordResetInterface {
+  accessToken: string;
+  newPassword: string;
+  confirmPassword: string;
+}
+
 export interface ResetPasswordInterface {
   email: string;
   newPassword: string;

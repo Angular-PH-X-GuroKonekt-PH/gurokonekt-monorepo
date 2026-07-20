@@ -23,6 +23,8 @@ const PUBLIC_AUTH_PATHS = [
   API_CONFIG.endpoints.auth.verifyEmail,
   API_CONFIG.endpoints.auth.resendConfirmation,
   API_CONFIG.endpoints.auth.refreshToken,
+  API_CONFIG.endpoints.auth.forgotPassword,
+  API_CONFIG.endpoints.auth.completePasswordReset,
 ] as const;
 
 let refreshInProgress: Observable<{ accessToken: string; refreshToken: string }> | null = null;
