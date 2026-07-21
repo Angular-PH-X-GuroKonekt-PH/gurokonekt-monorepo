@@ -1,0 +1,58 @@
+<div>
+  <div class="block text-sm font-semibold text-gray-700 mb-3">
+    Preferred Session Type <span class="text-red-500">*</span>
+  </div>
+  <p class="text-sm text-gray-600 mb-4">Select one or more</p>
+  <div class="grid grid-cols-2 gap-4">
+    <button
+      type="button"
+      (click)="toggled.emit(sessionTypes.Online)"
+      class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+      [class]="
+        isSelected()(sessionTypes.Online)
+          ? 'border-orange-500 bg-orange-50'
+          : 'border-gray-300 hover:border-orange-300'
+      "
+    >
+      <div class="flex-1">
+        <div class="flex items-center gap-3">
+          <app-icon name="user" class="w-6 h-6 text-orange-600"></app-icon>
+          <div>
+            <p class="font-semibold text-gray-900">Online</p>
+            <p class="text-sm text-gray-600">Virtual sessions</p>
+          </div>
+        </div>
+      </div>
+      @if (isSelected()(sessionTypes.Online)) {
+        <app-icon name="check-mark" class="w-5 h-5 text-orange-600"></app-icon>
+      }
+    </button>
+
+    <button
+      type="button"
+      (click)="toggled.emit(sessionTypes.InPerson)"
+      class="relative flex items-center p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+      [class]="
+        isSelected()(sessionTypes.InPerson)
+          ? 'border-orange-500 bg-orange-50'
+          : 'border-gray-300 hover:border-orange-300'
+      "
+    >
+      <div class="flex-1">
+        <div class="flex items-center gap-3">
+          <app-icon name="map-pin" class="w-6 h-6 text-orange-600"></app-icon>
+          <div>
+            <p class="font-semibold text-gray-900">In-Person</p>
+            <p class="text-sm text-gray-600">Face-to-face</p>
+          </div>
+        </div>
+      </div>
+      @if (isSelected()(sessionTypes.InPerson)) {
+        <app-icon name="check-mark" class="w-5 h-5 text-orange-600"></app-icon>
+      }
+    </button>
+  </div>
+  @if (selectedCount() === 0) {
+    <p class="text-sm text-red-600 mt-2">Please select at least one session type</p>
+  }
+</div>
