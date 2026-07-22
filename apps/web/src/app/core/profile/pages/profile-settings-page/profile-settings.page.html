@@ -3,7 +3,7 @@
     <!-- Header Section -->
     <div class="mb-8">
       <a href="/dashboard" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6">
-        <span class="text-xl">←</span>
+        <app-icon name="chevron-left" class="w-5 h-5"></app-icon>
         <span>Back to Dashboard</span>
       </a>
       <h1 class="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent">
@@ -74,7 +74,7 @@
               <!-- File Input -->
               <div class="flex flex-col items-center gap-4 w-full sm:w-auto">
                 <label class="flex items-center gap-2 px-6 py-3 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors cursor-pointer font-medium">
-                  <span class="text-lg">📷</span>
+                  <app-icon name="pencil" class="w-5 h-5"></app-icon>
                   <span>Upload Picture</span>
                   <input 
                     #avatarInput
@@ -92,7 +92,7 @@
               <!-- Avatar Error -->
               @if (avatarError()) {
                 <div class="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                  <span class="text-xl">⚠️</span>
+                  <app-icon name="alert-warning" class="w-5 h-5 shrink-0"></app-icon>
                   <span>{{ avatarError() }}</span>
                 </div>
               }
@@ -158,8 +158,8 @@
                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
                 >
                   <option value="">Select a country</option>
-                  @for (country of countryOptions; track country) {
-                    <option [value]="country">{{ country }}</option>
+                  @for (country of countryOptions; track country.value) {
+                    <option [value]="country.value">{{ country.label }}</option>
                   }
                 </select>
                 @if (profileForm.get('country')?.invalid && profileForm.get('country')?.touched) {
@@ -178,8 +178,8 @@
                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
                 >
                   <option value="">Select a timezone</option>
-                  @for (tz of timezoneOptions; track tz) {
-                    <option [value]="tz">{{ tz }}</option>
+                  @for (tz of timezoneOptions; track tz.value) {
+                    <option [value]="tz.value">{{ tz.label }}</option>
                   }
                 </select>
                 @if (profileForm.get('timezone')?.invalid && profileForm.get('timezone')?.touched) {
@@ -198,142 +198,77 @@
                   class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
                 >
                   <option value="">Select a language</option>
-                  @for (lang of languageOptions; track lang) {
-                    <option [value]="lang">{{ lang }}</option>
+                  @for (lang of languageOptions; track lang.value) {
+                    <option [value]="lang.value">{{ lang.label }}</option>
                   }
                 </select>
                 @if (profileForm.get('language')?.invalid && profileForm.get('language')?.touched) {
                   <p class="text-red-600 text-sm mt-1">Language is required</p>
                 }
               </div>
-            </div>
-          </div>
 
-          <!-- Learning & Interests Section -->
-          <div class="mb-10 pb-10 border-b border-gray-200">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">Learning & Interests</h2>
-
-            <!-- Learning Goals -->
-            <div class="mb-8">
-              <div class="flex items-center justify-between mb-4">
-                <label for="learningGoals" class="block text-sm font-semibold text-gray-700">
-                  Learning Goals (Optional)
-                </label>
-                <button
-                  type="button"
-                  (click)="addLearningGoal()"
-                  [disabled]="learningGoals.length >= 5"
-                  class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-orange-600 hover:text-orange-700 disabled:text-gray-400 transition-colors"
-                >
-                  <span class="text-lg">+</span>
-                  Add Goal
-                </button>
-              </div>
-
-              <div class="space-y-3">
-                @for (goal of learningGoals.value; track $index) {
-                  <div class="flex gap-2">
-                    <input
-                      [value]="goal"
-                      (change)="learningGoals.at($index).setValue($any($event.target).value || '')"
-                      type="text"
-                      placeholder="e.g., Master TypeScript and Angular"
-                      maxlength="500"
-                      class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      (click)="removeLearningGoal($index)"
-                      class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Remove learning goal"
-                    >
-                      <span class="text-lg">🗑️</span>
-                    </button>
-                  </div>
-                  @if (learningGoals.at($index).getError('maxlength')) {
-                    <p class="text-red-600 text-sm">Each goal cannot exceed 500 characters</p>
-                  }
-                }
-              </div>
-            </div>
-
-            <!-- Areas of Interest -->
-            <div>
-              <label for="areasOfInterest" class="block text-sm font-semibold text-gray-700 mb-4">
-                Areas of Interest <span class="text-red-500">*</span>
-                <span class="text-gray-500 font-normal">(Select at least one)</span>
-              </label>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                @for (area of areasOfInterestOptions; track area) {
-                  <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
-                    [class]="isAreaSelected(area) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                    <input
-                      type="checkbox"
-                      [checked]="isAreaSelected(area)"
-                      (change)="toggleAreaOfInterest(area)"
-                      class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
-                    />
-                    <span class="text-gray-700 font-medium">{{ area }}</span>
+              @if (isMentor()) {
+                <!-- Years of Experience -->
+                <div>
+                  <label for="yearsOfExperience" class="block text-sm font-semibold text-gray-700 mb-2">
+                    Years of Experience <span class="text-red-500">*</span>
                   </label>
-                }
-              </div>
-
-              @if (profileForm.get('areasOfInterest')?.invalid && profileForm.get('areasOfInterest')?.touched) {
-                <p class="text-red-600 text-sm mt-2">Please select at least one area of interest</p>
+                  <input
+                    type="number"
+                    id="yearsOfExperience"
+                    formControlName="yearsOfExperience"
+                    min="1"
+                    max="60"
+                    placeholder="e.g., 5"
+                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+                  />
+                  @if (profileForm.get('yearsOfExperience')?.invalid && profileForm.get('yearsOfExperience')?.touched) {
+                    <p class="text-red-600 text-sm mt-1">Enter a value between 1 and 60</p>
+                  }
+                </div>
               }
             </div>
           </div>
 
-          <!-- Session Preferences Section -->
-          <div class="mb-10 pb-10 border-b border-gray-200">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">Session Preferences</h2>
+          @if (isMentor()) {
+            <!-- Expertise Section -->
+            <div class="mb-10 pb-10 border-b border-gray-200">
+              <h2 class="text-xl font-bold text-gray-900 mb-6">Expertise</h2>
 
-            <!-- Preferred Session Type -->
-            <div class="mb-8">
-              <label for="preferredSessionType" class="block text-sm font-semibold text-gray-700 mb-4">
-                Preferred Session Type <span class="text-red-500">*</span>
-              </label>
-              <p class="text-sm text-gray-600 mb-4">Select one or more</p>
+              <div>
+                <label for="areasOfExpertise" class="block text-sm font-semibold text-gray-700 mb-4">
+                  Areas of Expertise <span class="text-red-500">*</span>
+                  <span class="text-gray-500 font-normal">(Select at least one)</span>
+                </label>
 
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button
-                  type="button"
-                  (click)="toggleSessionType(MenteePreferredSessionType.Online)"
-                  class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
-                  [class]="isSessionTypeSelected(MenteePreferredSessionType.Online) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                  <div>
-                    <span class="text-gray-900 font-medium block">Online</span>
-                    <span class="text-gray-600 text-sm">Video/Voice calls</span>
-                  </div>
-                </button>
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  @for (area of expertiseOptions; track area) {
+                    <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
+                      [class]="isExpertiseSelected(area) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
+                      <input
+                        type="checkbox"
+                        [checked]="isExpertiseSelected(area)"
+                        (change)="toggleAreaOfExpertise(area)"
+                        class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+                      />
+                      <span class="text-gray-700 font-medium">{{ area }}</span>
+                    </label>
+                  }
+                </div>
 
-                <button
-                  type="button"
-                  (click)="toggleSessionType(MenteePreferredSessionType.InPerson)"
-                  class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
-                  [class]="isSessionTypeSelected(MenteePreferredSessionType.InPerson) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                  <div>
-                    <span class="text-gray-900 font-medium block">In-Person</span>
-                    <span class="text-gray-600 text-sm">Face-to-face meetings</span>
-                  </div>
-                </button>
+                @if (profileForm.get('areasOfExpertise')?.invalid && profileForm.get('areasOfExpertise')?.touched) {
+                  <p class="text-red-600 text-sm mt-2">Please select at least one area of expertise</p>
+                }
               </div>
-              @if (preferredSessionTypes.length === 0) {
-                <p class="text-sm text-red-600 mt-2">Please select at least one session type</p>
-              }
             </div>
 
             <!-- Availability Schedule -->
-            <div>
-              <label for="availabilitySchedule" class="block text-sm font-semibold text-gray-700 mb-4">
-                Availability Schedule
-              </label>
+            <div class="mb-10 pb-10 border-b border-gray-200">
+              <h2 class="text-xl font-bold text-gray-900 mb-6">Availability</h2>
 
               <div class="space-y-4">
                 @for (daySchedule of availabilitySchedule(); track daySchedule.day) {
                   <div class="border-2 border-gray-200 rounded-lg p-4">
-                    <!-- Day Header -->
                     <div class="flex items-center gap-3 mb-3">
                       <input
                         type="checkbox"
@@ -344,7 +279,6 @@
                       <span class="font-semibold text-gray-900 capitalize flex-1">{{ daySchedule.day }}</span>
                     </div>
 
-                    <!-- Time Frames -->
                     @if (daySchedule.enabled) {
                       <div class="space-y-3 ml-7">
                         @for (timeFrame of daySchedule.timeFrames; track $index) {
@@ -371,7 +305,7 @@
                               class="p-2 text-red-600 hover:bg-red-50 rounded disabled:text-gray-400 disabled:cursor-not-allowed transition-colors"
                               title="Remove time slot"
                             >
-                              <span class="text-lg">🗑️</span>
+                              <app-icon name="trash" class="w-5 h-5"></app-icon>
                             </button>
                           </div>
                         }
@@ -382,7 +316,7 @@
                             (click)="addTimeFrame(daySchedule.day)"
                             class="text-orange-600 hover:text-orange-700 text-sm font-medium flex items-center gap-1"
                           >
-                            <span class="text-lg">+</span>
+                            <app-icon name="plus" class="w-4 h-4"></app-icon>
                             Add time slot
                           </button>
                         }
@@ -392,7 +326,122 @@
                 }
               </div>
             </div>
-          </div>
+          } @else {
+            <!-- Learning & Interests Section -->
+            <div class="mb-10 pb-10 border-b border-gray-200">
+              <h2 class="text-xl font-bold text-gray-900 mb-6">Learning & Interests</h2>
+
+              <!-- Learning Goals -->
+              <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                  <label for="learningGoals" class="block text-sm font-semibold text-gray-700">
+                    Learning Goals (Optional)
+                  </label>
+                  <button
+                    type="button"
+                    (click)="addLearningGoal()"
+                    [disabled]="learningGoals.length >= 5"
+                    class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-orange-600 hover:text-orange-700 disabled:text-gray-400 transition-colors"
+                  >
+                    <app-icon name="plus" class="w-4 h-4"></app-icon>
+                    Add Goal
+                  </button>
+                </div>
+
+                <div class="space-y-3">
+                  @for (goal of learningGoals.value; track $index) {
+                    <div class="flex gap-2">
+                      <input
+                        [value]="goal"
+                        (change)="learningGoals.at($index).setValue($any($event.target).value || '')"
+                        type="text"
+                        placeholder="e.g., Master TypeScript and Angular"
+                        maxlength="500"
+                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        (click)="removeLearningGoal($index)"
+                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove learning goal"
+                      >
+                        <app-icon name="trash" class="w-5 h-5"></app-icon>
+                      </button>
+                    </div>
+                    @if (learningGoals.at($index).getError('maxlength')) {
+                      <p class="text-red-600 text-sm">Each goal cannot exceed 500 characters</p>
+                    }
+                  }
+                </div>
+              </div>
+
+              <!-- Areas of Interest -->
+              <div>
+                <label for="areasOfInterest" class="block text-sm font-semibold text-gray-700 mb-4">
+                  Areas of Interest <span class="text-red-500">*</span>
+                  <span class="text-gray-500 font-normal">(Select at least one)</span>
+                </label>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  @for (area of areasOfInterestOptions; track area) {
+                    <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
+                      [class]="isAreaSelected(area) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
+                      <input
+                        type="checkbox"
+                        [checked]="isAreaSelected(area)"
+                        (change)="toggleAreaOfInterest(area)"
+                        class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+                      />
+                      <span class="text-gray-700 font-medium">{{ area }}</span>
+                    </label>
+                  }
+                </div>
+
+                @if (profileForm.get('areasOfInterest')?.invalid && profileForm.get('areasOfInterest')?.touched) {
+                  <p class="text-red-600 text-sm mt-2">Please select at least one area of interest</p>
+                }
+              </div>
+            </div>
+
+            <!-- Session Preferences Section -->
+            <div class="mb-10 pb-10 border-b border-gray-200">
+              <h2 class="text-xl font-bold text-gray-900 mb-6">Session Preferences</h2>
+
+              <div class="mb-8">
+                <label for="preferredSessionType" class="block text-sm font-semibold text-gray-700 mb-4">
+                  Preferred Session Type <span class="text-red-500">*</span>
+                </label>
+                <p class="text-sm text-gray-600 mb-4">Select one or more</p>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  <button
+                    type="button"
+                    (click)="toggleSessionType(MenteePreferredSessionType.Online)"
+                    class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+                    [class]="isSessionTypeSelected(MenteePreferredSessionType.Online) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
+                    <div>
+                      <span class="text-gray-900 font-medium block">Online</span>
+                      <span class="text-gray-600 text-sm">Video/Voice calls</span>
+                    </div>
+                  </button>
+
+                  <button
+                    type="button"
+                    (click)="toggleSessionType(MenteePreferredSessionType.InPerson)"
+                    class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+                    [class]="isSessionTypeSelected(MenteePreferredSessionType.InPerson) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
+                    <div>
+                      <span class="text-gray-900 font-medium block">In-Person</span>
+                      <span class="text-gray-600 text-sm">Face-to-face meetings</span>
+                    </div>
+                  </button>
+                </div>
+                @if (preferredSessionTypes.length === 0) {
+                  <p class="text-sm text-red-600 mt-2">Please select at least one session type</p>
+                }
+              </div>
+            </div>
+          }
 
           <!-- Form Actions -->
           <div class="flex gap-4 pt-6">
@@ -405,7 +454,7 @@
                 <div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
                 <span>Updating...</span>
               } @else {
-                <span class="text-lg">✓</span>
+                <app-icon name="check-mark" class="w-5 h-5"></app-icon>
                 <span>Update Profile</span>
               }
             </button>
