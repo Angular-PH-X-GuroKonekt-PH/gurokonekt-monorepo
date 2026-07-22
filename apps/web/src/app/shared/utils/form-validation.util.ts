@@ -130,6 +130,7 @@ function getFieldDisplayName(fieldName: string): string {
       language: 'Language',
       yearsOfExperience: 'Years of experience',
       linkedInUrl: 'LinkedIn URL',
+      bio: 'Bio',
       areasOfExpertise: 'Areas of expertise',
       verificationFiles: 'Verification files',
       acceptTerms: 'Terms and conditions'

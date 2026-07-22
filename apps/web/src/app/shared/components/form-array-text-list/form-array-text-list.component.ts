@@ -23,6 +23,7 @@ export function createFormArrayTextControl(
   standalone: true,
   imports: [ReactiveFormsModule, IconComponent],
   templateUrl: './form-array-text-list.component.html',
+  host: { class: 'block' },
 })
 export class FormArrayTextListComponent {
   private readonly fb = inject(FormBuilder);

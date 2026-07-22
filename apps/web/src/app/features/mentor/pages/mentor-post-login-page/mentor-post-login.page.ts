@@ -1,40 +1,65 @@
-import { Component, OnInit, inject, signal } from '@angular/core';
-import { CommonModule } from '@angular/common';
-import { FormArray, FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  signal,
+} from '@angular/core';
+import { toSignal } from '@angular/core/rxjs-interop';
+import {
+  FormArray,
+  FormBuilder,
+  FormGroup,
+  ReactiveFormsModule,
+  Validators,
+} from '@angular/forms';
 import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { firstValueFrom } from 'rxjs';
+import { firstValueFrom, merge } from 'rxjs';
 import type {
   UpdateMentorProfileInterface,
   UserAvailabilityInterface,
 } from '@gurokonekt/models/interfaces/user/user.model';
 
 import { ToastService } from '../../../../shared/services/toast.service';
-import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { FormArrayTextListComponent, createFormArrayTextControl } from '../../../../shared/components/form-array-text-list/form-array-text-list.component';
-import { AuthState } from '../../../../core/auth/store/auth.state';
+import {
+  FormArrayTextListComponent,
+  createFormArrayTextControl,
+} from '../../../../shared/components/form-array-text-list/form-array-text-list.component';
+import { ProfileSetupShellComponent } from '../../../../shared/components/profile-setup/profile-setup-shell/profile-setup-shell.component';
+import { ProfileSetupStepperComponent } from '../../../../shared/components/profile-setup/profile-setup-stepper/profile-setup-stepper.component';
+import { ProfileSetupStepNavComponent } from '../../../../shared/components/profile-setup/profile-setup-step-nav/profile-setup-step-nav.component';
+import { ProfileSetupAvatarComponent } from '../../../../shared/components/profile-setup/profile-setup-avatar/profile-setup-avatar.component';
+import { ProfileSetupBioComponent } from '../../../../shared/components/profile-setup/profile-setup-bio/profile-setup-bio.component';
+import { ProfileSetupOptionChipsComponent } from '../../../../shared/components/profile-setup/profile-setup-option-chips/profile-setup-option-chips.component';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
-import { expertiseOptions } from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
-import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
+import { expertiseOptions } from '../../../../shared/helpers/expertise-selection.helper';
+import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { isSessionExpiredError } from '../../../../shared/utils/http-error.util';
-import { AuthSelectors } from 'apps/web/src/app/core/auth/store/auth.selectors';
+import {
+  readFileAsDataUrl,
+  validateAvatarFile,
+} from '../../../../shared/utils/avatar-validation.util';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 import { MentorWeeklyAvailability } from './mentor-weekly-availability/mentor-weekly-availability';
 
 @Component({
   selector: 'app-mentor-post-login',
   standalone: true,
   imports: [
-    CommonModule,
     ReactiveFormsModule,
-    IconComponent,
     FormArrayTextListComponent,
     MentorWeeklyAvailability,
+    ProfileSetupShellComponent,
+    ProfileSetupStepperComponent,
+    ProfileSetupStepNavComponent,
+    ProfileSetupAvatarComponent,
+    ProfileSetupBioComponent,
+    ProfileSetupOptionChipsComponent,
   ],
   templateUrl: './mentor-post-login.page.html',
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class MentorPostLoginPage implements OnInit {
-  private static readonly MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
-  private static readonly ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+export class MentorPostLoginPage {
   private static readonly MAX_SKILLS = 8;
 
   private readonly fb = inject(FormBuilder);
@@ -45,30 +70,29 @@ export class MentorPostLoginPage implements OnInit {
   protected readonly currentStep = signal(1);
   protected readonly totalSteps = 3;
   protected readonly isSubmitting = signal(false);
-
   protected readonly expertiseOptions = expertiseOptions;
-
   protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly avatarPreview = signal<string | null>(null);
   protected readonly avatarError = signal<string | null>(null);
-
   protected readonly maxSkills = MentorPostLoginPage.MAX_SKILLS;
-
-  protected selectedAvatarFile: File | null = null;
-  protected profileForm!: FormGroup;
+  protected readonly stepTitles = ['About You', 'Topics & Skills', 'Availability'];
   protected readonly availability = signal<UserAvailabilityInterface[]>([]);
 
-  ngOnInit(): void {
-    this.initializeForm();
-  }
+  protected selectedAvatarFile: File | null = null;
 
-  private initializeForm(): void {
-    this.profileForm = this.fb.group({
-      bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
-      areasOfExpertise: this.fb.array([], Validators.required),
-      skills: this.fb.array([createFormArrayTextControl(this.fb)], Validators.required),
-    });
-  }
+  protected readonly profileForm: FormGroup = this.fb.group({
+    bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
+    areasOfExpertise: this.fb.array([], Validators.required),
+    skills: this.fb.array([createFormArrayTextControl(this.fb)], Validators.required),
+  });
+
+  /**
+   * Reactive mirror of the form's value/status so OnPush re-evaluates step
+   * validity as the user edits. `toSignal` handles teardown automatically.
+   */
+  private readonly formState = toSignal(
+    merge(this.profileForm.valueChanges, this.profileForm.statusChanges)
+  );
 
   get areasOfExpertise(): FormArray {
     return this.profileForm.get('areasOfExpertise') as FormArray;
@@ -78,8 +102,10 @@ export class MentorPostLoginPage implements OnInit {
     return this.profileForm.get('skills') as FormArray;
   }
 
-  toggleExpertise(area: string): void {
-    const index = this.areasOfExpertise.controls.findIndex((control) => control.value === area);
+  protected toggleExpertise(area: string): void {
+    const index = this.areasOfExpertise.controls.findIndex(
+      (control) => control.value === area
+    );
     if (index >= 0) {
       this.areasOfExpertise.removeAt(index);
       return;
@@ -88,11 +114,11 @@ export class MentorPostLoginPage implements OnInit {
     this.areasOfExpertise.push(this.fb.control(area));
   }
 
-  isExpertiseSelected(area: string): boolean {
+  protected isExpertiseSelected = (area: string): boolean => {
     return this.areasOfExpertise.controls.some((control) => control.value === area);
-  }
+  };
 
-  onAvatarSelected(event: Event): void {
+  protected async onAvatarSelected(event: Event): Promise<void> {
     const input = event.target as HTMLInputElement;
     if (!input.files || input.files.length === 0) {
       return;
@@ -101,28 +127,24 @@ export class MentorPostLoginPage implements OnInit {
     const file = input.files[0];
     this.avatarError.set(null);
 
-    if (!MentorPostLoginPage.ALLOWED_AVATAR_TYPES.includes(file.type)) {
-      this.avatarError.set('Only JPG, JPEG, and PNG formats are allowed');
-      input.value = '';
-      return;
-    }
-
-    if (file.size > MentorPostLoginPage.MAX_AVATAR_SIZE_BYTES) {
-      this.avatarError.set('File size must be less than 5MB');
+    const validation = validateAvatarFile(file);
+    if (!validation.valid) {
+      this.avatarError.set(validation.error);
       input.value = '';
       return;
     }
 
     this.selectedAvatarFile = file;
-    const reader = new FileReader();
-    reader.onload = (loadEvent) => {
-      this.avatarPreview.set(loadEvent.target?.result as string);
-      input.value = '';
-    };
-    reader.readAsDataURL(file);
+    try {
+      this.avatarPreview.set(await readFileAsDataUrl(file));
+    } catch {
+      this.avatarError.set('Failed to preview image');
+      this.selectedAvatarFile = null;
+    }
+    input.value = '';
   }
 
-  removeAvatar(input?: HTMLInputElement): void {
+  protected removeAvatar(input?: HTMLInputElement): void {
     this.selectedAvatarFile = null;
     this.avatarPreview.set(null);
     this.avatarError.set(null);
@@ -131,21 +153,23 @@ export class MentorPostLoginPage implements OnInit {
     }
   }
 
-  nextStep(): void {
+  protected nextStep(): void {
     if (this.currentStep() < this.totalSteps) {
       this.currentStep.update((step) => step + 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
-  previousStep(): void {
+  protected previousStep(): void {
     if (this.currentStep() > 1) {
       this.currentStep.update((step) => step - 1);
       window.scrollTo({ top: 0, behavior: 'smooth' });
     }
   }
 
-  canProceedToNextStep(): boolean {
+  protected canProceedToNextStep(): boolean {
+    this.formState();
+
     switch (this.currentStep()) {
       case 1:
         return (this.profileForm.get('bio')?.valid ?? false) && this.selectedAvatarFile !== null;
@@ -187,7 +211,7 @@ export class MentorPostLoginPage implements OnInit {
     return true;
   }
 
-  async onSubmit(): Promise<void> {
+  protected async onSubmit(): Promise<void> {
     if (this.currentStep() !== this.totalSteps || this.profileForm.invalid || this.isSubmitting()) {
       return;
     }
@@ -226,7 +250,10 @@ export class MentorPostLoginPage implements OnInit {
       }
 
       const message = (error as { message?: string })?.message;
-      this.toastService.error(message || 'Failed to setup mentor profile. Please try again.', 'Error');
+      this.toastService.error(
+        message || 'Failed to setup mentor profile. Please try again.',
+        'Error'
+      );
       this.isSubmitting.set(false);
     }
   }
