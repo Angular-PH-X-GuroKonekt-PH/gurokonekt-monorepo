@@ -192,14 +192,15 @@ export class RegistrationMentorPage
 
     try {
       const formData = this.registerForm.value;
-      const emailRedirectTo = buildVerifyEmailRedirectUrl();
+      const email = formData.email.toLowerCase().trim();
+      const emailRedirectTo = buildVerifyEmailRedirectUrl(email);
 
       const registrationData: RegisterMentorRequest = {
         firstName: formData.firstName,
         middleName: formData.middleName || undefined,
         lastName: formData.lastName,
         suffix: formData.suffix || undefined,
-        email: formData.email.toLowerCase().trim(),
+        email,
         phoneNumber: formatPhoneToE164(
           formData.phoneNumber,
           formData.country || 'PH'

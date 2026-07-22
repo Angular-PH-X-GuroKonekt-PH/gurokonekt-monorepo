@@ -489,6 +489,21 @@ export const API_RESPONSE = {
       code: 429,
       message: 'Too many requests. Please try again later',
     },
+    RESEND_VERIFICATION_LIMIT_REACHED: {
+      code: 429,
+      message:
+        'You have reached the daily limit for verification emails. Please try again tomorrow.',
+    },
+    RESEND_VERIFICATION_TOO_SOON: {
+      code: 429,
+      message:
+        'Please wait before requesting another verification email.',
+    },
+    RESEND_VERIFICATION_RATE_LIMITED: {
+      code: 429,
+      message:
+        'Too many verification emails were requested. Please wait a while before trying again.',
+    },
 
     UPDATE_USER_STATUS: {
       code: 400,
