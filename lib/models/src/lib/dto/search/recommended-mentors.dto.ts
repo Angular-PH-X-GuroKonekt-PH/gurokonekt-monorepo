@@ -1,9 +1,10 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, Max, Min } from 'class-validator';
-
-export const DEFAULT_RECOMMENDED_MENTOR_LIMIT = 6;
-export const MAX_RECOMMENDED_MENTOR_LIMIT = 20;
+import {
+  DEFAULT_RECOMMENDED_MENTOR_LIMIT,
+  MAX_RECOMMENDED_MENTOR_LIMIT,
+} from '../../interfaces/search/search.model';
 
 export class RecommendedMentorsDto {
   @ApiPropertyOptional({

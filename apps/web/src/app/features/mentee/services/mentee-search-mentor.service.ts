@@ -2,7 +2,13 @@ import { Injectable, inject } from '@angular/core';
 import { HttpClient, HttpErrorResponse, HttpParams } from '@angular/common/http';
 import { Observable, throwError } from 'rxjs';
 import { catchError, map } from 'rxjs';
-import { MentorSearchFilter, MentorSearchRequest, MentorSearchResultInterface } from '@gurokonekt/models/interfaces/search/search.model';
+import {
+  DEFAULT_RECOMMENDED_MENTOR_LIMIT,
+  MentorRecommendationResultInterface,
+  MentorSearchFilter,
+  MentorSearchRequest,
+  MentorSearchResultInterface,
+} from '@gurokonekt/models/interfaces/search/search.model';
 import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 
@@ -16,6 +22,25 @@ export class MenteeSearchMentorService {
       .get<ApiResponse<MentorSearchResultInterface>>(buildApiUrl('/search'), { params })
       .pipe(
         map((response) => response.data ?? this.buildEmptySearchResult(filters)),
+        catchError(this.handleError),
+      );
+  }
+
+  getRecommendedMentors(
+    limit = DEFAULT_RECOMMENDED_MENTOR_LIMIT,
+  ): Observable<MentorRecommendationResultInterface> {
+    const params = new HttpParams().set('limit', String(limit));
+
+    return this.http
+      .get<ApiResponse<MentorRecommendationResultInterface>>(
+        buildApiUrl('/search/recommended'),
+        { params },
+      )
+      .pipe(
+        map(
+          (response) =>
+            response.data ?? { results: [], isPersonalized: false },
+        ),
         catchError(this.handleError),
       );
   }

@@ -76,6 +76,9 @@ export interface MentorRecommendationResultInterface {
   isPersonalized: boolean;
 }
 
+export const DEFAULT_RECOMMENDED_MENTOR_LIMIT = 6;
+export const MAX_RECOMMENDED_MENTOR_LIMIT = 20;
+
 // Frontend-only types for the mentor search feature.
 // Aligned to the backend SearchMentorDto (search-mentor.dto.ts).
 //
