@@ -11,7 +11,6 @@ import {
   SearchMentorDto,
   SearchSortBy,
   SearchSortOrder,
-  UserRole,
   MentorAccess,
   SelectFields
 } from '@gurokonekt/models';
@@ -37,12 +36,6 @@ export class SearchService {
       const sortBy = dto.sortBy ?? SearchSortBy.NEWEST;
       const sortOrder = dto.sortOrder ?? SearchSortOrder.DESC;
 
-      // Load mentee profile for intelligent matching (only when requester is a mentee)
-      const menteeProfile =
-        authenticatedUserRole === UserRole.Mentee
-          ? await this.loadMenteeProfile(authenticatedUserId)
-          : null;
-
       // Pre-compute mentor IDs whose skills/expertise match the keyword (case-insensitive).
       // Prisma's hasSome is case-sensitive on PostgreSQL arrays, so we use a raw query.
       const keywordMatchIds = dto.name?.trim()
@@ -50,7 +43,7 @@ export class SearchService {
         : [];
 
       // Build the dynamic where clause
-      const where = this.buildWhereClause(dto, menteeProfile, keywordMatchIds);
+      const where = this.buildWhereClause(dto, keywordMatchIds);
 
       // For native-sortable fields, delegate ordering to Prisma + use DB-level pagination.
       // For profile-level sorts (sessionRate, yearsExperience) we fetch all matches and
@@ -148,11 +141,7 @@ export class SearchService {
   // PRIVATE – WHERE CLAUSE BUILDER
   // ====================================================
 
-  private buildWhereClause(
-    dto: SearchMentorDto,
-    menteeProfile: { learningGoals: string[]; areasOfInterest: string[] } | null,
-    keywordMatchIds: string[],
-  ) {
+  private buildWhereClause(dto: SearchMentorDto, keywordMatchIds: string[]) {
     // Top-level AND conditions applied to the User model
     const topLevelAnd: object[] = [MentorAccess.approvedMentorWhere()];
 
@@ -188,39 +177,18 @@ export class SearchService {
       topLevelAnd.push({ OR: orConditions });
     }
 
-    // Profile-level filter conditions
+    // Profile-level filter conditions — explicit filters only.
     const profileConditions: object[] = [];
 
-    // Intelligent matching: combine mentee's learning goals + areas of interest
-    // with any explicit expertise / skills filters to produce a single OR clause
-    // that matches mentors relevant to the mentee's profile.
-    const intelligentExpertiseTerms: string[] = menteeProfile
-      ? [...menteeProfile.learningGoals, ...menteeProfile.areasOfInterest]
-      : [];
-    const explicitExpertiseTerms = dto.expertiseArray;
-    const explicitSkillsTerms = dto.skillsArray;
-
-    const allExpertiseTerms = [
-      ...new Set([...intelligentExpertiseTerms, ...explicitExpertiseTerms]),
-    ];
-    const allSkillsTerms = [
-      ...new Set([...intelligentExpertiseTerms, ...explicitSkillsTerms]),
-    ];
-
-    if (allExpertiseTerms.length > 0 || allSkillsTerms.length > 0) {
-      const matchOr: object[] = [];
-
-      if (allExpertiseTerms.length > 0) {
-        matchOr.push({ areasOfExpertise: { hasSome: allExpertiseTerms } });
-      }
-      if (allSkillsTerms.length > 0) {
-        matchOr.push({ skills: { hasSome: allSkillsTerms } });
-      }
-
-      profileConditions.push({ OR: matchOr });
+    if (dto.expertiseArray.length > 0) {
+      profileConditions.push({ areasOfExpertise: { hasSome: dto.expertiseArray } });
     }
 
-    // Session rate range 
+    if (dto.skillsArray.length > 0) {
+      profileConditions.push({ skills: { hasSome: dto.skillsArray } });
+    }
+
+    // Session rate range
     if (
       dto.minSessionRate !== undefined ||
       dto.maxSessionRate !== undefined
