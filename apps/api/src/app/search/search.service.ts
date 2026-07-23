@@ -31,8 +31,6 @@ export class SearchService {
 
   async searchMentors(
     dto: SearchMentorDto,
-    authenticatedUserId: string,
-    authenticatedUserRole: string,
   ): Promise<ResponseDto<MentorSearchResultInterface>> {
     try {
       const page = dto.page ?? 1;
@@ -245,7 +243,8 @@ export class SearchService {
         )
       `;
       return rows.map((r) => r.user_id);
-    } catch {
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
       return [];
     }
   }
@@ -268,7 +267,8 @@ export class SearchService {
         )
       `;
       return rows.map((r) => r.user_id);
-    } catch {
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
       return [];
     }
   }
@@ -346,8 +346,13 @@ export class SearchService {
         WHERE lower(slot->>'day') = ANY(${days}::text[])
       `;
       return rows.map((r) => r.user_id);
-    } catch {
-      return [];
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      // This result feeds a hard filter (`{ id: { in: [] } }`). Returning [] here
+      // would be indistinguishable from "no mentor is available that day" — a
+      // legitimate empty result — so we re-throw and let the outer catch in
+      // searchMentors turn this into a visible INTERNAL_SERVER_ERROR instead.
+      throw error;
     }
   }
 

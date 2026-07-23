@@ -279,17 +279,18 @@ export class SearchController {
     @Query() dto: SearchMentorDto,
     @Req() req: Request & { user: { id: string; role: string } },
   ) {
-    const { id: userId, role } = req.user;
+    const { id: userId } = req.user;
 
     // The system must never return mentor results to unauthenticated callers.
     // Admin and mentor roles are permitted to search as well (e.g., admin dashboard).
-    // Restricting to only mentee would break admin tooling, so we allow all roles
-    // but apply intelligent matching only for mentees.
+    // Every caller receives the same result set for the same filters — search
+    // applies only the explicit filters supplied in the query string; profile-based
+    // personalization lives in GET /search/recommended instead.
     if (!userId) {
       throw new ForbiddenException('Authenticated user required');
     }
 
-    const response = await this.searchService.searchMentors(dto, userId, role);
+    const response = await this.searchService.searchMentors(dto);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },

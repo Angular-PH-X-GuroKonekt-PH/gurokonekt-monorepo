@@ -70,10 +70,7 @@ describe('SearchService', () => {
     prisma = createPrismaMock();
 
     const moduleRef: TestingModule = await Test.createTestingModule({
-      providers: [
-        SearchService,
-        { provide: PrismaService, useValue: prisma },
-      ],
+      providers: [SearchService, { provide: PrismaService, useValue: prisma }],
     }).compile();
 
     service = moduleRef.get(SearchService);
@@ -91,11 +88,7 @@ describe('SearchService', () => {
         buildMentorRow('m2'),
       ]);
 
-      const response = await service.searchMentors(
-        buildDto(),
-        'mentee-1',
-        UserRole.Mentee,
-      );
+      const response = await service.searchMentors(buildDto());
 
       expect(response.data?.results).toHaveLength(2);
       expect(response.data?.total).toBe(2);
@@ -111,11 +104,7 @@ describe('SearchService', () => {
       prisma.db.user.count.mockResolvedValue(1);
       prisma.db.user.findMany.mockResolvedValue([buildMentorRow('m1')]);
 
-      await service.searchMentors(
-        buildDto({ expertise: 'Web Development' }),
-        'mentee-1',
-        UserRole.Mentee,
-      );
+      await service.searchMentors(buildDto({ expertise: 'Web Development' }));
 
       const where = JSON.stringify(
         prisma.db.user.findMany.mock.calls[0][0].where,
@@ -133,8 +122,6 @@ describe('SearchService', () => {
 
       const response = await service.searchMentors(
         buildDto({ availabilityDay: 'monday', limit: 1 }),
-        'mentee-1',
-        UserRole.Mentee,
       );
 
       expect(response.data?.total).toBe(25);
@@ -153,8 +140,6 @@ describe('SearchService', () => {
 
       const response = await service.searchMentors(
         buildDto({ availabilityDay: 'sunday' }),
-        'mentee-1',
-        UserRole.Mentee,
       );
 
       const where = JSON.stringify(
@@ -168,14 +153,23 @@ describe('SearchService', () => {
       prisma.db.user.count.mockResolvedValue(0);
       prisma.db.user.findMany.mockResolvedValue([]);
 
-      const response = await service.searchMentors(
-        buildDto(),
-        'mentee-1',
-        UserRole.Mentee,
-      );
+      const response = await service.searchMentors(buildDto());
 
       expect(response.statusCode).toBe(200);
       expect(response.message).toBe('Mentors retrieved successfully');
+    });
+
+    it('returns an error response when the availability lookup fails, instead of a false empty success', async () => {
+      prisma.db.$queryRaw.mockRejectedValue(new Error('statement timeout'));
+
+      const response = await service.searchMentors(
+        buildDto({ availabilityDay: 'monday' }),
+      );
+
+      expect(response.status).toBe('error');
+      expect(response.statusCode).toBe(500);
+      expect(prisma.db.user.findMany).not.toHaveBeenCalled();
+      expect(prisma.db.user.count).not.toHaveBeenCalled();
     });
   });
 
@@ -197,7 +191,11 @@ describe('SearchService', () => {
       );
 
       expect(response.data?.isPersonalized).toBe(true);
-      expect(response.data?.results.map((m) => m.id)).toEqual(['m1', 'm2', 'm3']);
+      expect(response.data?.results.map((m) => m.id)).toEqual([
+        'm1',
+        'm2',
+        'm3',
+      ]);
     });
 
     it('tops up with newest mentors and reports not personalized when nothing matches', async () => {
