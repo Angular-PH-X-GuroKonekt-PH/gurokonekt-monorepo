@@ -116,5 +116,41 @@ describe('SearchService', () => {
       );
       expect(where).toContain('Web Development');
     });
+
+    it('reports the true total when an availability-day filter is applied', async () => {
+      prisma.db.$queryRaw.mockResolvedValue([
+        { user_id: 'm1' },
+        { user_id: 'm2' },
+      ]);
+      prisma.db.user.count.mockResolvedValue(25);
+      prisma.db.user.findMany.mockResolvedValue([buildMentorRow('m1')]);
+
+      const response = await service.searchMentors(
+        buildDto({ availabilityDay: 'monday', limit: 1 }),
+        'mentee-1',
+        UserRole.Mentee,
+      );
+
+      expect(response.data?.total).toBe(25);
+      expect(response.data?.results).toHaveLength(1);
+    });
+
+    it('matches nothing when no mentor is available on the requested day', async () => {
+      prisma.db.$queryRaw.mockResolvedValue([]);
+      prisma.db.user.count.mockResolvedValue(0);
+      prisma.db.user.findMany.mockResolvedValue([]);
+
+      const response = await service.searchMentors(
+        buildDto({ availabilityDay: 'sunday' }),
+        'mentee-1',
+        UserRole.Mentee,
+      );
+
+      const where = JSON.stringify(
+        prisma.db.user.findMany.mock.calls[0][0].where,
+      );
+      expect(where).toContain('"in":[]');
+      expect(response.data?.total).toBe(0);
+    });
   });
 });

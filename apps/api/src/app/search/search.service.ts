@@ -42,8 +42,19 @@ export class SearchService {
         ? await this.findMentorIdsByKeyword(dto.name.trim())
         : [];
 
-      // Build the dynamic where clause
-      const where = this.buildWhereClause(dto, keywordMatchIds);
+      // Pre-compute mentor IDs available on the requested day(s). Applied inside the
+      // where clause (not as a post-filter) so count() and findMany() agree and
+      // `total` stays truthful across pages.
+      const availabilityDays = dto.availabilityDaysArray;
+      const availabilityMatchIds = availabilityDays.length
+        ? await this.findMentorIdsByAvailabilityDay(availabilityDays)
+        : null;
+
+      const where = this.buildWhereClause(
+        dto,
+        keywordMatchIds,
+        availabilityMatchIds,
+      );
 
       // For native-sortable fields, delegate ordering to Prisma + use DB-level pagination.
       // For profile-level sorts (sessionRate, yearsExperience) we fetch all matches and
@@ -61,10 +72,13 @@ export class SearchService {
           select: SelectFields.getMentorSearchSelect(),
         });
 
-        const sorted = this.sortInMemory(all as unknown as MentorSearchItemInterface[], sortBy, sortOrder);
-        const filtered = this.filterByAvailabilityDay(sorted, dto.availabilityDaysArray);
-        total = filtered.length;
-        results = filtered.slice((page - 1) * limit, page * limit);
+        const sorted = this.sortInMemory(
+          all as unknown as MentorSearchItemInterface[],
+          sortBy,
+          sortOrder,
+        );
+        total = sorted.length;
+        results = sorted.slice((page - 1) * limit, page * limit);
       } else {
         const orderBy = this.buildOrderBy(sortBy, sortOrder);
         [total, results] = await Promise.all([
@@ -77,8 +91,6 @@ export class SearchService {
             take: limit,
           }) as unknown as Promise<MentorSearchItemInterface[]>,
         ]);
-        results = this.filterByAvailabilityDay(results, dto.availabilityDaysArray);
-        total = results.length;
       }
 
       return {
@@ -138,16 +150,47 @@ export class SearchService {
   }
 
   // ====================================================
+  // PRIVATE – AVAILABILITY DAY ID LOOKUP
+  // ====================================================
+
+  private async findMentorIdsByAvailabilityDay(
+    days: DaysInWeek[],
+  ): Promise<string[]> {
+    try {
+      const rows = await this.prisma.db.$queryRaw<{ user_id: string }[]>`
+        SELECT DISTINCT mp.user_id::text
+        FROM mentor_profiles mp,
+             jsonb_array_elements(mp.availability) AS slot
+        WHERE lower(slot->>'day') = ANY(${days})
+      `;
+      return rows.map((r) => r.user_id);
+    } catch {
+      return [];
+    }
+  }
+
+  // ====================================================
   // PRIVATE – WHERE CLAUSE BUILDER
   // ====================================================
 
-  private buildWhereClause(dto: SearchMentorDto, keywordMatchIds: string[]) {
+  private buildWhereClause(
+    dto: SearchMentorDto,
+    keywordMatchIds: string[],
+    availabilityMatchIds: string[] | null,
+  ) {
     // Top-level AND conditions applied to the User model
     const topLevelAnd: object[] = [MentorAccess.approvedMentorWhere()];
 
     // Language filter (case-insensitive)
     if (dto.language) {
       topLevelAnd.push({ language: { equals: dto.language, mode: 'insensitive' } });
+    }
+
+    // Availability-day filter. An empty array is intentional and matches nothing —
+    // it means the day was requested but no mentor is free then. Do not skip the
+    // clause when empty; that would silently drop the filter.
+    if (availabilityMatchIds !== null) {
+      topLevelAnd.push({ id: { in: availabilityMatchIds } });
     }
 
     // Keyword filter — case-insensitive match across name, bio, title, skills, and expertise.
@@ -270,25 +313,6 @@ export class SearchService {
       }
 
       return 0;
-    });
-  }
-
-  // ====================================================
-  // PRIVATE – AVAILABILITY DAY POST-FILTER
-  // ====================================================
-
-  private filterByAvailabilityDay(
-    mentors: MentorSearchItemInterface[],
-    days: DaysInWeek[],
-  ): MentorSearchItemInterface[] {
-    if (!days.length) return mentors;
-
-    return mentors.filter((mentor) => {
-      const availability = mentor.mentorProfiles[0]?.availability;
-      if (!availability || !Array.isArray(availability)) return false;
-      return (availability as { day: string }[]).some((slot) =>
-        days.some((day) => slot.day?.toLowerCase() === day.toLowerCase()),
-      );
     });
   }
 
