@@ -60,26 +60,57 @@ function getErrorCode(error: HttpErrorResponse | Record<string, unknown>): strin
 }
 
 /**
+ * Messages produced by the transport layer rather than by the application:
+ * Express's router fallback ("Cannot GET /api/...") and Angular's own
+ * HttpErrorResponse summary ("Http failure response for /api/...: 404 ...").
+ *
+ * Both leak internal URLs and mean nothing to a user, so they are discarded in
+ * favour of the status-based copy below.
+ */
+const TECHNICAL_MESSAGE_PATTERNS = [
+  /^Cannot (GET|POST|PUT|PATCH|DELETE|HEAD|OPTIONS)\b/i,
+  /^Http failure/i,
+];
+
+function sanitizeServerMessage(message?: string): string | undefined {
+  if (!message) {
+    return undefined;
+  }
+
+  return TECHNICAL_MESSAGE_PATTERNS.some((pattern) => pattern.test(message))
+    ? undefined
+    : message;
+}
+
+/**
  * Centralized HTTP error handling helper for consistent error messaging
  */
 export function getErrorMessage(error: HttpErrorResponse | any): string {
   const errorCode = getErrorCode(error);
 
   if (error instanceof HttpErrorResponse) {
-    const serverMessage = error.error?.message || error.message;
+    const serverMessage = sanitizeServerMessage(error.error?.message || error.message);
     return mapStatusToMessage(error.status, serverMessage, errorCode, error);
   }
 
   if (error && typeof error === 'object' && 'status' in error) {
-    return mapStatusToMessage(error.status, error.message, errorCode);
+    return mapStatusToMessage(error.status, sanitizeServerMessage(error.message), errorCode);
   }
 
   if (error && typeof error === 'object' && 'statusCode' in error) {
     const originalError = error.originalError as HttpErrorResponse | undefined;
-    return mapStatusToMessage(error.statusCode, error.message, errorCode, originalError);
+    return mapStatusToMessage(
+      error.statusCode,
+      sanitizeServerMessage(error.message),
+      errorCode,
+      originalError
+    );
   }
 
-  return error?.message || 'An unexpected error occurred. Please try again.';
+  return (
+    sanitizeServerMessage(error?.message) ??
+    'An unexpected error occurred. Please try again.'
+  );
 }
 
 function mapStatusToMessage(
@@ -107,6 +138,8 @@ function mapStatusToMessage(
       return 'Invalid credentials. Please check your email and password.';
     case 403:
       return 'Access denied. Please check your permissions.';
+    case 404:
+      return serverMessage || 'We could not find what you were looking for. Please try again later.';
     case 409:
       return serverMessage || 'An account with this email already exists. Please try logging in instead.';
     case 422:

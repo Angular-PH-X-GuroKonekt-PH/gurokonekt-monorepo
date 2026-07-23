@@ -68,4 +68,24 @@ describe('MenteeSearchMentorService', () => {
 
     expect(error).toBeInstanceOf(Error);
   });
+
+  it('does not leak the express router message when the route is missing', () => {
+    let error: Error | undefined;
+    service.getRecommendedMentors().subscribe({ error: (e) => (error = e) });
+
+    const req = httpMock.expectOne((r) =>
+      r.url.includes('/search/recommended'),
+    );
+    req.flush(
+      {
+        message: 'Cannot GET /api/search/recommended?limit=6',
+        error: 'Not Found',
+        statusCode: 404,
+      },
+      { status: 404, statusText: 'Not Found' },
+    );
+
+    expect(error?.message).not.toContain('Cannot GET');
+    expect(error?.message).not.toContain('/api/');
+  });
 });
