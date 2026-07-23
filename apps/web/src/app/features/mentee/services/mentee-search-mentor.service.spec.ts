@@ -25,7 +25,9 @@ describe('MenteeSearchMentorService', () => {
     let result: MentorRecommendationResultInterface | undefined;
     service.getRecommendedMentors(6).subscribe((r) => (result = r));
 
-    const req = httpMock.expectOne((r) => r.url.includes('/search/recommended'));
+    const req = httpMock.expectOne((r) =>
+      r.url.includes('/search/recommended'),
+    );
     expect(req.request.params.get('limit')).toBe('6');
 
     req.flush({
@@ -42,8 +44,15 @@ describe('MenteeSearchMentorService', () => {
     let result: MentorRecommendationResultInterface | undefined;
     service.getRecommendedMentors().subscribe((r) => (result = r));
 
-    const req = httpMock.expectOne((r) => r.url.includes('/search/recommended'));
-    req.flush({ status: 'success', statusCode: 200, message: 'OK', data: null });
+    const req = httpMock.expectOne((r) =>
+      r.url.includes('/search/recommended'),
+    );
+    req.flush({
+      status: 'success',
+      statusCode: 200,
+      message: 'OK',
+      data: null,
+    });
 
     expect(result).toEqual({ results: [], isPersonalized: false });
   });
@@ -52,7 +61,9 @@ describe('MenteeSearchMentorService', () => {
     let error: Error | undefined;
     service.getRecommendedMentors().subscribe({ error: (e) => (error = e) });
 
-    const req = httpMock.expectOne((r) => r.url.includes('/search/recommended'));
+    const req = httpMock.expectOne((r) =>
+      r.url.includes('/search/recommended'),
+    );
     req.error(new ProgressEvent('error'));
 
     expect(error).toBeInstanceOf(Error);
