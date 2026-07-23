@@ -149,6 +149,26 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Mentor bookings retrieved successfully',
     },
+
+    /**
+     * SEARCH
+     */
+    GET_MENTORS: {
+      code: 200,
+      message: 'Mentors retrieved successfully',
+    },
+    GET_RECOMMENDED_MENTORS: {
+      code: 200,
+      message: 'Recommended mentors retrieved successfully',
+    },
+    GET_MENTOR_PROFILE: {
+      code: 200,
+      message: 'Mentor profile retrieved successfully',
+    },
+    GET_SEARCH_META: {
+      code: 200,
+      message: 'Search options retrieved successfully',
+    },
     APPROVE_BOOKING: {
       code: 200,
       message: 'Booking approved successfully',
@@ -1326,15 +1346,54 @@ Returns the complete public profile of a single mentor including bio, areas of e
     description: `
 Returns a paginated list of approved, active mentors matching the given filters.
 
-**Role-based behaviour:**
-- **Mentee:** applies intelligent profile-based matching using the mentee's learning goals and areas of interest in addition to any explicit filters.
-- **Mentor / Admin:** applies only the explicit filters provided — no profile-based matching.
+Applies **only** the explicit filters supplied in the query string. Profile-based
+personalization is not applied here — see \`GET /search/recommended\` for that.
+Callers of every role receive the same result set for the same filters.
 
 **All filters are optional and combinable.**
 
 **Pagination:** default \`page=1\`, \`limit=10\`, maximum \`limit=50\`.
 
 **Sorting options (\`sortBy\`):** \`newest\` | \`sessionRate\` | \`yearsExperience\` | \`name\`
+`,
+  },
+
+  GET_RECOMMENDED_MENTORS: {
+    summary: 'Get recommended mentors for the authenticated user',
+    description: `
+Returns a small, ranked set of mentors for the mentee's find-mentors page.
+
+**Ranking:** mentors whose \`skills\` or \`areasOfExpertise\` overlap the mentee's
+\`learningGoals\` or \`areasOfInterest\` come first (case-insensitive). If fewer than
+\`limit\` mentors match, the remainder is topped up with the newest approved mentors.
+
+**The result is never empty** when approved mentors exist, including for mentees with
+an empty profile and for mentor/admin callers.
+
+\`isPersonalized\` is \`true\` when at least one genuine match was found, and \`false\`
+when the entire set came from the top-up. Clients use it to switch heading copy.
+
+**Access:** JWT required.
+`,
+  },
+
+  GET_SEARCH_META_SKILLS: {
+    summary: 'List all distinct mentor skills',
+    description: `
+Returns the sorted, distinct set of \`skills\` values across approved mentors with a
+complete profile. Intended to populate the skills filter dropdown.
+
+**Access:** JWT required.
+`,
+  },
+
+  GET_SEARCH_META_EXPERTISE: {
+    summary: 'List all distinct mentor expertise areas',
+    description: `
+Returns the sorted, distinct set of \`areasOfExpertise\` values across approved mentors
+with a complete profile. Intended to populate the expertise filter dropdown.
+
+**Access:** JWT required.
 `,
   },
 

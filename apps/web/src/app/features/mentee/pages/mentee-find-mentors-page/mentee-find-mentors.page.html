@@ -11,53 +11,70 @@
     </div>
   </section>
 
-  <div class="pt-14 md:pt-20">
+  <div class="flex flex-col gap-10 pt-14 md:pt-20">
+
+    @if (!hasActiveFilters()) {
+      <app-mentor-recommendations [state]="recommendedState()" />
+
+      <hr class="border-slate-200" />
+    }
+
     @if (searchState(); as searchState) {
-      @if (searchState.isLoading) {
-      <app-mentor-card-list-skeleton [count]="6" />
-      }
-
-      @if (!searchState.isLoading && searchState.error) {
-      <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
-        <svg class="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
-          <path fill-rule="evenodd"
-            d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-            clip-rule="evenodd" />
-        </svg>
-        {{ searchState.error }}
-      </div>
-      }
-
-      @if (!searchState.isLoading && !searchState.error && searchState.mentors.length === 0) {
-      <div
-        class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
-        <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
-          <app-icon name="magnifying-glass" class="h-7 w-7 text-blue-900"></app-icon>
-        </div>
-
-        <h3 class="text-base font-semibold text-heading">No mentors match your search</h3>
-        <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
-          We could not find mentors that match the selected filters. Try broadening your
-          search criteria or clearing a few filters to see more results.
-        </p>
-      </div>
-      }
-
-      @if (!searchState.isLoading && searchState.mentors.length > 0) {
       <div class="flex flex-col gap-4">
-        <div class="text-sm text-gray-400">
-          Showing {{ searchState.mentors.length }} of {{ searchState.totalCount }} mentor{{ searchState.totalCount === 1 ? '' : 's' }} found
+        <div class="flex flex-wrap items-baseline justify-between gap-2">
+          <h2 class="text-xl font-semibold text-heading">All Mentors</h2>
+
+          @if (!searchState.isLoading && searchState.mentors.length > 0) {
+          <span class="text-sm text-gray-400">
+            Showing {{ searchState.mentors.length }} of {{ searchState.totalCount }} mentor{{ searchState.totalCount === 1 ? '' : 's' }} found
+          </span>
+          }
         </div>
+
+        @if (searchState.isLoading) {
+        <app-mentor-card-list-skeleton [count]="6" />
+        }
+
+        @if (!searchState.isLoading && searchState.error) {
+        <div class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+          <svg class="h-4 w-4 shrink-0" fill="currentColor" viewBox="0 0 20 20">
+            <path fill-rule="evenodd"
+              d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h1a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
+              clip-rule="evenodd" />
+          </svg>
+          {{ searchState.error }}
+        </div>
+        }
+
+        @if (!searchState.isLoading && !searchState.error && searchState.mentors.length === 0) {
+        <div
+          class="rounded-3xl border border-dashed border-slate-200 bg-linear-to-br from-slate-50 to-white p-8 text-center shadow-sm">
+          <div class="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-blue-50 ring-1 ring-blue-100">
+            <app-icon name="magnifying-glass" class="h-7 w-7 text-blue-900"></app-icon>
+          </div>
+
+          <h3 class="text-base font-semibold text-heading">No mentors match your search</h3>
+          <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-body">
+            We could not find mentors that match the selected filters. Try broadening your
+            search criteria or clearing a few filters to see more results.
+          </p>
+        </div>
+        }
+
+        @if (!searchState.isLoading && searchState.mentors.length > 0) {
         <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
           @for (mentor of searchState.mentors; track mentor.id) {
           <app-mentor-info-card [mentor]="mentor" />
           }
         </div>
-        <gk-pagination [currentPage]="searchState.currentPage" [pageSize]="searchState.pageSize" [totalItems]="searchState.totalCount"
+
+        <gk-pagination [currentPage]="searchState.currentPage" [pageSize]="searchState.pageSize"
+          [totalItems]="searchState.totalCount"
           (pageChange)="onPageChange($event, searchState.currentPage)" />
+        }
       </div>
-      }
     }
+
   </div>
 
 </div>

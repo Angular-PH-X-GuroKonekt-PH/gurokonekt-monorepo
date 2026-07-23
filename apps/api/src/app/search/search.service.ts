@@ -3,17 +3,20 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   API_RESPONSE,
   DaysInWeek,
+  DEFAULT_RECOMMENDED_MENTOR_LIMIT,
   MentorProfileDetailInterface,
+  MentorRecommendationResultInterface,
   MentorSearchItemInterface,
   MentorSearchResultInterface,
+  RecommendedMentorsDto,
   ResponseDto,
   ResponseStatus,
   SearchMentorDto,
   SearchSortBy,
   SearchSortOrder,
-  UserRole,
   MentorAccess,
-  SelectFields
+  SelectFields,
+  UserRole,
 } from '@gurokonekt/models';
 
 @Injectable()
@@ -28,8 +31,6 @@ export class SearchService {
 
   async searchMentors(
     dto: SearchMentorDto,
-    authenticatedUserId: string,
-    authenticatedUserRole: string,
   ): Promise<ResponseDto<MentorSearchResultInterface>> {
     try {
       const page = dto.page ?? 1;
@@ -37,20 +38,25 @@ export class SearchService {
       const sortBy = dto.sortBy ?? SearchSortBy.NEWEST;
       const sortOrder = dto.sortOrder ?? SearchSortOrder.DESC;
 
-      // Load mentee profile for intelligent matching (only when requester is a mentee)
-      const menteeProfile =
-        authenticatedUserRole === UserRole.Mentee
-          ? await this.loadMenteeProfile(authenticatedUserId)
-          : null;
-
       // Pre-compute mentor IDs whose skills/expertise match the keyword (case-insensitive).
       // Prisma's hasSome is case-sensitive on PostgreSQL arrays, so we use a raw query.
       const keywordMatchIds = dto.name?.trim()
         ? await this.findMentorIdsByKeyword(dto.name.trim())
         : [];
 
-      // Build the dynamic where clause
-      const where = this.buildWhereClause(dto, menteeProfile, keywordMatchIds);
+      // Pre-compute mentor IDs available on the requested day(s). Applied inside the
+      // where clause (not as a post-filter) so count() and findMany() agree and
+      // `total` stays truthful across pages.
+      const availabilityDays = dto.availabilityDaysArray;
+      const availabilityMatchIds = availabilityDays.length
+        ? await this.findMentorIdsByAvailabilityDay(availabilityDays)
+        : null;
+
+      const where = this.buildWhereClause(
+        dto,
+        keywordMatchIds,
+        availabilityMatchIds,
+      );
 
       // For native-sortable fields, delegate ordering to Prisma + use DB-level pagination.
       // For profile-level sorts (sessionRate, yearsExperience) we fetch all matches and
@@ -68,10 +74,13 @@ export class SearchService {
           select: SelectFields.getMentorSearchSelect(),
         });
 
-        const sorted = this.sortInMemory(all as unknown as MentorSearchItemInterface[], sortBy, sortOrder);
-        const filtered = this.filterByAvailabilityDay(sorted, dto.availabilityDaysArray);
-        total = filtered.length;
-        results = filtered.slice((page - 1) * limit, page * limit);
+        const sorted = this.sortInMemory(
+          all as unknown as MentorSearchItemInterface[],
+          sortBy,
+          sortOrder,
+        );
+        total = sorted.length;
+        results = sorted.slice((page - 1) * limit, page * limit);
       } else {
         const orderBy = this.buildOrderBy(sortBy, sortOrder);
         [total, results] = await Promise.all([
@@ -84,14 +93,12 @@ export class SearchService {
             take: limit,
           }) as unknown as Promise<MentorSearchItemInterface[]>,
         ]);
-        results = this.filterByAvailabilityDay(results, dto.availabilityDaysArray);
-        total = results.length;
       }
 
       return {
         status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.GET_BOOKINGS.code,
-        message: API_RESPONSE.SUCCESS.GET_BOOKINGS.message,
+        statusCode: API_RESPONSE.SUCCESS.GET_MENTORS.code,
+        message: API_RESPONSE.SUCCESS.GET_MENTORS.message,
         data: { total, page, limit, results },
       };
     } catch (error) {
@@ -101,6 +108,103 @@ export class SearchService {
         statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
         message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: null,
+      };
+    }
+  }
+
+  // ====================================================
+  // RECOMMENDED MENTORS
+  // ====================================================
+
+  async getRecommendedMentors(
+    dto: RecommendedMentorsDto,
+    authenticatedUserId: string,
+    authenticatedUserRole: string,
+  ): Promise<ResponseDto<MentorRecommendationResultInterface>> {
+    try {
+      const limit = dto.limit ?? DEFAULT_RECOMMENDED_MENTOR_LIMIT;
+
+      // Only mentees have goals/interests to personalize against.
+      const terms =
+        authenticatedUserRole === UserRole.Mentee
+          ? await this.loadMenteeMatchTerms(authenticatedUserId)
+          : [];
+
+      const matched = terms.length
+        ? await this.findMatchedMentors(terms, limit)
+        : [];
+
+      // Match first, then top up with the newest mentors so the section is never
+      // empty — a mentee with an unfilled or non-overlapping profile still gets
+      // a full row of mentors to browse.
+      const padding = await this.findNewestMentors(
+        limit - matched.length,
+        matched.map((mentor) => mentor.id),
+      );
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_RECOMMENDED_MENTORS.code,
+        message: API_RESPONSE.SUCCESS.GET_RECOMMENDED_MENTORS.message,
+        data: {
+          results: [...matched, ...padding],
+          isPersonalized: matched.length > 0,
+        },
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+        data: null,
+      };
+    }
+  }
+
+  // ====================================================
+  // SEARCH METADATA (filter dropdown options)
+  // ====================================================
+
+  async getSkillOptions(): Promise<ResponseDto<string[]>> {
+    return this.getMentorProfileArrayValues('skills');
+  }
+
+  async getExpertiseOptions(): Promise<ResponseDto<string[]>> {
+    return this.getMentorProfileArrayValues('areas_of_expertise');
+  }
+
+  private async getMentorProfileArrayValues(
+    column: 'skills' | 'areas_of_expertise',
+  ): Promise<ResponseDto<string[]>> {
+    try {
+      // The column name is not user input — it comes from the two call sites
+      // above — so interpolating it into the query text is safe here. Prisma's
+      // parameter binding cannot parameterize identifiers.
+      const rows = await this.prisma.db.$queryRawUnsafe<{ value: string }[]>(`
+        SELECT DISTINCT unnest(mp.${column}) AS value
+        FROM mentor_profiles mp
+        JOIN users u ON u.id = mp.user_id
+        WHERE u.role = 'mentor'
+          AND u.status = 'approved'
+          AND u.is_mentor_approved = true
+          AND u.is_mentor_profile_complete = true
+        ORDER BY value ASC
+      `);
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_SEARCH_META.code,
+        message: API_RESPONSE.SUCCESS.GET_SEARCH_META.message,
+        data: rows.map((row) => row.value).filter(Boolean),
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_SEARCH_META.code,
+        message: API_RESPONSE.SUCCESS.GET_SEARCH_META.message,
+        data: [],
       };
     }
   }
@@ -139,8 +243,116 @@ export class SearchService {
         )
       `;
       return rows.map((r) => r.user_id);
-    } catch {
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
       return [];
+    }
+  }
+
+  // ====================================================
+  // PRIVATE – CASE-INSENSITIVE MULTI-TERM ARRAY LOOKUP
+  // ====================================================
+
+  private async findMentorIdsByTerms(terms: string[]): Promise<string[]> {
+    if (!terms.length) return [];
+
+    try {
+      const rows = await this.prisma.db.$queryRaw<{ user_id: string }[]>`
+        SELECT DISTINCT mp.user_id::text
+        FROM mentor_profiles mp
+        WHERE EXISTS (
+          SELECT 1 FROM unnest(mp.skills) AS s WHERE s ILIKE ANY(${terms}::text[])
+        ) OR EXISTS (
+          SELECT 1 FROM unnest(mp.areas_of_expertise) AS e WHERE e ILIKE ANY(${terms}::text[])
+        )
+      `;
+      return rows.map((r) => r.user_id);
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return [];
+    }
+  }
+
+  // ====================================================
+  // PRIVATE – RECOMMENDATION FETCH HELPERS
+  // ====================================================
+
+  private async loadMenteeMatchTerms(userId: string): Promise<string[]> {
+    const profile = await this.loadMenteeProfile(userId);
+    if (!profile) return [];
+
+    return [
+      ...new Set(
+        [...profile.learningGoals, ...profile.areasOfInterest]
+          .map((term) => term.trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  private async findMatchedMentors(
+    terms: string[],
+    take: number,
+  ): Promise<MentorSearchItemInterface[]> {
+    const matchedIds = await this.findMentorIdsByTerms(terms);
+    if (!matchedIds.length) return [];
+
+    return this.prisma.db.user.findMany({
+      where: {
+        AND: [MentorAccess.approvedMentorWhere(), { id: { in: matchedIds } }],
+      },
+      select: SelectFields.getMentorSearchSelect(),
+      orderBy: { createdAt: 'desc' },
+      take,
+    }) as unknown as Promise<MentorSearchItemInterface[]>;
+  }
+
+  private async findNewestMentors(
+    take: number,
+    excludeIds: string[],
+  ): Promise<MentorSearchItemInterface[]> {
+    if (take <= 0) return [];
+
+    return this.prisma.db.user.findMany({
+      where: {
+        AND: [
+          MentorAccess.approvedMentorWhere(),
+          ...(excludeIds.length ? [{ id: { notIn: excludeIds } }] : []),
+        ],
+      },
+      select: SelectFields.getMentorSearchSelect(),
+      orderBy: { createdAt: 'desc' },
+      take,
+    }) as unknown as Promise<MentorSearchItemInterface[]>;
+  }
+
+  // ====================================================
+  // PRIVATE – AVAILABILITY DAY ID LOOKUP
+  // ====================================================
+
+  private async findMentorIdsByAvailabilityDay(
+    days: DaysInWeek[],
+  ): Promise<string[]> {
+    try {
+      const rows = await this.prisma.db.$queryRaw<{ user_id: string }[]>`
+        SELECT DISTINCT mp.user_id::text
+        FROM mentor_profiles mp,
+             jsonb_array_elements(
+               CASE WHEN jsonb_typeof(mp.availability) = 'array'
+                 THEN mp.availability
+                 ELSE '[]'::jsonb
+               END
+             ) AS slot
+        WHERE lower(slot->>'day') = ANY(${days}::text[])
+      `;
+      return rows.map((r) => r.user_id);
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      // This result feeds a hard filter (`{ id: { in: [] } }`). Returning [] here
+      // would be indistinguishable from "no mentor is available that day" — a
+      // legitimate empty result — so we re-throw and let the outer catch in
+      // searchMentors turn this into a visible INTERNAL_SERVER_ERROR instead.
+      throw error;
     }
   }
 
@@ -150,8 +362,8 @@ export class SearchService {
 
   private buildWhereClause(
     dto: SearchMentorDto,
-    menteeProfile: { learningGoals: string[]; areasOfInterest: string[] } | null,
     keywordMatchIds: string[],
+    availabilityMatchIds: string[] | null,
   ) {
     // Top-level AND conditions applied to the User model
     const topLevelAnd: object[] = [MentorAccess.approvedMentorWhere()];
@@ -159,6 +371,13 @@ export class SearchService {
     // Language filter (case-insensitive)
     if (dto.language) {
       topLevelAnd.push({ language: { equals: dto.language, mode: 'insensitive' } });
+    }
+
+    // Availability-day filter. An empty array is intentional and matches nothing —
+    // it means the day was requested but no mentor is free then. Do not skip the
+    // clause when empty; that would silently drop the filter.
+    if (availabilityMatchIds !== null) {
+      topLevelAnd.push({ id: { in: availabilityMatchIds } });
     }
 
     // Keyword filter — case-insensitive match across name, bio, title, skills, and expertise.
@@ -188,39 +407,18 @@ export class SearchService {
       topLevelAnd.push({ OR: orConditions });
     }
 
-    // Profile-level filter conditions
+    // Profile-level filter conditions — explicit filters only.
     const profileConditions: object[] = [];
 
-    // Intelligent matching: combine mentee's learning goals + areas of interest
-    // with any explicit expertise / skills filters to produce a single OR clause
-    // that matches mentors relevant to the mentee's profile.
-    const intelligentExpertiseTerms: string[] = menteeProfile
-      ? [...menteeProfile.learningGoals, ...menteeProfile.areasOfInterest]
-      : [];
-    const explicitExpertiseTerms = dto.expertiseArray;
-    const explicitSkillsTerms = dto.skillsArray;
-
-    const allExpertiseTerms = [
-      ...new Set([...intelligentExpertiseTerms, ...explicitExpertiseTerms]),
-    ];
-    const allSkillsTerms = [
-      ...new Set([...intelligentExpertiseTerms, ...explicitSkillsTerms]),
-    ];
-
-    if (allExpertiseTerms.length > 0 || allSkillsTerms.length > 0) {
-      const matchOr: object[] = [];
-
-      if (allExpertiseTerms.length > 0) {
-        matchOr.push({ areasOfExpertise: { hasSome: allExpertiseTerms } });
-      }
-      if (allSkillsTerms.length > 0) {
-        matchOr.push({ skills: { hasSome: allSkillsTerms } });
-      }
-
-      profileConditions.push({ OR: matchOr });
+    if (dto.expertiseArray.length > 0) {
+      profileConditions.push({ areasOfExpertise: { hasSome: dto.expertiseArray } });
     }
 
-    // Session rate range 
+    if (dto.skillsArray.length > 0) {
+      profileConditions.push({ skills: { hasSome: dto.skillsArray } });
+    }
+
+    // Session rate range
     if (
       dto.minSessionRate !== undefined ||
       dto.maxSessionRate !== undefined
@@ -306,25 +504,6 @@ export class SearchService {
   }
 
   // ====================================================
-  // PRIVATE – AVAILABILITY DAY POST-FILTER
-  // ====================================================
-
-  private filterByAvailabilityDay(
-    mentors: MentorSearchItemInterface[],
-    days: DaysInWeek[],
-  ): MentorSearchItemInterface[] {
-    if (!days.length) return mentors;
-
-    return mentors.filter((mentor) => {
-      const availability = mentor.mentorProfiles[0]?.availability;
-      if (!availability || !Array.isArray(availability)) return false;
-      return (availability as { day: string }[]).some((slot) =>
-        days.some((day) => slot.day?.toLowerCase() === day.toLowerCase()),
-      );
-    });
-  }
-
-  // ====================================================
   // GET MENTOR PROFILE BY ID
   // ====================================================
 
@@ -403,8 +582,8 @@ export class SearchService {
 
       return {
         status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.GET_BOOKINGS.code,
-        message: 'Mentor profile retrieved successfully',
+        statusCode: API_RESPONSE.SUCCESS.GET_MENTOR_PROFILE.code,
+        message: API_RESPONSE.SUCCESS.GET_MENTOR_PROFILE.message,
         data: result,
       };
     } catch (error) {
