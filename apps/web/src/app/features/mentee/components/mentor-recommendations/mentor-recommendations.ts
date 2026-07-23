@@ -14,16 +14,16 @@ export class MentorRecommendations {
   state = input.required<RecommendedMentorsState>();
 
   protected readonly heading = computed(() =>
-    this.state().isPersonalized ? 'Recommended for you' : 'Featured mentors'
+    this.state().isPersonalized ? 'Recommended for you' : 'Featured mentors',
   );
 
   protected readonly subtitle = computed(() =>
     this.state().isPersonalized
       ? 'Based on your goals and interests'
-      : 'Popular mentors on Gurokonekt'
+      : 'Popular mentors on Gurokonekt',
   );
 
   protected readonly hasMentors = computed(
-    () => this.state().mentors.length > 0
+    () => this.state().mentors.length > 0,
   );
 }

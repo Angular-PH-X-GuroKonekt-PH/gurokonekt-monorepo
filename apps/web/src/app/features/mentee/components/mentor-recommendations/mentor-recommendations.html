@@ -1,4 +1,5 @@
-@if (state(); as state) {
+@if (state(); as state) { @if (state.isLoading || state.error ||
+state.mentors.length > 0) {
 <section class="flex flex-col gap-4">
   <div class="flex flex-col gap-1">
     <h2 class="text-xl font-semibold text-heading">{{ heading() }}</h2>
@@ -7,16 +8,13 @@
 
   @if (state.isLoading) {
   <app-mentor-card-list-skeleton [count]="3" />
-  }
-
-  @if (!state.isLoading && state.error) {
+  } @if (!state.isLoading && state.error) {
   <div
-    class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700">
+    class="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-4 text-sm text-red-700"
+  >
     {{ state.error }}
   </div>
-  }
-
-  @if (!state.isLoading && !state.error && hasMentors()) {
+  } @if (!state.isLoading && !state.error && hasMentors()) {
   <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
     @for (mentor of state.mentors; track mentor.id) {
     <app-mentor-info-card [mentor]="mentor" />
@@ -24,4 +22,4 @@
   </div>
   }
 </section>
-}
+} }
