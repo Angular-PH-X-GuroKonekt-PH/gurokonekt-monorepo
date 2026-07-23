@@ -209,81 +209,83 @@
             </div>
           </div>
 
-          <!-- Learning & Interests Section -->
-          <div class="mb-10 pb-10 border-b border-gray-200">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">Learning & Interests</h2>
+          <!-- Learning & Interests Section (mentee only) -->
+          @if (isMentee()) {
+            <div class="mb-10 pb-10 border-b border-gray-200">
+              <h2 class="text-xl font-bold text-gray-900 mb-6">Learning & Interests</h2>
 
-            <!-- Learning Goals -->
-            <div class="mb-8">
-              <div class="flex items-center justify-between mb-4">
-                <label for="learningGoals" class="block text-sm font-semibold text-gray-700">
-                  Learning Goals (Optional)
-                </label>
-                <button
-                  type="button"
-                  (click)="addLearningGoal()"
-                  [disabled]="learningGoals.length >= 5"
-                  class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-orange-600 hover:text-orange-700 disabled:text-gray-400 transition-colors"
-                >
-                  <span class="text-lg">+</span>
-                  Add Goal
-                </button>
-              </div>
-
-              <div class="space-y-3">
-                @for (goal of learningGoals.value; track $index) {
-                  <div class="flex gap-2">
-                    <input
-                      [value]="goal"
-                      (change)="learningGoals.at($index).setValue($any($event.target).value || '')"
-                      type="text"
-                      placeholder="e.g., Master TypeScript and Angular"
-                      maxlength="500"
-                      class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                    />
-                    <button
-                      type="button"
-                      (click)="removeLearningGoal($index)"
-                      class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                      title="Remove learning goal"
-                    >
-                      <span class="text-lg">🗑️</span>
-                    </button>
-                  </div>
-                  @if (learningGoals.at($index).getError('maxlength')) {
-                    <p class="text-red-600 text-sm">Each goal cannot exceed 500 characters</p>
-                  }
-                }
-              </div>
-            </div>
-
-            <!-- Areas of Interest -->
-            <div>
-              <label for="areasOfInterest" class="block text-sm font-semibold text-gray-700 mb-4">
-                Areas of Interest <span class="text-red-500">*</span>
-                <span class="text-gray-500 font-normal">(Select at least one)</span>
-              </label>
-
-              <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                @for (area of areasOfInterestOptions; track area) {
-                  <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
-                    [class]="isAreaSelected(area) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                    <input
-                      type="checkbox"
-                      [checked]="isAreaSelected(area)"
-                      (change)="toggleAreaOfInterest(area)"
-                      class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
-                    />
-                    <span class="text-gray-700 font-medium">{{ area }}</span>
+              <!-- Learning Goals -->
+              <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                  <label for="learningGoals" class="block text-sm font-semibold text-gray-700">
+                    Learning Goals (Optional)
                   </label>
-                }
+                  <button
+                    type="button"
+                    (click)="addLearningGoal()"
+                    [disabled]="learningGoals.length >= 5"
+                    class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-orange-600 hover:text-orange-700 disabled:text-gray-400 transition-colors"
+                  >
+                    <span class="text-lg">+</span>
+                    Add Goal
+                  </button>
+                </div>
+
+                <div class="space-y-3">
+                  @for (goal of learningGoals.value; track $index) {
+                    <div class="flex gap-2">
+                      <input
+                        [value]="goal"
+                        (change)="learningGoals.at($index).setValue($any($event.target).value || '')"
+                        type="text"
+                        placeholder="e.g., Master TypeScript and Angular"
+                        maxlength="500"
+                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+                      />
+                      <button
+                        type="button"
+                        (click)="removeLearningGoal($index)"
+                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
+                        title="Remove learning goal"
+                      >
+                        <span class="text-lg">🗑️</span>
+                      </button>
+                    </div>
+                    @if (learningGoals.at($index).getError('maxlength')) {
+                      <p class="text-red-600 text-sm">Each goal cannot exceed 500 characters</p>
+                    }
+                  }
+                </div>
               </div>
 
-              @if (profileForm.get('areasOfInterest')?.invalid && profileForm.get('areasOfInterest')?.touched) {
-                <p class="text-red-600 text-sm mt-2">Please select at least one area of interest</p>
-              }
+              <!-- Areas of Interest -->
+              <div>
+                <label for="areasOfInterest" class="block text-sm font-semibold text-gray-700 mb-4">
+                  Areas of Interest <span class="text-red-500">*</span>
+                  <span class="text-gray-500 font-normal">(Select at least one)</span>
+                </label>
+
+                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  @for (area of areasOfInterestOptions; track area) {
+                    <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
+                      [class]="isAreaSelected(area) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
+                      <input
+                        type="checkbox"
+                        [checked]="isAreaSelected(area)"
+                        (change)="toggleAreaOfInterest(area)"
+                        class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+                      />
+                      <span class="text-gray-700 font-medium">{{ area }}</span>
+                    </label>
+                  }
+                </div>
+
+                @if (profileForm.get('areasOfInterest')?.invalid && profileForm.get('areasOfInterest')?.touched) {
+                  <p class="text-red-600 text-sm mt-2">Please select at least one area of interest</p>
+                }
+              </div>
             </div>
-          </div>
+          }
 
           <!-- Session Preferences Section -->
           <div class="mb-10 pb-10 border-b border-gray-200">

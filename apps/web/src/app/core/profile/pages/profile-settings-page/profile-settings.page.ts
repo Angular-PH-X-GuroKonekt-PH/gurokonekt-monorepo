@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit } from '@angular/core';
+import { Component, computed, inject, signal, OnInit } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { ReactiveFormsModule, FormBuilder, FormGroup, Validators, FormArray } from '@angular/forms';
 import { Router } from '@angular/router';
@@ -10,7 +10,6 @@ import type { DayAvailability, TimeFrame } from '../../../../shared/interfaces/p
 import { ToastService } from '../../../../shared/services/toast.service';
 import { ProfileService } from '../../profile.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { AuthState } from '../../../../core/auth/store/auth.state';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { AuthSelectors } from '../../../auth/store/auth.selectors';
@@ -45,6 +44,7 @@ export class ProfileSettingsPageComponent implements OnInit {
   
   // Get current user from auth state
   protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
+  protected readonly isMentee = computed(() => this.currentUser()?.role === 'mentee');
   
   // Expose enums to template
   protected readonly MenteePreferredSessionType = MenteePreferredSessionType;
@@ -132,6 +132,8 @@ export class ProfileSettingsPageComponent implements OnInit {
   }
 
   private initializeForm(): void {
+    const areasOfInterestValidators = this.isMentee() ? [Validators.required] : [];
+
     this.profileForm = this.fb.group({
       bio: ['', [Validators.minLength(50), Validators.maxLength(500)]],
       phoneNumber: ['', [Validators.pattern(/^\+\d{10,15}$/)]],
@@ -139,7 +141,7 @@ export class ProfileSettingsPageComponent implements OnInit {
       timezone: ['', Validators.required],
       language: ['', Validators.required],
       learningGoals: this.fb.array([]),
-      areasOfInterest: this.fb.array([], Validators.required),
+      areasOfInterest: this.fb.array([], areasOfInterestValidators),
       preferredSessionType: this.fb.array([], Validators.required),
     });
   }
@@ -217,18 +219,19 @@ export class ProfileSettingsPageComponent implements OnInit {
       this.preferredSessionTypes.push(this.fb.control(type));
     });
 
-    // Populate learning goals
-    if (learningGoals && Array.isArray(learningGoals)) {
-      learningGoals.forEach(goal => {
-        this.learningGoals.push(this.fb.control(goal, [Validators.maxLength(ProfileSettingsPageComponent.MAX_LEARNING_GOAL_LENGTH)]));
-      });
-    }
+    // Populate learning goals and areas of interest (mentee only)
+    if (this.isMentee()) {
+      if (learningGoals && Array.isArray(learningGoals)) {
+        learningGoals.forEach(goal => {
+          this.learningGoals.push(this.fb.control(goal, [Validators.maxLength(ProfileSettingsPageComponent.MAX_LEARNING_GOAL_LENGTH)]));
+        });
+      }
 
-    // Populate areas of interest
-    if (areasOfInterest && Array.isArray(areasOfInterest)) {
-      areasOfInterest.forEach(area => {
-        this.areasOfInterest.push(this.fb.control(area));
-      });
+      if (areasOfInterest && Array.isArray(areasOfInterest)) {
+        areasOfInterest.forEach(area => {
+          this.areasOfInterest.push(this.fb.control(area));
+        });
+      }
     }
 
     // Populate availability
@@ -424,8 +427,10 @@ export class ProfileSettingsPageComponent implements OnInit {
       country: this.profileForm.value.country,
       timezone: this.profileForm.value.timezone,
       language: this.profileForm.value.language,
-      learningGoals: this.learningGoals.value.filter((g: string) => g.trim()),
-      areasOfInterest: this.areasOfInterest.value,
+      ...(this.isMentee() && {
+        learningGoals: this.learningGoals.value.filter((g: string) => g.trim()),
+        areasOfInterest: this.areasOfInterest.value,
+      }),
       preferredSessionType: this.preferredSessionTypes.value,
       ...(availability.length > 0 && { availability }),
     };
@@ -435,7 +440,7 @@ export class ProfileSettingsPageComponent implements OnInit {
   async onSubmit(): Promise<void> {
     if (this.profileForm.invalid || this.isSubmitting()) return;
 
-    if (this.areasOfInterest.length === 0) {
+    if (this.isMentee() && this.areasOfInterest.length === 0) {
       this.toastService.error('Please select at least one area of interest');
       return;
     }
