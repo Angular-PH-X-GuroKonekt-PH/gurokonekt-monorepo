@@ -133,6 +133,11 @@ describe('SearchService', () => {
 
       expect(response.data?.total).toBe(25);
       expect(response.data?.results).toHaveLength(1);
+
+      const where = JSON.stringify(
+        prisma.db.user.findMany.mock.calls[0][0].where,
+      );
+      expect(where).toContain('"in":["m1","m2"]');
     });
 
     it('matches nothing when no mentor is available on the requested day', async () => {

@@ -160,8 +160,13 @@ export class SearchService {
       const rows = await this.prisma.db.$queryRaw<{ user_id: string }[]>`
         SELECT DISTINCT mp.user_id::text
         FROM mentor_profiles mp,
-             jsonb_array_elements(mp.availability) AS slot
-        WHERE lower(slot->>'day') = ANY(${days})
+             jsonb_array_elements(
+               CASE WHEN jsonb_typeof(mp.availability) = 'array'
+                 THEN mp.availability
+                 ELSE '[]'::jsonb
+               END
+             ) AS slot
+        WHERE lower(slot->>'day') = ANY(${days}::text[])
       `;
       return rows.map((r) => r.user_id);
     } catch {
