@@ -266,5 +266,81 @@ describe('SearchService', () => {
       const terms = prisma.db.$queryRaw.mock.calls[0][1];
       expect(terms).toEqual(['web development', 'Design']);
     });
+
+    it('excludes already-matched mentors from the padding query', async () => {
+      prisma.db.menteeProfile.findUnique.mockResolvedValue({
+        learningGoals: ['Baking'],
+        areasOfInterest: [],
+      });
+      prisma.db.$queryRaw.mockResolvedValue([{ user_id: 'm1' }]);
+      prisma.db.user.findMany
+        .mockResolvedValueOnce([buildMentorRow('m1')])
+        .mockResolvedValueOnce([buildMentorRow('m2')]);
+
+      await service.getRecommendedMentors(
+        Object.assign(new RecommendedMentorsDto(), { limit: 3 }),
+        'mentee-1',
+        UserRole.Mentee,
+      );
+
+      const paddingWhere = JSON.stringify(
+        prisma.db.user.findMany.mock.calls[1][0].where,
+      );
+      expect(paddingWhere).toContain('"notIn":["m1"]');
+    });
+
+    it('short-circuits the padding query when matches already fill the limit', async () => {
+      prisma.db.menteeProfile.findUnique.mockResolvedValue({
+        learningGoals: ['Baking'],
+        areasOfInterest: [],
+      });
+      prisma.db.$queryRaw.mockResolvedValue([{ user_id: 'm1' }]);
+      prisma.db.user.findMany.mockResolvedValueOnce([buildMentorRow('m1')]);
+
+      const response = await service.getRecommendedMentors(
+        Object.assign(new RecommendedMentorsDto(), { limit: 1 }),
+        'mentee-1',
+        UserRole.Mentee,
+      );
+
+      expect(prisma.db.user.findMany).toHaveBeenCalledTimes(1);
+      expect(response.data?.results).toHaveLength(1);
+    });
+
+    it('still returns newest mentors when the mentee has no profile row at all', async () => {
+      prisma.db.menteeProfile.findUnique.mockResolvedValue(null);
+      prisma.db.user.findMany.mockResolvedValue([
+        buildMentorRow('m1'),
+        buildMentorRow('m2'),
+      ]);
+
+      const response = await service.getRecommendedMentors(
+        Object.assign(new RecommendedMentorsDto(), { limit: 2 }),
+        'mentee-1',
+        UserRole.Mentee,
+      );
+
+      expect(prisma.db.$queryRaw).not.toHaveBeenCalled();
+      expect(response.data?.isPersonalized).toBe(false);
+      expect(response.data?.results).toHaveLength(2);
+    });
+
+    it('still pads with newest mentors when the term query throws', async () => {
+      prisma.db.menteeProfile.findUnique.mockResolvedValue({
+        learningGoals: ['Baking'],
+        areasOfInterest: [],
+      });
+      prisma.db.$queryRaw.mockRejectedValue(new Error('db down'));
+      prisma.db.user.findMany.mockResolvedValue([buildMentorRow('m1')]);
+
+      const response = await service.getRecommendedMentors(
+        Object.assign(new RecommendedMentorsDto(), { limit: 1 }),
+        'mentee-1',
+        UserRole.Mentee,
+      );
+
+      expect(response.data?.isPersonalized).toBe(false);
+      expect(response.data?.results).toHaveLength(1);
+    });
   });
 });
