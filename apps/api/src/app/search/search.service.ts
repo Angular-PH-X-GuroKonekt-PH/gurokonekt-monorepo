@@ -3,16 +3,20 @@ import { PrismaService } from '../prisma/prisma.service';
 import {
   API_RESPONSE,
   DaysInWeek,
+  DEFAULT_RECOMMENDED_MENTOR_LIMIT,
   MentorProfileDetailInterface,
+  MentorRecommendationResultInterface,
   MentorSearchItemInterface,
   MentorSearchResultInterface,
+  RecommendedMentorsDto,
   ResponseDto,
   ResponseStatus,
   SearchMentorDto,
   SearchSortBy,
   SearchSortOrder,
   MentorAccess,
-  SelectFields
+  SelectFields,
+  UserRole,
 } from '@gurokonekt/models';
 
 @Injectable()
@@ -111,6 +115,56 @@ export class SearchService {
   }
 
   // ====================================================
+  // RECOMMENDED MENTORS
+  // ====================================================
+
+  async getRecommendedMentors(
+    dto: RecommendedMentorsDto,
+    authenticatedUserId: string,
+    authenticatedUserRole: string,
+  ): Promise<ResponseDto<MentorRecommendationResultInterface>> {
+    try {
+      const limit = dto.limit ?? DEFAULT_RECOMMENDED_MENTOR_LIMIT;
+
+      // Only mentees have goals/interests to personalize against.
+      const terms =
+        authenticatedUserRole === UserRole.Mentee
+          ? await this.loadMenteeMatchTerms(authenticatedUserId)
+          : [];
+
+      const matched = terms.length
+        ? await this.findMatchedMentors(terms, limit)
+        : [];
+
+      // Match first, then top up with the newest mentors so the section is never
+      // empty — a mentee with an unfilled or non-overlapping profile still gets
+      // a full row of mentors to browse.
+      const padding = await this.findNewestMentors(
+        limit - matched.length,
+        matched.map((mentor) => mentor.id),
+      );
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_RECOMMENDED_MENTORS.code,
+        message: API_RESPONSE.SUCCESS.GET_RECOMMENDED_MENTORS.message,
+        data: {
+          results: [...matched, ...padding],
+          isPersonalized: matched.length > 0,
+        },
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+        data: null,
+      };
+    }
+  }
+
+  // ====================================================
   // PRIVATE – MENTEE PROFILE LOADER
   // ====================================================
 
@@ -147,6 +201,82 @@ export class SearchService {
     } catch {
       return [];
     }
+  }
+
+  // ====================================================
+  // PRIVATE – CASE-INSENSITIVE MULTI-TERM ARRAY LOOKUP
+  // ====================================================
+
+  private async findMentorIdsByTerms(terms: string[]): Promise<string[]> {
+    if (!terms.length) return [];
+
+    try {
+      const rows = await this.prisma.db.$queryRaw<{ user_id: string }[]>`
+        SELECT DISTINCT mp.user_id::text
+        FROM mentor_profiles mp
+        WHERE EXISTS (
+          SELECT 1 FROM unnest(mp.skills) AS s WHERE s ILIKE ANY(${terms}::text[])
+        ) OR EXISTS (
+          SELECT 1 FROM unnest(mp.areas_of_expertise) AS e WHERE e ILIKE ANY(${terms}::text[])
+        )
+      `;
+      return rows.map((r) => r.user_id);
+    } catch {
+      return [];
+    }
+  }
+
+  // ====================================================
+  // PRIVATE – RECOMMENDATION FETCH HELPERS
+  // ====================================================
+
+  private async loadMenteeMatchTerms(userId: string): Promise<string[]> {
+    const profile = await this.loadMenteeProfile(userId);
+    if (!profile) return [];
+
+    return [
+      ...new Set(
+        [...profile.learningGoals, ...profile.areasOfInterest]
+          .map((term) => term.trim())
+          .filter(Boolean),
+      ),
+    ];
+  }
+
+  private async findMatchedMentors(
+    terms: string[],
+    take: number,
+  ): Promise<MentorSearchItemInterface[]> {
+    const matchedIds = await this.findMentorIdsByTerms(terms);
+    if (!matchedIds.length) return [];
+
+    return this.prisma.db.user.findMany({
+      where: {
+        AND: [MentorAccess.approvedMentorWhere(), { id: { in: matchedIds } }],
+      },
+      select: SelectFields.getMentorSearchSelect(),
+      orderBy: { createdAt: 'desc' },
+      take,
+    }) as unknown as Promise<MentorSearchItemInterface[]>;
+  }
+
+  private async findNewestMentors(
+    take: number,
+    excludeIds: string[],
+  ): Promise<MentorSearchItemInterface[]> {
+    if (take <= 0) return [];
+
+    return this.prisma.db.user.findMany({
+      where: {
+        AND: [
+          MentorAccess.approvedMentorWhere(),
+          ...(excludeIds.length ? [{ id: { notIn: excludeIds } }] : []),
+        ],
+      },
+      select: SelectFields.getMentorSearchSelect(),
+      orderBy: { createdAt: 'desc' },
+      take,
+    }) as unknown as Promise<MentorSearchItemInterface[]>;
   }
 
   // ====================================================

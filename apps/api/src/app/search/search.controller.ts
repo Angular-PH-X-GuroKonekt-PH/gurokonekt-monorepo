@@ -21,6 +21,7 @@ import { Request } from 'express';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { SearchService } from './search.service';
 import {
+  RecommendedMentorsDto,
   ResponseDto,
   ResponseStatus,
   SearchMentorDto,
@@ -86,6 +87,80 @@ export class SearchController {
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
+
+  // ====================================================
+  // GET /api/search/recommended – Recommended Mentors
+  // NOTE: declared before GET / to prevent route conflict
+  // ====================================================
+
+  @Get('recommended')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.GET_RECOMMENDED_MENTORS.summary,
+    description: SWAGGER_DOCUMENTATION.GET_RECOMMENDED_MENTORS.description,
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    type: Number,
+    description: 'Number of mentors to recommend (max 20)',
+    example: 6,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Recommended mentors retrieved successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Recommended mentors retrieved successfully',
+        data: {
+          isPersonalized: true,
+          results: [
+            {
+              id: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21',
+              firstName: 'Carlos',
+              lastName: 'Reyes',
+              mentorProfiles: [
+                {
+                  areasOfExpertise: ['Web Development'],
+                  skills: ['TypeScript'],
+                  sessionRate: 50,
+                  yearsOfExperience: 7,
+                },
+              ],
+            },
+          ],
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({ status: 403, description: 'Access denied — authenticated user required.' })
+  async getRecommendedMentors(
+    @Query() dto: RecommendedMentorsDto,
+    @Req() req: Request & { user: { id: string; role: string } },
+  ) {
+    const { id: userId, role } = req.user;
+
+    if (!userId) {
+      throw new ForbiddenException('Authenticated user required');
+    }
+
+    const response = await this.searchService.getRecommendedMentors(dto, userId, role);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
