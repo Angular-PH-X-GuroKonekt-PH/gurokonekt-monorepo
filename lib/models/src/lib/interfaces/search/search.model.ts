@@ -66,6 +66,15 @@ export interface MentorSearchResultInterface {
   results: MentorSearchItemInterface[];
 }
 
+export interface MentorRecommendationResultInterface {
+  results: MentorSearchItemInterface[];
+  /**
+   * True when at least one returned mentor genuinely matched the mentee's
+   * goals or interests. False when the whole set came from the newest-mentor
+   * top-up, which the UI uses to switch its heading copy.
+   */
+  isPersonalized: boolean;
+}
 
 // Frontend-only types for the mentor search feature.
 // Aligned to the backend SearchMentorDto (search-mentor.dto.ts).

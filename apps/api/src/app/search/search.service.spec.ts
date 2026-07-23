@@ -157,5 +157,19 @@ describe('SearchService', () => {
       expect(where).toContain('"in":[]');
       expect(response.data?.total).toBe(0);
     });
+
+    it('returns the mentor-search success code', async () => {
+      prisma.db.user.count.mockResolvedValue(0);
+      prisma.db.user.findMany.mockResolvedValue([]);
+
+      const response = await service.searchMentors(
+        buildDto(),
+        'mentee-1',
+        UserRole.Mentee,
+      );
+
+      expect(response.statusCode).toBe(200);
+      expect(response.message).toBe('Mentors retrieved successfully');
+    });
   });
 });

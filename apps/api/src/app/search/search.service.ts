@@ -95,8 +95,8 @@ export class SearchService {
 
       return {
         status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.GET_BOOKINGS.code,
-        message: API_RESPONSE.SUCCESS.GET_BOOKINGS.message,
+        statusCode: API_RESPONSE.SUCCESS.GET_MENTORS.code,
+        message: API_RESPONSE.SUCCESS.GET_MENTORS.message,
         data: { total, page, limit, results },
       };
     } catch (error) {
@@ -400,8 +400,8 @@ export class SearchService {
 
       return {
         status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.GET_BOOKINGS.code,
-        message: 'Mentor profile retrieved successfully',
+        statusCode: API_RESPONSE.SUCCESS.GET_MENTOR_PROFILE.code,
+        message: API_RESPONSE.SUCCESS.GET_MENTOR_PROFILE.message,
         data: result,
       };
     } catch (error) {
