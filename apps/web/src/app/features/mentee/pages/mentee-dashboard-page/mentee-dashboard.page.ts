@@ -9,8 +9,8 @@ import {
   BookingCardInterface,
   BookingStatus,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
-import { of, switchMap } from 'rxjs';
-import { MentorService } from '../../../mentor/services/mentor.service';
+import { catchError, map, of, switchMap } from 'rxjs';
+import { MenteeSearchMentorService } from '../../services/mentee-search-mentor.service';
 import { MentorSearchItemInterface } from '@gurokonekt/models/interfaces/search/search.model';
 import { MentorCardListSkeleton } from '../../components/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
 import { GreetingCard } from '../../../../shared/components/greeting-card/greeting-card.component';
@@ -37,7 +37,7 @@ export class MenteeDashboardPage {
   protected readonly userId = computed(() => this.authUser()?.id);
 
   private readonly bookingService = inject(BookingService);
-  private readonly mentorService = inject(MentorService);
+  private readonly menteeSearchMentorService = inject(MenteeSearchMentorService);
 
   protected readonly fullName = computed<string>(() => {
     const value = this.authUser()?.['fullName'];
@@ -104,7 +104,13 @@ export class MenteeDashboardPage {
   //RECOMMENDED MENTORS
   protected readonly recommendedMentors = toSignal<
     MentorSearchItemInterface[] | null
-  >(this.mentorService.getRecommendedMentors(6), { initialValue: null });
+  >(
+    this.menteeSearchMentorService.getRecommendedMentors(6).pipe(
+      map((result) => result.results),
+      catchError(() => of([])),
+    ),
+    { initialValue: null },
+  );
   protected readonly recommendedMentorsLoading = computed(
     () => this.recommendedMentors() === null,
   );

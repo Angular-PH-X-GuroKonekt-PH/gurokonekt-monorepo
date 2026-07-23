@@ -17,3 +17,10 @@ export interface FindMentorsSearchState {
   isLoading: boolean;
   error: string | null;
 }
+
+export interface RecommendedMentorsState {
+  mentors: MentorSearchItemInterface[];
+  isPersonalized: boolean;
+  isLoading: boolean;
+  error: string | null;
+}
