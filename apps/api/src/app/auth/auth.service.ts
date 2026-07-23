@@ -13,6 +13,7 @@ import {
   AuthRateLimiterService,
   AuthErrorHandlerService,
   AUTH_RATE_LIMITS,
+  withVerificationEmailQuery,
 } from './helpers';
 import bcrypt from 'bcrypt';
 
@@ -44,7 +45,10 @@ export class AuthService {
       }
 
       // Create user in Supabase Auth
-      const emailRedirectTo = dto.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`;
+      const emailRedirectTo = withVerificationEmailQuery(
+        dto.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`,
+        normalizedEmail
+      );
       const { data, error } = await this.supabase.client.auth.signUp({
         email: normalizedEmail,
         password: dto.password,
@@ -140,7 +144,10 @@ export class AuthService {
         };
       }
 
-      const emailRedirectTo = dto.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`;
+      const emailRedirectTo = withVerificationEmailQuery(
+        dto.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`,
+        normalizedEmail
+      );
       const { data, error } = await this.supabase.client.auth.signUp({
         email: normalizedEmail,
         password: dto.password,
@@ -305,7 +312,7 @@ export class AuthService {
             data: {
               actionType: LogsActionType.ResendEmailConfirmation,
               targetId: "",
-              details: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
+              details: API_RESPONSE.ERROR.RESEND_VERIFICATION_LIMIT_REACHED.message,
               metadata: { email: input.email },
               ipAddress,
               userAgent,
@@ -315,8 +322,8 @@ export class AuthService {
 
           return {
             status: ResponseStatus.Error,
-            statusCode: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.code,
-            message: API_RESPONSE.ERROR.TOO_MANY_REQUESTS.message,
+            statusCode: API_RESPONSE.ERROR.RESEND_VERIFICATION_LIMIT_REACHED.code,
+            message: API_RESPONSE.ERROR.RESEND_VERIFICATION_LIMIT_REACHED.message,
             data: null,
           };
         }
@@ -333,10 +340,13 @@ export class AuthService {
         if (lastAttempt) {
           const secondsSinceLast = (Date.now() - lastAttempt.createdAt.getTime()) / 1000;
           if (secondsSinceLast < RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS) {
+            const waitSeconds = Math.ceil(
+              RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS - secondsSinceLast
+            );
             return {
               status: ResponseStatus.Error,
-              statusCode: 429,
-              message: `Please wait ${Math.ceil(RESEND_EMAIL_CONFIRMATION.MIN_INTERVAL_SECONDS - secondsSinceLast)} seconds before trying again.`,
+              statusCode: API_RESPONSE.ERROR.RESEND_VERIFICATION_TOO_SOON.code,
+              message: `Please wait ${waitSeconds} seconds before requesting another verification email.`,
               data: null,
             };
           }
@@ -379,7 +389,10 @@ export class AuthService {
       }
 
       // Resend email via Supabase
-      const emailRedirectTo = input.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`;
+      const emailRedirectTo = withVerificationEmailQuery(
+        input.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`,
+        input.email
+      );
       const { data, error } = await this.supabase.client.auth.resend({
         type: ResendOTPTypes.SignUp,
         email: input.email,
@@ -392,7 +405,9 @@ export class AuthService {
           actionType: LogsActionType.ResendEmailConfirmation,
           targetId: user.id,
           details: error
-            ? API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message
+            ? this.isSupabaseEmailRateLimitError(error)
+              ? API_RESPONSE.ERROR.RESEND_VERIFICATION_RATE_LIMITED.message
+              : API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message
             : API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.message,
           metadata: { email: input.email },
           ipAddress,
@@ -402,6 +417,15 @@ export class AuthService {
       });
 
       if (error) {
+        if (this.isSupabaseEmailRateLimitError(error)) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.RESEND_VERIFICATION_RATE_LIMITED.code,
+            message: API_RESPONSE.ERROR.RESEND_VERIFICATION_RATE_LIMITED.message,
+            data: error,
+          };
+        }
+
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
@@ -1237,7 +1261,12 @@ export class AuthService {
       const { error } = await this.supabase.client.auth.resend({
         type: ResendOTPTypes.SignUp,
         email: user.email,
-        options: { emailRedirectTo: REDIRECT_LINKS.VERIFY_EMAIL },
+        options: {
+          emailRedirectTo: withVerificationEmailQuery(
+            REDIRECT_LINKS.VERIFY_EMAIL,
+            user.email
+          ),
+        },
       });
 
       await this.prisma.db.logs.create({
@@ -1278,5 +1307,30 @@ export class AuthService {
         data: error,
       };
     }
+  }
+
+  private isSupabaseEmailRateLimitError(error: {
+    status?: number;
+    code?: string;
+    message?: string;
+  } | null | undefined): boolean {
+    if (!error) {
+      return false;
+    }
+
+    const code = (error.code ?? '').toLowerCase();
+    const message = (error.message ?? '').toLowerCase();
+
+    return (
+      error.status === 429 ||
+      code.includes('rate_limit') ||
+      code === 'over_email_send_rate_limit' ||
+      message.includes('rate limit') ||
+      message.includes('too many requests') ||
+      message.includes('email rate') ||
+      message.includes('security purposes') ||
+      message.includes('only request this after') ||
+      message.includes('you can only request')
+    );
   }
 }

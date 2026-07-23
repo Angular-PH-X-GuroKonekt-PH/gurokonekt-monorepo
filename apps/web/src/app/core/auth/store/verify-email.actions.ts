@@ -11,6 +11,7 @@ export class InitializeVerification {
 
 export class ResendVerificationEmail {
   static readonly type = '[VerifyEmail] Resend Verification Email';
+  constructor(public email?: string) {}
 }
 
 export class ResendVerificationEmailSuccess {

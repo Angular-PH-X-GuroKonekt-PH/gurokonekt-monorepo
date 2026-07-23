@@ -46,7 +46,15 @@ export class AuthState {
         }));
       }),
       catchError((error) => {
-        ctx.dispatch(new AuthActions.LoginFailure(this.getErrorMessage(error)));
+        const message = this.getErrorMessage(error);
+        if (/not verified/i.test(message)) {
+          const loginEmail = action.payload.email?.toLowerCase().trim();
+          if (loginEmail) {
+            this.storage.setLastRegisteredEmail(loginEmail);
+            ctx.patchState({ lastRegisteredEmail: loginEmail });
+          }
+        }
+        ctx.dispatch(new AuthActions.LoginFailure(message));
         return throwError(() => error);
       })
     );

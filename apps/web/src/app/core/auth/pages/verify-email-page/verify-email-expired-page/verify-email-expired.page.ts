@@ -51,6 +51,6 @@ export class VerifyEmailExpiredPage implements OnInit {
   }
 
   protected resendVerification(): void {
-    this.store.dispatch(new ResendVerificationEmail());
+    this.store.dispatch(new ResendVerificationEmail(this.email() || undefined));
   }
 }

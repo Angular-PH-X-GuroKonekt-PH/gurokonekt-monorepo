@@ -6,6 +6,30 @@ const LOCAL_DEV_ORIGIN =
   /^https?:\/\/(localhost|127\.0\.0\.1)(:\d+)?$/i;
 
 /**
+ * Ensures the signup verification redirect URL carries the recipient email
+ * as a query param so the app can resend after the link expires.
+ */
+export function withVerificationEmailQuery(
+  redirectTo: string,
+  email: string
+): string {
+  const normalizedEmail = email.toLowerCase().trim();
+  if (!redirectTo || !normalizedEmail) {
+    return redirectTo;
+  }
+
+  if (/^https?:\/\//i.test(redirectTo)) {
+    const url = new URL(redirectTo);
+    url.searchParams.set('email', normalizedEmail);
+    return url.toString();
+  }
+
+  const base = new URL(redirectTo, 'http://verification.local');
+  base.searchParams.set('email', normalizedEmail);
+  return `${base.pathname}${base.search}${base.hash}`;
+}
+
+/**
  * Reads Supabase auth callback parameters from the URL hash or query string.
  */
 export function getEmailVerificationParams(): URLSearchParams {
@@ -16,6 +40,27 @@ export function getEmailVerificationParams(): URLSearchParams {
 
   const search = typeof window !== 'undefined' ? window.location.search : '';
   return new URLSearchParams(search.startsWith('?') ? search.slice(1) : search);
+}
+
+/**
+ * Email embedded in the confirmation redirect (query) survives expired-link
+ * redirects even when the hash only contains Supabase error fields.
+ */
+export function getVerificationEmailFromCallback(
+  search = typeof window !== 'undefined' ? window.location.search : '',
+  hashParams = getEmailVerificationParams()
+): string {
+  const fromSearch = new URLSearchParams(
+    search.startsWith('?') ? search.slice(1) : search
+  )
+    .get('email')
+    ?.trim();
+
+  if (fromSearch) {
+    return fromSearch.toLowerCase();
+  }
+
+  return hashParams.get('email')?.trim().toLowerCase() || '';
 }
 
 /**
@@ -116,30 +161,37 @@ export function hasPasswordRecoveryCallbackHash(
 /**
  * Sends the browser to the verify-email callback route with the current hash intact.
  * Use when Supabase redirects to /login (or another route) instead of /verify-email.
+ * Preserves query params (e.g. email) from the confirmation redirect URL.
  */
 export function redirectToVerifyEmailCallback(): void {
-  const hash = window.location.hash;
-  window.location.replace(`/${APP_ROUTES.VERIFY_EMAIL}${hash}`);
+  const { search, hash } = window.location;
+  window.location.replace(`/${APP_ROUTES.VERIFY_EMAIL}${search}${hash}`);
 }
 
 /**
  * Sends a recovery callback to the reset-password route with its hash intact.
  */
 export function redirectToPasswordRecoveryCallback(): void {
-  const hash = window.location.hash;
-  window.location.replace(`/${APP_ROUTES.RESET_PASSWORD}${hash}`);
+  const { search, hash } = window.location;
+  window.location.replace(`/${APP_ROUTES.RESET_PASSWORD}${search}${hash}`);
 }
 
 /**
  * Redirect URL for confirmation emails. Omitted on localhost so the API can build
  * the URL from the request Origin header (avoids strict @IsUrl validation on deployed API).
+ * When email is provided, it is embedded as a query param for expired-link resend.
  */
 export function buildVerifyEmailRedirectUrl(
-  origin = window.location.origin
+  email?: string,
+  origin = typeof window !== 'undefined' ? window.location.origin : ''
 ): string | undefined {
   const base = (origin || '').replace(/\/$/, '');
   if (!base || LOCAL_DEV_ORIGIN.test(base)) {
     return undefined;
   }
-  return `${base}/${APP_ROUTES.VERIFY_EMAIL}`;
+
+  const redirectTo = `${base}/${APP_ROUTES.VERIFY_EMAIL}`;
+  return email?.trim()
+    ? withVerificationEmailQuery(redirectTo, email)
+    : redirectTo;
 }
