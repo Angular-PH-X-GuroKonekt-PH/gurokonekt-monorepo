@@ -168,6 +168,62 @@ export class SearchController {
   }
 
   // ====================================================
+  // GET /api/search/meta/skills – Distinct Skills
+  // NOTE: declared before GET / to prevent route conflict
+  // ====================================================
+
+  @Get('meta/skills')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.GET_SEARCH_META_SKILLS.summary,
+    description: SWAGGER_DOCUMENTATION.GET_SEARCH_META_SKILLS.description,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Distinct mentor skills retrieved successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Search options retrieved successfully',
+        data: ['Node.js', 'PostgreSQL', 'TypeScript'],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  async getSkillOptions() {
+    return this.searchService.getSkillOptions();
+  }
+
+  // ====================================================
+  // GET /api/search/meta/expertise – Distinct Expertise
+  // NOTE: declared before GET / to prevent route conflict
+  // ====================================================
+
+  @Get('meta/expertise')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.GET_SEARCH_META_EXPERTISE.summary,
+    description: SWAGGER_DOCUMENTATION.GET_SEARCH_META_EXPERTISE.description,
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Distinct mentor expertise areas retrieved successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Search options retrieved successfully',
+        data: ['System Design', 'Web Development'],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  async getExpertiseOptions() {
+    return this.searchService.getExpertiseOptions();
+  }
+
+  // ====================================================
   // GET /api/search – Mentor Search
   // ====================================================
 

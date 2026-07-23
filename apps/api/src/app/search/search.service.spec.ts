@@ -13,6 +13,7 @@ export type PrismaMock = {
     menteeProfile: { findUnique: jest.Mock };
     mentorProfile: { findUnique: jest.Mock };
     $queryRaw: jest.Mock;
+    $queryRawUnsafe: jest.Mock;
   };
 };
 
@@ -22,6 +23,7 @@ const createPrismaMock = (): PrismaMock => ({
     menteeProfile: { findUnique: jest.fn() },
     mentorProfile: { findUnique: jest.fn() },
     $queryRaw: jest.fn(),
+    $queryRawUnsafe: jest.fn(),
   },
 });
 
@@ -341,6 +343,38 @@ describe('SearchService', () => {
 
       expect(response.data?.isPersonalized).toBe(false);
       expect(response.data?.results).toHaveLength(1);
+    });
+  });
+
+  describe('search metadata', () => {
+    it('returns distinct skills', async () => {
+      prisma.db.$queryRawUnsafe.mockResolvedValue([
+        { value: 'Node.js' },
+        { value: 'TypeScript' },
+      ]);
+
+      const response = await service.getSkillOptions();
+
+      expect(response.data).toEqual(['Node.js', 'TypeScript']);
+      expect(response.message).toBe('Search options retrieved successfully');
+    });
+
+    it('returns distinct expertise areas', async () => {
+      prisma.db.$queryRawUnsafe.mockResolvedValue([
+        { value: 'Web Development' },
+      ]);
+
+      const response = await service.getExpertiseOptions();
+
+      expect(response.data).toEqual(['Web Development']);
+    });
+
+    it('returns an empty list when the metadata query fails', async () => {
+      prisma.db.$queryRawUnsafe.mockRejectedValue(new Error('db down'));
+
+      const response = await service.getSkillOptions();
+
+      expect(response.data).toEqual([]);
     });
   });
 });

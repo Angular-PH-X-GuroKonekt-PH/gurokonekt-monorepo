@@ -165,6 +165,53 @@ export class SearchService {
   }
 
   // ====================================================
+  // SEARCH METADATA (filter dropdown options)
+  // ====================================================
+
+  async getSkillOptions(): Promise<ResponseDto<string[]>> {
+    return this.getMentorProfileArrayValues('skills');
+  }
+
+  async getExpertiseOptions(): Promise<ResponseDto<string[]>> {
+    return this.getMentorProfileArrayValues('areas_of_expertise');
+  }
+
+  private async getMentorProfileArrayValues(
+    column: 'skills' | 'areas_of_expertise',
+  ): Promise<ResponseDto<string[]>> {
+    try {
+      // The column name is not user input — it comes from the two call sites
+      // above — so interpolating it into the query text is safe here. Prisma's
+      // parameter binding cannot parameterize identifiers.
+      const rows = await this.prisma.db.$queryRawUnsafe<{ value: string }[]>(`
+        SELECT DISTINCT unnest(mp.${column}) AS value
+        FROM mentor_profiles mp
+        JOIN users u ON u.id = mp.user_id
+        WHERE u.role = 'mentor'
+          AND u.status = 'approved'
+          AND u.is_mentor_approved = true
+          AND u.is_mentor_profile_complete = true
+        ORDER BY value ASC
+      `);
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_SEARCH_META.code,
+        message: API_RESPONSE.SUCCESS.GET_SEARCH_META.message,
+        data: rows.map((row) => row.value).filter(Boolean),
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_SEARCH_META.code,
+        message: API_RESPONSE.SUCCESS.GET_SEARCH_META.message,
+        data: [],
+      };
+    }
+  }
+
+  // ====================================================
   // PRIVATE – MENTEE PROFILE LOADER
   // ====================================================
 
