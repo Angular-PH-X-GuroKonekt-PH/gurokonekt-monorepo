@@ -10,8 +10,8 @@ import {
 } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { NavigationStart, Router, RouterLink } from '@angular/router';
-import { Store } from '@ngxs/store';
-import { firstValueFrom, of } from 'rxjs';
+import { Actions, ofActionSuccessful, Store } from '@ngxs/store';
+import { firstValueFrom, merge, of } from 'rxjs';
 import { catchError, filter, map, switchMap } from 'rxjs/operators';
 
 import {
@@ -27,6 +27,7 @@ import { NotificationListSkeleton } from '../../../../shared/components/skeleton
 import { ProfileService } from '../../../../core/profile/profile.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
+import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
 
 @Component({
   selector: 'app-navbar',
@@ -41,6 +42,7 @@ import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 })
 export class NavbarComponent implements OnInit {
   private readonly store = inject(Store);
+  private readonly actions$ = inject(Actions);
   private readonly profileService = inject(ProfileService);
   private readonly notificationService = inject(NotificationService);
   private readonly router = inject(Router);
@@ -56,7 +58,16 @@ export class NavbarComponent implements OnInit {
   protected readonly userRole = computed(() => this.user()?.role ?? null);
 
   protected readonly profile = toSignal(
-    toObservable(this.userId).pipe(
+    merge(
+      toObservable(this.userId),
+      this.actions$.pipe(
+        ofActionSuccessful(
+          AuthActions.UpdateMentorProfileSuccess,
+          AuthActions.UpdateMenteeProfileSuccess
+        ),
+        map(() => this.userId())
+      )
+    ).pipe(
       switchMap((userId) => {
         if (!userId) return of(null);
 
@@ -84,16 +95,9 @@ export class NavbarComponent implements OnInit {
     return this.profile()?.email?.trim() || 'No email available';
   });
 
-  protected readonly userAvatarUrl = computed(() => {
-    const avatarAttachments = this.profile()?.avatarAttachments as
-      | { publicUrl?: string }[]
-      | undefined;
-
-    return (
-      avatarAttachments?.[0]?.publicUrl ||
-      'assets/img/no_profile_avatar.png'
-    );
-  });
+  protected readonly userAvatarUrl = computed(() =>
+    resolveAvatarPublicUrl(this.profile())
+  );
 
   // Notification data
   protected readonly fetchNotifications = toSignal<

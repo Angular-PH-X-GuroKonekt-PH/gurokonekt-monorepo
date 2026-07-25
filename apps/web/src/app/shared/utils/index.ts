@@ -1,5 +1,6 @@
 export * from './alert.util';
 export * from './api.util';
+export * from './avatar-url.util';
 export * from './form-validation.util';
 export * from './http-error.util';
 export * from './icon.util';

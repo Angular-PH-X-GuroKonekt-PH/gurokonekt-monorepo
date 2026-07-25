@@ -68,6 +68,8 @@ export class StorageService {
           select: SelectFields.getAvatarAttachmentSelect()
         });
 
+        await this.replacePreviousAvatars(userId, avatar.id);
+
         response.push({
           status: ResponseStatus.Success,
           statusCode: API_RESPONSE.SUCCESS.UPLOAD_FILES.code,
@@ -90,6 +92,49 @@ export class StorageService {
         data: error
       }
     }
+  }
+
+  /**
+   * Keep a single current avatar: remove older attachment rows and storage objects.
+   */
+  private async replacePreviousAvatars(userId: string, keepAvatarId: string): Promise<void> {
+    const previousAvatars = await this.prisma.db.avatarAttachment.findMany({
+      where: {
+        userId,
+        NOT: { id: keepAvatarId },
+      },
+      select: {
+        id: true,
+        bucketName: true,
+        storagePath: true,
+      },
+    });
+
+    if (previousAvatars.length === 0) {
+      return;
+    }
+
+    const pathsByBucket = previousAvatars.reduce<Record<string, string[]>>((acc, avatar) => {
+      if (!acc[avatar.bucketName]) {
+        acc[avatar.bucketName] = [];
+      }
+      acc[avatar.bucketName].push(avatar.storagePath);
+      return acc;
+    }, {});
+
+    for (const [bucketName, paths] of Object.entries(pathsByBucket)) {
+      const { error } = await this.supabase.clientAdmin.storage.from(bucketName).remove(paths);
+      if (error) {
+        this.logger.warn(`Failed to remove previous avatar files from ${bucketName}: ${error.message}`);
+      }
+    }
+
+    await this.prisma.db.avatarAttachment.deleteMany({
+      where: {
+        userId,
+        NOT: { id: keepAvatarId },
+      },
+    });
   }
 
   async uploadDocument(files: Express.Multer.File[], userId: string, role: string): Promise<ResponseDto> {
