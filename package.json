@@ -133,6 +133,7 @@
     "rxjs": "^7.8.0",
     "scheduler": "^0.27.0",
     "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3",
     "swagger-ui-express": "^5.0.1",
     "zone.js": "~0.15.0"
   },

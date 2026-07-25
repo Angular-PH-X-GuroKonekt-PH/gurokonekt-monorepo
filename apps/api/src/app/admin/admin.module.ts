@@ -18,9 +18,17 @@ import { SupabaseModule } from '../supabase/supabase.module';
 import { AuthModule } from '../auth/auth.module';
 import { JwtGuardModule } from '../jwt-guard/jwt-guard.module';
 import { MailModule } from '../mail/mail.module';
+import { NotificationGatewayModule } from '../gateway/notification-gateway.module';
 
 @Module({
-  imports: [PrismaModule, SupabaseModule, AuthModule, JwtGuardModule, MailModule],
+  imports: [
+    PrismaModule,
+    SupabaseModule,
+    AuthModule,
+    JwtGuardModule,
+    MailModule,
+    NotificationGatewayModule,
+  ],
   controllers: [
     AdminController,
     AdminBookingController,
