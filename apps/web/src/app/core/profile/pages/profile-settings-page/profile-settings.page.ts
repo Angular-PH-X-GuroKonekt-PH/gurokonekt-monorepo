@@ -62,6 +62,9 @@ export class ProfileSettingsPageComponent implements OnInit {
     () => this.currentUser()?.role === UserRole.Mentor
   );
 
+  protected readonly isMentee = computed(() => this.currentUser()?.role === 'mentee');
+  
+  // Expose enums to template
   protected readonly MenteePreferredSessionType = MenteePreferredSessionType;
   protected readonly DaysInWeek = DaysInWeek;
   protected readonly daysOfWeek = Object.values(DaysInWeek);
@@ -100,6 +103,7 @@ export class ProfileSettingsPageComponent implements OnInit {
 
   private initializeForm(): void {
     const mentor = this.isMentor();
+    const areasOfInterestValidators = this.isMentee() ? [Validators.required] : [];
 
     this.profileForm = this.fb.group({
       bio: ['', [Validators.minLength(50), Validators.maxLength(500)]],
@@ -217,6 +221,20 @@ export class ProfileSettingsPageComponent implements OnInit {
     areasOfExpertise.forEach((area) => {
       this.areasOfExpertise.push(this.fb.control(area));
     });
+    // Populate learning goals and areas of interest (mentee only)
+    if (this.isMentee()) {
+      if (learningGoals && Array.isArray(learningGoals)) {
+        learningGoals.forEach(goal => {
+          this.learningGoals.push(this.fb.control(goal, [Validators.maxLength(ProfileSettingsPageComponent.MAX_LEARNING_GOAL_LENGTH)]));
+        });
+      }
+
+      if (areasOfInterest && Array.isArray(areasOfInterest)) {
+        areasOfInterest.forEach(area => {
+          this.areasOfInterest.push(this.fb.control(area));
+        });
+      }
+    }
 
     const availability = Array.isArray(mentorProfile['availability'])
       ? (mentorProfile['availability'] as Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }>)
@@ -475,8 +493,10 @@ export class ProfileSettingsPageComponent implements OnInit {
       country: this.profileForm.value.country,
       timezone: this.profileForm.value.timezone,
       language: this.profileForm.value.language,
-      learningGoals: this.learningGoals.value.filter((g: string) => g.trim()),
-      areasOfInterest: this.areasOfInterest.value,
+      ...(this.isMentee() && {
+        learningGoals: this.learningGoals.value.filter((g: string) => g.trim()),
+        areasOfInterest: this.areasOfInterest.value,
+      }),
       preferredSessionType: this.preferredSessionTypes.value,
     };
   }
@@ -505,7 +525,7 @@ export class ProfileSettingsPageComponent implements OnInit {
       return true;
     }
 
-    if (this.areasOfInterest.length === 0) {
+    if (this.isMentee() && this.areasOfInterest.length === 0) {
       this.toastService.error('Please select at least one area of interest');
       return false;
     }

@@ -12,10 +12,9 @@ import {
   MentorSearchItemInterface,
   MentorSearchResultInterface,
 } from '@gurokonekt/models/interfaces/search/search.model';
-import { catchError, map, Observable, of, switchMap } from 'rxjs';
+import { catchError, map, Observable, of } from 'rxjs';
 
 import { ApiResponse } from '../interfaces/api-response.interface';
-import { ProfileService } from '../../core/profile/profile.service';
 import { buildApiUrl } from '../utils/api.util';
 
 @Injectable({
@@ -23,7 +22,6 @@ import { buildApiUrl } from '../utils/api.util';
 })
 export class MentorService {
   private readonly http = inject(HttpClient);
-  private readonly profileService = inject(ProfileService);
 
   getAllMentorProfiles(): Observable<MentorProfileInterface[]> {
     const params = new HttpParams().set('page', '1').set('limit', '50');
@@ -62,87 +60,6 @@ export class MentorService {
           return of(null);
         })
       );
-  }
-
-  getRecommendedMentorsForMentee(
-    menteeUserId: string,
-    limit = 6
-  ): Observable<MentorProfileInterface[]> {
-    return this.profileService.getUserProfile(menteeUserId).pipe(
-      map((response) => {
-        const profile = response.data as {
-          menteeProfile?: { areasOfInterest?: string[] | null } | null;
-        } | null;
-
-        return profile?.menteeProfile?.areasOfInterest ?? [];
-      }),
-      switchMap((areasOfInterest) =>
-        this.getAllMentorProfiles().pipe(
-          map((mentors) => {
-            const approvedMentors = mentors.filter(
-              (mentor) => mentor.user.isMentorApproved
-            );
-
-            if (!areasOfInterest.length) {
-              return approvedMentors.slice(0, limit);
-            }
-
-            const matchedMentors = approvedMentors
-              .map((mentor) => ({
-                mentor,
-                matchCount: this.getMatchCount(
-                  areasOfInterest,
-                  mentor.areasOfExpertise ?? []
-                ),
-              }))
-              .filter(({ matchCount }) => matchCount > 0)
-              .sort((a, b) => {
-                if (b.matchCount !== a.matchCount) {
-                  return b.matchCount - a.matchCount;
-                }
-
-                return (
-                  (b.mentor.yearsOfExperience ?? 0) -
-                  (a.mentor.yearsOfExperience ?? 0)
-                );
-              })
-              .slice(0, limit)
-              .map(({ mentor }) => mentor);
-
-            return matchedMentors.length
-              ? matchedMentors
-              : approvedMentors.slice(0, limit);
-          })
-        )
-      ),
-      catchError((error) => {
-        console.error('recommended mentors flow failed', error);
-        return this.getAllMentorProfiles().pipe(
-          map((mentors) =>
-            mentors
-              .filter((mentor) => mentor.user.isMentorApproved)
-              .slice(0, limit)
-          ),
-          catchError((fallbackError) => {
-            console.error('recommended mentors fallback failed', fallbackError);
-            return of([]);
-          })
-        );
-      })
-    );
-  }
-
-  private getMatchCount(
-    areasOfInterest: string[],
-    areasOfExpertise: string[]
-  ): number {
-    const normalizedInterests = new Set(
-      areasOfInterest.map((item) => item.trim().toLowerCase())
-    );
-
-    return areasOfExpertise.filter((item) =>
-      normalizedInterests.has(item.trim().toLowerCase())
-    ).length;
   }
 
   private mapSearchItemToMentorProfile(

@@ -1,4 +1,4 @@
-import { HttpClient, HttpParams } from '@angular/common/http';
+import { HttpClient } from '@angular/common/http';
 import { inject, Injectable } from '@angular/core';
 import {
   MentorProfileInterface,
@@ -7,16 +7,8 @@ import {
   UserStatus,
   UserFlatInterface,
 } from '@gurokonekt/models/interfaces/user/user.model';
-import {
-  MentorProfileDetailInterface,
-  MentorSearchItemInterface,
-  MentorSearchResultInterface,
-} from '@gurokonekt/models/interfaces/search/search.model';
+import { MentorProfileDetailInterface } from '@gurokonekt/models/interfaces/search/search.model';
 import { catchError, map, Observable, of } from 'rxjs';
-import {
-  handleApiErrorWithFallback,
-  validateApiResponse,
-} from '../../../shared/helpers/api-response.helper';
 import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 
@@ -42,27 +34,6 @@ export class MentorService {
           console.error('mentor detail api request failed', error);
           return of(null);
         })
-      );
-  }
-
-  getRecommendedMentors(limit = 6): Observable<MentorSearchItemInterface[]> {
-    const params = new HttpParams().set('page', '1').set('limit', String(limit));
-
-    return this.http
-      .get<ApiResponse<MentorSearchResultInterface>>(buildApiUrl('/search'), {
-        params,
-      })
-      .pipe(
-        map((response) =>
-          validateApiResponse<MentorSearchResultInterface>(
-            response,
-            'Failed to fetch recommended mentors.'
-          )
-        ),
-        map((result) => result.results ?? []),
-        catchError(
-          handleApiErrorWithFallback([], 'Failed to fetch recommended mentors')
-        )
       );
   }
 

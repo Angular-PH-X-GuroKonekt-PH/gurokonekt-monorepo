@@ -9,7 +9,6 @@
     after a limited time.
   </p>
 
-  
   <div
     resultBody
     class="rounded-xl border border-amber-200 border-l-4 border-l-amber-500 bg-amber-50 p-5 text-sm text-gray-700"
@@ -17,9 +16,11 @@
     <p class="font-medium text-amber-900">What you can do</p>
     <ul class="mt-2 list-disc space-y-1.5 pl-5 marker:text-orange-400">
       <li>
-        Click the button below to request a new verification email@if (email()) {
-        <span> for
-          <span class="font-medium text-gray-900">{{ email() }}</span></span>}.
+        Click the button below to request a new verification email
+        @if (email()) {
+          for
+          <span class="font-medium text-gray-900">{{ email() }}</span>
+        }.
       </li>
       <li>Check your inbox and spam folder for the latest message from GuroKonekt.</li>
     </ul>

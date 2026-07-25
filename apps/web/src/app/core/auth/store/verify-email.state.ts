@@ -56,44 +56,58 @@ export class VerifyEmailState {
   }
 
   @Action(VerifyEmailActions.ResendVerificationEmail)
-  resendVerificationEmail(ctx: StateContext<VerifyEmailStateModel>) {
+  resendVerificationEmail(
+    ctx: StateContext<VerifyEmailStateModel>,
+    action: VerifyEmailActions.ResendVerificationEmail
+  ) {
     const state = ctx.getState();
 
-    let email = state.email?.trim() || '';
-
-    if (!email) {
-      email = this.authStorage.getLastRegisteredEmail()?.trim() || '';
-      if (email) {
-        ctx.patchState({ email });
-      }
-    }
+    let email =
+      action.email?.trim() ||
+      state.email?.trim() ||
+      this.authStorage.getLastRegisteredEmail()?.trim() ||
+      '';
 
     if (!email) {
       ctx.patchState({
         isResendLoading: false,
-        resendError: 'Unable to resend verification email. Please try again later or contact support.'
+        resendError:
+          'Unable to resend verification email. Please try again later or contact support.'
       });
       return;
     }
 
+    this.authStorage.setLastRegisteredEmail(email);
+
     ctx.patchState({
+      email,
       isResendLoading: true,
       resendError: null
     });
 
     return this.authService
-      .resendVerificationEmail(email, buildVerifyEmailRedirectUrl())
+      .resendVerificationEmail(email, buildVerifyEmailRedirectUrl(email))
       .pipe(
       tap(() => {
         ctx.dispatch(new VerifyEmailActions.ResendVerificationEmailSuccess());
       }),
       catchError((error) => {
-        const errorMessage =
+        const status =
+          error?.originalError?.status ??
+          error?.originalError?.error?.statusCode ??
+          error?.statusCode ??
+          error?.status;
+        const serverMessage =
           error?.originalError?.error?.message ||
           error?.error?.message ||
-          error?.message ||
-          'Unable to resend verification email at this time. Please try again later or contact support.';
-        
+          error?.message;
+        const errorMessage =
+          status === 429
+            ? serverMessage ||
+              'Too many verification emails were requested. Please wait before trying again.'
+            : serverMessage ||
+              'Unable to resend verification email at this time. Please try again later or contact support.';
+
         ctx.dispatch(new VerifyEmailActions.ResendVerificationEmailFailure(errorMessage));
         return throwError(() => error);
       })
