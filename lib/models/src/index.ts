@@ -42,3 +42,5 @@ export * from './lib/dto/admin/admin-mentee.dto';
 export * from './lib/dto/admin/admin-dashboard.dto';
 export * from './lib/interfaces/admin/admin-mentor.model';
 export * from './lib/dto/admin/admin-mentor.dto';
+export * from './lib/interfaces/review/review.model';
+export * from './lib/dto/review/review.dto';
