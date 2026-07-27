@@ -3,12 +3,15 @@ import {
   API_RESPONSE,
   BookingStatus,
   CreateReviewDto,
+  GetReviewsQueryDto,
   NotificationInterface,
   NotificationStatus,
   NotificationType,
   ResponseDto,
   ResponseStatus,
   ReviewInterface,
+  ReviewListResponseInterface,
+  UserRole,
 } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
 import {
@@ -117,6 +120,116 @@ export class ReviewService {
 
       this.logger.error(error.message, error.stack);
       return this.error(API_RESPONSE.ERROR.CREATE_REVIEW);
+    }
+  }
+
+  // ====================================================
+  // READ
+  // ====================================================
+
+  async findReviews(
+    query: GetReviewsQueryDto,
+    requester: { id: string; role: string },
+  ): Promise<ResponseDto<ReviewInterface | ReviewListResponseInterface>> {
+    const { bookingId, mentorId } = query;
+
+    // Exactly one filter — supplying both would make the response shape ambiguous.
+    if ((!bookingId && !mentorId) || (bookingId && mentorId)) {
+      return this.error(API_RESPONSE.ERROR.REVIEW_INVALID_QUERY);
+    }
+
+    return bookingId
+      ? this.findByBookingId(bookingId, requester)
+      : this.findByMentorId(mentorId as string, query);
+  }
+
+  /** Returns the mentee's review of one booking. Participants and admins only. */
+  private async findByBookingId(
+    bookingId: string,
+    requester: { id: string; role: string },
+  ): Promise<ResponseDto<ReviewInterface>> {
+    try {
+      const booking = await this.prisma.db.booking.findFirst({
+        where: { id: bookingId, isDeleted: false },
+        select: { menteeId: true, mentorId: true },
+      });
+
+      if (!booking) {
+        return this.error(API_RESPONSE.ERROR.REVIEW_BOOKING_NOT_FOUND);
+      }
+
+      const isParticipant =
+        requester.id === booking.menteeId || requester.id === booking.mentorId;
+
+      if (!isParticipant && requester.role !== UserRole.Admin) {
+        return this.error(API_RESPONSE.ERROR.REVIEW_ACCESS_DENIED);
+      }
+
+      const review = await this.prisma.db.bookingFeedback.findUnique({
+        where: { bookingId_userId: { bookingId, userId: booking.menteeId } },
+        select: REVIEW_SELECT,
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_REVIEW.code,
+        message: API_RESPONSE.SUCCESS.GET_REVIEW.message,
+        data: review ? this.mapReview(review) : null,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return this.error(API_RESPONSE.ERROR.GET_REVIEWS);
+    }
+  }
+
+  /** Returns a mentor's mentee reviews, newest first, with an average rating. */
+  private async findByMentorId(
+    mentorId: string,
+    query: GetReviewsQueryDto,
+  ): Promise<ResponseDto<ReviewListResponseInterface>> {
+    try {
+      const page = query.page ?? DEFAULT_PAGE;
+      const limit = query.limit ?? DEFAULT_LIMIT;
+      const where = {
+        booking: { mentorId, isDeleted: false },
+        user: { role: UserRole.Mentee },
+      };
+
+      const [rows, total, summary] = await Promise.all([
+        this.prisma.db.bookingFeedback.findMany({
+          where,
+          select: REVIEW_SELECT,
+          orderBy: { createdAt: 'desc' },
+          skip: (page - 1) * limit,
+          take: limit,
+        }),
+        this.prisma.db.bookingFeedback.count({ where }),
+        this.prisma.db.bookingFeedback.aggregate({
+          where,
+          _avg: { rating: true },
+          _count: { rating: true },
+        }),
+      ]);
+
+      const average = summary._avg.rating;
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_REVIEWS.code,
+        message: API_RESPONSE.SUCCESS.GET_REVIEWS.message,
+        data: {
+          data: rows.map(row => this.mapReview(row)),
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+          averageRating: average === null ? null : Math.round(average * 10) / 10,
+          ratingCount: summary._count.rating,
+        },
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return this.error(API_RESPONSE.ERROR.GET_REVIEWS);
     }
   }
 
