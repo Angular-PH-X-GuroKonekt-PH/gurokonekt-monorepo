@@ -1,0 +1,76 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/50 px-4">
+  <div
+    class="w-full max-w-lg rounded-2xl bg-white p-5 shadow-xl sm:p-6"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="avatar-crop-title"
+  >
+    <div class="mb-4 flex items-start justify-between gap-3">
+      <div>
+        <h2 id="avatar-crop-title" class="text-lg font-semibold text-gray-900">
+          Crop profile picture
+        </h2>
+        <p class="mt-1 text-sm text-gray-600">
+          Drag to reposition. Resize the circle, then apply.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="rounded-lg p-2 text-gray-500 transition-colors hover:bg-gray-100 hover:text-gray-700"
+        (click)="cancel()"
+        aria-label="Close crop dialog"
+      >
+        <app-icon name="close" class="h-4 w-4"></app-icon>
+      </button>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-gray-50">
+      <image-cropper
+        class="block max-h-[22rem]"
+        [imageChangedEvent]="imageChangedEvent() ?? undefined"
+        [imageFile]="imageFile() ?? undefined"
+        [maintainAspectRatio]="true"
+        [aspectRatio]="1"
+        [roundCropper]="true"
+        [resizeToWidth]="512"
+        [resizeToHeight]="512"
+        [onlyScaleDown]="true"
+        format="png"
+        [output]="'blob'"
+        imageAltText="Profile picture crop preview"
+        (imageCropped)="onImageCropped($event)"
+        (loadImageFailed)="onLoadFailed()"
+      />
+    </div>
+
+    @if (cropError()) {
+      <p class="mt-3 text-sm text-red-600">{{ cropError() }}</p>
+    }
+
+    <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+      <button
+        type="button"
+        class="rounded-lg border-2 border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-700 transition-colors hover:border-gray-400 hover:bg-gray-50"
+        (click)="cancel()"
+        [disabled]="isApplying()"
+      >
+        Cancel
+      </button>
+      <button
+        type="button"
+        class="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-gray-400"
+        (click)="applyCrop()"
+        [disabled]="isApplying()"
+      >
+        @if (isApplying()) {
+          <span
+            class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+          ></span>
+          Applying...
+        } @else {
+          Apply crop
+        }
+      </button>
+    </div>
+  </div>
+</div>

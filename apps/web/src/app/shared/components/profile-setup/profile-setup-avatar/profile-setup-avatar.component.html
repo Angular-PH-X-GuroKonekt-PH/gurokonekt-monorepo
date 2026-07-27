@@ -8,10 +8,12 @@
       />
       <button
         type="button"
-        (click)="removed.emit(avatarInput)"
-        class="absolute -top-2 -right-2 flex h-9 w-9 items-center justify-center rounded-full border border-red-100 bg-white text-red-500 shadow-md transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
+        (click)="onRemove(avatarInput)"
+        class="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
+        title="Remove image preview"
+        aria-label="Remove image preview"
       >
-        <app-icon name="close" class="w-4 h-4"></app-icon>
+        <app-icon name="close" class="w-3.5 h-3.5"></app-icon>
       </button>
     } @else {
       <div
@@ -24,22 +26,32 @@
 
   <label class="mt-4 cursor-pointer">
     <span
-      class="px-6 py-2 bg-orange-500 text-white rounded-lg hover:bg-orange-600 transition-colors inline-block"
+      class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors font-medium"
     >
+      <app-icon name="pencil" class="w-3.5 h-3.5"></app-icon>
       {{ buttonLabel() }} <span class="text-red-200">*</span>
     </span>
     <input
       #avatarInput
       type="file"
       accept=".jpg,.jpeg,.png"
-      (change)="fileSelected.emit($event)"
+      (change)="onFileInputChange($event)"
       class="hidden"
     />
   </label>
 
-  <p class="text-sm text-gray-500 mt-2">{{ helperText() }}</p>
+  <p class="text-xs text-gray-500 mt-2">{{ helperText() }}</p>
 
   @if (error()) {
     <p class="text-sm text-red-600 mt-2">{{ error() }}</p>
   }
 </div>
+
+@if (isCropOpen()) {
+  <app-avatar-crop-modal
+    [imageFile]="cropSourceFile()"
+    [originalFileName]="cropSourceFile()?.name || 'avatar.png'"
+    (cropped)="onCropped($event)"
+    (cancelled)="onCropCancelled()"
+  />
+}

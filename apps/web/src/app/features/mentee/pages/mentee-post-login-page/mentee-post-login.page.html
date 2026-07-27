@@ -22,7 +22,8 @@
             [previewUrl]="avatarPreview()"
             [error]="avatarError()"
             buttonLabel="Choose Profile Picture"
-            (fileSelected)="onAvatarSelected($event)"
+            (avatarReady)="onAvatarReady($event)"
+            (selectionFailed)="avatarError.set($event)"
             (removed)="removeAvatar($event)"
           />
 

@@ -32,10 +32,7 @@ import { ProfileSetupSessionTypeComponent } from '../../../../shared/components/
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { isSessionExpiredError } from '../../../../shared/utils/http-error.util';
-import {
-  readFileAsDataUrl,
-  validateAvatarFile,
-} from '../../../../shared/utils/avatar-validation.util';
+import type { AvatarCropResult } from '../../../../shared/components/avatar-crop-modal/avatar-crop-modal.component';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 
 @Component({
@@ -157,33 +154,20 @@ export class MenteePostLoginPage {
     );
   };
 
-  protected async onAvatarSelected(event: Event): Promise<void> {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) {
-      return;
+  protected onAvatarReady(result: AvatarCropResult): void {
+    if (this.avatarPreview()?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.avatarPreview()!);
     }
 
-    const file = input.files[0];
+    this.selectedAvatarFile = result.file;
+    this.avatarPreview.set(result.previewUrl);
     this.avatarError.set(null);
-
-    const validation = validateAvatarFile(file);
-    if (!validation.valid) {
-      this.avatarError.set(validation.error);
-      input.value = '';
-      return;
-    }
-
-    this.selectedAvatarFile = file;
-    try {
-      this.avatarPreview.set(await readFileAsDataUrl(file));
-    } catch {
-      this.avatarError.set('Failed to preview image');
-      this.selectedAvatarFile = null;
-    }
-    input.value = '';
   }
 
   protected removeAvatar(input?: HTMLInputElement): void {
+    if (this.avatarPreview()?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.avatarPreview()!);
+    }
     this.selectedAvatarFile = null;
     this.avatarPreview.set(null);
     this.avatarError.set(null);
