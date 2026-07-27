@@ -640,7 +640,7 @@ export class UserController {
   })
   @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 403, description: 'Access denied — not the mentor owner, or target is not a mentor.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async updateMentorAvailability(
     @Param('userId') userId: string,
@@ -694,7 +694,7 @@ export class UserController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 403, description: 'Access denied — not the mentor owner, or target is not a mentor.' })
   @ApiResponse({ status: 404, description: 'Mentor profile not found.' })
   async setSessionDuration(
     @Param('userId') userId: string,
@@ -752,7 +752,7 @@ export class UserController {
   })
   @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 403, description: 'Access denied — not the mentor owner, or target is not a mentor.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async addAvailabilitySlot(
     @Param('userId') userId: string,
@@ -806,7 +806,7 @@ export class UserController {
   })
   @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
   @ApiResponse({ status: 401, description: 'Unauthorized - missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied - mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 403, description: 'Access denied - not the mentor owner, or target is not a mentor.' })
   @ApiResponse({ status: 404, description: 'Slot not found for specified day / time frame index.' })
   async updateAvailabilitySlot(
     @Param('userId') userId: string,
@@ -861,7 +861,7 @@ export class UserController {
     },
   })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — mentor not approved or not a mentor.' })
+  @ApiResponse({ status: 403, description: 'Access denied — not the mentor owner, or target is not a mentor.' })
   @ApiResponse({ status: 404, description: 'Slot not found for specified day / time frame index.' })
   async deleteAvailabilitySlot(
     @Param('userId') userId: string,

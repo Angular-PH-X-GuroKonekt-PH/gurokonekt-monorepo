@@ -38,14 +38,20 @@ export class ProfileService {
   }
 
   /**
-   * Update mentor profile with required avatar upload during setup
+   * Update mentor profile with optional avatar and verification document uploads
    */
   updateMentorProfile(
     userId: string,
     data: Partial<UpdateMentorProfileInterface>,
-    avatarFile?: File
+    avatarFile?: File,
+    documentFiles?: File[]
   ): Observable<ApiResponse> {
-    const formData = this.buildMentorProfileFormData(userId, data, avatarFile);
+    const formData = this.buildMentorProfileFormData(
+      userId,
+      data,
+      avatarFile,
+      documentFiles
+    );
 
     return this.http.patch<ApiResponse>(
       buildApiUrl(`/user/${userId}/profile`),
@@ -103,7 +109,8 @@ export class ProfileService {
   private buildMentorProfileFormData(
     userId: string,
     data: Partial<UpdateMentorProfileInterface>,
-    avatarFile?: File
+    avatarFile?: File,
+    documentFiles?: File[]
   ): FormData {
     const formData = new FormData();
 
@@ -116,6 +123,10 @@ export class ProfileService {
     this.appendArrayField(formData, 'areasOfExpertise', data.areasOfExpertise);
     this.appendArrayField(formData, 'skills', data.skills);
 
+    if (data.linkedInUrl !== undefined) {
+      formData.append('linkedInUrl', data.linkedInUrl ?? '');
+    }
+
     if (data.availability) {
       formData.append('availability', JSON.stringify(data.availability));
     }
@@ -124,6 +135,12 @@ export class ProfileService {
 
     if (avatarFile) {
       formData.append('avatar', avatarFile, avatarFile.name);
+    }
+
+    if (documentFiles?.length) {
+      documentFiles.forEach((file) => {
+        formData.append('files', file, file.name);
+      });
     }
 
     return formData;

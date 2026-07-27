@@ -109,6 +109,7 @@ export interface UpdateMentorProfileInterface {
   areasOfExpertise: string[];
   yearsOfExperience: number;
   skills: string[];
+  linkedInUrl?: string | null;
   sessionRate?: number;
   availability: UserAvailabilityInterface[];
   updatedById: string;
