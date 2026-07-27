@@ -221,20 +221,6 @@ export class ProfileSettingsPageComponent implements OnInit {
     areasOfExpertise.forEach((area) => {
       this.areasOfExpertise.push(this.fb.control(area));
     });
-    // Populate learning goals and areas of interest (mentee only)
-    if (this.isMentee()) {
-      if (learningGoals && Array.isArray(learningGoals)) {
-        learningGoals.forEach(goal => {
-          this.learningGoals.push(this.fb.control(goal, [Validators.maxLength(ProfileSettingsPageComponent.MAX_LEARNING_GOAL_LENGTH)]));
-        });
-      }
-
-      if (areasOfInterest && Array.isArray(areasOfInterest)) {
-        areasOfInterest.forEach(area => {
-          this.areasOfInterest.push(this.fb.control(area));
-        });
-      }
-    }
 
     const availability = Array.isArray(mentorProfile['availability'])
       ? (mentorProfile['availability'] as Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }>)
