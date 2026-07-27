@@ -142,6 +142,49 @@ describe('ReviewService', () => {
       );
     });
 
+    it('normalizes a whitespace-only comment to null', async () => {
+      prisma.db.booking.findFirst.mockResolvedValue(buildBooking());
+      prisma.db.bookingFeedback.findUnique.mockResolvedValue(null);
+      prisma.db.bookingFeedback.create.mockResolvedValue(buildReviewRow({ comment: null }));
+      prisma.db.notification.create.mockResolvedValue({ id: 'notif-1' });
+
+      const result = await service.create(
+        { bookingId: BOOKING_ID, rating: 4, comment: '   ' },
+        MENTEE_ID,
+      );
+
+      expect(result.status).toBe(ResponseStatus.Success);
+      expect(prisma.db.bookingFeedback.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: { bookingId: BOOKING_ID, userId: MENTEE_ID, rating: 4, comment: null },
+        }),
+      );
+    });
+
+    it('trims a real comment before storing it', async () => {
+      prisma.db.booking.findFirst.mockResolvedValue(buildBooking());
+      prisma.db.bookingFeedback.findUnique.mockResolvedValue(null);
+      prisma.db.bookingFeedback.create.mockResolvedValue(buildReviewRow());
+      prisma.db.notification.create.mockResolvedValue({ id: 'notif-1' });
+
+      const result = await service.create(
+        { bookingId: BOOKING_ID, rating: 5, comment: '  Great session  ' },
+        MENTEE_ID,
+      );
+
+      expect(result.status).toBe(ResponseStatus.Success);
+      expect(prisma.db.bookingFeedback.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: {
+            bookingId: BOOKING_ID,
+            userId: MENTEE_ID,
+            rating: 5,
+            comment: 'Great session',
+          },
+        }),
+      );
+    });
+
     it('returns 404 when the booking does not exist or is soft-deleted', async () => {
       prisma.db.booking.findFirst.mockResolvedValue(null);
 
@@ -243,7 +286,7 @@ describe('ReviewService', () => {
       expect(result.statusCode).toBe(API_RESPONSE.ERROR.REVIEW_INVALID_QUERY.code);
     });
 
-    it('returns the review for the booking mentee', async () => {
+    it('returns the review for the booking mentee, keeping the full last name', async () => {
       prisma.db.booking.findFirst.mockResolvedValue(buildBooking());
       prisma.db.bookingFeedback.findUnique.mockResolvedValue(buildReviewRow());
 
@@ -254,6 +297,7 @@ describe('ReviewService', () => {
       expect(result.data).toEqual(
         expect.objectContaining({ id: 'review-1', mentorId: MENTOR_ID, menteeId: MENTEE_ID }),
       );
+      expect((result.data as { mentee: { lastName: string } }).mentee.lastName).toBe('Mentee');
     });
 
     it('returns the review for the booking mentor and for an admin', async () => {
@@ -296,9 +340,8 @@ describe('ReviewService', () => {
       expect(result.data).toBeNull();
     });
 
-    it('returns a paginated mentor review list with aggregates', async () => {
+    it('returns a paginated mentor review list with aggregates, masking the last name', async () => {
       prisma.db.bookingFeedback.findMany.mockResolvedValue([buildReviewRow()]);
-      prisma.db.bookingFeedback.count.mockResolvedValue(42);
       prisma.db.bookingFeedback.aggregate.mockResolvedValue({
         _avg: { rating: 4.5666 },
         _count: { rating: 42 },
@@ -312,7 +355,12 @@ describe('ReviewService', () => {
       expect(result.status).toBe(ResponseStatus.Success);
       expect(result.statusCode).toBe(API_RESPONSE.SUCCESS.GET_REVIEWS.code);
       expect(result.data).toEqual({
-        data: [expect.objectContaining({ id: 'review-1' })],
+        data: [
+          expect.objectContaining({
+            id: 'review-1',
+            mentee: expect.objectContaining({ lastName: 'M.' }),
+          }),
+        ],
         total: 42,
         page: 2,
         limit: 20,
@@ -324,18 +372,50 @@ describe('ReviewService', () => {
         expect.objectContaining({
           where: {
             booking: { mentorId: MENTOR_ID, isDeleted: false },
-            user: { role: 'mentee' },
+            userId: { not: MENTOR_ID },
           },
           orderBy: { createdAt: 'desc' },
           skip: 20,
           take: 20,
         }),
       );
+      expect(prisma.db.bookingFeedback.count).not.toHaveBeenCalled();
+    });
+
+    it('masks an empty or whitespace-only last name to an empty string', async () => {
+      prisma.db.bookingFeedback.findMany.mockResolvedValue([
+        buildReviewRow({ user: { id: MENTEE_ID, firstName: 'Mia', lastName: '   ' } }),
+      ]);
+      prisma.db.bookingFeedback.aggregate.mockResolvedValue({
+        _avg: { rating: 5 },
+        _count: { rating: 1 },
+      });
+
+      const result = await service.findReviews({ mentorId: MENTOR_ID }, strangerRequester);
+
+      expect(
+        (result.data as { data: { mentee: { lastName: string } }[] }).data[0].mentee.lastName,
+      ).toBe('');
+    });
+
+    it('masks a single-character last name to "X."', async () => {
+      prisma.db.bookingFeedback.findMany.mockResolvedValue([
+        buildReviewRow({ user: { id: MENTEE_ID, firstName: 'Mia', lastName: 'X' } }),
+      ]);
+      prisma.db.bookingFeedback.aggregate.mockResolvedValue({
+        _avg: { rating: 5 },
+        _count: { rating: 1 },
+      });
+
+      const result = await service.findReviews({ mentorId: MENTOR_ID }, strangerRequester);
+
+      expect(
+        (result.data as { data: { mentee: { lastName: string } }[] }).data[0].mentee.lastName,
+      ).toBe('X.');
     });
 
     it('defaults to page 1 and limit 20', async () => {
       prisma.db.bookingFeedback.findMany.mockResolvedValue([]);
-      prisma.db.bookingFeedback.count.mockResolvedValue(0);
       prisma.db.bookingFeedback.aggregate.mockResolvedValue({
         _avg: { rating: null },
         _count: { rating: 0 },
@@ -359,7 +439,6 @@ describe('ReviewService', () => {
 
     it('returns 500 when the query fails unexpectedly', async () => {
       prisma.db.bookingFeedback.findMany.mockRejectedValue(new Error('db down'));
-      prisma.db.bookingFeedback.count.mockResolvedValue(0);
       prisma.db.bookingFeedback.aggregate.mockResolvedValue({
         _avg: { rating: null },
         _count: { rating: 0 },

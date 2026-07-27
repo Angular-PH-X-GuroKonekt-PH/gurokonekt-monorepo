@@ -92,7 +92,7 @@ export class ReviewService {
           bookingId: dto.bookingId,
           userId: menteeId,
           rating: dto.rating,
-          comment: dto.comment ?? null,
+          comment: this.normalizeComment(dto.comment),
         },
         select: REVIEW_SELECT,
       });
@@ -192,10 +192,10 @@ export class ReviewService {
       const limit = query.limit ?? DEFAULT_LIMIT;
       const where = {
         booking: { mentorId, isDeleted: false },
-        user: { role: UserRole.Mentee },
+        userId: { not: mentorId },
       };
 
-      const [rows, total, summary] = await Promise.all([
+      const [rows, summary] = await Promise.all([
         this.prisma.db.bookingFeedback.findMany({
           where,
           select: REVIEW_SELECT,
@@ -203,7 +203,6 @@ export class ReviewService {
           skip: (page - 1) * limit,
           take: limit,
         }),
-        this.prisma.db.bookingFeedback.count({ where }),
         this.prisma.db.bookingFeedback.aggregate({
           where,
           _avg: { rating: true },
@@ -211,6 +210,10 @@ export class ReviewService {
         }),
       ]);
 
+      // rating is INTEGER NOT NULL, so _count.rating already equals a row count
+      // over the same predicate — reuse it for both `total` and `ratingCount`
+      // instead of running a redundant, non-transactional count() query.
+      const total = summary._count.rating;
       const average = summary._avg.rating;
 
       return {
@@ -218,13 +221,13 @@ export class ReviewService {
         statusCode: API_RESPONSE.SUCCESS.GET_REVIEWS.code,
         message: API_RESPONSE.SUCCESS.GET_REVIEWS.message,
         data: {
-          data: rows.map(row => this.mapReview(row)),
+          data: rows.map(row => this.mapReview(row, { maskLastName: true })),
           total,
           page,
           limit,
           totalPages: Math.ceil(total / limit),
           averageRating: average === null ? null : Math.round(average * 10) / 10,
-          ratingCount: summary._count.rating,
+          ratingCount: total,
         },
       };
     } catch (error) {
@@ -247,16 +250,31 @@ export class ReviewService {
     };
   }
 
-  /** Flattens a Prisma feedback row into the public review shape. */
-  private mapReview(row: {
-    id: string;
-    bookingId: string;
-    rating: number;
-    comment: string | null;
-    createdAt: Date;
-    booking: { mentorId: string; menteeId: string };
-    user: unknown;
-  }): ReviewInterface {
+  /**
+   * Flattens a Prisma feedback row into the public review shape.
+   *
+   * `?mentorId=` is readable by any authenticated user, so passing
+   * `maskLastName: true` reduces `mentee.lastName` to an initial (e.g.
+   * "Mentee" -> "M.") to avoid exposing the full reviewer roster. The
+   * `?bookingId=` branch — restricted to the booking's participants and
+   * admins — must never set this option.
+   */
+  private mapReview(
+    row: {
+      id: string;
+      bookingId: string;
+      rating: number;
+      comment: string | null;
+      createdAt: Date;
+      booking: { mentorId: string; menteeId: string };
+      user: unknown;
+    },
+    options: { maskLastName?: boolean } = {},
+  ): ReviewInterface {
+    const mentee = options.maskLastName
+      ? this.maskMenteeLastName(row.user as Record<string, unknown>)
+      : row.user;
+
     return {
       id: row.id,
       bookingId: row.bookingId,
@@ -265,8 +283,27 @@ export class ReviewService {
       rating: row.rating,
       comment: row.comment,
       createdAt: row.createdAt.toISOString(),
-      mentee: row.user as ReviewInterface['mentee'],
+      mentee: mentee as ReviewInterface['mentee'],
     };
+  }
+
+  /** Returns a new mentee object with `lastName` reduced to a trailing-period initial. */
+  private maskMenteeLastName(
+    mentee: Record<string, unknown>,
+  ): Record<string, unknown> {
+    const lastName = mentee?.['lastName'];
+    const trimmed = typeof lastName === 'string' ? lastName.trim() : '';
+
+    return {
+      ...mentee,
+      lastName: trimmed.length > 0 ? `${trimmed.charAt(0)}.` : '',
+    };
+  }
+
+  /** Trims a comment and normalizes an empty/whitespace-only value to null. */
+  private normalizeComment(comment?: string): string | null {
+    const trimmed = comment?.trim();
+    return trimmed ? trimmed : null;
   }
 
   /**

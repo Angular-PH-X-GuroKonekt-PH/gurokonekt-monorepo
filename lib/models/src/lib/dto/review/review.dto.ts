@@ -21,7 +21,6 @@ export class CreateReviewDto {
   bookingId!: string;
 
   @ApiProperty({ description: 'Rating from 1 to 5', example: 5, minimum: 1, maximum: 5 })
-  @Type(() => Number)
   @IsInt()
   @Min(1)
   @Max(5)
