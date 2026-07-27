@@ -12,6 +12,7 @@ import { SearchModule } from './search/search.module';
 import { NotificationGateway } from './gateway/notification-gateway.gateway';
 import { MetricsModule } from './metrics/metrics.module';
 import { AdminModule } from './admin/admin.module';
+import { ReviewModule } from './review/review.module';
 
 @Module({
   imports: [
@@ -24,6 +25,7 @@ import { AdminModule } from './admin/admin.module';
     SearchModule,
     MetricsModule,
     AdminModule,
+    ReviewModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, NotificationGateway],
