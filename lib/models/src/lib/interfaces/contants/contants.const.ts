@@ -183,6 +183,22 @@ export const API_RESPONSE = {
     },
 
     /**
+     * REVIEWS
+     */
+    CREATE_REVIEW: {
+      code: 201,
+      message: 'Review submitted successfully',
+    },
+    GET_REVIEW: {
+      code: 200,
+      message: 'Review retrieved successfully',
+    },
+    GET_REVIEWS: {
+      code: 200,
+      message: 'Reviews retrieved successfully',
+    },
+
+    /**
      * MENTOR DOWNGRADE
      */
     MENTOR_DOWNGRADE_INITIATED: {
@@ -648,6 +664,38 @@ export const API_RESPONSE = {
     BOOKING_INVALID_TRANSITION: {
       code: 400,
       message: 'Invalid booking status transition',
+    },
+
+    /**
+     * REVIEWS
+     */
+    CREATE_REVIEW: {
+      code: 500,
+      message: 'Failed to submit review',
+    },
+    GET_REVIEWS: {
+      code: 500,
+      message: 'Failed to retrieve reviews',
+    },
+    REVIEW_BOOKING_NOT_FOUND: {
+      code: 404,
+      message: 'Booking not found',
+    },
+    REVIEW_ACCESS_DENIED: {
+      code: 403,
+      message: 'Access denied: you cannot review or view this booking',
+    },
+    REVIEW_BOOKING_NOT_COMPLETED: {
+      code: 400,
+      message: 'Only completed sessions can be reviewed',
+    },
+    REVIEW_ALREADY_EXISTS: {
+      code: 409,
+      message: 'You have already reviewed this session',
+    },
+    REVIEW_INVALID_QUERY: {
+      code: 400,
+      message: 'Provide exactly one of bookingId or mentorId',
     },
 
     /**
@@ -1259,6 +1307,38 @@ Updates the role of a user. Intended for admin panel use.
   },
 
   // ─── Booking ──────────────────────────────────────────────────────────────
+
+  CREATE_REVIEW: {
+    summary: 'Submit a review for a completed session (mentee only)',
+    description: `
+Creates the authenticated mentee's review of a completed booking.
+
+**The mentee ID is read from the JWT** — do not send it in the body.
+
+**Rules:**
+- The booking must exist and must not be soft-deleted.
+- Only the mentee on the booking may review it.
+- The booking status must be \`COMPLETED\`.
+- One review per booking — a second attempt returns \`409\`.
+
+The mentor receives an in-app notification when a review is submitted.
+`,
+    bodyExample: {
+      bookingId: 'c9d0e1f2-a3b4-5678-cdef-012345678901',
+      rating: 5,
+      comment: 'Very insightful session — clear, practical advice.',
+    },
+  },
+
+  GET_REVIEWS: {
+    summary: 'Get reviews by booking or by mentor',
+    description: `
+Returns reviews for **exactly one** of the following — supplying both or neither returns \`400\`:
+
+- \`?bookingId=\` — the single review for that booking, or \`data: null\` if the mentee has not reviewed it yet. Restricted to the booking's mentee, its mentor, or an admin.
+- \`?mentorId=\` — all reviews for that mentor, newest first, paginated with \`page\` and \`limit\`. Readable by any authenticated user. The response also carries \`averageRating\` (one decimal place, \`null\` when there are no reviews) and \`ratingCount\`.
+`,
+  },
 
   CREATE_BOOKING: {
     summary: 'Create a new booking request (mentee only)',
