@@ -643,6 +643,12 @@ export class UserService {
 
             return {
               ...currentDto,
+              yearsOfExperience:
+                currentDto.yearsOfExperience === undefined ||
+                currentDto.yearsOfExperience === null ||
+                (currentDto.yearsOfExperience as unknown) === ''
+                  ? undefined
+                  : Number(currentDto.yearsOfExperience),
               skills: normalizeToArray(currentDto.skills),
               areasOfExpertise: normalizeToArray(currentDto.areasOfExpertise),
               availability: normalizeAvailability(currentDto.availability),
@@ -676,51 +682,55 @@ export class UserService {
 
       if (role === UserRole.Mentor) {
         const mentorDto = effectiveDto as UpdateMentorProfileDto;
-        const availability = (mentorDto.availability ?? []) as AvailabilitySlot[];
-        const normalizedAvailability: AvailabilitySlot[] = [];
-        const days = availability.map((entry) => entry.day);
 
-        if (new Set(days).size !== days.length) {
-          return {
-            status: ResponseStatus.Error,
-            statusCode: API_RESPONSE.ERROR.AVAILABILITY_DUPLICATE_DAY.code,
-            message: API_RESPONSE.ERROR.AVAILABILITY_DUPLICATE_DAY.message,
-            data: null,
-          };
-        }
+        // Profile settings updates often omit availability; only normalize when sent.
+        if (mentorDto.availability !== undefined) {
+          const availability = mentorDto.availability as AvailabilitySlot[];
+          const normalizedAvailability: AvailabilitySlot[] = [];
+          const days = availability.map((entry) => entry.day);
 
-        for (const entry of availability) {
-          const validationError = validateTimeFrames(entry.timeFrames);
-
-          if (validationError) {
-            const response = validationError.startsWith('Overlapping slots')
-              ? API_RESPONSE.ERROR.AVAILABILITY_OVERLAP
-              : API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE;
-
+          if (new Set(days).size !== days.length) {
             return {
               status: ResponseStatus.Error,
-              statusCode: response.code,
-              message: `${response.message} (${entry.day}): ${validationError}`,
+              statusCode: API_RESPONSE.ERROR.AVAILABILITY_DUPLICATE_DAY.code,
+              message: API_RESPONSE.ERROR.AVAILABILITY_DUPLICATE_DAY.message,
               data: null,
             };
           }
 
-          try {
-            normalizedAvailability.push({
-              day: entry.day,
-              timeFrames: splitIntoSessionFrames(entry.timeFrames),
-            });
-          } catch (error) {
-            return {
-              status: ResponseStatus.Error,
-              statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
-              message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message} (${entry.day}): ${(error as Error).message}`,
-              data: null,
-            };
-          }
-        }
+          for (const entry of availability) {
+            const validationError = validateTimeFrames(entry.timeFrames);
 
-        mentorDto.availability = normalizedAvailability;
+            if (validationError) {
+              const response = validationError.startsWith('Overlapping slots')
+                ? API_RESPONSE.ERROR.AVAILABILITY_OVERLAP
+                : API_RESPONSE.ERROR.AVAILABILITY_INVALID_RANGE;
+
+              return {
+                status: ResponseStatus.Error,
+                statusCode: response.code,
+                message: `${response.message} (${entry.day}): ${validationError}`,
+                data: null,
+              };
+            }
+
+            try {
+              normalizedAvailability.push({
+                day: entry.day,
+                timeFrames: splitIntoSessionFrames(entry.timeFrames),
+              });
+            } catch (error) {
+              return {
+                status: ResponseStatus.Error,
+                statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
+                message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message} (${entry.day}): ${(error as Error).message}`,
+                data: null,
+              };
+            }
+          }
+
+          mentorDto.availability = normalizedAvailability;
+        }
       }
 
       
@@ -733,22 +743,28 @@ export class UserService {
       let profileResponse: Record<string, unknown> | null = null;
 
       if (role === UserRole.Mentor) {
-        const payload = UserProfileValidator.buildProfilePayload(effectiveDto, role) as {
-          bio: string;
-          areasOfExpertise: string[];
-          yearsOfExperience: number;
-          skills: string[];
-          sessionRate: number;
-          availability: Record<string, any>;
-          updatedById?: string;
-        };
+        const payload = UserProfileValidator.buildProfilePayload(effectiveDto, role) as Record<
+          string,
+          unknown
+        >;
+
+        // FormData fields arrive as strings; coerce before Prisma write.
+        if (payload['yearsOfExperience'] !== undefined && payload['yearsOfExperience'] !== null) {
+          payload['yearsOfExperience'] = Number(payload['yearsOfExperience']);
+        }
+
+        const cleanPayload = Object.fromEntries(
+          Object.entries(payload).filter(([, value]) => value !== undefined)
+        );
+
         await this.prisma.db.$transaction(async (tx) => {
           profileResponse = await tx.mentorProfile.upsert({
             where: { userId },
-            update: payload,
+            update: cleanPayload,
             create: {
               userId,
-              ...payload
+              availability: [],
+              ...cleanPayload,
             },
             select: SelectFields.getMentorProfileSelect(),
           });
@@ -1152,7 +1168,7 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
       if (check) return check;
 
       // Check for duplicate days
@@ -1231,7 +1247,7 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
       if (check) return check;
 
       const profile = await this.prisma.db.mentorProfile.findUnique({
@@ -1318,7 +1334,7 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
       if (check) return check;
 
       const profile = await this.prisma.db.mentorProfile.findUnique({
@@ -1412,7 +1428,7 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
       if (check) return check;
 
       const profile = await this.prisma.db.mentorProfile.findUnique({
@@ -1487,7 +1503,7 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireApprovedMentor(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
       if (check) return check;
 
       await this.prisma.db.mentorProfile.update({
@@ -1527,11 +1543,11 @@ export class UserService {
   }
 
   /**
-   * Checks that the target user is an approved mentor and the caller is either
-   * the mentor themselves or an admin. Returns a ResponseDto error if the check
-   * fails, or null if it passes.
+   * Ensures the caller can manage the target mentor's availability schedule.
+   * Mentors may edit their own schedule before admin approval (approval only
+   * gates public discoverability and booking). Admins may manage any mentor.
    */
-  private async requireApprovedMentor(
+  private async requireMentorOwnerOrAdmin(
     userId: string,
     authenticatedUserId: string,
   ): Promise<ResponseDto | null> {
@@ -1547,7 +1563,7 @@ export class UserService {
 
     const user = await this.prisma.db.user.findUnique({
       where: { id: userId },
-      select: { role: true, isMentorApproved: true },
+      select: { role: true },
     });
 
     if (!user) {
@@ -1564,15 +1580,6 @@ export class UserService {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.code,
         message: 'Only mentor accounts can manage availability',
-        data: null,
-      };
-    }
-
-    if (!user.isMentorApproved) {
-      return {
-        status: ResponseStatus.Error,
-        statusCode: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.code,
-        message: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.message,
         data: null,
       };
     }

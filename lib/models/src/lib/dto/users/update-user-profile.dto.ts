@@ -11,9 +11,11 @@ import {
   IsNumber,
   Min,
   IsOptional,
+  IsUrl,
   Matches,
   MaxLength,
-  ArrayMinSize
+  ArrayMinSize,
+  ValidateIf,
 } from 'class-validator';
 
 export class TimeFrameDto implements TimeFrameInterface {
@@ -155,7 +157,11 @@ export class UpdateMentorProfileDto implements Partial<UpdateMentorProfileInterf
   timezone?: string;
 
   @ApiPropertyOptional()
-  @Transform(({ value }) => Number(value))
+  @Transform(({ value }) => {
+    if (value === undefined || value === null || value === '') return undefined;
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : value;
+  })
   @IsNumber()
   @Min(0)
   @IsOptional()
@@ -180,6 +186,23 @@ export class UpdateMentorProfileDto implements Partial<UpdateMentorProfileInterf
   @IsString({ each: true })
   @IsOptional()
   skills?: string[];
+
+  @ApiPropertyOptional({
+    example: 'https://linkedin.com/in/johnsmith',
+    description: 'LinkedIn profile URL',
+    nullable: true,
+  })
+  @Transform(({ value }) => {
+    if (value === undefined) return undefined;
+    if (value === null) return null;
+    if (typeof value === 'string' && value.trim() === '') return null;
+    return value;
+  })
+  @IsOptional()
+  @ValidateIf((_, value) => value !== null && value !== undefined)
+  @IsString()
+  @IsUrl({}, { message: API_RESPONSE.ERROR.INVALID_URL.message })
+  linkedInUrl?: string | null;
 
   @ApiPropertyOptional()
   @IsNumber()

@@ -72,7 +72,14 @@ export class UpdateMenteeProfileFailure {
 
 export class UpdateMentorProfile {
   static readonly type = '[Auth] Update Mentor Profile';
-  constructor(public payload: { userId: string; profileData: Partial<UpdateMentorProfileInterface>; avatarFile?: File }) {}
+  constructor(
+    public payload: {
+      userId: string;
+      profileData: Partial<UpdateMentorProfileInterface>;
+      avatarFile?: File;
+      documentFiles?: File[];
+    }
+  ) {}
 }
 
 export class UpdateMentorProfileSuccess {
