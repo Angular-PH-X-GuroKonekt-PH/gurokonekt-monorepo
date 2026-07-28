@@ -5,6 +5,7 @@ import {
   ElementRef,
   HostListener,
   inject,
+  OnDestroy,
   OnInit,
   signal,
 } from '@angular/core';
@@ -40,7 +41,7 @@ import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util
   ],
   templateUrl: './navbar.component.html',
 })
-export class NavbarComponent implements OnInit {
+export class NavbarComponent implements OnInit, OnDestroy {
   private readonly store = inject(Store);
   private readonly actions$ = inject(Actions);
   private readonly profileService = inject(ProfileService);
@@ -73,11 +74,11 @@ export class NavbarComponent implements OnInit {
 
         return this.profileService.getUserProfile(userId).pipe(
           map((response) => response.data as UserInterface | null),
-          catchError(() => of(null))
+          catchError(() => of(null)),
         );
-      })
+      }),
     ),
-    { initialValue: null as UserInterface | null }
+    { initialValue: null as UserInterface | null },
   );
 
   protected readonly userFullName = computed(() => {
@@ -108,24 +109,34 @@ export class NavbarComponent implements OnInit {
 
   protected readonly notifications = toSignal(
     this.notificationService.notifications$,
-    { initialValue: [] as NotificationInterface[] }
+    { initialValue: [] as NotificationInterface[] },
   );
 
   protected readonly isNotificationsLoading = computed(
-    () => this.fetchNotifications() === null
+    () => this.fetchNotifications() === null,
   );
 
   protected readonly unreadCount = computed(
     () =>
       this.notifications()?.filter(
-        (notification) => notification.status === NotificationStatus.UNREAD
-      ).length ?? 0
+        (notification) => notification.status === NotificationStatus.UNREAD,
+      ).length ?? 0,
+  );
+
+  protected readonly recentNotifications = computed(() =>
+    this.notifications().slice(0, 5),
   );
 
   ngOnInit(): void {
+    this.notificationService.connectToRealtime();
+
     this.router.events
       .pipe(filter((event) => event instanceof NavigationStart))
       .subscribe(() => this.closeAllDropdowns());
+  }
+
+  ngOnDestroy(): void {
+    this.notificationService.disconnectFromRealtime();
   }
 
   protected toggleNotification(event: MouseEvent): void {
@@ -153,11 +164,12 @@ export class NavbarComponent implements OnInit {
     }
 
     void firstValueFrom(
-      this.notificationService.markAsRead(notification.id)
+      this.notificationService.markAsRead(notification.id),
     ).catch(() => undefined);
   }
 
   protected logout(): void {
+    this.notificationService.disconnectFromRealtime();
     void this.store.dispatch(new AuthActions.Logout());
   }
 

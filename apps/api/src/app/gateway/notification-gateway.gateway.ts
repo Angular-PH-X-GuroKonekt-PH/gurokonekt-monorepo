@@ -5,8 +5,15 @@ import {
   WebSocketGateway,
   WebSocketServer,
 } from '@nestjs/websockets';
+import {
+  isAllowedOrigin,
+  NotificationInterface,
+  UserStatus,
+} from '@gurokonekt/models';
 import { Server, Socket } from 'socket.io';
-import { isAllowedOrigin, NotificationInterface } from '@gurokonekt/models';
+
+import { PrismaService } from '../prisma/prisma.service';
+import { SupabaseService } from '../supabase/supabase.service';
 
 export const NOTIFICATION_EVENTS = {
   CREATED: 'notification:created',
@@ -16,7 +23,10 @@ export const NOTIFICATION_EVENTS = {
 
 @WebSocketGateway({
   cors: {
-    origin: (origin: string, callback: (err: Error | null, allow?: boolean) => void) => {
+    origin: (
+      origin: string,
+      callback: (err: Error | null, allow?: boolean) => void,
+    ) => {
       if (isAllowedOrigin(origin)) callback(null, true);
       else callback(new Error(`Origin ${origin} is not allowed by CORS`));
     },
@@ -29,67 +39,108 @@ export class NotificationGateway
 {
   @WebSocketServer()
   server!: Server;
+
   private readonly logger = new Logger(NotificationGateway.name);
 
-  // userId -> socketId mapping for targeted emission.
-  private readonly userSocketMap = new Map<string, string>();
+  constructor(
+    private readonly supabase: SupabaseService,
+    private readonly prisma: PrismaService,
+  ) {}
 
-  // socketId -> userId reverse mapping for efficient disconnect cleanup.
-  private readonly socketUserMap = new Map<string, string>();
+  async handleConnection(client: Socket): Promise<void> {
+    const token = this.getAccessToken(client);
 
-  // ====================================================
-  // LIFECYCLE
-  // ====================================================
-
-  handleConnection(client: Socket): void {
-    const userId = client.handshake.query['userId'] as string | undefined;
-
-    if (!userId) {
-      this.logger.warn(`WebSocket connected without userId — socketId=${client.id}`);
+    if (!token) {
+      this.logger.warn(
+        `Rejected unauthenticated WebSocket — socketId=${client.id}`,
+      );
+      client.disconnect(true);
       return;
     }
 
-    this.userSocketMap.set(userId, client.id);
-    this.socketUserMap.set(client.id, userId);
-    this.logger.log(`WebSocket connected — userId=${userId}, socketId=${client.id}`);
-  }
+    try {
+      const { data, error } = await this.supabase.client.auth.getUser(token);
+      const userId = data.user?.id;
 
-  handleDisconnect(client: Socket): void {
-    const userId = this.socketUserMap.get(client.id);
+      if (error || !userId) {
+        this.logger.warn(
+          `Rejected invalid WebSocket token — socketId=${client.id}`,
+        );
+        client.disconnect(true);
+        return;
+      }
 
-    if (userId) {
-      this.userSocketMap.delete(userId);
-      this.socketUserMap.delete(client.id);
-      this.logger.log(`WebSocket disconnected — userId=${userId}, socketId=${client.id}`);
+      const user = await this.prisma.db.user.findUnique({
+        where: { id: userId },
+        select: { status: true },
+      });
+      const blockedStatuses: UserStatus[] = [
+        UserStatus.Inactive,
+        UserStatus.Banned,
+        UserStatus.Deleted,
+        UserStatus.Suspended,
+      ];
+
+      if (!user || blockedStatuses.includes(user.status as UserStatus)) {
+        this.logger.warn(
+          `Rejected WebSocket for unavailable user — userId=${userId}`,
+        );
+        client.disconnect(true);
+        return;
+      }
+
+      client.data['userId'] = userId;
+      await client.join(this.getUserRoom(userId));
+      this.logger.log(
+        `WebSocket connected — userId=${userId}, socketId=${client.id}`,
+      );
+    } catch (error) {
+      this.logger.warn(
+        `WebSocket authentication failed — socketId=${client.id}: ${
+          (error as Error).message
+        }`,
+      );
+      client.disconnect(true);
     }
   }
 
-  // ====================================================
-  // PUBLIC EMIT API
-  // ====================================================
+  handleDisconnect(client: Socket): void {
+    const userId = client.data['userId'] as string | undefined;
 
-  /**
-   * Emit a realtime notification event to a specific user.
-   *
-   * @param userId  - The target user's ID.
-   * @param payload - The notification payload (or `{ id }` for delete events).
-   * @param event   - Socket event name (use `NOTIFICATION_EVENTS` constants).
-   */
+    if (userId) {
+      this.logger.log(
+        `WebSocket disconnected — userId=${userId}, socketId=${client.id}`,
+      );
+    }
+  }
+
   sendNotificationToUser(
     userId: string,
     payload: NotificationInterface | { id: string },
     event: string = NOTIFICATION_EVENTS.UPDATED,
   ): void {
-    const socketId = this.userSocketMap.get(userId);
+    this.server.to(this.getUserRoom(userId)).emit(event, payload);
+    this.logger.log(`Emitted "${event}" to userId=${userId}`);
+  }
 
-    if (!socketId) {
-      this.logger.warn(
-        `No active WebSocket for userId=${userId} — skipping emit for event "${event}"`,
-      );
-      return;
+  private getAccessToken(client: Socket): string | null {
+    const authToken = client.handshake.auth?.['token'];
+    if (typeof authToken === 'string' && authToken.trim()) {
+      return authToken;
     }
 
-    this.server.to(socketId).emit(event, payload);
-    this.logger.log(`Emitted "${event}" to userId=${userId} (socketId=${socketId})`);
+    const authorization = client.handshake.headers.authorization;
+    if (
+      typeof authorization === 'string' &&
+      authorization.startsWith('Bearer ')
+    ) {
+      return authorization.slice('Bearer '.length);
+    }
+
+    return null;
+  }
+
+  private getUserRoom(userId: string): string {
+    return `notifications:${userId}`;
   }
 }

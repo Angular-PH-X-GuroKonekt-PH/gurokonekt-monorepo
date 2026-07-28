@@ -9,7 +9,7 @@ import { UserModule } from './user/user.module';
 import { NotificationModule } from './notification/notification.module';
 import { BookingModule } from './booking/booking.module';
 import { SearchModule } from './search/search.module';
-import { NotificationGateway } from './gateway/notification-gateway.gateway';
+import { NotificationGatewayModule } from './gateway/notification-gateway.module';
 import { MetricsModule } from './metrics/metrics.module';
 import { AdminModule } from './admin/admin.module';
 
@@ -24,8 +24,9 @@ import { AdminModule } from './admin/admin.module';
     SearchModule,
     MetricsModule,
     AdminModule,
+    NotificationGatewayModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService, NotificationGateway],
+  providers: [AppService, PrismaService],
 })
 export class AppModule {}

@@ -20,6 +20,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import { Request } from 'express';
+import { AdminGuard } from '../jwt-guard/admin.guard';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { NotificationService } from './notification.service';
 import {
@@ -42,6 +43,7 @@ export class NotificationController {
   // ====================================================
 
   @Post()
+  @UseGuards(AdminGuard)
   @ApiOperation({
     summary: SWAGGER_DOCUMENTATION.CREATE_NOTIFICATION.summary,
     description: SWAGGER_DOCUMENTATION.CREATE_NOTIFICATION.description,
@@ -58,7 +60,8 @@ export class NotificationController {
         value: {
           userId: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21',
           title: 'Platform Maintenance',
-          message: 'Gurokonekt will be down for maintenance on April 30 from 2 AM – 4 AM UTC.',
+          message:
+            'Gurokonekt will be down for maintenance on April 30 from 2 AM – 4 AM UTC.',
           type: 'ANNOUNCEMENT',
         },
       },
@@ -66,7 +69,8 @@ export class NotificationController {
   })
   @ApiResponse({
     status: 201,
-    description: 'Notification created and delivered in real-time via WebSocket (if user is online).',
+    description:
+      'Notification created and delivered in real-time via WebSocket (if user is online).',
     type: ResponseDto,
     schema: {
       example: {
@@ -77,15 +81,22 @@ export class NotificationController {
           id: 'f1e2d3c4-b5a6-7890-fedc-ba9876543210',
           userId: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21',
           title: 'Booking Approved',
-          message: 'Your session with Carlos Reyes on April 15 has been approved.',
+          message:
+            'Your session with Carlos Reyes on April 15 has been approved.',
           type: 'BOOKING',
           status: 'UNREAD',
         },
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Validation error — missing required fields or invalid type.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error — missing required fields or invalid type.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
   async create(@Body() dto: CreateNotificationDto) {
     const response = await this.notificationService.create(dto);
     if (response.status === ResponseStatus.Error) {
@@ -110,7 +121,8 @@ export class NotificationController {
   @Get('me')
   @ApiOperation({
     summary: 'Get all notifications for the authenticated user',
-    description: 'Returns all non-deleted notifications for the user identified by the JWT, ordered by creation date descending.',
+    description:
+      'Returns all non-deleted notifications for the user identified by the JWT, ordered by creation date descending.',
   })
   @ApiResponse({
     status: 200,
@@ -125,9 +137,14 @@ export class NotificationController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
   async findMyNotifications(@Req() req: Request & { user: { id: string } }) {
-    const response = await this.notificationService.findMyNotifications(req.user.id);
+    const response = await this.notificationService.findMyNotifications(
+      req.user.id,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         {
@@ -147,9 +164,11 @@ export class NotificationController {
   // ====================================================
 
   @Get()
+  @UseGuards(AdminGuard)
   @ApiOperation({
     summary: 'Get all notifications (admin / internal use)',
-    description: 'Returns every notification in the system. Intended for admin dashboards only.',
+    description:
+      'Returns every notification in the system. Intended for admin dashboards only.',
   })
   @ApiResponse({
     status: 200,
@@ -164,7 +183,10 @@ export class NotificationController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
   async findAll() {
     const response = await this.notificationService.findAll();
     if (response.status === ResponseStatus.Error) {
@@ -189,7 +211,8 @@ export class NotificationController {
   @Get('user/:userId')
   @ApiOperation({
     summary: 'Get all notifications for a specific user',
-    description: 'Returns all non-deleted notifications for the given user. The authenticated user can only access their own notifications unless they have admin privileges.',
+    description:
+      'Returns all non-deleted notifications for the given user. The authenticated user can only access their own notifications unless they have admin privileges.',
   })
   @ApiParam({
     name: 'userId',
@@ -210,13 +233,23 @@ export class NotificationController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — notification does not belong to the authenticated user.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Access denied — notification does not belong to the authenticated user.',
+  })
   async findByUserId(
     @Param('userId') userId: string,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.notificationService.findByUserId(userId, req.user.id);
+    const response = await this.notificationService.findByUserId(
+      userId,
+      req.user.id,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         {
@@ -238,7 +271,8 @@ export class NotificationController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get a notification by ID',
-    description: 'Returns a single notification. Only the notification owner can access it.',
+    description:
+      'Returns a single notification. Only the notification owner can access it.',
   })
   @ApiParam({
     name: 'id',
@@ -266,8 +300,14 @@ export class NotificationController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — notification does not belong to you.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied — notification does not belong to you.',
+  })
   @ApiResponse({ status: 404, description: 'Notification not found.' })
   async findById(
     @Param('id') id: string,
@@ -296,7 +336,8 @@ export class NotificationController {
   @Patch(':id/read')
   @ApiOperation({
     summary: 'Mark a notification as read',
-    description: 'Sets the notification status to READ and records the readAt timestamp. Only the notification owner can mark it as read.',
+    description:
+      'Sets the notification status to READ and records the readAt timestamp. Only the notification owner can mark it as read.',
   })
   @ApiParam({
     name: 'id',
@@ -317,8 +358,14 @@ export class NotificationController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — notification does not belong to you.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied — notification does not belong to you.',
+  })
   @ApiResponse({ status: 404, description: 'Notification not found.' })
   async markAsRead(
     @Param('id') id: string,
@@ -344,6 +391,7 @@ export class NotificationController {
   // ====================================================
 
   @Patch(':id')
+  @UseGuards(AdminGuard)
   @ApiOperation({
     summary: SWAGGER_DOCUMENTATION.UPDATE_NOTIFICATION.summary,
     description: SWAGGER_DOCUMENTATION.UPDATE_NOTIFICATION.description,
@@ -363,7 +411,9 @@ export class NotificationController {
       },
       updateMessage: {
         summary: 'Update message text',
-        value: { message: 'Your session has been rescheduled to April 20 at 2 PM.' },
+        value: {
+          message: 'Your session has been rescheduled to April 20 at 2 PM.',
+        },
       },
     },
   })
@@ -380,15 +430,25 @@ export class NotificationController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — notification does not belong to you.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied — notification does not belong to you.',
+  })
   @ApiResponse({ status: 404, description: 'Notification not found.' })
   async update(
     @Param('id') id: string,
     @Body() dto: UpdateNotificationDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.notificationService.update(id, dto, req.user.id);
+    const response = await this.notificationService.update(
+      id,
+      dto,
+      req.user.id,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         {
@@ -410,7 +470,8 @@ export class NotificationController {
   @Delete(':id')
   @ApiOperation({
     summary: 'Soft-delete a notification',
-    description: 'Sets the notification status to DELETED. The record is retained in the database but will not appear in normal queries. Only the notification owner can delete it.',
+    description:
+      'Sets the notification status to DELETED. The record is retained in the database but will not appear in normal queries. Only the notification owner can delete it.',
   })
   @ApiParam({
     name: 'id',
@@ -431,8 +492,14 @@ export class NotificationController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — notification does not belong to you.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied — notification does not belong to you.',
+  })
   @ApiResponse({ status: 404, description: 'Notification not found.' })
   async softDelete(
     @Param('id') id: string,
