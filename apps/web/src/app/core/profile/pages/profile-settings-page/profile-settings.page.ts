@@ -17,6 +17,14 @@ import type { DayAvailability, TimeFrame } from '../../../../shared/interfaces/p
 import { ToastService } from '../../../../shared/services/toast.service';
 import { ProfileService } from '../../profile.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import {
+  FormArrayTextListComponent,
+  createFormArrayTextControl,
+} from '../../../../shared/components/form-array-text-list/form-array-text-list.component';
+import {
+  AvatarCropModalComponent,
+  type AvatarCropResult,
+} from '../../../../shared/components/avatar-crop-modal/avatar-crop-modal.component';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { AuthSelectors } from '../../../auth/store/auth.selectors';
@@ -27,21 +35,55 @@ import {
 } from '../../../../shared/utils/location-data.util';
 import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
 import { expertiseOptions } from '../../../../shared/helpers/expertise-selection.helper';
+import { formatTimeRange } from '../../../../features/mentor/pages/mentor-manage-availability-page/availability.helpers';
+import { FORM_FIELD_VALIDATORS } from '../../../../shared/constants/form-validation-configs.constants';
+import { VALIDATION_MESSAGES } from '../../../../shared/constants/validation-patterns.constants';
+
+interface ProfileSettingsDraft {
+  userId: string;
+  bio: string;
+  phoneNumber: string;
+  country: string;
+  timezone: string;
+  language: string;
+  linkedInUrl: string;
+  yearsOfExperience: number | null;
+  areasOfExpertise: string[];
+  skills: string[];
+  learningGoals: string[];
+  areasOfInterest: string[];
+  preferredSessionType: MenteePreferredSessionType[];
+}
 
 @Component({
   selector: 'app-profile-settings-page',
   standalone: true,
-  imports: [CommonModule, ReactiveFormsModule, IconComponent],
+  imports: [
+    CommonModule,
+    ReactiveFormsModule,
+    IconComponent,
+    FormArrayTextListComponent,
+    AvatarCropModalComponent,
+  ],
   templateUrl: './profile-settings.page.html',
 })
 export class ProfileSettingsPageComponent implements OnInit {
   private static readonly MAX_LEARNING_GOALS = 5;
   private static readonly MAX_AREAS_OF_INTEREST = 5;
   private static readonly MAX_AREAS_OF_EXPERTISE = 10;
-  private static readonly MAX_TIME_FRAMES_PER_DAY = 3;
+  private static readonly MAX_SKILLS = 8;
   private static readonly MAX_AVATAR_SIZE_BYTES = 5 * 1024 * 1024;
   private static readonly ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
+  private static readonly MAX_VERIFICATION_FILES = 5;
+  private static readonly MAX_VERIFICATION_FILE_SIZE_BYTES = 5 * 1024 * 1024;
+  private static readonly ALLOWED_VERIFICATION_TYPES = [
+    'application/pdf',
+    'image/png',
+    'image/jpeg',
+    'image/jpg',
+  ];
   private static readonly MAX_LEARNING_GOAL_LENGTH = 500;
+  private static readonly DRAFT_STORAGE_KEY = 'profile-settings-draft';
 
   private readonly fb = inject(FormBuilder);
   private readonly toastService = inject(ToastService);
@@ -56,6 +98,11 @@ export class ProfileSettingsPageComponent implements OnInit {
   protected currentAvatarUrl = signal<string | null>(null);
   protected selectedAvatarFile: File | null = null;
   protected avatarError = signal<string | null>(null);
+  protected isAvatarCropOpen = signal(false);
+  protected avatarCropEvent = signal<Event | null>(null);
+  protected avatarCropSourceFile = signal<File | null>(null);
+  protected selectedVerificationFiles = signal<File[]>([]);
+  protected verificationFileError = signal<string | null>(null);
 
   protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly isMentor = computed(
@@ -66,8 +113,13 @@ export class ProfileSettingsPageComponent implements OnInit {
   
   // Expose enums to template
   protected readonly MenteePreferredSessionType = MenteePreferredSessionType;
-  protected readonly DaysInWeek = DaysInWeek;
   protected readonly daysOfWeek = Object.values(DaysInWeek);
+  protected readonly manageAvailabilityRoute = APP_ROUTES.MANAGE_AVAILABILITY;
+  protected readonly maxSkills = ProfileSettingsPageComponent.MAX_SKILLS;
+  protected readonly maxVerificationFiles =
+    ProfileSettingsPageComponent.MAX_VERIFICATION_FILES;
+  protected readonly linkedInUrlErrorMessage = VALIDATION_MESSAGES.LINKEDIN_URL;
+  protected readonly phoneErrorMessage = VALIDATION_MESSAGES.PHONE;
 
   protected readonly areasOfInterestOptions = [
     'Web Development',
@@ -92,9 +144,6 @@ export class ProfileSettingsPageComponent implements OnInit {
   protected profileForm!: FormGroup;
   protected availabilitySchedule = signal<DayAvailability[]>([]);
 
-  /** Preserved on load so mentor updates do not wipe skills set during setup. */
-  private mentorSkills: string[] = [];
-
   ngOnInit(): void {
     this.initializeForm();
     this.initializeAvailability();
@@ -103,21 +152,27 @@ export class ProfileSettingsPageComponent implements OnInit {
 
   private initializeForm(): void {
     const mentor = this.isMentor();
-    const areasOfInterestValidators = this.isMentee() ? [Validators.required] : [];
 
     this.profileForm = this.fb.group({
-      bio: ['', [Validators.minLength(50), Validators.maxLength(500)]],
-      phoneNumber: ['', [Validators.pattern(/^\+\d{10,15}$/)]],
-      country: ['', Validators.required],
-      timezone: ['', Validators.required],
-      language: ['', Validators.required],
+      // Bio comes from post-login setup (not registration); keep the same 50–500 rule.
+      bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
+      // Shared registration fields — same validators as mentee/mentor register forms.
+      phoneNumber: ['', [...FORM_FIELD_VALIDATORS.PHONE_NUMBER]],
+      country: ['', [...FORM_FIELD_VALIDATORS.COUNTRY]],
+      timezone: ['', [...FORM_FIELD_VALIDATORS.TIMEZONE]],
+      language: ['', [...FORM_FIELD_VALIDATORS.LANGUAGE]],
+      linkedInUrl: ['', [...FORM_FIELD_VALIDATORS.LINKEDIN_URL]],
       yearsOfExperience: [
         null as number | null,
-        mentor ? [Validators.required, Validators.min(1), Validators.max(60)] : [],
+        mentor ? [...FORM_FIELD_VALIDATORS.YEARS_OF_EXPERIENCE] : [],
       ],
       learningGoals: this.fb.array([]),
       areasOfInterest: this.fb.array([], mentor ? [] : [Validators.required]),
-      areasOfExpertise: this.fb.array([], mentor ? [Validators.required] : []),
+      areasOfExpertise: this.fb.array(
+        [],
+        mentor ? [...FORM_FIELD_VALIDATORS.EXPERTISE_AREAS] : []
+      ),
+      skills: this.fb.array([]),
       preferredSessionType: this.fb.array([], mentor ? [] : [Validators.required]),
     });
   }
@@ -126,13 +181,13 @@ export class ProfileSettingsPageComponent implements OnInit {
     const schedule: DayAvailability[] = this.daysOfWeek.map((day) => ({
       day,
       enabled: false,
-      timeFrames: [this.createDefaultTimeFrame()],
+      timeFrames: [],
     }));
     this.availabilitySchedule.set(schedule);
   }
 
-  private createDefaultTimeFrame(): TimeFrame {
-    return { from: '09:00', to: '17:00' };
+  protected formatAvailabilityTimeRange(timeFrame: TimeFrame): string {
+    return formatTimeRange(timeFrame);
   }
 
   private async loadProfileData(): Promise<void> {
@@ -154,6 +209,10 @@ export class ProfileSettingsPageComponent implements OnInit {
         if (avatarUrl) {
           this.currentAvatarUrl.set(avatarUrl);
         }
+
+        // Restore unsaved edits after navigating away (e.g. Manage Availability).
+        // Availability always stays server-fresh from populateForm above.
+        this.restoreDraftIfPresent(user.id);
       }
     } catch (error) {
       console.error('Error loading profile:', error);
@@ -205,14 +264,28 @@ export class ProfileSettingsPageComponent implements OnInit {
 
   private populateMentorFields(mentorProfile: Record<string, unknown>): void {
     const yearsOfExperience = mentorProfile['yearsOfExperience'];
+    const linkedInUrl =
+      typeof mentorProfile['linkedInUrl'] === 'string'
+        ? mentorProfile['linkedInUrl']
+        : '';
+
     this.profileForm.patchValue({
       yearsOfExperience:
         typeof yearsOfExperience === 'number' ? yearsOfExperience : null,
+      linkedInUrl,
     });
 
-    this.mentorSkills = Array.isArray(mentorProfile['skills'])
+    const skills = Array.isArray(mentorProfile['skills'])
       ? (mentorProfile['skills'] as string[])
       : [];
+    this.skills.clear();
+    if (skills.length > 0) {
+      skills.forEach((skill) => {
+        const control = createFormArrayTextControl(this.fb);
+        control.setValue(skill);
+        this.skills.push(control);
+      });
+    }
 
     const areasOfExpertise = Array.isArray(mentorProfile['areasOfExpertise'])
       ? (mentorProfile['areasOfExpertise'] as string[])
@@ -264,27 +337,134 @@ export class ProfileSettingsPageComponent implements OnInit {
   private populateAvailabilitySchedule(
     availability: Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }>
   ): void {
-    const schedule = this.availabilitySchedule();
+    const schedule: DayAvailability[] = this.daysOfWeek.map((day) => ({
+      day,
+      enabled: false,
+      timeFrames: [],
+    }));
+
     availability.forEach((slot) => {
       const daySchedule = schedule.find((d) => d.day === slot.day);
       if (daySchedule) {
-        daySchedule.enabled = true;
-        daySchedule.timeFrames = slot.timeFrames || [this.createDefaultTimeFrame()];
+        daySchedule.enabled = (slot.timeFrames?.length ?? 0) > 0;
+        daySchedule.timeFrames = slot.timeFrames ?? [];
       }
     });
-    this.availabilitySchedule.set([...schedule]);
+    this.availabilitySchedule.set(schedule);
   }
 
-  private updateScheduleForDay(
-    day: DaysInWeek,
-    update: (daySchedule: DayAvailability) => void
-  ): void {
-    const schedule = this.availabilitySchedule();
-    const dayIndex = schedule.findIndex((d) => d.day === day);
-    if (dayIndex < 0) return;
+  protected goToManageAvailability(): void {
+    const user = this.currentUser();
+    if (!user) {
+      this.toastService.error('User session not found');
+      return;
+    }
 
-    update(schedule[dayIndex]);
-    this.availabilitySchedule.set([...schedule]);
+    this.saveDraft(user.id);
+    void this.router.navigate(['/', this.manageAvailabilityRoute]);
+  }
+
+  private saveDraft(userId: string): void {
+    const draft: ProfileSettingsDraft = {
+      userId,
+      bio: this.profileForm.value.bio ?? '',
+      phoneNumber: this.profileForm.value.phoneNumber ?? '',
+      country: this.profileForm.value.country ?? '',
+      timezone: this.profileForm.value.timezone ?? '',
+      language: this.profileForm.value.language ?? '',
+      linkedInUrl: this.profileForm.value.linkedInUrl ?? '',
+      yearsOfExperience:
+        this.profileForm.value.yearsOfExperience === null ||
+        this.profileForm.value.yearsOfExperience === undefined ||
+        this.profileForm.value.yearsOfExperience === ''
+          ? null
+          : Number(this.profileForm.value.yearsOfExperience),
+      areasOfExpertise: [...(this.areasOfExpertise.value as string[])],
+      skills: [...(this.skills.value as string[])],
+      learningGoals: [...(this.learningGoals.value as string[])],
+      areasOfInterest: [...(this.areasOfInterest.value as string[])],
+      preferredSessionType: [
+        ...(this.preferredSessionTypes.value as MenteePreferredSessionType[]),
+      ],
+    };
+
+    try {
+      sessionStorage.setItem(
+        ProfileSettingsPageComponent.DRAFT_STORAGE_KEY,
+        JSON.stringify(draft)
+      );
+    } catch (error) {
+      console.error('Failed to save profile settings draft:', error);
+    }
+  }
+
+  private restoreDraftIfPresent(userId: string): void {
+    try {
+      const raw = sessionStorage.getItem(
+        ProfileSettingsPageComponent.DRAFT_STORAGE_KEY
+      );
+      if (!raw) return;
+
+      const draft = JSON.parse(raw) as ProfileSettingsDraft;
+      if (draft.userId !== userId) {
+        this.clearDraft();
+        return;
+      }
+
+      this.profileForm.patchValue({
+        bio: draft.bio ?? '',
+        phoneNumber: draft.phoneNumber ?? '',
+        country: draft.country ?? '',
+        timezone: draft.timezone ?? '',
+        language: draft.language ?? '',
+        linkedInUrl: draft.linkedInUrl ?? '',
+        yearsOfExperience: draft.yearsOfExperience,
+      });
+
+      if (this.isMentor()) {
+        this.replaceStringFormArray(this.areasOfExpertise, draft.areasOfExpertise ?? []);
+        this.replaceSkillsFormArray(draft.skills ?? []);
+      } else {
+        this.replaceLearningGoals(draft.learningGoals ?? []);
+        this.replaceStringFormArray(this.areasOfInterest, draft.areasOfInterest ?? []);
+        this.preferredSessionTypes.clear();
+        (draft.preferredSessionType ?? []).forEach((type) => {
+          this.preferredSessionTypes.push(this.fb.control(type));
+        });
+      }
+    } catch (error) {
+      console.error('Failed to restore profile settings draft:', error);
+      this.clearDraft();
+    }
+  }
+
+  private replaceStringFormArray(formArray: FormArray, values: string[]): void {
+    formArray.clear();
+    values.forEach((value) => formArray.push(this.fb.control(value)));
+  }
+
+  private replaceSkillsFormArray(values: string[]): void {
+    this.skills.clear();
+    values.forEach((skill) => {
+      const control = createFormArrayTextControl(this.fb);
+      control.setValue(skill);
+      this.skills.push(control);
+    });
+  }
+
+  private replaceLearningGoals(values: string[]): void {
+    this.learningGoals.clear();
+    values.forEach((goal) => {
+      this.learningGoals.push(
+        this.fb.control(goal, [
+          Validators.maxLength(ProfileSettingsPageComponent.MAX_LEARNING_GOAL_LENGTH),
+        ])
+      );
+    });
+  }
+
+  private clearDraft(): void {
+    sessionStorage.removeItem(ProfileSettingsPageComponent.DRAFT_STORAGE_KEY);
   }
 
   get learningGoals(): FormArray {
@@ -313,6 +493,10 @@ export class ProfileSettingsPageComponent implements OnInit {
 
   get areasOfExpertise(): FormArray {
     return this.profileForm.get('areasOfExpertise') as FormArray;
+  }
+
+  get skills(): FormArray {
+    return this.profileForm.get('skills') as FormArray;
   }
 
   toggleAreaOfInterest(area: string): void {
@@ -390,13 +574,32 @@ export class ProfileSettingsPageComponent implements OnInit {
       return;
     }
 
-    this.selectedAvatarFile = file;
-    const reader = new FileReader();
-    reader.onload = (e) => {
-      this.avatarPreview.set(e.target?.result as string);
-      input.value = '';
-    };
-    reader.readAsDataURL(file);
+    // Keep the File for the cropper; clearing the input would empty the change event's FileList.
+    this.avatarCropSourceFile.set(file);
+    this.avatarCropEvent.set(null);
+    this.isAvatarCropOpen.set(true);
+    input.value = '';
+  }
+
+  protected onAvatarCropped(result: AvatarCropResult): void {
+    if (this.avatarPreview()?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.avatarPreview()!);
+    }
+
+    this.selectedAvatarFile = result.file;
+    this.avatarPreview.set(result.previewUrl);
+    this.avatarError.set(null);
+    this.closeAvatarCropModal();
+  }
+
+  protected onAvatarCropCancelled(): void {
+    this.closeAvatarCropModal();
+  }
+
+  private closeAvatarCropModal(): void {
+    this.isAvatarCropOpen.set(false);
+    this.avatarCropEvent.set(null);
+    this.avatarCropSourceFile.set(null);
   }
 
   private isValidAvatarType(file: File): boolean {
@@ -408,6 +611,9 @@ export class ProfileSettingsPageComponent implements OnInit {
   }
 
   removeAvatarPreview(input?: HTMLInputElement): void {
+    if (this.avatarPreview()?.startsWith('blob:')) {
+      URL.revokeObjectURL(this.avatarPreview()!);
+    }
     this.selectedAvatarFile = null;
     this.avatarPreview.set(null);
     this.avatarError.set(null);
@@ -423,53 +629,59 @@ export class ProfileSettingsPageComponent implements OnInit {
     }
   }
 
-  toggleDay(day: DaysInWeek): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      daySchedule.enabled = !daySchedule.enabled;
-    });
-  }
+  protected onVerificationFilesSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (!input.files || input.files.length === 0) {
+      return;
+    }
 
-  addTimeFrame(day: DaysInWeek): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (
-        daySchedule.timeFrames.length < ProfileSettingsPageComponent.MAX_TIME_FRAMES_PER_DAY
-      ) {
-        daySchedule.timeFrames.push(this.createDefaultTimeFrame());
+    this.verificationFileError.set(null);
+
+    const remainingSlots =
+      ProfileSettingsPageComponent.MAX_VERIFICATION_FILES -
+      this.selectedVerificationFiles().length;
+    if (remainingSlots <= 0) {
+      this.verificationFileError.set(
+        `You can upload up to ${ProfileSettingsPageComponent.MAX_VERIFICATION_FILES} documents`
+      );
+      input.value = '';
+      return;
+    }
+
+    const nextFiles = [...this.selectedVerificationFiles()];
+    for (const file of Array.from(input.files).slice(0, remainingSlots)) {
+      if (!ProfileSettingsPageComponent.ALLOWED_VERIFICATION_TYPES.includes(file.type)) {
+        this.verificationFileError.set('Only PDF, PNG, and JPEG documents are allowed');
+        input.value = '';
+        return;
       }
-    });
-  }
 
-  removeTimeFrame(day: DaysInWeek, timeFrameIndex: number): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (daySchedule.timeFrames.length > 1) {
-        daySchedule.timeFrames.splice(timeFrameIndex, 1);
+      if (file.size > ProfileSettingsPageComponent.MAX_VERIFICATION_FILE_SIZE_BYTES) {
+        this.verificationFileError.set('Each document must be less than 5MB');
+        input.value = '';
+        return;
       }
-    });
+
+      nextFiles.push(file);
+    }
+
+    this.selectedVerificationFiles.set(nextFiles);
+    input.value = '';
   }
 
-  updateTimeFrame(
-    day: DaysInWeek,
-    timeFrameIndex: number,
-    field: 'from' | 'to',
-    value: string
-  ): void {
-    this.updateScheduleForDay(day, (daySchedule) => {
-      if (!daySchedule.timeFrames[timeFrameIndex]) return;
-      daySchedule.timeFrames[timeFrameIndex][field] = value;
-    });
+  protected removeVerificationFile(index: number): void {
+    const nextFiles = this.selectedVerificationFiles().filter((_, i) => i !== index);
+    this.selectedVerificationFiles.set(nextFiles);
+    this.verificationFileError.set(null);
   }
 
-  getDaySchedule(day: DaysInWeek): DayAvailability | undefined {
-    return this.availabilitySchedule().find((d) => d.day === day);
+  protected clearVerificationFiles(): void {
+    this.selectedVerificationFiles.set([]);
+    this.verificationFileError.set(null);
   }
 
-  private buildAvailabilityPayload(): Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }> {
-    return this.availabilitySchedule()
-      .filter((day) => day.enabled)
-      .map((day) => ({
-        day: day.day,
-        timeFrames: day.timeFrames,
-      }));
+  protected formatFileSizeMb(sizeBytes: number): string {
+    return (sizeBytes / (1024 * 1024)).toFixed(2);
   }
 
   private buildMenteeProfileData(): Partial<UpdateMenteeProfileInterface> {
@@ -488,17 +700,21 @@ export class ProfileSettingsPageComponent implements OnInit {
   }
 
   private buildMentorProfileData(): Partial<UpdateMentorProfileInterface> {
-    const availability = this.buildAvailabilityPayload();
+    const linkedInUrl = (this.profileForm.value.linkedInUrl as string | null)?.trim() || null;
+    const skills = (this.skills.value as string[])
+      .map((skill) => skill.trim())
+      .filter((skill) => skill.length > 0);
+
     return {
       bio: this.profileForm.value.bio,
       phoneNumber: this.profileForm.value.phoneNumber,
       country: this.profileForm.value.country,
       timezone: this.profileForm.value.timezone,
       language: this.profileForm.value.language,
+      linkedInUrl,
       areasOfExpertise: this.areasOfExpertise.value,
       yearsOfExperience: Number(this.profileForm.value.yearsOfExperience),
-      skills: this.mentorSkills,
-      ...(availability.length > 0 && { availability }),
+      skills,
     };
   }
 
@@ -508,6 +724,7 @@ export class ProfileSettingsPageComponent implements OnInit {
         this.toastService.error('Please select at least one area of expertise');
         return false;
       }
+
       return true;
     }
 
@@ -525,7 +742,13 @@ export class ProfileSettingsPageComponent implements OnInit {
   }
 
   async onSubmit(): Promise<void> {
-    if (this.profileForm.invalid || this.isSubmitting()) return;
+    if (this.isSubmitting()) return;
+
+    if (this.profileForm.invalid) {
+      this.profileForm.markAllAsTouched();
+      this.toastService.error('Please fix the highlighted fields before updating.');
+      return;
+    }
 
     if (!this.validateBeforeSubmit()) return;
 
@@ -546,6 +769,10 @@ export class ProfileSettingsPageComponent implements OnInit {
               userId: user.id,
               profileData: this.buildMentorProfileData(),
               avatarFile: this.selectedAvatarFile || undefined,
+              documentFiles:
+                this.selectedVerificationFiles().length > 0
+                  ? this.selectedVerificationFiles()
+                  : undefined,
             })
           )
         );
@@ -562,6 +789,8 @@ export class ProfileSettingsPageComponent implements OnInit {
       }
 
       this.toastService.success('Profile updated successfully!');
+      this.clearDraft();
+      this.clearVerificationFiles();
       this.commitAvatarAfterSuccessfulUpdate();
     } catch (error) {
       const message = (error as { message?: string })?.message;

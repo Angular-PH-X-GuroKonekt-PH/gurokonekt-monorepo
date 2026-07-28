@@ -30,15 +30,37 @@ export class UserProfileValidator {
   static buildProfilePayload(dto: UpdateMenteeProfileDto | UpdateMentorProfileDto, role: UserRole) {
     if (role === UserRole.Mentor) {
       const currentDto = dto as UpdateMentorProfileDto;
-      return {
+      const yearsOfExperience =
+        currentDto.yearsOfExperience === undefined || currentDto.yearsOfExperience === null
+          ? undefined
+          : Number(currentDto.yearsOfExperience);
+
+      const payload: Record<string, unknown> = {
         bio: currentDto.bio,
         areasOfExpertise: currentDto.areasOfExpertise,
-        yearsOfExperience: currentDto.yearsOfExperience,
         skills: currentDto.skills,
-        sessionRate: currentDto.sessionRate,
-        availability: instanceToPlain(currentDto.availability),
         updatedById: currentDto.updatedById,
       };
+
+      if (yearsOfExperience !== undefined && Number.isFinite(yearsOfExperience)) {
+        payload['yearsOfExperience'] = yearsOfExperience;
+      }
+
+      if (currentDto.linkedInUrl !== undefined) {
+        payload['linkedInUrl'] = currentDto.linkedInUrl;
+      }
+
+      if (currentDto.sessionRate !== undefined) {
+        payload['sessionRate'] = currentDto.sessionRate;
+      }
+
+      // Only touch availability when the client explicitly sends it.
+      // Omitting it prevents profile settings updates from wiping the schedule.
+      if (currentDto.availability !== undefined) {
+        payload['availability'] = instanceToPlain(currentDto.availability);
+      }
+
+      return payload;
     } else {
       const currentDto = dto as UpdateMenteeProfileDto;
       return {

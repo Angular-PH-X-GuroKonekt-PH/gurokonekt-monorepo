@@ -130,7 +130,7 @@ export const FORM_CONFIGURATIONS = {
     groupValidators: [FORM_GROUP_VALIDATORS.PASSWORD_MATCH],
   },
   
-  // Profile update form (subset of registration fields)
+  // Profile update form (registration-aligned field validators)
   PROFILE_UPDATE: {
     fields: {
       firstName: { validators: FORM_FIELD_VALIDATORS.FIRST_NAME, initialValue: '' },
@@ -139,8 +139,19 @@ export const FORM_CONFIGURATIONS = {
       country: { validators: FORM_FIELD_VALIDATORS.COUNTRY, initialValue: '' },
       timezone: { validators: FORM_FIELD_VALIDATORS.TIMEZONE, initialValue: '' },
       language: { validators: FORM_FIELD_VALIDATORS.LANGUAGE, initialValue: 'en' },
-      bio: { validators: FORM_FIELD_VALIDATORS.BIO, initialValue: '' },
-      linkedInUrl: { validators: [Validators.pattern(VALIDATION_PATTERNS.LINKEDIN_URL)], initialValue: '' }, // Optional for profile
+      bio: {
+        validators: [Validators.required, Validators.minLength(50), Validators.maxLength(500)],
+        initialValue: '',
+      },
+      linkedInUrl: { validators: FORM_FIELD_VALIDATORS.LINKEDIN_URL, initialValue: '' },
+      yearsOfExperience: {
+        validators: FORM_FIELD_VALIDATORS.YEARS_OF_EXPERIENCE,
+        initialValue: null,
+      },
+      areasOfExpertise: {
+        validators: FORM_FIELD_VALIDATORS.EXPERTISE_AREAS,
+        initialValue: [],
+      },
     },
     groupValidators: [],
   },

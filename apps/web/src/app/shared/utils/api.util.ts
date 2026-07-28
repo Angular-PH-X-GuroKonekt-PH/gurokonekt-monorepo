@@ -1,4 +1,4 @@
-import { API_CONFIG } from "../../core/config/api.config";
+import { API_CONFIG } from '../../core/config/api.config';
 
 /**
  * Helper function to build full API URLs
@@ -8,3 +8,5 @@ import { API_CONFIG } from "../../core/config/api.config";
 export const buildApiUrl = (endpoint: string): string => {
   return `${API_CONFIG.baseUrl}${endpoint}`;
 };
+
+export const getApiOrigin = (): string => API_CONFIG.baseUrl.replace(/\/api\/?$/, '');

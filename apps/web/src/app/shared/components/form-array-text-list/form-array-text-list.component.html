@@ -43,7 +43,7 @@
             <app-icon name="plus" class="w-5 h-5"></app-icon>
           </button>
         }
-        @if (formArray().length > 1) {
+        @if (!required() || formArray().length > 1) {
           <button
             type="button"
             (click)="removeItem($index)"

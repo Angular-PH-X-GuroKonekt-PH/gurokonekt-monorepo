@@ -125,27 +125,9 @@ test.describe('Mentee Profile Settings', () => {
     expect(newCheckedState).toBe(!isChecked);
   });
 
-  test('should manage availability schedule', async ({ page }) => {
-    // Find Monday checkbox and enable it
-    const mondayCheckbox = page.locator('input[type="checkbox"]').filter({
-      hasText: 'monday'
-    }).first();
-    
-    await mondayCheckbox.click();
-    
-    // Wait for time frames to appear
-    await page.waitForTimeout(500);
-    
-    // Check that time inputs are visible
-    const timeInputs = page.locator('input[type="time"]');
-    await expect(timeInputs.first()).toBeVisible();
-    
-    // Add a time frame
-    const addTimeButton = page.locator('button:has-text("Add time slot")').first();
-    await addTimeButton.click();
-    
-    // Verify second time frame appears
-    await expect(timeInputs.nth(2)).toBeVisible();
+  test('should not show mentor availability section for mentee', async ({ page }) => {
+    await expect(page.locator('h2:has-text("Availability")')).not.toBeVisible();
+    await expect(page.locator('a:has-text("Edit Availability")')).not.toBeVisible();
   });
 
   test('should validate phone number format', async ({ page }) => {

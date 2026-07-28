@@ -55,7 +55,7 @@ export class FormArrayTextListComponent {
 
   removeItem(index: number): void {
     const array = this.formArray();
-    if (array.length <= 1) {
+    if (this.required() && array.length <= 1) {
       return;
     }
 
