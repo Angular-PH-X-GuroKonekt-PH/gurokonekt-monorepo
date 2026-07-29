@@ -63,10 +63,13 @@ export class AdminListBookingsQueryDto {
   @IsString()
   search?: string;
 
-  @ApiPropertyOptional({ enum: ['sessionDateTime', 'createdAt'], description: 'Sort field' })
+  @ApiPropertyOptional({
+    enum: ['sessionDateTime', 'createdAt', 'status', 'mentee', 'mentor'],
+    description: 'Sort field. "mentee"/"mentor" sort by that user\'s first name.',
+  })
   @IsOptional()
-  @IsEnum(['sessionDateTime', 'createdAt'])
-  sortBy?: 'sessionDateTime' | 'createdAt';
+  @IsEnum(['sessionDateTime', 'createdAt', 'status', 'mentee', 'mentor'])
+  sortBy?: 'sessionDateTime' | 'createdAt' | 'status' | 'mentee' | 'mentor';
 
   @ApiPropertyOptional({ enum: ['asc', 'desc'], description: 'Sort direction' })
   @IsOptional()

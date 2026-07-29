@@ -58,10 +58,16 @@ export class AdminBookingService {
 
       const skip = (page - 1) * limit;
 
+      // 'mentee'/'mentor' are relations, so order by the related user's name.
+      const orderBy =
+        sortBy === 'mentee' || sortBy === 'mentor'
+          ? { [sortBy]: { firstName: sortOrder } }
+          : { [sortBy]: sortOrder };
+
       const [bookings, total] = await Promise.all([
         this.prisma.db.booking.findMany({
           where,
-          orderBy: { [sortBy]: sortOrder },
+          orderBy,
           skip,
           take: limit,
           include: {
