@@ -34,6 +34,11 @@ import {
   getTimezones,
 } from '../../../../shared/utils/location-data.util';
 import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
+import {
+  ALLOWED_DOCUMENT_ACCEPT,
+  DOCUMENT_TYPE_ERROR,
+  isAllowedDocumentType,
+} from '../../../../shared/utils/document-validation.util';
 import { expertiseOptions } from '../../../../shared/helpers/expertise-selection.helper';
 import { formatTimeRange } from '../../../../features/mentor/pages/mentor-manage-availability-page/availability.helpers';
 import { FORM_FIELD_VALIDATORS } from '../../../../shared/constants/form-validation-configs.constants';
@@ -76,12 +81,6 @@ export class ProfileSettingsPageComponent implements OnInit {
   private static readonly ALLOWED_AVATAR_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
   private static readonly MAX_VERIFICATION_FILES = 5;
   private static readonly MAX_VERIFICATION_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-  private static readonly ALLOWED_VERIFICATION_TYPES = [
-    'application/pdf',
-    'image/png',
-    'image/jpeg',
-    'image/jpg',
-  ];
   private static readonly MAX_LEARNING_GOAL_LENGTH = 500;
   private static readonly DRAFT_STORAGE_KEY = 'profile-settings-draft';
 
@@ -118,6 +117,7 @@ export class ProfileSettingsPageComponent implements OnInit {
   protected readonly maxSkills = ProfileSettingsPageComponent.MAX_SKILLS;
   protected readonly maxVerificationFiles =
     ProfileSettingsPageComponent.MAX_VERIFICATION_FILES;
+  protected readonly allowedDocumentAccept = ALLOWED_DOCUMENT_ACCEPT;
   protected readonly linkedInUrlErrorMessage = VALIDATION_MESSAGES.LINKEDIN_URL;
   protected readonly phoneErrorMessage = VALIDATION_MESSAGES.PHONE;
 
@@ -650,8 +650,8 @@ export class ProfileSettingsPageComponent implements OnInit {
 
     const nextFiles = [...this.selectedVerificationFiles()];
     for (const file of Array.from(input.files).slice(0, remainingSlots)) {
-      if (!ProfileSettingsPageComponent.ALLOWED_VERIFICATION_TYPES.includes(file.type)) {
-        this.verificationFileError.set('Only PDF, PNG, and JPEG documents are allowed');
+      if (!isAllowedDocumentType(file)) {
+        this.verificationFileError.set(DOCUMENT_TYPE_ERROR);
         input.value = '';
         return;
       }

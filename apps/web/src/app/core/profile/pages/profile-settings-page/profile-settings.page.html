@@ -341,7 +341,7 @@
                 <input
                   #verificationFileInput
                   type="file"
-                  accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
+                  [accept]="allowedDocumentAccept"
                   multiple
                   (change)="onVerificationFilesSelected($event)"
                   class="hidden"
