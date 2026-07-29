@@ -1,0 +1,103 @@
+<div>
+  <div class="mb-10 pb-10 border-b border-gray-200" [formGroup]="form()">
+    <h2 class="text-xl font-bold text-gray-900 mb-6">Learning & Interests</h2>
+
+    <div class="mb-8">
+      <app-form-array-text-list
+        [formArray]="learningGoals()"
+        listId="learning-goal"
+        label="Learning Goals"
+        description="What do you want to achieve? (Add at least 1, max 5)"
+        addButtonLabel="Add Goal"
+        itemSingularLabel="goal"
+        [maxItems]="maxLearningGoals()"
+        [required]="true"
+        placeholder="e.g., Master TypeScript and Angular"
+        helperText="Type a goal and press Enter or click + to add another."
+      />
+    </div>
+
+    <div>
+      <label for="areasOfInterest" class="block text-sm font-semibold text-gray-700 mb-4">
+        Areas of Interest <span class="text-red-500">*</span>
+        <span class="text-gray-500 font-normal"> (Select at least one)</span>
+      </label>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        @for (area of areasOfInterestOptions(); track area) {
+          <label
+            class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
+            [class]="
+              isAreaSelected(area)
+                ? 'border-orange-500 bg-orange-50'
+                : 'border-gray-300 hover:border-orange-300'
+            "
+          >
+            <input
+              type="checkbox"
+              [checked]="isAreaSelected(area)"
+              (change)="toggleAreaOfInterest.emit(area)"
+              class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+            />
+            <span class="text-gray-700 font-medium">{{ area }}</span>
+          </label>
+        }
+      </div>
+
+      <app-form-field-error
+        [form]="form()"
+        controlName="areasOfInterest"
+        errorClass="text-red-600 text-sm mt-2"
+        [messages]="interestRequiredMessage"
+      />
+    </div>
+  </div>
+
+  <div class="pb-6 border-b border-gray-200">
+    <h2 class="text-xl font-bold text-gray-900 mb-6">Session Preferences</h2>
+
+    <div class="mb-8">
+      <label for="preferredSessionType" class="block text-sm font-semibold text-gray-700 mb-4">
+        Preferred Session Type <span class="text-red-500">*</span>
+      </label>
+      <p class="text-sm text-gray-600 mb-4">Select one or more</p>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <button
+          type="button"
+          (click)="toggleSessionType.emit(menteePreferredSessionType().Online)"
+          class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+          [class]="
+            isSessionTypeSelected(menteePreferredSessionType().Online)
+              ? 'border-orange-500 bg-orange-50'
+              : 'border-gray-300 hover:border-orange-300'
+          "
+        >
+          <div>
+            <span class="text-gray-900 font-medium block">Online</span>
+            <span class="text-gray-600 text-sm">Video/Voice calls</span>
+          </div>
+        </button>
+
+        <button
+          type="button"
+          (click)="toggleSessionType.emit(menteePreferredSessionType().InPerson)"
+          class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
+          [class]="
+            isSessionTypeSelected(menteePreferredSessionType().InPerson)
+              ? 'border-orange-500 bg-orange-50'
+              : 'border-gray-300 hover:border-orange-300'
+          "
+        >
+          <div>
+            <span class="text-gray-900 font-medium block">In-Person</span>
+            <span class="text-gray-600 text-sm">Face-to-face meetings</span>
+          </div>
+        </button>
+      </div>
+      @if (preferredSessionTypes().length === 0) {
+        <p class="text-sm text-red-600 mt-2">Please select at least one session type</p>
+      }
+    </div>
+  </div>
+</div>
