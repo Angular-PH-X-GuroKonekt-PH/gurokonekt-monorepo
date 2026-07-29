@@ -7,12 +7,18 @@ import { MenteeManagementService, MenteeListItem, MenteesQueryParams } from '../
 import { ViewMenteeProfileModalComponent } from '../modals/view-mentee-profile-modal/view-mentee-profile-modal';
 import { RejectMenteeModalComponent } from '../modals/reject-mentee-modal/reject-mentee-modal';
 import { DeactivationFeedbackModalComponent } from '../modals/deactivation-feedback-modal/deactivation-feedback-modal';
+import { SortableHeaderComponent } from '../../../../shared/components/sortable-header/sortable-header.component';
+
+type SortField = NonNullable<MenteesQueryParams['sortBy']>;
+
+const DEFAULT_SORT_FIELD: SortField = 'createdAt';
+const DEFAULT_SORT_ORDER = 'desc' as const;
 
 export type ComputedStatus = 'active' | 'not-verified' | 'deactivated' | 'rejected' | 'other';
 
 @Component({
   selector: 'app-mentee-table',
-  imports: [DatePipe, ViewMenteeProfileModalComponent, RejectMenteeModalComponent, DeactivationFeedbackModalComponent],
+  imports: [DatePipe, ViewMenteeProfileModalComponent, RejectMenteeModalComponent, DeactivationFeedbackModalComponent, SortableHeaderComponent],
   templateUrl: './mentee-table.html',
 })
 export class MenteeTableComponent implements OnInit {
@@ -32,6 +38,10 @@ export class MenteeTableComponent implements OnInit {
   protected statusFilter = signal<'active' | 'inactive' | 'all'>('all');
   protected dateFrom = signal('');
   protected dateTo = signal('');
+
+  // Sorting — null field means no explicit sort, so the default is used
+  protected sortBy = signal<SortField | null>(null);
+  protected sortOrder = signal<'asc' | 'desc'>(DEFAULT_SORT_ORDER);
   protected search = signal('');
 
   // Dropdown
@@ -56,8 +66,8 @@ export class MenteeTableComponent implements OnInit {
     this.isLoading.set(true);
     const params: MenteesQueryParams = {
       status: this.statusFilter(),
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
+      sortBy: this.sortBy() ?? DEFAULT_SORT_FIELD,
+      sortOrder: this.sortBy() ? this.sortOrder() : DEFAULT_SORT_ORDER,
       page: this.page(),
       limit: this.limit,
       ...(this.dateFrom() && { dateFrom: this.dateFrom() }),
@@ -104,6 +114,22 @@ export class MenteeTableComponent implements OnInit {
 
   protected clearSearch(): void {
     this.search.set('');
+    this.page.set(1);
+    this.loadMentees();
+  }
+
+  /** Cycles the clicked column: ascending -> descending -> cleared. */
+  protected onSort(field: string): void {
+    const next = field as SortField;
+    if (this.sortBy() !== next) {
+      this.sortBy.set(next);
+      this.sortOrder.set('asc');
+    } else if (this.sortOrder() === 'asc') {
+      this.sortOrder.set('desc');
+    } else {
+      this.sortBy.set(null);
+      this.sortOrder.set(DEFAULT_SORT_ORDER);
+    }
     this.page.set(1);
     this.loadMentees();
   }

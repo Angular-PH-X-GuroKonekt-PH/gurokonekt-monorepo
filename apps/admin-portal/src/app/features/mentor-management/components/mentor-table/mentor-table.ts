@@ -8,12 +8,22 @@ import {
 } from '../../services/mentor-management.service';
 import { ViewMentorProfileModalComponent } from '../modals/view-mentor-profile-modal/view-mentor-profile-modal';
 import { RejectMentorModalComponent } from '../modals/reject-mentor-modal/reject-mentor-modal';
+import { SortableHeaderComponent } from '../../../../shared/components/sortable-header/sortable-header.component';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'inactive';
+type SortField = NonNullable<MentorsQueryParams['sortBy']>;
+
+const DEFAULT_SORT_FIELD: SortField = 'createdAt';
+const DEFAULT_SORT_ORDER = 'desc' as const;
 
 @Component({
   selector: 'app-mentor-table',
-  imports: [DatePipe, ViewMentorProfileModalComponent, RejectMentorModalComponent],
+  imports: [
+    DatePipe,
+    ViewMentorProfileModalComponent,
+    RejectMentorModalComponent,
+    SortableHeaderComponent,
+  ],
   templateUrl: './mentor-table.html',
 })
 export class MentorTableComponent implements OnInit, OnDestroy {
@@ -34,6 +44,10 @@ export class MentorTableComponent implements OnInit, OnDestroy {
   protected search = signal('');
   protected dateFrom = signal('');
   protected dateTo = signal('');
+
+  // Sorting — null field means no explicit sort, so the default is used
+  protected sortBy = signal<SortField | null>(null);
+  protected sortOrder = signal<'asc' | 'desc'>(DEFAULT_SORT_ORDER);
 
   // Dropdown
   protected openDropdownId = signal<string | null>(null);
@@ -72,8 +86,8 @@ export class MentorTableComponent implements OnInit, OnDestroy {
     this.isLoading.set(true);
     const params: MentorsQueryParams = {
       status: this.statusFilter(),
-      sortBy: 'createdAt',
-      sortOrder: 'desc',
+      sortBy: this.sortBy() ?? DEFAULT_SORT_FIELD,
+      sortOrder: this.sortBy() ? this.sortOrder() : DEFAULT_SORT_ORDER,
       page: this.page(),
       limit: this.limit,
       ...(this.search() && { search: this.search() }),
@@ -112,6 +126,22 @@ export class MentorTableComponent implements OnInit, OnDestroy {
 
   protected onDateToChange(value: string): void {
     this.dateTo.set(value);
+    this.page.set(1);
+    this.loadMentors();
+  }
+
+  /** Cycles the clicked column: ascending -> descending -> cleared. */
+  protected onSort(field: string): void {
+    const next = field as SortField;
+    if (this.sortBy() !== next) {
+      this.sortBy.set(next);
+      this.sortOrder.set('asc');
+    } else if (this.sortOrder() === 'asc') {
+      this.sortOrder.set('desc');
+    } else {
+      this.sortBy.set(null);
+      this.sortOrder.set(DEFAULT_SORT_ORDER);
+    }
     this.page.set(1);
     this.loadMentors();
   }

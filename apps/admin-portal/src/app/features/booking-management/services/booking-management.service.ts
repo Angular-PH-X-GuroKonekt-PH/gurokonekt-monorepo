@@ -47,7 +47,7 @@ export interface BookingsQueryParams {
   dateFrom?: string;
   dateTo?: string;
   search?: string;
-  sortBy?: 'sessionDateTime' | 'createdAt';
+  sortBy?: 'sessionDateTime' | 'createdAt' | 'status' | 'mentee' | 'mentor';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;
