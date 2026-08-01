@@ -14,4 +14,6 @@ export class Footer {
 
   readonly joinUrl = this.appConfig.SIGN_IN_URL;
   readonly communityUrl = 'https://angular-ph.org';
+  readonly facebookUrl = 'https://www.facebook.com/profile.php?id=61592939991798';
+  readonly linkedInUrl = 'https://www.linkedin.com/company/gurokonekt/';
 }
