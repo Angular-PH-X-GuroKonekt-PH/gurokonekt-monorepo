@@ -19,9 +19,7 @@
     }
   </select>
   @if (hasFieldError('country')) {
-  <p class="mt-1 text-sm text-red-600">
-    {{ getFieldErrorMessage('country') }}
-  </p>
+  <app-form-field-error [form]="form()" controlName="country" />
   } @else {
   <p class="mt-1 text-xs text-gray-600">{{ countryHint() }}</p>
   }
@@ -43,9 +41,7 @@
     }
   </select>
   @if (hasFieldError('timezone')) {
-  <p class="mt-1 text-sm text-red-600">
-    {{ getFieldErrorMessage('timezone') }}
-  </p>
+  <app-form-field-error [form]="form()" controlName="timezone" />
   } @else {
   <p class="mt-1 text-xs text-gray-600">
     @if (form().get('country')?.value) {

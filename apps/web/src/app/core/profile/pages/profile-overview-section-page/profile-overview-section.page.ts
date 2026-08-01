@@ -1,18 +1,18 @@
-import { Component, computed, effect, inject, signal } from '@angular/core';
+import { Component, computed, inject } from '@angular/core';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
+import { catchError, concat, map, of, switchMap } from 'rxjs';
 
 import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
+import { UserRole } from '@gurokonekt/models/interfaces/user/user.model';
 import { ProfileService } from '../../profile.service';
-import { AuthState } from '../../../../core/auth/store/auth.state';
 import { AuthSelectors } from '../../../auth/store/auth.selectors';
-
-interface AvatarRecord {
-  publicUrl?: string;
-}
+import { APP_ROUTES } from '../../../../shared/constants/routes';
+import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
+import { IconComponent } from '../../../../shared/components/icon/icon.component';
 
 interface OverviewData {
-  firstName: string;
-  lastName: string;
   fullName: string;
   email: string;
   role: string;
@@ -20,39 +20,82 @@ interface OverviewData {
   avatarUrl: string;
 }
 
+interface ProfileLoadState {
+  loading: boolean;
+  error: string | null;
+  data: OverviewData | null;
+}
+
+const INITIAL_LOAD_STATE: ProfileLoadState = {
+  loading: false,
+  error: null,
+  data: null,
+};
+
 @Component({
   selector: 'app-profile-overview-section',
   standalone: true,
+  imports: [IconComponent],
   templateUrl: './profile-overview-section.page.html',
-  styles: [
-    `
-      :host {
-        display: block;
-      }
-    `,
-  ],
+  host: { class: 'block' },
 })
 export class ProfileOverviewSectionPage {
   private readonly store = inject(Store);
   private readonly profileService = inject(ProfileService);
+  private readonly router = inject(Router);
 
   private readonly user = this.store.selectSignal(AuthSelectors.user);
+  private readonly userId = computed(() => this.user()?.id ?? null);
 
-  protected readonly isLoading = signal(false);
-  protected readonly errorMessage = signal<string | null>(null);
-  protected readonly isEditMode = signal(false);
-  protected readonly profile = signal<OverviewData | null>(null);
+  private readonly profileLoad = toSignal(
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of(INITIAL_LOAD_STATE);
+        }
 
-  protected readonly initials = computed(() => {
-    const activeProfile = this.profile();
+        return concat(
+          of<ProfileLoadState>({ loading: true, error: null, data: null }),
+          this.profileService.getUserProfile(userId).pipe(
+            map((response): ProfileLoadState => ({
+              loading: false,
+              error: null,
+              data:
+                response.data && typeof response.data === 'object'
+                  ? this.toOverviewData(response.data as Record<string, unknown>)
+                  : null,
+            })),
+            catchError((error: { message?: string }) =>
+              of<ProfileLoadState>({
+                loading: false,
+                error: error.message ?? 'Unable to load profile overview right now.',
+                data: null,
+              })
+            )
+          )
+        );
+      })
+    ),
+    { initialValue: INITIAL_LOAD_STATE }
+  );
 
-    if (!activeProfile) {
-      return 'M';
+  protected readonly isLoading = computed(() => this.profileLoad().loading);
+  protected readonly errorMessage = computed(() => this.profileLoad().error);
+
+  protected readonly profile = computed(() => {
+    const fetched = this.profileLoad().data;
+    if (fetched) {
+      return fetched;
     }
 
-    const fullName = activeProfile.fullName.trim();
+    const activeUser = this.user();
+    return activeUser ? this.toOverviewData(activeUser) : null;
+  });
+
+  protected readonly initials = computed(() => {
+    const fullName = this.profile()?.fullName.trim();
     if (!fullName) {
-      return 'M';
+      return '?';
     }
 
     return fullName
@@ -65,86 +108,56 @@ export class ProfileOverviewSectionPage {
 
   protected readonly statusLabel = computed(() => this.mapStatusLabel(this.profile()?.status));
   protected readonly accountTypeLabel = computed(() => this.mapRoleLabel(this.profile()?.role));
+  protected readonly isMentor = computed(
+    () => (this.profile()?.role ?? '').toLowerCase() === UserRole.Mentor
+  );
+  protected readonly overviewDescription = computed(() =>
+    this.isMentor()
+      ? 'Review your mentor profile basics and account identity details.'
+      : 'Review your mentee profile basics and account identity details.'
+  );
 
-  constructor() {
-    effect(() => {
-      const activeUser = this.user();
-      if (!activeUser) {
-        this.profile.set(null);
-        return;
-      }
-
-      this.profile.set(this.toOverviewData(activeUser));
-
-      const userId = activeUser.id;
-      if (userId) {
-        this.fetchUserProfile(userId);
-      }
-    });
-  }
-
-  protected toggleEditMode(): void {
-    this.isEditMode.update((value) => !value);
-  }
-
-  private fetchUserProfile(userId: string): void {
-    this.isLoading.set(true);
-    this.errorMessage.set(null);
-
-    this.profileService.getUserProfile(userId).subscribe({
-      next: (response) => {
-        if (response.data && typeof response.data === 'object') {
-          this.profile.set(this.toOverviewData(response.data as Record<string, unknown>));
-        }
-        this.isLoading.set(false);
-      },
-      error: (error: { message?: string }) => {
-        this.errorMessage.set(error.message ?? 'Unable to load profile overview right now.');
-        this.isLoading.set(false);
-      },
-    });
+  protected onEdit(): void {
+    void this.router.navigate([`/${APP_ROUTES.SETTINGS_EDIT}`]);
   }
 
   private toOverviewData(source: AuthUser | Record<string, unknown>): OverviewData {
     const s = source as Record<string, unknown>;
-    const firstName = this.getString(s['firstName']);
-    const lastName = this.getString(s['lastName']);
-    const fallbackFullName = this.getString(s['fullName']);
-    const fullName = `${firstName} ${lastName}`.trim() || fallbackFullName || 'Mentor';
-
-    const avatarRecord = this.getAvatarRecord(s['avatarAttachments']);
+    const firstName = this.asString(s['firstName']);
+    const lastName = this.asString(s['lastName']);
+    const fallbackFullName = this.asString(s['fullName']);
+    const fullName = `${firstName} ${lastName}`.trim() || fallbackFullName || 'User';
+    const authUser = this.user();
 
     return {
-      firstName,
-      lastName,
       fullName,
-      email: this.getString(s['email']),
-      role: this.getString(s['role']) || 'mentor',
-      status: this.getString(s['status']) || 'pending_approval',
-      avatarUrl: this.getString(avatarRecord?.publicUrl),
+      email: this.asString(s['email']) || this.asString(authUser?.email),
+      role: this.asString(s['role']) || this.asString(authUser?.role) || UserRole.Mentee,
+      status: this.asString(s['status']) || 'active',
+      avatarUrl: resolveAvatarPublicUrl(
+        s as {
+          avatarAttachments?:
+            | { publicUrl?: string | null }
+            | { publicUrl?: string | null }[]
+            | null;
+        },
+        ''
+      ),
     };
   }
 
-  private getAvatarRecord(value: unknown): AvatarRecord | null {
-    if (!value || typeof value !== 'object') {
-      return null;
-    }
-
-    return value as AvatarRecord;
-  }
-
-  private getString(value: unknown): string {
+  private asString(value: unknown): string {
     return typeof value === 'string' ? value : '';
   }
 
   private mapRoleLabel(role?: string): string {
     const normalizedRole = (role ?? '').toLowerCase().trim();
 
-    if (normalizedRole === 'mentor') {
+    if (normalizedRole === UserRole.Mentor) {
       return 'Mentor';
     }
 
-    if (normalizedRole === 'mentee') {
+    if (normalizedRole === UserRole.Mentee) {
       return 'Mentee';
     }
 
@@ -152,7 +165,7 @@ export class ProfileOverviewSectionPage {
       return 'Admin';
     }
 
-    return 'Mentor';
+    return 'Mentee';
   }
 
   private mapStatusLabel(status?: string): string {

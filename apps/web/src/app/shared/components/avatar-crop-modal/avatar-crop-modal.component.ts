@@ -1,4 +1,13 @@
-import { Component, input, output, signal } from '@angular/core';
+import {
+  Component,
+  ElementRef,
+  OnDestroy,
+  OnInit,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import {
   ImageCroppedEvent,
   ImageCropperComponent,
@@ -15,9 +24,15 @@ export interface AvatarCropResult {
   standalone: true,
   imports: [ImageCropperComponent, IconComponent],
   templateUrl: './avatar-crop-modal.component.html',
-  host: { class: 'contents' },
+  host: {
+    class:
+      'fixed inset-0 z-[100] flex items-center justify-center bg-black/50 px-4',
+    role: 'presentation',
+  },
 })
-export class AvatarCropModalComponent {
+export class AvatarCropModalComponent implements OnInit, OnDestroy {
+  private readonly host = inject(ElementRef<HTMLElement>);
+
   readonly imageChangedEvent = input<Event | null>(null);
   readonly imageFile = input<File | null>(null);
   readonly originalFileName = input('avatar.png');
@@ -28,6 +43,18 @@ export class AvatarCropModalComponent {
   private readonly latestCrop = signal<ImageCroppedEvent | null>(null);
   protected readonly isApplying = signal(false);
   protected readonly cropError = signal<string | null>(null);
+
+  ngOnInit(): void {
+    // Attach to body so viewport-fixed overlay is not trapped by parent
+    // transform/filter/backdrop-filter (e.g. settings content panel).
+    document.body.appendChild(this.host.nativeElement);
+    document.body.classList.add('overflow-hidden');
+  }
+
+  ngOnDestroy(): void {
+    document.body.classList.remove('overflow-hidden');
+    this.host.nativeElement.remove();
+  }
 
   protected onImageCropped(event: ImageCroppedEvent): void {
     this.latestCrop.set(event);
