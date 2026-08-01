@@ -1,0 +1,123 @@
+<div class="mb-10 pb-10 border-b border-gray-200" [formGroup]="form()">
+  <h2 class="text-xl font-bold text-gray-900 mb-6">Personal Information</h2>
+
+  <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div class="md:col-span-2">
+      <label for="bio" class="block text-sm font-semibold text-gray-700 mb-2">
+        Short Bio
+        <span class="text-red-500">*</span>
+      </label>
+      <textarea
+        id="bio"
+        formControlName="bio"
+        placeholder="Tell us about yourself (50-500 characters)"
+        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors resize-none"
+        rows="4"
+      ></textarea>
+      <app-form-field-error [form]="form()" controlName="bio" />
+    </div>
+
+    <div>
+      <label for="phoneNumber" class="block text-sm font-semibold text-gray-700 mb-2">
+        Phone Number <span class="text-red-500">*</span>
+      </label>
+      <input
+        type="tel"
+        id="phoneNumber"
+        formControlName="phoneNumber"
+        placeholder="e.g., +639171234567"
+        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+      />
+      <app-form-field-error [form]="form()" controlName="phoneNumber" />
+    </div>
+
+    <div>
+      <label for="country" class="block text-sm font-semibold text-gray-700 mb-2">
+        Country <span class="text-red-500">*</span>
+      </label>
+      <select
+        id="country"
+        formControlName="country"
+        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+      >
+        <option value="">Select a country</option>
+        @for (country of countryOptions(); track country.value) {
+          <option [value]="country.value">{{ country.label }}</option>
+        }
+      </select>
+      <app-form-field-error [form]="form()" controlName="country" />
+    </div>
+
+    <div>
+      <label for="timezone" class="block text-sm font-semibold text-gray-700 mb-2">
+        Timezone <span class="text-red-500">*</span>
+      </label>
+      <select
+        id="timezone"
+        formControlName="timezone"
+        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+      >
+        <option value="">Select a timezone</option>
+        @for (tz of timezoneOptions(); track tz.value) {
+          <option [value]="tz.value">{{ tz.label }}</option>
+        }
+      </select>
+      <app-form-field-error [form]="form()" controlName="timezone" />
+    </div>
+
+    <div>
+      <label for="language" class="block text-sm font-semibold text-gray-700 mb-2">
+        Preferred Language
+      </label>
+      <select
+        id="language"
+        formControlName="language"
+        class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+      >
+        <option value="">Select a language</option>
+        @for (lang of languageOptions(); track lang.value) {
+          <option [value]="lang.value">{{ lang.label }}</option>
+        }
+      </select>
+    </div>
+  </div>
+
+  @if (isMentor()) {
+    <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div>
+        <label for="yearsOfExperience" class="block text-sm font-semibold text-gray-700 mb-2">
+          Years of Experience <span class="text-red-500">*</span>
+        </label>
+        <input
+          type="number"
+          id="yearsOfExperience"
+          formControlName="yearsOfExperience"
+          min="1"
+          max="60"
+          placeholder="e.g., 5"
+          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+        />
+        <app-form-field-error
+          [form]="form()"
+          controlName="yearsOfExperience"
+          [messages]="yearsOfExperienceMessages"
+        />
+      </div>
+
+      <div class="md:col-span-2">
+        <label for="linkedInUrl" class="block text-sm font-semibold text-gray-700 mb-2">
+          LinkedIn Profile
+        </label>
+        <input
+          type="url"
+          id="linkedInUrl"
+          formControlName="linkedInUrl"
+          placeholder="https://linkedin.com/in/your-profile"
+          class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
+          [class.border-red-500]="fieldHasError('linkedInUrl')"
+        />
+        <app-form-field-error [form]="form()" controlName="linkedInUrl" />
+      </div>
+    </div>
+  }
+</div>

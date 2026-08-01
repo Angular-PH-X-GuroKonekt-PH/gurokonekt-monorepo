@@ -1,593 +1,88 @@
-<section class="min-h-screen bg-linear-to-r from-blue-50 via-orange-50 to-blue-50 py-8 sm:py-12">
-  <div class="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
-    <!-- Header Section -->
-    <div class="mb-8">
-      <a href="/dashboard" class="inline-flex items-center gap-2 text-blue-600 hover:text-blue-700 mb-6">
-        <app-icon name="chevron-left" class="w-5 h-5"></app-icon>
-        <span>Back to Dashboard</span>
+<section class="min-h-screen bg-linear-to-br from-blue-50 via-orange-50/80 to-slate-50 py-8 sm:py-12">
+  <div class="mx-auto max-w-6xl px-4 sm:px-6 lg:px-8">
+    <header class="mb-8">
+      <a
+        [routerLink]="dashboardRoute"
+        class="mb-6 inline-flex items-center gap-1.5 text-sm font-medium text-blue-700 transition-colors hover:text-blue-900"
+      >
+        <app-icon name="chevron-left" class="h-4 w-4"></app-icon>
+        Back to Dashboard
       </a>
-      <h1 class="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent">
-        Profile Settings
-      </h1>
-      <p class="mt-3 text-base text-gray-700">
-        Update your profile details and picture
-      </p>
-    </div>
 
-    <!-- Loading State -->
-    @if (isLoading()) {
-      <div class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-8 sm:p-12 flex items-center justify-center min-h-96">
-        <div class="flex flex-col items-center gap-4">
-          <div class="animate-spin rounded-full h-12 w-12 border-b-2 border-orange-500"></div>
-          <p class="text-gray-600">Loading your profile...</p>
+      <div class="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 class="text-3xl font-bold tracking-tight text-slate-900 sm:text-4xl">
+            Profile Settings
+          </h1>
+          <p class="mt-2 max-w-xl text-base text-slate-600">
+            Review your account identity and update your profile details.
+          </p>
         </div>
       </div>
-    }
+    </header>
 
-    <!-- Profile Form Card -->
-    @if (!isLoading()) {
-      <div class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-8 sm:p-12">
-        <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
-          
-          <!-- Avatar Section -->
-          <div class="mb-10 pb-10 border-b border-gray-200">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">Profile Picture</h2>
-            
-            <div class="flex flex-col items-center gap-5">
-              <!-- Current Avatar or Preview -->
-              <div class="relative">
-                @if (avatarPreview()) {
-                  <img 
-                    [src]="avatarPreview()" 
-                    alt="Profile preview" 
-                    class="w-40 h-40 rounded-full object-cover border-4 border-orange-500"
-                  />
-                  <button
-                    type="button"
-                    (click)="removeAvatarPreview(avatarInput)"
-                    class="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
-                    title="Remove image preview"
-                    aria-label="Remove image preview"
-                  >
-                    <app-icon name="close" class="w-3.5 h-3.5"></app-icon>
-                  </button>
-                } @else if (currentAvatarUrl()) {
-                  <img 
-                    [src]="currentAvatarUrl()" 
-                    alt="Current profile picture" 
-                    class="w-40 h-40 rounded-full object-cover border-4 border-gray-300"
-                  />
-                  <button
-                    type="button"
-                    (click)="removeCurrentAvatar(avatarInput)"
-                    class="absolute top-1 right-1 flex h-7 w-7 items-center justify-center rounded-full border border-gray-200 bg-white text-gray-500 shadow-sm transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600 focus:outline-none focus:ring-2 focus:ring-red-200"
-                    title="Remove current picture"
-                    aria-label="Remove current picture"
-                  >
-                    <app-icon name="close" class="w-3.5 h-3.5"></app-icon>
-                  </button>
-                } @else {
-                  <div class="w-40 h-40 rounded-full bg-gray-200 flex items-center justify-center border-4 border-gray-300">
-                    <app-icon name="user" class="w-16 h-16 text-gray-400"></app-icon>
-                  </div>
-                }
-              </div>
-
-              <!-- File Input -->
-              <div class="flex flex-col items-center gap-2">
-                <label class="inline-flex items-center gap-1.5 px-3.5 py-2 text-sm bg-orange-500 text-white rounded-full hover:bg-orange-600 transition-colors cursor-pointer font-medium">
-                  <app-icon name="pencil" class="w-3.5 h-3.5"></app-icon>
-                  <span>Upload Picture</span>
-                  <input 
-                    #avatarInput
-                    type="file" 
-                    accept=".jpg,.jpeg,.png"
-                    (change)="onAvatarSelected($event)"
-                    class="hidden"
-                  />
-                </label>
-                <p class="text-xs text-gray-500 text-center">
-                  JPG, JPEG, or PNG • Max 5MB
-                </p>
-              </div>
-
-              <!-- Avatar Error -->
-              @if (avatarError()) {
-                <div class="flex items-center gap-2 p-4 bg-red-50 border border-red-200 rounded-lg text-red-700">
-                  <app-icon name="alert-warning" class="w-5 h-5 shrink-0"></app-icon>
-                  <span>{{ avatarError() }}</span>
-                </div>
-              }
-            </div>
-          </div>
-
-          @if (isAvatarCropOpen()) {
-            <app-avatar-crop-modal
-              [imageChangedEvent]="avatarCropEvent()"
-              [imageFile]="avatarCropSourceFile()"
-              [originalFileName]="avatarCropSourceFile()?.name || 'avatar.png'"
-              (cropped)="onAvatarCropped($event)"
-              (cancelled)="onAvatarCropCancelled()"
-            />
-          }
-
-          <!-- Personal Information Section -->
-          <div class="mb-10 pb-10 border-b border-gray-200">
-            <h2 class="text-xl font-bold text-gray-900 mb-6">Personal Information</h2>
-            
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <!-- Bio -->
-              <div class="md:col-span-2">
-                <label for="bio" class="block text-sm font-semibold text-gray-700 mb-2">
-                  Short Bio
-                  <span class="text-red-500">*</span>
-                </label>
-                <textarea id="bio"
-                  formControlName="bio"
-                  placeholder="Tell us about yourself (50-500 characters)"
-                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors resize-none"
-                  rows="4"
-                ></textarea>
-                @if (profileForm.get('bio')?.invalid && profileForm.get('bio')?.touched) {
-                  <p class="text-red-600 text-sm mt-1">
-                    @if (profileForm.get('bio')?.errors?.['required']) {
-                      Bio is required
-                    } @else if (profileForm.get('bio')?.errors?.['minlength']) {
-                      Bio must be at least 50 characters
-                    } @else if (profileForm.get('bio')?.errors?.['maxlength']) {
-                      Bio cannot exceed 500 characters
-                    }
-                  </p>
-                }
-              </div>
-
-              <!-- Phone Number -->
-              <div>
-                <label for="phoneNumber" class="block text-sm font-semibold text-gray-700 mb-2">
-                  Phone Number <span class="text-red-500">*</span>
-                </label>
-                <input
-                  type="tel"
-                  id="phoneNumber"
-                  formControlName="phoneNumber"
-                  placeholder="e.g., +639171234567"
-                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                />
-                @if (profileForm.get('phoneNumber')?.invalid && profileForm.get('phoneNumber')?.touched) {
-                  <p class="text-red-600 text-sm mt-1">
-                    @if (profileForm.get('phoneNumber')?.errors?.['required']) {
-                      Phone number is required
-                    } @else {
-                      {{ phoneErrorMessage }}
-                    }
-                  </p>
-                }
-              </div>
-
-              <!-- Country -->
-              <div>
-                <label for="country" class="block text-sm font-semibold text-gray-700 mb-2">
-                  Country <span class="text-red-500">*</span>
-                </label>
-                <select
-                  id="country"
-                  formControlName="country"
-                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                >
-                  <option value="">Select a country</option>
-                  @for (country of countryOptions; track country.value) {
-                    <option [value]="country.value">{{ country.label }}</option>
-                  }
-                </select>
-                @if (profileForm.get('country')?.invalid && profileForm.get('country')?.touched) {
-                  <p class="text-red-600 text-sm mt-1">Country is required</p>
-                }
-              </div>
-
-              <!-- Timezone -->
-              <div>
-                <label for="timezone" class="block text-sm font-semibold text-gray-700 mb-2">
-                  Timezone <span class="text-red-500">*</span>
-                </label>
-                <select
-                  id="timezone"
-                  formControlName="timezone"
-                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                >
-                  <option value="">Select a timezone</option>
-                  @for (tz of timezoneOptions; track tz.value) {
-                    <option [value]="tz.value">{{ tz.label }}</option>
-                  }
-                </select>
-                @if (profileForm.get('timezone')?.invalid && profileForm.get('timezone')?.touched) {
-                  <p class="text-red-600 text-sm mt-1">Timezone is required</p>
-                }
-              </div>
-
-              <!-- Preferred Language (optional, same as registration) -->
-              <div>
-                <label for="language" class="block text-sm font-semibold text-gray-700 mb-2">
-                  Preferred Language
-                </label>
-                <select
-                  id="language"
-                  formControlName="language"
-                  class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                >
-                  <option value="">Select a language</option>
-                  @for (lang of languageOptions; track lang.value) {
-                    <option [value]="lang.value">{{ lang.label }}</option>
-                  }
-                </select>
-              </div>
-            </div>
-
-            @if (isMentor()) {
-              <div class="mt-6 grid grid-cols-1 md:grid-cols-3 gap-6">
-                <div>
-                  <label for="yearsOfExperience" class="block text-sm font-semibold text-gray-700 mb-2">
-                    Years of Experience <span class="text-red-500">*</span>
-                  </label>
-                  <input
-                    type="number"
-                    id="yearsOfExperience"
-                    formControlName="yearsOfExperience"
-                    min="1"
-                    max="60"
-                    placeholder="e.g., 5"
-                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                  />
-                  @if (profileForm.get('yearsOfExperience')?.invalid && profileForm.get('yearsOfExperience')?.touched) {
-                    <p class="text-red-600 text-sm mt-1">
-                      @if (profileForm.get('yearsOfExperience')?.errors?.['required']) {
-                        Years of experience is required
-                      } @else {
-                        Years of experience must be between 1 and 60
-                      }
-                    </p>
-                  }
-                </div>
-
-                <div class="md:col-span-2">
-                  <label for="linkedInUrl" class="block text-sm font-semibold text-gray-700 mb-2">
-                    LinkedIn Profile
-                  </label>
-                  <input
-                    type="url"
-                    id="linkedInUrl"
-                    formControlName="linkedInUrl"
-                    placeholder="https://linkedin.com/in/your-profile"
-                    class="w-full px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                    [class.border-red-500]="profileForm.get('linkedInUrl')?.invalid && profileForm.get('linkedInUrl')?.touched"
-                  />
-                  @if (profileForm.get('linkedInUrl')?.invalid && profileForm.get('linkedInUrl')?.touched) {
-                    <p class="text-red-600 text-sm mt-1">{{ linkedInUrlErrorMessage }}</p>
-                  }
-                </div>
-              </div>
-            }
-          </div>
-
-          @if (isMentor()) {
-            <!-- Expertise Section -->
-            <div class="mb-10 pb-10 border-b border-gray-200">
-              <h2 class="text-xl font-bold text-gray-900 mb-6">Expertise</h2>
-
-              <div class="mb-8">
-                <label for="areasOfExpertise" class="block text-sm font-semibold text-gray-700 mb-4">
-                  Areas of Expertise <span class="text-red-500">*</span>
-                  <span class="text-gray-500 font-normal"> (Select at least one)</span>
-                </label>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  @for (area of expertiseOptions; track area) {
-                    <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
-                      [class]="isExpertiseSelected(area) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                      <input
-                        type="checkbox"
-                        [checked]="isExpertiseSelected(area)"
-                        (change)="toggleAreaOfExpertise(area)"
-                        class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
-                      />
-                      <span class="text-gray-700 font-medium">{{ area }}</span>
-                    </label>
-                  }
-                </div>
-
-                @if (profileForm.get('areasOfExpertise')?.invalid && profileForm.get('areasOfExpertise')?.touched) {
-                  <p class="text-red-600 text-sm mt-2">Please select at least one area of expertise</p>
-                }
-              </div>
-
-              <app-form-array-text-list
-                [formArray]="skills"
-                listId="additional-skill"
-                label="Additional Skills"
-                description="Add specific skills you can mentor (Max 8)"
-                addButtonLabel="Add Skill"
-                itemSingularLabel="skill"
-                [maxItems]="maxSkills"
-                [required]="false"
-                placeholder="E.g., CV review, React architecture, interview coaching"
-                helperText="Type a skill and press Enter or click + to add another."
-              />
-            </div>
-
-            <!-- Verification Documents -->
-            <div class="mb-10 pb-10 border-b border-gray-200">
-              <h2 class="text-xl font-bold text-gray-900 mb-2">Verification Documents</h2>
-              <p class="text-sm text-gray-600 mb-6">
-                Upload supporting documents to verify your expertise (PDF, PNG, or JPEG • max 5MB each • up to {{ maxVerificationFiles }} files)
-              </p>
-
-              <div
-                class="flex flex-col items-center justify-center w-full rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 transition-colors hover:bg-gray-100 cursor-pointer"
-                (click)="verificationFileInput.click()"
-                (keyup.enter)="verificationFileInput.click()"
-                (keyup.space)="verificationFileInput.click()"
-                tabindex="0"
-                role="button"
-                aria-label="Upload verification documents"
-              >
-                <app-icon name="verified-badge" class="w-10 h-10 text-gray-400 mb-3"></app-icon>
-                <p class="text-sm text-gray-600 mb-4">Click to browse or add documents</p>
-                <button
-                  type="button"
-                  class="inline-flex items-center gap-2 px-5 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors"
-                  (click)="verificationFileInput.click(); $event.stopPropagation()"
-                >
-                  Browse files
-                </button>
-                <input
-                  #verificationFileInput
-                  type="file"
-                  accept=".pdf,.png,.jpg,.jpeg,application/pdf,image/png,image/jpeg"
-                  multiple
-                  (change)="onVerificationFilesSelected($event)"
-                  class="hidden"
-                />
-              </div>
-
-              @if (verificationFileError()) {
-                <div class="mt-3 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm">
-                  <app-icon name="alert-warning" class="w-4 h-4 shrink-0"></app-icon>
-                  <span>{{ verificationFileError() }}</span>
-                </div>
-              }
-
-              @if (selectedVerificationFiles().length > 0) {
-                <ul class="mt-4 space-y-2">
-                  @for (file of selectedVerificationFiles(); track file.name + '-' + $index) {
-                    <li class="flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-gray-700">
-                      <div class="flex min-w-0 items-center gap-2">
-                        <app-icon name="check-mark" class="w-4 h-4 shrink-0 text-green-600"></app-icon>
-                        <span class="truncate font-medium">{{ file.name }}</span>
-                        <span class="shrink-0 text-xs text-green-700">({{ formatFileSizeMb(file.size) }} MB)</span>
-                      </div>
-                      <button
-                        type="button"
-                        (click)="removeVerificationFile($index)"
-                        class="shrink-0 text-red-500 hover:text-red-700 transition-colors"
-                        [attr.aria-label]="'Remove ' + file.name"
-                      >
-                        <app-icon name="close" class="w-4 h-4"></app-icon>
-                      </button>
-                    </li>
-                  }
-                </ul>
-              }
-            </div>
-
-            <!-- Availability Schedule (view-only) -->
-            <div class="mb-10 pb-10 border-b border-gray-200">
-              <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                <div>
-                  <h2 class="text-xl font-bold text-gray-900">Availability</h2>
-                  <p class="mt-1 text-sm text-gray-600">
-                    Your weekly availability for mentee bookings
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  (click)="goToManageAvailability()"
-                  class="inline-flex items-center justify-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
-                >
-                  <app-icon name="pencil-square" class="h-4 w-4"></app-icon>
-                  Edit Availability
-                </button>
-              </div>
-
-              <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
-                <div class="overflow-x-auto">
-                  <table class="w-full min-w-[420px] table-fixed text-left">
-                    <colgroup>
-                      <col class="w-[28%]" />
-                      <col class="w-[72%]" />
-                    </colgroup>
-                    <thead>
-                      <tr class="border-b border-gray-200 bg-gray-50">
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Day
-                        </th>
-                        <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
-                          Time slots
-                        </th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      @for (daySchedule of availabilitySchedule(); track daySchedule.day) {
-                        @let isAvailable = daySchedule.enabled && daySchedule.timeFrames.length > 0;
-                        <tr class="border-b border-gray-100 last:border-b-0">
-                          <td
-                            class="px-5 py-3.5 align-middle text-sm capitalize"
-                            [class]="isAvailable ? 'font-medium text-gray-900' : 'font-medium text-gray-400'"
-                          >
-                            {{ daySchedule.day }}
-                          </td>
-                          <td class="px-5 py-3.5 align-middle">
-                            @if (isAvailable) {
-                              <div class="flex flex-wrap items-center gap-2">
-                                @for (timeFrame of daySchedule.timeFrames; track $index) {
-                                  <span
-                                    class="inline-flex items-center rounded-md bg-orange-50 px-2.5 py-1 text-sm font-medium tabular-nums text-orange-700 ring-1 ring-inset ring-orange-200"
-                                  >
-                                    {{ formatAvailabilityTimeRange(timeFrame) }}
-                                  </span>
-                                }
-                              </div>
-                            } @else {
-                              <span class="text-sm font-normal text-gray-400">Unavailable</span>
-                            }
-                          </td>
-                        </tr>
-                      }
-                    </tbody>
-                  </table>
-                </div>
-              </div>
-            </div>
-          } @else {
-            <!-- Learning & Interests Section -->
-            <div class="mb-10 pb-10 border-b border-gray-200">
-              <h2 class="text-xl font-bold text-gray-900 mb-6">Learning & Interests</h2>
-
-              <!-- Learning Goals -->
-              <div class="mb-8">
-                <div class="flex items-center justify-between mb-4">
-                  <label for="learningGoals" class="block text-sm font-semibold text-gray-700">
-                    Learning Goals 
-                    <span class="text-gray-500 font-normal"> (Max 5)</span>
-                  </label>
-                  <button
-                    type="button"
-                    (click)="addLearningGoal()"
-                    [disabled]="learningGoals.length >= 5"
-                    class="inline-flex items-center gap-1 px-3 py-1 text-sm font-medium text-orange-600 hover:text-orange-700 disabled:text-gray-400 transition-colors"
-                  >
-                    <app-icon name="plus" class="w-4 h-4"></app-icon>
-                    Add Goal
-                  </button>
-                </div>
-
-                <div class="space-y-3">
-                  @for (goal of learningGoals.value; track $index) {
-                    <div class="flex gap-2">
-                      <input
-                        [value]="goal"
-                        (change)="learningGoals.at($index).setValue($any($event.target).value || '')"
-                        type="text"
-                        placeholder="e.g., Master TypeScript and Angular"
-                        maxlength="500"
-                        class="flex-1 px-4 py-3 border-2 border-gray-300 rounded-lg focus:outline-none focus:border-orange-500 focus:ring-2 focus:ring-orange-200 transition-colors"
-                      />
-                      <button
-                        type="button"
-                        (click)="removeLearningGoal($index)"
-                        class="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors"
-                        title="Remove learning goal"
-                      >
-                        <app-icon name="trash" class="w-5 h-5"></app-icon>
-                      </button>
-                    </div>
-                    @if (learningGoals.at($index).getError('maxlength')) {
-                      <p class="text-red-600 text-sm">Each goal cannot exceed 500 characters</p>
-                    }
-                  }
-                </div>
-              </div>
-
-              <!-- Areas of Interest -->
-              <div>
-                <label for="areasOfInterest" class="block text-sm font-semibold text-gray-700 mb-4">
-                  Areas of Interest <span class="text-red-500">*</span>
-                  <span class="text-gray-500 font-normal"> (Select at least one)</span>
-                </label>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                  @for (area of areasOfInterestOptions; track area) {
-                    <label class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
-                      [class]="isAreaSelected(area) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                      <input
-                        type="checkbox"
-                        [checked]="isAreaSelected(area)"
-                        (change)="toggleAreaOfInterest(area)"
-                        class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
-                      />
-                      <span class="text-gray-700 font-medium">{{ area }}</span>
-                    </label>
-                  }
-                </div>
-
-                @if (profileForm.get('areasOfInterest')?.invalid && profileForm.get('areasOfInterest')?.touched) {
-                  <p class="text-red-600 text-sm mt-2">Please select at least one area of interest</p>
-                }
-              </div>
-            </div>
-
-            <!-- Session Preferences Section -->
-            <div class="mb-10 pb-10 border-b border-gray-200">
-              <h2 class="text-xl font-bold text-gray-900 mb-6">Session Preferences</h2>
-
-              <div class="mb-8">
-                <label for="preferredSessionType" class="block text-sm font-semibold text-gray-700 mb-4">
-                  Preferred Session Type <span class="text-red-500">*</span>
-                </label>
-                <p class="text-sm text-gray-600 mb-4">Select one or more</p>
-
-                <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <button
-                    type="button"
-                    (click)="toggleSessionType(MenteePreferredSessionType.Online)"
-                    class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
-                    [class]="isSessionTypeSelected(MenteePreferredSessionType.Online) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                    <div>
-                      <span class="text-gray-900 font-medium block">Online</span>
-                      <span class="text-gray-600 text-sm">Video/Voice calls</span>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    (click)="toggleSessionType(MenteePreferredSessionType.InPerson)"
-                    class="flex items-center gap-3 p-4 border-2 rounded-lg cursor-pointer transition-all text-left"
-                    [class]="isSessionTypeSelected(MenteePreferredSessionType.InPerson) ? 'border-orange-500 bg-orange-50' : 'border-gray-300 hover:border-orange-300'">
-                    <div>
-                      <span class="text-gray-900 font-medium block">In-Person</span>
-                      <span class="text-gray-600 text-sm">Face-to-face meetings</span>
-                    </div>
-                  </button>
-                </div>
-                @if (preferredSessionTypes.length === 0) {
-                  <p class="text-sm text-red-600 mt-2">Please select at least one session type</p>
-                }
-              </div>
-            </div>
-          }
-
-          <!-- Form Actions -->
-          <div class="flex gap-4 pt-6">
-            <button
-              type="submit"
-              [disabled]="isSubmitting()"
-              class="flex-1 px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
-            >
-              @if (isSubmitting()) {
-                <div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
-                <span>Updating...</span>
-              } @else {
-                <app-icon name="check-mark" class="w-5 h-5"></app-icon>
-                <span>Update Profile</span>
-              }
-            </button>
+    <div class="grid gap-6 lg:grid-cols-[280px_1fr] lg:items-start">
+      <aside
+        class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:sticky lg:top-6"
+      >
+        <nav class="flex flex-col gap-1.5 p-3" aria-label="Profile settings sections">
+          @for (section of sections; track section.route) {
             <a
-              href="/dashboard"
-              class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors flex items-center justify-center"
+              [routerLink]="section.route"
+              routerLinkActive
+              #sectionNav="routerLinkActive"
+              [attr.aria-current]="sectionNav.isActive ? 'page' : null"
+              class="group relative flex items-center gap-3.5 overflow-hidden rounded-xl px-3.5 py-3.5 text-base transition-colors duration-150"
+              [class.bg-orange-50]="sectionNav.isActive"
+              [class.text-orange-800]="sectionNav.isActive"
+              [class.text-slate-600]="!sectionNav.isActive"
+              [class.hover:bg-slate-50]="!sectionNav.isActive"
+              [class.hover:text-slate-900]="!sectionNav.isActive"
             >
-              Cancel
+              <span
+                class="absolute inset-y-2.5 left-0 w-1 rounded-full transition-opacity duration-150"
+                [class.bg-orange-500]="sectionNav.isActive"
+                [class.opacity-100]="sectionNav.isActive"
+                [class.opacity-0]="!sectionNav.isActive"
+                aria-hidden="true"
+              ></span>
+
+              <span
+                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-150"
+                [class.bg-orange-100]="sectionNav.isActive"
+                [class.text-orange-600]="sectionNav.isActive"
+                [class.bg-slate-100]="!sectionNav.isActive"
+                [class.text-slate-500]="!sectionNav.isActive"
+                [class.group-hover:bg-slate-200/70]="!sectionNav.isActive"
+                [class.group-hover:text-slate-700]="!sectionNav.isActive"
+              >
+                <app-icon [name]="section.icon" class="h-5 w-5"></app-icon>
+              </span>
+
+              <span class="min-w-0 flex flex-col gap-0.5">
+                <span
+                  class="truncate font-semibold leading-tight"
+                  [class.text-orange-800]="sectionNav.isActive"
+                  [class.text-slate-800]="!sectionNav.isActive"
+                >
+                  {{ section.label }}
+                </span>
+                <span
+                  class="truncate text-sm font-normal leading-tight"
+                  [class.text-orange-600/75]="sectionNav.isActive"
+                  [class.text-slate-400]="!sectionNav.isActive"
+                >
+                  {{ section.description }}
+                </span>
+              </span>
             </a>
-          </div>
-        </form>
+          }
+        </nav>
+      </aside>
+
+      <div class="min-h-96 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7 lg:p-8">
+        <router-outlet></router-outlet>
       </div>
-    }
+    </div>
   </div>
 </section>

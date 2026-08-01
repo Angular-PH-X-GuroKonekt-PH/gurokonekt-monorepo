@@ -18,6 +18,7 @@ export const APP_ROUTES = {
   BOOKING_OVERVIEW: 'booking-overview',
   SETTINGS: 'settings',
   SETTINGS_OVERVIEW: 'settings/overview',
+  SETTINGS_EDIT: 'settings/edit',
   NOTIFICATIONS: 'notifications',
   MANAGE_AVAILABILITY: 'manage-availability',
 } as const;
