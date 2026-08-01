@@ -135,4 +135,49 @@ describe('BookingTableComponent — filters and actions', () => {
     const instance = createComponent().componentInstance as any;
     expect(instance.getStatusLabel('APPROVED')).toBe('Confirmed');
   });
+
+  it('starts with no explicit sort but queries the default', () => {
+    const instance = createComponent().componentInstance as any;
+    expect(instance.sortBy()).toBeNull();
+    expect(mockService.getBookings).toHaveBeenCalledWith(
+      expect.objectContaining({ sortBy: 'createdAt', sortOrder: 'desc' })
+    );
+  });
+
+  it('onSort cycles a column ascending -> descending -> cleared', () => {
+    const instance = createComponent().componentInstance as any;
+
+    instance.onSort('sessionDateTime');
+    expect(instance.sortBy()).toBe('sessionDateTime');
+    expect(instance.sortOrder()).toBe('asc');
+
+    instance.onSort('sessionDateTime');
+    expect(instance.sortBy()).toBe('sessionDateTime');
+    expect(instance.sortOrder()).toBe('desc');
+
+    instance.onSort('sessionDateTime');
+    expect(instance.sortBy()).toBeNull();
+  });
+
+  it('onSort sends the default sort to the API once cleared', () => {
+    const instance = createComponent().componentInstance as any;
+    instance.onSort('sessionDateTime');
+    instance.onSort('sessionDateTime');
+    instance.onSort('sessionDateTime');
+
+    expect(mockService.getBookings).toHaveBeenLastCalledWith(
+      expect.objectContaining({ sortBy: 'createdAt', sortOrder: 'desc' })
+    );
+  });
+
+  it('onSort resets page to 1 and reloads', () => {
+    const instance = createComponent().componentInstance as any;
+    instance.page.set(3);
+    const callsBefore = (mockService.getBookings as ReturnType<typeof vi.fn>).mock.calls.length;
+
+    instance.onSort('sessionDateTime');
+
+    expect(instance.page()).toBe(1);
+    expect((mockService.getBookings as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore + 1);
+  });
 });

@@ -19,8 +19,8 @@ export class ListMenteesQueryDto {
   search?: string;
 
   @IsOptional()
-  @IsEnum(['createdAt', 'firstName', 'lastName'])
-  sortBy?: 'createdAt' | 'firstName' | 'lastName';
+  @IsEnum(['createdAt', 'firstName', 'lastName', 'email', 'status'])
+  sortBy?: 'createdAt' | 'firstName' | 'lastName' | 'email' | 'status';
 
   @IsOptional()
   @IsEnum(['asc', 'desc'])

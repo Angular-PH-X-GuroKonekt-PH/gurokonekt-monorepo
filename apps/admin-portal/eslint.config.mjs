@@ -19,7 +19,9 @@ export default [
       '@angular-eslint/component-selector': [
         'error',
         {
-          type: 'element',
+          // 'attribute' allows host-element components such as
+          // th[app-sortable-header], which keep native table semantics.
+          type: ['element', 'attribute'],
           prefix: 'app',
           style: 'kebab-case',
         },

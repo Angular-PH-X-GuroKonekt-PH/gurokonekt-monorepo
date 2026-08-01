@@ -57,10 +57,38 @@
     <table class="w-full text-sm">
       <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
         <tr>
-          <th class="px-6 py-3 text-left font-medium">Mentee</th>
-          <th class="px-6 py-3 text-left font-medium">Mentor</th>
-          <th class="px-6 py-3 text-left font-medium">Session Date</th>
-          <th class="px-6 py-3 text-left font-medium">Status</th>
+          <th
+            class="px-6 py-3 text-left font-medium"
+            app-sortable-header
+            field="mentee"
+            [activeField]="sortBy()"
+            [activeOrder]="sortOrder()"
+            (sort)="onSort($event)"
+          >Mentee</th>
+          <th
+            class="px-6 py-3 text-left font-medium"
+            app-sortable-header
+            field="mentor"
+            [activeField]="sortBy()"
+            [activeOrder]="sortOrder()"
+            (sort)="onSort($event)"
+          >Mentor</th>
+          <th
+            class="px-6 py-3 text-left font-medium"
+            app-sortable-header
+            field="sessionDateTime"
+            [activeField]="sortBy()"
+            [activeOrder]="sortOrder()"
+            (sort)="onSort($event)"
+          >Session Date</th>
+          <th
+            class="px-6 py-3 text-left font-medium"
+            app-sortable-header
+            field="status"
+            [activeField]="sortBy()"
+            [activeOrder]="sortOrder()"
+            (sort)="onSort($event)"
+          >Status</th>
           <th class="px-6 py-3 text-left font-medium w-12">Actions</th>
         </tr>
       </thead>

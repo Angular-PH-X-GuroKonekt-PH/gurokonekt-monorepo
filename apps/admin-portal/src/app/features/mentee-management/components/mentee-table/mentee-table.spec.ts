@@ -91,4 +91,48 @@ describe('MenteeTableComponent — search', () => {
     expect(instance.page()).toBe(1);
     expect((mockService.getMentees as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore + 1);
   });
+
+  it('starts with no explicit sort but queries the default', () => {
+    const instance = createComponent().componentInstance as any;
+    expect(instance.sortBy()).toBeNull();
+    expect(mockService.getMentees).toHaveBeenCalledWith(
+      expect.objectContaining({ sortBy: 'createdAt', sortOrder: 'desc' })
+    );
+  });
+
+  it('onSort cycles a column ascending -> descending -> cleared', () => {
+    const instance = createComponent().componentInstance as any;
+
+    instance.onSort('firstName');
+    expect(instance.sortBy()).toBe('firstName');
+    expect(instance.sortOrder()).toBe('asc');
+
+    instance.onSort('firstName');
+    expect(instance.sortOrder()).toBe('desc');
+
+    instance.onSort('firstName');
+    expect(instance.sortBy()).toBeNull();
+  });
+
+  it('onSort switching to a different column restarts at ascending', () => {
+    const instance = createComponent().componentInstance as any;
+    instance.onSort('firstName');
+    instance.onSort('firstName');
+    expect(instance.sortOrder()).toBe('desc');
+
+    instance.onSort('createdAt');
+    expect(instance.sortBy()).toBe('createdAt');
+    expect(instance.sortOrder()).toBe('asc');
+  });
+
+  it('onSort resets page to 1 and reloads', () => {
+    const instance = createComponent().componentInstance as any;
+    instance.page.set(3);
+    const callsBefore = (mockService.getMentees as ReturnType<typeof vi.fn>).mock.calls.length;
+
+    instance.onSort('firstName');
+
+    expect(instance.page()).toBe(1);
+    expect((mockService.getMentees as ReturnType<typeof vi.fn>).mock.calls.length).toBe(callsBefore + 1);
+  });
 });

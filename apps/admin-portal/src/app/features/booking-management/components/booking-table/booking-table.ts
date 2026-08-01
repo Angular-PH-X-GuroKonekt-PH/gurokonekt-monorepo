@@ -4,10 +4,16 @@ import { DatePipe } from '@angular/common';
 import { BookingManagementService, BookingListItem, BookingsQueryParams } from '../../services/booking-management.service';
 import { ViewBookingDetailModalComponent } from '../modals/view-booking-detail-modal/view-booking-detail-modal';
 import { ForceCancelBookingModalComponent } from '../modals/force-cancel-booking-modal/force-cancel-booking-modal';
+import { SortableHeaderComponent } from '../../../../shared/components/sortable-header/sortable-header.component';
+
+type SortField = NonNullable<BookingsQueryParams['sortBy']>;
+
+const DEFAULT_SORT_FIELD: SortField = 'createdAt';
+const DEFAULT_SORT_ORDER = 'desc' as const;
 
 @Component({
   selector: 'app-booking-table',
-  imports: [DatePipe, ViewBookingDetailModalComponent, ForceCancelBookingModalComponent],
+  imports: [DatePipe, ViewBookingDetailModalComponent, ForceCancelBookingModalComponent, SortableHeaderComponent],
   templateUrl: './booking-table.html',
 })
 export class BookingTableComponent implements OnInit {
@@ -22,8 +28,9 @@ export class BookingTableComponent implements OnInit {
   protected searchQuery = signal('');
   protected dateFrom = signal('');
   protected dateTo = signal('');
-  protected sortBy = signal<'sessionDateTime' | 'createdAt'>('createdAt');
-  protected sortOrder = signal<'asc' | 'desc'>('desc');
+  // Sorting — null field means no explicit sort, so the default is used
+  protected sortBy = signal<SortField | null>(null);
+  protected sortOrder = signal<'asc' | 'desc'>(DEFAULT_SORT_ORDER);
   protected page = signal(1);
   protected readonly limit = 20;
 
@@ -41,8 +48,8 @@ export class BookingTableComponent implements OnInit {
   protected loadBookings(): void {
     this.isLoading.set(true);
     const params: BookingsQueryParams = {
-      sortBy: this.sortBy(),
-      sortOrder: this.sortOrder(),
+      sortBy: this.sortBy() ?? DEFAULT_SORT_FIELD,
+      sortOrder: this.sortBy() ? this.sortOrder() : DEFAULT_SORT_ORDER,
       page: this.page(),
       limit: this.limit,
       ...(this.statusFilter() && { status: this.statusFilter() }),
@@ -84,6 +91,22 @@ export class BookingTableComponent implements OnInit {
 
   protected onDateToChange(value: string): void {
     this.dateTo.set(value);
+    this.page.set(1);
+    this.loadBookings();
+  }
+
+  /** Cycles the clicked column: ascending -> descending -> cleared. */
+  protected onSort(field: string): void {
+    const next = field as SortField;
+    if (this.sortBy() !== next) {
+      this.sortBy.set(next);
+      this.sortOrder.set('asc');
+    } else if (this.sortOrder() === 'asc') {
+      this.sortOrder.set('desc');
+    } else {
+      this.sortBy.set(null);
+      this.sortOrder.set(DEFAULT_SORT_ORDER);
+    }
     this.page.set(1);
     this.loadBookings();
   }
