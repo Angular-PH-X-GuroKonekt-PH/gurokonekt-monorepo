@@ -1,15 +1,33 @@
 <header>
     <nav class="bg-gray-900 border-gray-200 px-4 lg:px-6 py-6">
         <div class="flex flex-wrap justify-between items-center mx-auto max-w-screen-xl">
-            <a href="#" class="flex items-center">
+            <a href="/home" class="flex items-center">
                 <img src="logo.svg" class="mr-1 h-10 sm:h-16" alt="GuroKonekt Logo" />
                 <span class="self-center font-semibold whitespace-nowrap text-white text-2xl">Guro<span class="text-tertiary-50">Konekt</span></span>
             </a>
             <div class="flex items-center lg:order-2">
-                <a href="#" class="text-white border-tertiary-100 border-2 border-solid hover:bg-gray-700 focus:ring-4 focus:ring-gray-300 font-normal rounded-xl text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none focus:ring-gray-800">Sign In</a>
-                <a href="#" class="text-black bg-tertiary-50 hover:bg-yellow-600 focus:ring-4 focus:ring-primary-300 font-normal rounded-xl text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none focus:ring-primary-800">Register</a>
+                <div class="hidden md:flex items-center rounded-xl border border-white/10 bg-white/5 p-1 mr-2">
+                    <button
+                        type="button"
+                        (click)="translation.setLanguage('en')"
+                        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                        [class.bg-tertiary-50]="translation.currentLanguage() === 'en'"
+                        [class.text-slate-950]="translation.currentLanguage() === 'en'"
+                        [class.text-white]="translation.currentLanguage() !== 'en'"
+                    >{{ 'header.language.en' | translate }}</button>
+                    <button
+                        type="button"
+                        (click)="translation.setLanguage('tl')"
+                        class="rounded-lg px-3 py-1.5 text-xs font-semibold transition-colors"
+                        [class.bg-tertiary-50]="translation.currentLanguage() === 'tl'"
+                        [class.text-slate-950]="translation.currentLanguage() === 'tl'"
+                        [class.text-white]="translation.currentLanguage() !== 'tl'"
+                    >{{ 'header.language.tl' | translate }}</button>
+                </div>
+                <a [href]="signInUrl" class="text-white border-tertiary-100 border-2 border-solid hover:bg-gray-700 focus:ring-4 focus:ring-gray-300 font-normal rounded-xl text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none focus:ring-gray-800">{{ 'header.signIn' | translate }}</a>
+                <a [href]="registerUrl" class="text-black bg-tertiary-50 hover:bg-yellow-600 focus:ring-4 focus:ring-primary-300 font-normal rounded-xl text-sm px-4 lg:px-5 py-2 lg:py-2.5 mr-2 focus:outline-none focus:ring-primary-800">{{ 'header.register' | translate }}</a>
                 <button data-collapse-toggle="mobile-menu-2" type="button" class="inline-flex items-center p-2 ml-1 text-sm text-gray-400 rounded-xl lg:hidden hover:bg-gray-700 focus:outline-none focus:ring-2 focus:ring-gray-600" aria-controls="mobile-menu-2" aria-expanded="false">
-                    <span class="sr-only">Open main menu</span>
+                    <span class="sr-only">{{ 'header.openMenu' | translate }}</span>
                     <svg class="w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M3 5a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 10a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zM3 15a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1z" clip-rule="evenodd"></path></svg>
                     <svg class="hidden w-6 h-6" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path></svg>
                 </button>
@@ -17,19 +35,19 @@
             <div class="hidden justify-between items-center w-full lg:flex lg:w-auto lg:order-1" id="mobile-menu-2">
                 <ul class="flex flex-col mt-4 font-normal lg:flex-row lg:space-x-8 lg:mt-0">
                     <li>
-                        <a href="#" class="block py-2 pr-4 pl-3 text-white rounded bg-primary-700 lg:bg-transparent lg:p-0" aria-current="page">Home</a>
+                        <a href="/home" class="block py-2 pr-4 pl-3 text-white rounded bg-primary-700 lg:bg-transparent lg:p-0" aria-current="page">{{ 'header.home' | translate }}</a>
                     </li>
                     <li>
-                        <a href="#about" class="block py-2 pr-4 pl-3 text-gray-400 border-b border-gray-700 hover:bg-gray-700 lg:hover:bg-transparent lg:border-0 lg:hover:text-white lg:p-0">About</a>
+                        <a href="/home#about" class="block py-2 pr-4 pl-3 text-gray-400 border-b border-gray-700 hover:bg-gray-700 lg:hover:bg-transparent lg:border-0 lg:hover:text-white lg:p-0">{{ 'header.about' | translate }}</a>
                     </li>
                     <li>
-                        <a href="#mentors" class="block py-2 pr-4 pl-3 text-gray-400 border-b border-gray-700 hover:bg-gray-700 lg:hover:bg-transparent lg:border-0 lg:hover:text-white lg:p-0">Mentors</a>
+                        <a href="/home#mentors" class="block py-2 pr-4 pl-3 text-gray-400 border-b border-gray-700 hover:bg-gray-700 lg:hover:bg-transparent lg:border-0 lg:hover:text-white lg:p-0">{{ 'header.mentors' | translate }}</a>
                     </li>
                     <li>
-                        <a href="#community" class="block py-2 pr-4 pl-3 text-gray-400 border-b border-gray-700 hover:bg-gray-700 lg:hover:bg-transparent lg:border-0 lg:hover:text-white lg:p-0">The Community</a>
+                        <a href="/home#community" class="block py-2 pr-4 pl-3 text-gray-400 border-b border-gray-700 hover:bg-gray-700 lg:hover:bg-transparent lg:border-0 lg:hover:text-white lg:p-0">{{ 'header.community' | translate }}</a>
                     </li>
                     <li>
-                        <a href="#contact" class="block py-2 pr-4 pl-3 text-gray-400 border-b border-gray-700 hover:bg-gray-700 lg:hover:bg-transparent lg:border-0 lg:hover:text-white lg:p-0">Contact</a>
+                        <a href="/home#contact" class="block py-2 pr-4 pl-3 text-gray-400 border-b border-gray-700 hover:bg-gray-700 lg:hover:bg-transparent lg:border-0 lg:hover:text-white lg:p-0">{{ 'header.contact' | translate }}</a>
                     </li>
                 </ul>
             </div>

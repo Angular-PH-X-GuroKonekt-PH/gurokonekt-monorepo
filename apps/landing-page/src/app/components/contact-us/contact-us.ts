@@ -1,9 +1,11 @@
 import { Component, signal } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 
 @Component({
   selector: 'app-contact-us',
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, ScrollRevealDirective, TranslatePipe],
   templateUrl: './contact-us.html',
   styleUrl: './contact-us.scss',
 })
