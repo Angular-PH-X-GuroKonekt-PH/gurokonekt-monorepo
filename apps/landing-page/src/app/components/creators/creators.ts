@@ -1,9 +1,11 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { Creator } from '@gurokonekt/models';
 import { Contentful } from '../../shared/services/contentful/contentful';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
 @Component({
   selector: 'app-creators',
-  imports: [],
+  imports: [ScrollRevealDirective, TranslatePipe],
   templateUrl: './creators.html',
   styleUrl: './creators.scss',
 })

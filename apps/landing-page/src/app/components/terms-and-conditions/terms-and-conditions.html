@@ -1,0 +1,75 @@
+<div class="bg-gray-900 min-h-screen text-white">
+  <app-header />
+
+  <main class="px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+    <section class="mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,#0f172a_0%,#13223e_55%,#1d467d_100%)] shadow-2xl">
+      <div class="grid gap-10 px-6 py-12 sm:px-10 lg:grid-cols-[1.15fr_0.85fr] lg:px-14 lg:py-16">
+        <div>
+          <p appScrollReveal="up" class="mb-4 inline-flex rounded-full border border-tertiary-50/40 bg-tertiary-50/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.24em] text-tertiary-50">
+            {{ 'terms.eyebrow' | translate }}
+          </p>
+          <h1 appScrollReveal="up" [revealDelay]="80" class="max-w-3xl text-4xl font-black leading-tight sm:text-5xl">
+            {{ 'terms.title' | translate }}
+          </h1>
+          <p appScrollReveal="up" [revealDelay]="160" class="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">{{ 'terms.intro' | translate }}</p>
+          <div appScrollReveal="zoom" [revealDelay]="240" class="mt-8 flex flex-wrap gap-4">
+            <a routerLink="/home" class="inline-flex items-center rounded-xl border border-tertiary-100 px-5 py-3 font-semibold text-white transition hover:bg-white/10">
+              {{ 'terms.backHome' | translate }}
+            </a>
+            <a routerLink="/privacy-policy" class="inline-flex items-center rounded-xl bg-tertiary-50 px-5 py-3 font-semibold text-slate-950 transition hover:bg-orange-400">
+              {{ 'terms.readPrivacy' | translate }}
+            </a>
+          </div>
+        </div>
+
+        <aside appScrollReveal="right" [revealDelay]="180" class="rounded-[1.75rem] border border-white/10 bg-slate-950/35 p-6 backdrop-blur-sm">
+          <p class="text-sm font-semibold uppercase tracking-[0.24em] text-cyan-300">{{ 'terms.corePrinciples' | translate }}</p>
+          <ul class="mt-5 space-y-4 text-sm leading-7 text-slate-300 sm:text-base">
+            <li>{{ 'terms.core1' | translate }}</li>
+            <li>{{ 'terms.core2' | translate }}</li>
+            <li>{{ 'terms.core3' | translate }}</li>
+            <li>{{ 'terms.core4' | translate }}</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-2">
+      <article appScrollReveal="up" class="rounded-3xl border border-white/10 bg-[#131e31] p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white">{{ 'terms.acceptableTitle' | translate }}</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'terms.acceptableBody' | translate }}</p>
+      </article>
+
+      <article appScrollReveal="up" [revealDelay]="100" class="rounded-3xl border border-white/10 bg-[#131e31] p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white">{{ 'terms.contentTitle' | translate }}</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'terms.contentBody' | translate }}</p>
+      </article>
+
+      <article appScrollReveal="up" [revealDelay]="180" class="rounded-3xl border border-white/10 bg-[#131e31] p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white">{{ 'terms.serviceTitle' | translate }}</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'terms.serviceBody' | translate }}</p>
+      </article>
+
+      <article appScrollReveal="up" [revealDelay]="260" class="rounded-3xl border border-white/10 bg-[#131e31] p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white">{{ 'terms.stewardshipTitle' | translate }}</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'terms.stewardshipBody' | translate }}</p>
+      </article>
+    </section>
+
+    <section class="mx-auto mt-12 max-w-6xl rounded-[2rem] border border-white/10 bg-[#0f1c35] p-8 sm:p-10 lg:p-12">
+      <div class="grid gap-8 lg:grid-cols-2">
+        <div appScrollReveal="left">
+          <h2 class="text-3xl font-bold text-white">{{ 'terms.expectationsTitle' | translate }}</h2>
+          <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'terms.expectationsBody' | translate }}</p>
+        </div>
+
+        <div appScrollReveal="right" [revealDelay]="120">
+          <h2 class="text-3xl font-bold text-white">{{ 'terms.changesTitle' | translate }}</h2>
+          <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'terms.changesBody' | translate }}</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <app-footer />
+</div>

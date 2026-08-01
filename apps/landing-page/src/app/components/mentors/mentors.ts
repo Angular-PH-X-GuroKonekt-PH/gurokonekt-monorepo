@@ -1,83 +1,97 @@
 import { Component, signal, computed, DestroyRef, inject, NgZone } from '@angular/core';
-import { MentorCardInterface } from '@gurokonekt/models';
+import { ScrollRevealDirective } from '../../shared/directives/scroll-reveal.directive';
+import { TranslatePipe } from '../../shared/i18n/translate.pipe';
+import { TranslationService } from '../../shared/i18n/translation.service';
+import { TranslationKey } from '../../shared/i18n/translations';
+
+interface MentorCardViewModel {
+  id: string;
+  firstName: string;
+  lastName: string;
+  expertiseKeys: TranslationKey[];
+  rating: number;
+  bioKey: TranslationKey;
+  avatarUrl: string;
+}
 
 @Component({
   selector: 'app-mentors',
-  imports: [],
+  imports: [ScrollRevealDirective, TranslatePipe],
   templateUrl: './mentors.html',
   styleUrl: './mentors.scss',
 })
 export class Mentors {
   private destroyRef = inject(DestroyRef);
   private ngZone = inject(NgZone);
+  private translation = inject(TranslationService);
 
   currentIndex = signal(0);
   navigationCount = signal(0);
   isTransitioning = signal(false);
   readonly VISIBLE_DOTS = 3;
 
-  mentors = signal<MentorCardInterface[]>([
+  mentors = signal<MentorCardViewModel[]>([
     {
       id: '1',
       firstName: 'John',
       lastName: 'Doe',
-      areasOfExpertise: ['Software Engineering', 'DevOps'],
+      expertiseKeys: ['mentors.expertise.softwareEngineering', 'mentors.expertise.devops'],
       rating: 4.9,
-      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      bioKey: 'mentors.bio.1',
       avatarUrl: 'https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=800&h=800&fit=crop'
     },
     {
       id: '2',
       firstName: 'Jane',
       lastName: 'Smith',
-      areasOfExpertise: ['UX Design'],
+      expertiseKeys: ['mentors.expertise.uxDesign'],
       rating: 4.8,
-      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      bioKey: 'mentors.bio.2',
       avatarUrl: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=800&h=800&fit=crop'
     },
     {
       id: '3',
       firstName: 'Mike',
       lastName: 'Johnson',
-      areasOfExpertise: ['Data Science'],
+      expertiseKeys: ['mentors.expertise.dataScience'],
       rating: 4.95,
-      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      bioKey: 'mentors.bio.3',
       avatarUrl: 'https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=800&h=800&fit=crop'
     },
     {
       id: '4',
       firstName: 'Sarah',
       lastName: 'Williams',
-      areasOfExpertise: ['Product Management'],
+      expertiseKeys: ['mentors.expertise.productManagement'],
       rating: 4.85,
-      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      bioKey: 'mentors.bio.4',
       avatarUrl: 'https://images.unsplash.com/photo-1438761681033-6461ffad8d80?w=800&h=800&fit=crop'
     },
     {
       id: '5',
       firstName: 'David',
       lastName: 'Brown',
-      areasOfExpertise: ['DevOps'],
+      expertiseKeys: ['mentors.expertise.devops'],
       rating: 4.92,
-      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      bioKey: 'mentors.bio.5',
       avatarUrl: 'https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?w=800&h=800&fit=crop'
     },
     {
       id: '6',
       firstName: 'Emily',
       lastName: 'Chen',
-      areasOfExpertise: ['Mobile Development'],
+      expertiseKeys: ['mentors.expertise.mobileDevelopment'],
       rating: 4.88,
-      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      bioKey: 'mentors.bio.6',
       avatarUrl: 'https://images.unsplash.com/photo-1487412720507-e7ab37603c6f?w=800&h=800&fit=crop'
     },
     {
       id: '7',
       firstName: 'Alice',
       lastName: 'Monroe',
-      areasOfExpertise: ['AI/ML Engineering'],
+      expertiseKeys: ['mentors.expertise.aiMlEngineering'],
       rating: 4.91,
-      bio: 'Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea',
+      bioKey: 'mentors.bio.7',
       avatarUrl: 'https://images.unsplash.com/photo-1544005313-94ddf0286df2?w=800&h=800&fit=crop'
     }
   ]);
@@ -85,6 +99,12 @@ export class Mentors {
   currentMentor = computed(() => this.mentors()[this.currentIndex()]);
 
   fullName = computed(() => `${this.currentMentor().firstName} ${this.currentMentor().lastName}`);
+
+  currentMentorExpertise = computed(() =>
+    this.currentMentor().expertiseKeys.map(key => this.translation.translate(key)).join(', ')
+  );
+
+  currentMentorBio = computed(() => this.translation.translate(this.currentMentor().bioKey));
 
   activeDotPosition = computed(() => {
     return this.navigationCount() % this.VISIBLE_DOTS;

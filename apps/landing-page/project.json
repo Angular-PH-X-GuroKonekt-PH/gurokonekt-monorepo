@@ -30,6 +30,12 @@
       },
       "configurations": {
         "production": {
+          "fileReplacements": [
+            {
+              "replace": "apps/landing-page/src/environments/environment.ts",
+              "with": "apps/landing-page/src/environments/environment.prod.ts"
+            }
+          ],
           "budgets": [
             {
               "type": "initial",
