@@ -373,6 +373,14 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Mentor deactivation feedback retrieved successfully',
     },
+    ADMIN_SET_MENTOR_FEATURED: {
+      code: 200,
+      message: 'Mentor featured status updated successfully',
+    },
+    PUBLIC_GET_FEATURED_MENTORS: {
+      code: 200,
+      message: 'Featured mentors retrieved successfully',
+    },
   },
   ERROR: {
     /**
@@ -952,6 +960,22 @@ export const API_RESPONSE = {
     MENTOR_INVALID_STATUS_FOR_DEACTIVATE: {
       code: 400,
       message: 'Mentor account must be approved to be deactivated',
+    },
+    MENTOR_PROFILE_NOT_FOUND: {
+      code: 404,
+      message: 'Mentor profile not found',
+    },
+    MENTOR_INVALID_STATUS_FOR_FEATURE: {
+      code: 409,
+      message: 'Only approved mentors with a complete profile can be featured',
+    },
+    ADMIN_SET_MENTOR_FEATURED: {
+      code: 500,
+      message: 'Failed to update mentor featured status',
+    },
+    PUBLIC_GET_FEATURED_MENTORS: {
+      code: 500,
+      message: 'Failed to retrieve featured mentors',
     },
   }
 }
@@ -1657,6 +1681,66 @@ Remove one time frame: \`{ "day": "monday", "timeFrameIndex": 0 }\`
 Remove entire day: \`{ "day": "monday" }\`
 `,
     bodyExample: { day: 'monday', timeFrameIndex: 0 },
+  },
+
+  // ─── Featured mentors ─────────────────────────────────────────────────────
+
+  GET_FEATURED_MENTORS: {
+    summary: 'List featured mentors (public, no authentication)',
+    description: `
+Returns the mentors an admin has flagged as **featured**, for display on the public marketing site.
+
+**This endpoint is public** — it requires no bearer token and returns only fields that are safe to expose publicly. Email, phone number, session rate, availability, documents, and internal status flags are never included.
+
+A mentor appears here only while they are approved, active, and have a complete profile. Featuring a mentor who is later deactivated or rejected removes them from this response automatically; the flag itself is left untouched so they reappear if reinstated.
+
+Results are ordered by most recently featured first.
+
+**Query parameters:**
+- \`limit\` (optional) — number of mentors to return. Default \`12\`, maximum \`50\`.
+
+**Response \`data\` shape:**
+\`\`\`json
+[
+  {
+    "id": "b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21",
+    "firstName": "Maria",
+    "lastName": "Santos",
+    "title": "Senior Software Engineer",
+    "bio": "Ten years building distributed systems.",
+    "areasOfExpertise": ["Software Engineering"],
+    "skills": ["TypeScript", "Kubernetes"],
+    "avatarUrl": "https://…/avatar.png",
+    "averageRating": 4.8,
+    "ratingCount": 27
+  }
+]
+\`\`\`
+
+\`averageRating\` is the mean of all mentee ratings rounded to one decimal, or \`null\` when the mentor has no reviews yet.
+
+An empty featured set is a **200 with an empty array**, not a 404.
+`,
+  },
+
+  ADMIN_SET_MENTOR_FEATURED: {
+    summary: 'Mark a mentor as featured or remove them from the featured list',
+    description: `
+Toggles whether a mentor appears in the public Featured Mentors section. Admin only.
+
+**Rules:**
+- Featuring requires the mentor to be **approved**, **active**, and to have a **complete profile**. Any other state returns \`409\`.
+- Un-featuring is always allowed, so a mentor can be retracted regardless of their current status.
+- Setting \`isFeatured: true\` stamps \`featuredAt\`, which drives the public ordering. Setting it to \`false\` clears it.
+
+The action is written to the audit log as \`admin_feature_mentor\` or \`admin_unfeature_mentor\`. No email or notification is sent — featuring is internal merchandising, not an account-status change.
+
+**Payload:**
+\`\`\`json
+{ "isFeatured": true }
+\`\`\`
+`,
+    bodyExample: { isFeatured: true },
   },
 
   // ─── Field-level helpers ──────────────────────────────────────────────────

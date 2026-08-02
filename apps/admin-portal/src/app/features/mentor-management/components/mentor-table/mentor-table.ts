@@ -1,4 +1,4 @@
-import { Component, inject, signal, OnInit, OnDestroy } from '@angular/core';
+import { Component, computed, inject, signal, OnInit, OnDestroy } from '@angular/core';
 import { DatePipe } from '@angular/common';
 import { Subject, debounceTime, distinctUntilChanged, takeUntil } from 'rxjs';
 import {
@@ -6,11 +6,13 @@ import {
   MentorListItem,
   MentorsQueryParams,
 } from '../../services/mentor-management.service';
+import { ToastService } from '../../../../shared/services/toast.service';
 import { ViewMentorProfileModalComponent } from '../modals/view-mentor-profile-modal/view-mentor-profile-modal';
 import { RejectMentorModalComponent } from '../modals/reject-mentor-modal/reject-mentor-modal';
 import { SortableHeaderComponent } from '../../../../shared/components/sortable-header/sortable-header.component';
 
 type StatusFilter = 'all' | 'pending' | 'approved' | 'rejected' | 'inactive';
+type FeaturedFilter = 'all' | 'featured' | 'not-featured';
 type SortField = NonNullable<MentorsQueryParams['sortBy']>;
 
 const DEFAULT_SORT_FIELD: SortField = 'createdAt';
@@ -28,6 +30,7 @@ const DEFAULT_SORT_ORDER = 'desc' as const;
 })
 export class MentorTableComponent implements OnInit, OnDestroy {
   private readonly mentorService = inject(MentorManagementService);
+  private readonly toast = inject(ToastService);
   private readonly searchSubject = new Subject<string>();
   private readonly destroy$ = new Subject<void>();
 
@@ -41,9 +44,13 @@ export class MentorTableComponent implements OnInit, OnDestroy {
 
   // Filters
   protected statusFilter = signal<StatusFilter>('all');
+  protected featuredFilter = signal<FeaturedFilter>('all');
   protected search = signal('');
   protected dateFrom = signal('');
   protected dateTo = signal('');
+
+  /** Id of the mentor whose featured toggle is currently in flight, if any. */
+  protected featuringId = signal<string | null>(null);
 
   // Sorting — null field means no explicit sort, so the default is used
   protected sortBy = signal<SortField | null>(null);
@@ -60,6 +67,17 @@ export class MentorTableComponent implements OnInit, OnDestroy {
   protected selectedMentor = signal<MentorListItem | null>(null);
   protected showViewModal = signal(false);
   protected showRejectModal = signal(false);
+
+  /**
+   * The live row for the mentor being viewed, resolved out of `mentors()` so an
+   * optimistic featured patch is reflected in the open modal. Falls back to the
+   * captured selection if the row has left the current page.
+   */
+  protected viewingMentor = computed<MentorListItem | null>(() => {
+    const selected = this.selectedMentor();
+    if (!selected) return null;
+    return this.mentors().find((m) => m.id === selected.id) ?? selected;
+  });
 
   constructor() {
     this.searchSubject.pipe(
@@ -93,6 +111,9 @@ export class MentorTableComponent implements OnInit, OnDestroy {
       ...(this.search() && { search: this.search() }),
       ...(this.dateFrom() && { dateFrom: this.dateFrom() }),
       ...(this.dateTo() && { dateTo: this.dateTo() }),
+      ...(this.featuredFilter() !== 'all' && {
+        isFeatured: this.featuredFilter() === 'featured',
+      }),
     };
 
     this.mentorService.getMentors(params).subscribe({
@@ -110,6 +131,12 @@ export class MentorTableComponent implements OnInit, OnDestroy {
 
   protected onStatusFilterChange(status: StatusFilter): void {
     this.statusFilter.set(status);
+    this.page.set(1);
+    this.loadMentors();
+  }
+
+  protected onFeaturedFilterChange(featured: FeaturedFilter): void {
+    this.featuredFilter.set(featured);
     this.page.set(1);
     this.loadMentors();
   }
@@ -186,6 +213,79 @@ export class MentorTableComponent implements OnInit, OnDestroy {
 
   protected isPending(status: string): boolean {
     return status === 'pending_approval' || status === 'pending_review';
+  }
+
+  // Featured
+  /**
+   * Mirrors the backend's `MentorAccess.isApprovedMentor` rule so the switch is
+   * disabled for exactly the mentors the API would reject with a 409.
+   */
+  protected canBeFeatured(mentor: MentorListItem): boolean {
+    return (
+      mentor.status === 'approved' &&
+      mentor.isMentorApproved &&
+      mentor.isMentorProfileComplete
+    );
+  }
+
+  /**
+   * Toggles a mentor's featured status optimistically.
+   *
+   * The list is deliberately NOT reloaded on success — the local patch is
+   * already correct, and a reload would throw away the admin's page and scroll
+   * position. On failure the row is restored to its previous value.
+   */
+  protected onToggleFeatured(mentor: MentorListItem): void {
+    if (this.featuringId()) return;
+
+    const next = !mentor.isFeatured;
+    // Un-featuring is always allowed, so a mentor who has since lost
+    // eligibility can still be retracted.
+    if (next && !this.canBeFeatured(mentor)) return;
+
+    const previous = mentor.isFeatured;
+    const previousFeaturedAt = mentor.featuredAt;
+
+    this.patchFeatured(mentor.id, next, next ? new Date().toISOString() : null);
+    this.featuringId.set(mentor.id);
+
+    this.mentorService.setFeatured(mentor.id, next).subscribe({
+      next: () => {
+        this.featuringId.set(null);
+        this.toast.success(
+          next
+            ? 'Mentor added to the Featured Mentors section.'
+            : 'Mentor removed from the Featured Mentors section.',
+        );
+      },
+      error: () => {
+        this.patchFeatured(mentor.id, previous, previousFeaturedAt);
+        this.featuringId.set(null);
+        this.toast.error(
+          next
+            ? 'Could not feature this mentor. Please try again.'
+            : 'Could not remove this mentor from featured. Please try again.',
+        );
+      },
+    });
+  }
+
+  /** Called by the profile modal, which only knows the mentor id. */
+  protected onToggleFeaturedById(mentorId: string): void {
+    const mentor = this.mentors().find((m) => m.id === mentorId);
+    if (mentor) this.onToggleFeatured(mentor);
+  }
+
+  private patchFeatured(
+    mentorId: string,
+    isFeatured: boolean,
+    featuredAt: string | null,
+  ): void {
+    this.mentors.update((mentors) =>
+      mentors.map((m) =>
+        m.id === mentorId ? { ...m, isFeatured, featuredAt } : m,
+      ),
+    );
   }
 
   // Action openers

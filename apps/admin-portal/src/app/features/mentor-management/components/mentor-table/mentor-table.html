@@ -21,6 +21,23 @@
       </svg>
     </div>
 
+    <!-- Featured filter -->
+    <div class="relative">
+      <select
+        [value]="featuredFilter()"
+        (change)="onFeaturedFilterChange($any($event.target).value)"
+        aria-label="Filter by featured status"
+        class="appearance-none text-sm border border-gray-200 rounded-lg pl-3 pr-8 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+      >
+        <option value="all">All Mentors</option>
+        <option value="featured">Featured</option>
+        <option value="not-featured">Not Featured</option>
+      </select>
+      <svg class="pointer-events-none absolute right-2.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m19.5 8.25-7.5 7.5-7.5-7.5"/>
+      </svg>
+    </div>
+
     <!-- Search -->
     <div class="relative">
       <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
@@ -112,6 +129,7 @@
               [activeOrder]="sortOrder()"
               (sort)="onSort($event)"
             >Registered</th>
+            <th class="px-6 py-3 text-left font-medium">Featured</th>
             <th class="px-6 py-3 text-left font-medium w-12">Actions</th>
           </tr>
         </thead>
@@ -119,11 +137,11 @@
 
           @if (isLoading()) {
             <tr>
-              <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">Loading mentors...</td>
+              <td colspan="6" class="px-6 py-12 text-center text-gray-400 text-sm">Loading mentors...</td>
             </tr>
           } @else if (mentors().length === 0) {
             <tr>
-              <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">No mentors found.</td>
+              <td colspan="6" class="px-6 py-12 text-center text-gray-400 text-sm">No mentors found.</td>
             </tr>
           } @else {
             @for (mentor of mentors(); track mentor.id) {
@@ -152,6 +170,29 @@
                   </span>
                 </td>
                 <td class="px-6 py-4 text-gray-500">{{ mentor.createdAt | date: 'MMM d, y' }}</td>
+                <td class="px-6 py-4"
+                  tabindex="-1"
+                  (click)="$event.stopPropagation()"
+                  (keydown)="$event.stopPropagation()">
+                  <label
+                    class="relative inline-flex items-center"
+                    [class.cursor-pointer]="canBeFeatured(mentor) || mentor.isFeatured"
+                    [class.opacity-50]="!canBeFeatured(mentor) && !mentor.isFeatured"
+                    [title]="canBeFeatured(mentor) || mentor.isFeatured
+                      ? (mentor.isFeatured ? 'Remove from Featured Mentors' : 'Add to Featured Mentors')
+                      : 'Only approved mentors with a complete profile can be featured'"
+                  >
+                    <input
+                      type="checkbox"
+                      class="sr-only peer"
+                      [checked]="mentor.isFeatured"
+                      [disabled]="featuringId() !== null || (!canBeFeatured(mentor) && !mentor.isFeatured)"
+                      (change)="onToggleFeatured(mentor)"
+                      [attr.aria-label]="'Featured status for ' + mentor.firstName + ' ' + mentor.lastName"
+                    />
+                    <div class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 peer-focus:ring-2 peer-focus:ring-orange-300 peer-disabled:cursor-not-allowed after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></div>
+                  </label>
+                </td>
                 <td class="px-6 py-4">
                   <div class="relative"
                     tabindex="-1"
@@ -217,7 +258,7 @@
               <!-- Inline confirm row -->
               @if (confirmAction() !== null && selectedMentor()?.id === mentor.id) {
                 <tr class="bg-orange-50 border-l-4 border-orange-400">
-                  <td colspan="5" class="px-6 py-3">
+                  <td colspan="6" class="px-6 py-3">
                     <div class="flex items-center justify-between">
                       <p class="text-sm font-medium text-orange-800">
                         {{ getConfirmMessage(confirmAction()!.type) }}
@@ -272,9 +313,11 @@
 </div>
 
 <!-- Modals -->
-@if (showViewModal() && selectedMentor()) {
+@if (showViewModal() && viewingMentor(); as viewing) {
   <app-view-mentor-profile-modal
-    [mentor]="selectedMentor()!"
+    [mentor]="viewing"
+    [isFeaturing]="featuringId() === viewing.id"
+    (featuredChange)="onToggleFeaturedById($event)"
     (closed)="closeViewModal()"
   />
 }

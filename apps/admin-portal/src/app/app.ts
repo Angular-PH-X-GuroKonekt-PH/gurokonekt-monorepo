@@ -4,9 +4,10 @@ import { toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
 import { filter, map } from 'rxjs/operators';
 import * as AuthActions from './core/auth/store/auth.actions';
+import { ToastContainerComponent } from './shared/components/toast/toast.component';
 
 @Component({
-  imports: [RouterModule],
+  imports: [RouterModule, ToastContainerComponent],
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrl: './app.scss',

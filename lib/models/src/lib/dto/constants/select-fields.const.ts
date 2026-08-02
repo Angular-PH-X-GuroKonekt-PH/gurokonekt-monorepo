@@ -104,8 +104,38 @@ export class SelectFields {
       sessionRate: true,
       sessionDurationMinutes: true,
       availability: true,
+      isFeatured: true,
+      featuredAt: true,
       updatedAt: true,
       updatedBy: { select: { id: true, firstName: true, lastName: true } },
+    };
+  }
+
+  /**
+   * Fields for the PUBLIC featured-mentors endpoint.
+   *
+   * Rooted at `MentorProfile` rather than `User` because the query orders by
+   * `featuredAt`, and Prisma cannot order a `User` query by a scalar on the
+   * to-many `mentorProfiles` relation.
+   *
+   * This feeds an UNAUTHENTICATED response — do not add email, phone, country,
+   * timezone, session rate, availability, LinkedIn URL, or status flags here.
+   */
+  static getFeaturedMentorSelect() {
+    return {
+      title: true,
+      bio: true,
+      areasOfExpertise: true,
+      skills: true,
+      featuredAt: true,
+      user: {
+        select: {
+          id: true,
+          firstName: true,
+          lastName: true,
+          avatarAttachments: { select: this.getAvatarAttachmentSelect() },
+        },
+      },
     };
   }
 

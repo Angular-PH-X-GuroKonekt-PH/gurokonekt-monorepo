@@ -24,6 +24,7 @@ export const API_ENDPOINTS = {
     approveMentor: (id: string) => `/admin/mentors/${id}/approve`,
     rejectMentor: (id: string) => `/admin/mentors/${id}/reject`,
     deactivateMentor: (id: string) => `/admin/mentors/${id}/deactivate`,
+    setMentorFeatured: (id: string) => `/admin/mentors/${id}/featured`,
     bookings: '/admin/bookings',
     bookingById: (id: string) => `/admin/bookings/${id}`,
     bookingForceCancel: (id: string) => `/admin/bookings/${id}/force-cancel`,
