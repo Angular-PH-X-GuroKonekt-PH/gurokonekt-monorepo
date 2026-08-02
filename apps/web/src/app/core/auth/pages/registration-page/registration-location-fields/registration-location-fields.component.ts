@@ -10,15 +10,13 @@ import {
   getLanguages,
   getTimezones,
 } from '../../../../../shared/utils';
-import {
-  getFormErrorMessage,
-  hasError,
-} from '../../../../../shared/utils/form-validation.util';
+import { hasError } from '../../../../../shared/utils/form-validation.util';
+import { FormFieldErrorComponent } from '../../../../../shared/components/form-field-error/form-field-error.component';
 
 @Component({
   selector: 'app-registration-location-fields',
   standalone: true,
-  imports: [ReactiveFormsModule],
+  imports: [ReactiveFormsModule, FormFieldErrorComponent],
   templateUrl: './registration-location-fields.component.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
   viewProviders: [
@@ -41,9 +39,5 @@ export class RegistrationLocationFieldsComponent {
 
   protected hasFieldError(fieldName: string): boolean {
     return hasError(this.form(), fieldName);
-  }
-
-  protected getFieldErrorMessage(fieldName: string): string {
-    return getFormErrorMessage(this.form(), fieldName);
   }
 }

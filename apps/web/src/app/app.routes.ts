@@ -223,7 +223,7 @@ export const appRoutes: Route[] = [
     canActivate: [dashboardAccessGuard],
     loadComponent: () =>
       import('./core/profile/pages/profile-settings-page/profile-settings.page').then(
-        (m) => m.ProfileSettingsPageComponent
+        (m) => m.ProfileSettingsPage
       ),
     title: 'Profile Settings',
     children: [
@@ -239,6 +239,14 @@ export const appRoutes: Route[] = [
             (m) => m.ProfileOverviewSectionPage
           ),
         title: 'Overview Section',
+      },
+      {
+        path: 'edit',
+        loadComponent: () =>
+          import('./core/profile/pages/profile-edit-section-page/profile-edit-section.page').then(
+            (m) => m.ProfileEditSectionPage
+          ),
+        title: 'Edit Profile',
       },
     ],
   },

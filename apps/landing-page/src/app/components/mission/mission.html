@@ -1,0 +1,79 @@
+<div class="bg-gray-900 min-h-screen text-white">
+  <app-header />
+
+  <main class="px-4 pb-24 pt-6 sm:px-6 lg:px-8">
+    <section class="mx-auto max-w-6xl overflow-hidden rounded-[2rem] border border-white/10 bg-[linear-gradient(135deg,#10203b_0%,#14315a_50%,#1c4e8e_100%)] shadow-2xl">
+      <div class="grid gap-10 px-6 py-12 sm:px-10 lg:grid-cols-[1.2fr_0.8fr] lg:px-14 lg:py-16">
+        <div>
+          <p appScrollReveal="up" class="mb-4 inline-flex rounded-full border border-cyan-400/40 bg-cyan-400/10 px-4 py-2 text-sm font-semibold uppercase tracking-[0.24em] text-cyan-300">
+            {{ 'mission.eyebrow' | translate }}
+          </p>
+          <h1 appScrollReveal="up" [revealDelay]="80" class="max-w-3xl text-4xl font-black leading-tight sm:text-5xl">
+            {{ 'mission.title' | translate }}
+          </h1>
+          <p appScrollReveal="up" [revealDelay]="160" class="mt-6 max-w-2xl text-base leading-8 text-slate-300 sm:text-lg">
+            {{ 'mission.intro' | translate }}
+          </p>
+          <div appScrollReveal="zoom" [revealDelay]="240" class="mt-8 flex flex-wrap gap-4">
+            <a routerLink="/home" class="inline-flex items-center rounded-xl border border-tertiary-100 px-5 py-3 font-semibold text-white transition hover:bg-white/10">
+              {{ 'mission.backHome' | translate }}
+            </a>
+            <a href="/home#contact" class="inline-flex items-center rounded-xl bg-tertiary-50 px-5 py-3 font-semibold text-slate-950 transition hover:bg-orange-400">
+              {{ 'mission.join' | translate }}
+            </a>
+          </div>
+        </div>
+
+        <aside appScrollReveal="right" [revealDelay]="180" class="rounded-[1.75rem] border border-white/10 bg-slate-950/35 p-6 backdrop-blur-sm">
+          <p class="text-sm font-semibold uppercase tracking-[0.24em] text-tertiary-50">{{ 'mission.promise' | translate }}</p>
+          <ul class="mt-5 space-y-4 text-sm leading-7 text-slate-300 sm:text-base">
+            <li>{{ 'mission.promise1' | translate }}</li>
+            <li>{{ 'mission.promise2' | translate }}</li>
+            <li>{{ 'mission.promise3' | translate }}</li>
+            <li>{{ 'mission.promise4' | translate }}</li>
+          </ul>
+        </aside>
+      </div>
+    </section>
+
+    <section class="mx-auto mt-12 grid max-w-6xl gap-6 md:grid-cols-2 xl:grid-cols-4">
+      <article appScrollReveal="up" class="rounded-3xl border border-white/10 bg-[#131e31] p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white">{{ 'mission.reachTitle' | translate }}</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'mission.reachBody' | translate }}</p>
+      </article>
+
+      <article appScrollReveal="up" [revealDelay]="100" class="rounded-3xl border border-white/10 bg-[#131e31] p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white">{{ 'mission.mentorsTitle' | translate }}</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'mission.mentorsBody' | translate }}</p>
+      </article>
+
+      <article appScrollReveal="up" [revealDelay]="200" class="rounded-3xl border border-white/10 bg-[#131e31] p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white">{{ 'mission.educationTitle' | translate }}</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'mission.educationBody' | translate }}</p>
+      </article>
+
+      <article appScrollReveal="up" [revealDelay]="300" class="rounded-3xl border border-white/10 bg-[#131e31] p-8 shadow-xl">
+        <h2 class="text-2xl font-bold text-white">{{ 'mission.communityTitle' | translate }}</h2>
+        <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'mission.communityBody' | translate }}</p>
+      </article>
+    </section>
+
+    <section class="mx-auto mt-12 max-w-6xl rounded-[2rem] border border-white/10 bg-[#0f1c35] p-8 sm:p-10 lg:p-12">
+      <div class="grid gap-8 lg:grid-cols-2 lg:items-center">
+        <div appScrollReveal="left">
+          <h2 class="text-3xl font-bold text-white">{{ 'mission.visionTitle' | translate }}</h2>
+          <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'mission.visionBody1' | translate }}</p>
+          <p class="mt-4 text-sm leading-7 text-slate-300 sm:text-base">{{ 'mission.visionBody2' | translate }}</p>
+        </div>
+
+        <div appScrollReveal="right" [revealDelay]="120" class="rounded-[1.75rem] border border-cyan-400/20 bg-cyan-400/10 p-8">
+          <img src="logo.svg" alt="GuroKonekt Logo" class="mb-6 h-16 w-16" />
+          <p class="text-lg font-semibold text-white">{{ 'mission.title' | translate }}</p>
+          <p class="mt-4 text-sm leading-7 text-slate-200">{{ 'mission.intro' | translate }}</p>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <app-footer />
+</div>

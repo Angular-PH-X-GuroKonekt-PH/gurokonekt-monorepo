@@ -84,10 +84,38 @@
       <table class="w-full text-sm">
         <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
           <tr>
-            <th class="px-6 py-3 text-left font-medium">Name</th>
-            <th class="px-6 py-3 text-left font-medium">Email</th>
-            <th class="px-6 py-3 text-left font-medium">Status</th>
-            <th class="px-6 py-3 text-left font-medium">Registered</th>
+            <th
+              class="px-6 py-3 text-left font-medium"
+              app-sortable-header
+              field="firstName"
+              [activeField]="sortBy()"
+              [activeOrder]="sortOrder()"
+              (sort)="onSort($event)"
+            >Name</th>
+            <th
+              class="px-6 py-3 text-left font-medium"
+              app-sortable-header
+              field="email"
+              [activeField]="sortBy()"
+              [activeOrder]="sortOrder()"
+              (sort)="onSort($event)"
+            >Email</th>
+            <th
+              class="px-6 py-3 text-left font-medium"
+              app-sortable-header
+              field="status"
+              [activeField]="sortBy()"
+              [activeOrder]="sortOrder()"
+              (sort)="onSort($event)"
+            >Status</th>
+            <th
+              class="px-6 py-3 text-left font-medium"
+              app-sortable-header
+              field="createdAt"
+              [activeField]="sortBy()"
+              [activeOrder]="sortOrder()"
+              (sort)="onSort($event)"
+            >Registered</th>
             <th class="px-6 py-3 text-left font-medium w-12">Actions</th>
           </tr>
         </thead>

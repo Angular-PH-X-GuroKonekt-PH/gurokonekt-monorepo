@@ -1,10 +1,10 @@
 <section id="mentors" class="flex items-center justify-center pt-12 pr-8 pb-24 pl-8 min-h-[80vh] bg-[#0f1c35]">
     <div class="w-full max-w-6xl">
-        <h1 class="text-3xl sm:text-4xl font-bold text-white text-center mb-10 lg:mb-20">The Mentors</h1>
+        <h1 appScrollReveal="up" class="text-3xl sm:text-4xl font-bold text-white text-center mb-10 lg:mb-20">{{ 'mentors.title' | translate }}</h1>
 
         <div class="relative flex flex-col md:flex-row items-center gap-6 md:gap-8 group">
 
-            <img src="pencilnaut-front.png" alt="pencilnaut-front" class="object-contain hidden md:block mr-4">
+            <img appScrollReveal="left" [revealDelay]="120" src="pencilnaut-front.png" alt="pencilnaut-front" class="object-contain hidden md:block mr-4">
 
             <!-- Carousel Content -->
             <div class="flex-1 w-full">
@@ -14,16 +14,16 @@
 
                         <!-- Left Side - Text -->
                         <div class="flex-1">
-                            <h2 class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{{ fullName() }}</h2>
-                            <p class="text-lg sm:text-xl text-blue-300 mb-4 lg:mb-6">{{ currentMentor().areasOfExpertise.join(', ') }}</p>
-                            <p class="text-gray-300 text-sm sm:text-base lg:text-lg leading-relaxed">{{ currentMentor().bio }}</p>
+                            <h2 appScrollReveal="up" [revealDelay]="160" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{{ fullName() }}</h2>
+                            <p appScrollReveal="up" [revealDelay]="220" class="text-lg sm:text-xl text-blue-300 mb-4 lg:mb-6">{{ currentMentorExpertise() }}</p>
+                            <p appScrollReveal="up" [revealDelay]="280" class="text-gray-300 text-sm sm:text-base lg:text-lg leading-relaxed">{{ currentMentorBio() }}</p>
                         </div>
 
                         <!-- Right Side - Photo and Rating -->
-                        <div class="relative mt-4 lg:mt-0">
+                        <div appScrollReveal="right" [revealDelay]="200" class="relative mt-4 lg:mt-0">
                             <div class="absolute top-3 left-3 lg:-left-24 text-black px-4 lg:px-6 py-2 lg:py-3 rounded-2xl shadow-lg z-10 min-w-28 lg:min-w-36 bg-[#ff8e1c]">
                                 <div class="text-xs sm:text-sm font-semibold">{{ fullName() }}</div>
-                                <div class="text-xs sm:text-sm">Rating {{ currentMentor().rating }}</div>
+                                <div class="text-xs sm:text-sm">{{ 'mentors.rating' | translate }} {{ currentMentor().rating }}</div>
                             </div>
 
                             <div class="mt-8 rounded-3xl overflow-hidden shadow-2xl">
@@ -35,7 +35,7 @@
                 </div>
 
                 <!-- Navigation Dots -->
-                <div class="flex justify-center gap-3 mt-9 lg:ml-64">
+                <div appScrollReveal="up" [revealDelay]="320" class="flex justify-center gap-3 mt-9 lg:ml-64">
                     @for (dotPosition of dots; track dotPosition) {
                     <button (click)="onDotClick(dotPosition)"
                         [class.bg-orange-500]="dotPosition === activeDotPosition()"

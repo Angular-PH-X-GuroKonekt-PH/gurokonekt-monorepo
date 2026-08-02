@@ -12,17 +12,17 @@
   }
   <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
     <app-metric-card
-      label="Approved Mentors"
-      [value]="metrics()?.totalMentors ?? null"
-      icon="academic-cap"
-      iconBg="bg-blue-50 text-blue-600"
-      [loading]="metricsLoading()"
-    />
-    <app-metric-card
       label="Total Mentees"
       [value]="metrics()?.totalMentees ?? null"
       icon="users"
       iconBg="bg-green-50 text-green-600"
+      [loading]="metricsLoading()"
+    />
+    <app-metric-card
+      label="Approved Mentors"
+      [value]="metrics()?.totalMentors ?? null"
+      icon="academic-cap"
+      iconBg="bg-blue-50 text-blue-600"
       [loading]="metricsLoading()"
     />
     <a [routerLink]="['/', pendingApprovalRoute]" class="block focus:outline-none focus:ring-2 focus:ring-orange-400 rounded-xl">

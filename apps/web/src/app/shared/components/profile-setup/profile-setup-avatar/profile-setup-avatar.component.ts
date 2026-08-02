@@ -10,7 +10,7 @@ import {
   AvatarCropModalComponent,
   type AvatarCropResult,
 } from '../../avatar-crop-modal/avatar-crop-modal.component';
-import { validateAvatarFile } from '../../../utils/avatar-validation.util';
+import { resolveAvatarFileSelection } from '../../../utils/avatar-validation.util';
 
 @Component({
   selector: 'app-profile-setup-avatar',
@@ -29,28 +29,24 @@ export class ProfileSetupAvatarComponent {
   /** Emitted after the user crops and applies a valid image. */
   readonly avatarReady = output<AvatarCropResult>();
   readonly removed = output<HTMLInputElement>();
-  readonly selectionFailed = output<string>();
+  readonly selectionFailed = output<string | null>();
 
   protected readonly isCropOpen = signal(false);
   protected readonly cropSourceFile = signal<File | null>(null);
 
   protected onFileInputChange(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) {
+    const selection = resolveAvatarFileSelection(event);
+    if (selection.status === 'empty') {
+      return;
+    }
+    if (selection.status === 'invalid') {
+      this.selectionFailed.emit(selection.error);
       return;
     }
 
-    const file = input.files[0];
-    const validation = validateAvatarFile(file);
-    if (!validation.valid) {
-      this.selectionFailed.emit(validation.error);
-      input.value = '';
-      return;
-    }
-
-    this.cropSourceFile.set(file);
+    this.selectionFailed.emit(null);
+    this.cropSourceFile.set(selection.file);
     this.isCropOpen.set(true);
-    input.value = '';
   }
 
   protected onCropped(result: AvatarCropResult): void {

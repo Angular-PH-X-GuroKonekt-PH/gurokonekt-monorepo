@@ -1,0 +1,89 @@
+<section>
+  <div class="mb-6">
+    <h2 class="text-2xl font-bold tracking-tight text-slate-900">Edit Profile</h2>
+    <p class="mt-1 text-sm text-slate-500">Update your profile details and picture</p>
+  </div>
+
+  @if (isLoading()) {
+    <div class="flex min-h-64 items-center justify-center">
+      <div class="flex flex-col items-center gap-4">
+        <div class="h-12 w-12 animate-spin rounded-full border-b-2 border-orange-500"></div>
+        <p class="text-gray-600">Loading your profile...</p>
+      </div>
+    </div>
+  }
+
+  @if (!isLoading()) {
+    <form [formGroup]="profileForm" (ngSubmit)="onSubmit()">
+      <app-profile-edit-avatar
+        [avatarPreview]="avatarPreview()"
+        [currentAvatarUrl]="currentAvatarUrl()"
+        [avatarError]="avatarError()"
+        (avatarReady)="onAvatarCropped($event)"
+        (removePreview)="removeAvatarPreview($event)"
+        (removeCurrent)="removeCurrentAvatar($event)"
+        (selectionFailed)="onAvatarSelectionFailed($event)"
+      />
+
+      <app-profile-edit-personal-info
+        [form]="profileForm"
+        [isMentor]="isMentor()"
+        [countryOptions]="countryOptions"
+        [timezoneOptions]="timezoneOptions"
+        [languageOptions]="languageOptions"
+      />
+
+      @if (isMentor()) {
+        <app-profile-edit-mentor-extras
+          [form]="profileForm"
+          [skills]="skills"
+          [areasOfExpertise]="areasOfExpertise"
+          [expertiseOptions]="expertiseOptions"
+          [maxSkills]="maxSkills"
+          [maxVerificationFiles]="maxVerificationFiles"
+          [selectedVerificationFiles]="selectedVerificationFiles()"
+          [verificationFileError]="verificationFileError()"
+          [availabilitySchedule]="availabilitySchedule()"
+          (toggleExpertise)="toggleAreaOfExpertise($event)"
+          (verificationFilesSelected)="onVerificationFilesSelected($event)"
+          (removeVerificationFile)="removeVerificationFile($event)"
+          (manageAvailability)="goToManageAvailability()"
+        />
+      } @else {
+        <app-profile-edit-mentee-extras
+          [form]="profileForm"
+          [learningGoals]="learningGoals"
+          [areasOfInterest]="areasOfInterest"
+          [preferredSessionTypes]="preferredSessionTypes"
+          [maxLearningGoals]="maxLearningGoals"
+          [areasOfInterestOptions]="areasOfInterestOptions"
+          [menteePreferredSessionType]="MenteePreferredSessionType"
+          (toggleAreaOfInterest)="toggleAreaOfInterest($event)"
+          (toggleSessionType)="toggleSessionType($event)"
+        />
+      }
+
+      <div class="flex gap-4 pt-4">
+        <button
+          type="submit"
+          [disabled]="isSubmitting()"
+          class="flex-1 px-6 py-3 bg-orange-500 text-white font-semibold rounded-lg hover:bg-orange-600 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+        >
+          @if (isSubmitting()) {
+            <div class="animate-spin h-5 w-5 border-2 border-white border-t-transparent rounded-full"></div>
+            <span>Updating...</span>
+          } @else {
+            <app-icon name="check-mark" class="w-5 h-5"></app-icon>
+            <span>Update Profile</span>
+          }
+        </button>
+        <a
+          [routerLink]="overviewRoute"
+          class="px-6 py-3 border-2 border-gray-300 text-gray-700 font-semibold rounded-lg hover:border-gray-400 hover:bg-gray-50 transition-colors flex items-center justify-center"
+        >
+          Cancel
+        </a>
+      </div>
+    </form>
+  }
+</section>

@@ -28,6 +28,9 @@ export type IconName =
   | 'chevron-down'
   | 'chevron-left'
   | 'chevron-right'
+  | 'sort-asc'
+  | 'sort-desc'
+  | 'sort-none'
   | 'check-mark'
   | 'check-mark-circle'
   | 'close'
@@ -119,6 +122,9 @@ export class IconComponent {
       'refresh': 'M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99',
       'chevron-left': 'M15.75 19.5 8.25 12l7.5-7.5',
       'chevron-right': 'M8.25 4.5l7.5 7.5-7.5 7.5',
+      'sort-asc': 'M4.5 15.75l7.5-7.5 7.5 7.5',
+      'sort-desc': 'M19.5 8.25l-7.5 7.5-7.5-7.5',
+      'sort-none': 'M8.25 15 12 18.75 15.75 15m-7.5-6L12 5.25 15.75 9',
       'check-mark': 'M5 13l4 4L19 7',
       'check-mark-circle': 'M9 12.75 11.25 15 15 9.75M21 12a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z',
       'eye': '',

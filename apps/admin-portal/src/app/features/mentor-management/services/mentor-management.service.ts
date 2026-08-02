@@ -72,7 +72,7 @@ export interface MentorsQueryParams {
   search?: string;
   dateFrom?: string;
   dateTo?: string;
-  sortBy?: 'createdAt' | 'firstName' | 'lastName';
+  sortBy?: 'createdAt' | 'firstName' | 'lastName' | 'email' | 'status';
   sortOrder?: 'asc' | 'desc';
   page?: number;
   limit?: number;

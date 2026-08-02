@@ -1,0 +1,190 @@
+<div [formGroup]="form()">
+  <div class="mb-10 pb-10 border-b border-gray-200">
+    <h2 class="text-xl font-bold text-gray-900 mb-6">Expertise</h2>
+
+    <div class="mb-8">
+      <label for="areasOfExpertise" class="block text-sm font-semibold text-gray-700 mb-4">
+        Areas of Expertise <span class="text-red-500">*</span>
+        <span class="text-gray-500 font-normal"> (Select at least one)</span>
+      </label>
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
+        @for (area of expertiseOptions(); track area) {
+          <label
+            class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
+            [class]="
+              isExpertiseSelected(area)
+                ? 'border-orange-500 bg-orange-50'
+                : 'border-gray-300 hover:border-orange-300'
+            "
+          >
+            <input
+              type="checkbox"
+              [checked]="isExpertiseSelected(area)"
+              (change)="toggleExpertise.emit(area)"
+              class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
+            />
+            <span class="text-gray-700 font-medium">{{ area }}</span>
+          </label>
+        }
+      </div>
+
+      <app-form-field-error
+        [form]="form()"
+        controlName="areasOfExpertise"
+        errorClass="text-red-600 text-sm mt-2"
+        [messages]="expertiseRequiredMessage"
+      />
+    </div>
+
+    <app-form-array-text-list
+      [formArray]="skills()"
+      listId="additional-skill"
+      label="Additional Skills"
+      description="Add specific skills you can mentor (Max 8)"
+      addButtonLabel="Add Skill"
+      itemSingularLabel="skill"
+      [maxItems]="maxSkills()"
+      [required]="false"
+      placeholder="E.g., CV review, React architecture, interview coaching"
+      helperText="Type a skill and press Enter or click + to add another."
+    />
+  </div>
+
+  <div class="mb-10 pb-10 border-b border-gray-200">
+    <h2 class="text-xl font-bold text-gray-900 mb-2">Verification Documents</h2>
+    <p class="text-sm text-gray-600 mb-6">
+      Upload supporting documents to verify your expertise (PDF, PNG, or JPEG • max 5MB each • up
+      to {{ maxVerificationFiles() }} files)
+    </p>
+
+    <div
+      class="flex flex-col items-center justify-center w-full rounded-2xl border-2 border-dashed border-gray-300 bg-gray-50 px-6 py-10 transition-colors hover:bg-gray-100 cursor-pointer"
+      (click)="verificationFileInput.click()"
+      (keyup.enter)="verificationFileInput.click()"
+      (keyup.space)="verificationFileInput.click()"
+      tabindex="0"
+      role="button"
+      aria-label="Upload verification documents"
+    >
+      <app-icon name="verified-badge" class="w-10 h-10 text-gray-400 mb-3"></app-icon>
+      <p class="text-sm text-gray-600 mb-4">Click to browse or add documents</p>
+      <button
+        type="button"
+        class="inline-flex items-center gap-2 px-5 py-2 bg-orange-500 text-white text-sm font-medium rounded-lg hover:bg-orange-600 transition-colors"
+        (click)="verificationFileInput.click(); $event.stopPropagation()"
+      >
+        Browse files
+      </button>
+      <input
+        #verificationFileInput
+        type="file"
+        [accept]="allowedDocumentAccept"
+        multiple
+        (change)="verificationFilesSelected.emit($event)"
+        class="hidden"
+      />
+    </div>
+
+    @if (verificationFileError()) {
+      <div
+        class="mt-3 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
+      >
+        <app-icon name="alert-warning" class="w-4 h-4 shrink-0"></app-icon>
+        <span>{{ verificationFileError() }}</span>
+      </div>
+    }
+
+    @if (selectedVerificationFiles().length > 0) {
+      <ul class="mt-4 space-y-2">
+        @for (file of selectedVerificationFiles(); track file.name + '-' + $index) {
+          <li
+            class="flex items-center justify-between gap-3 rounded-lg border border-green-200 bg-green-50 px-4 py-3 text-sm text-gray-700"
+          >
+            <div class="flex min-w-0 items-center gap-2">
+              <app-icon name="check-mark" class="w-4 h-4 shrink-0 text-green-600"></app-icon>
+              <span class="truncate font-medium">{{ file.name }}</span>
+              <span class="shrink-0 text-xs text-green-700"
+                >({{ formatFileSizeMb(file.size) }} MB)</span
+              >
+            </div>
+            <button
+              type="button"
+              (click)="removeVerificationFile.emit($index)"
+              class="shrink-0 text-red-500 hover:text-red-700 transition-colors"
+              [attr.aria-label]="'Remove ' + file.name"
+            >
+              <app-icon name="close" class="w-4 h-4"></app-icon>
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  </div>
+
+  <div class="pb-6 border-b border-gray-200">
+    <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <div>
+        <h2 class="text-xl font-bold text-gray-900">Availability</h2>
+        <p class="mt-1 text-sm text-gray-600">Your weekly availability for mentee bookings</p>
+      </div>
+      <button
+        type="button"
+        (click)="manageAvailability.emit()"
+        class="inline-flex items-center justify-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600"
+      >
+        <app-icon name="pencil-square" class="h-4 w-4"></app-icon>
+        Edit Availability
+      </button>
+    </div>
+
+    <div class="overflow-hidden rounded-xl border border-gray-200 bg-white">
+      <div class="overflow-x-auto">
+        <table class="w-full min-w-[420px] table-fixed text-left">
+          <colgroup>
+            <col class="w-[28%]" />
+            <col class="w-[72%]" />
+          </colgroup>
+          <thead>
+            <tr class="border-b border-gray-200 bg-gray-50">
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Day
+              </th>
+              <th class="px-5 py-3 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+                Time slots
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (daySchedule of availabilitySchedule(); track daySchedule.day) {
+              @let isAvailable = daySchedule.enabled && daySchedule.timeFrames.length > 0;
+              <tr class="border-b border-gray-100 last:border-b-0">
+                <td
+                  class="px-5 py-3.5 align-middle text-sm capitalize"
+                  [class]="isAvailable ? 'font-medium text-gray-900' : 'font-medium text-gray-400'"
+                >
+                  {{ daySchedule.day }}
+                </td>
+                <td class="px-5 py-3.5 align-middle">
+                  @if (isAvailable) {
+                    <div class="flex flex-wrap items-center gap-2">
+                      @for (timeFrame of daySchedule.timeFrames; track $index) {
+                        <span
+                          class="inline-flex items-center rounded-md bg-orange-50 px-2.5 py-1 text-sm font-medium tabular-nums text-orange-700 ring-1 ring-inset ring-orange-200"
+                        >
+                          {{ formatAvailabilityTimeRange(timeFrame) }}
+                        </span>
+                      }
+                    </div>
+                  } @else {
+                    <span class="text-sm font-normal text-gray-400">Unavailable</span>
+                  }
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
