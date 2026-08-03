@@ -10,9 +10,7 @@ describe('Community', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Community],
-      providers: [
-        { provide: APP_CONFIG, useValue: environment },
-      ],
+      providers: [{ provide: APP_CONFIG, useValue: environment }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Community);

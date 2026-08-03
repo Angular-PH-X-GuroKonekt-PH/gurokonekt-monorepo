@@ -16,8 +16,8 @@ import { environment } from '../environments/environment';
 export const appConfig: ApplicationConfig = {
   providers: [
     provideClientHydration(withEventReplay()),
-    // withFetch() so HttpClient works under the Node prerender build, where the
-    // default XHR backend is unavailable.
+    // withFetch() so HttpClient works under the Node prerender/SSR build, where
+    // the default XHR backend is unavailable.
     provideHttpClient(withFetch()),
     provideBrowserGlobalErrorListeners(),
     provideZoneChangeDetection({ eventCoalescing: true }),

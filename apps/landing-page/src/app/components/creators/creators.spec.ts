@@ -3,8 +3,8 @@ import { Creators } from './creators';
 import { Contentful } from '../../shared/services/contentful/contentful';
 
 // This file previously imported and tested `Mentors` from './mentors' — a
-// copy-paste that pointed at a file which does not exist in this folder. It went
-// unnoticed because the landing page had no test runner configured.
+// copy-paste that pointed at a file which does not exist in this folder. It was
+// never caught because the landing page had no test runner configured.
 describe('Creators', () => {
   let component: Creators;
   let fixture: ComponentFixture<Creators>;
