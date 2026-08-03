@@ -13,6 +13,7 @@ import { NotificationGatewayModule } from './gateway/notification-gateway.module
 import { MetricsModule } from './metrics/metrics.module';
 import { AdminModule } from './admin/admin.module';
 import { ReviewModule } from './review/review.module';
+import { PublicModule } from './public/public.module';
 
 @Module({
   imports: [
@@ -26,6 +27,7 @@ import { ReviewModule } from './review/review.module';
     MetricsModule,
     AdminModule,
     ReviewModule,
+    PublicModule,
     NotificationGatewayModule,
   ],
   controllers: [AppController],

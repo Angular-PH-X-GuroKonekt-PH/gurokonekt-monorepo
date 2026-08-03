@@ -61,6 +61,8 @@ enum LogsActionType {
   admin_approve_mentor
   admin_reject_mentor
   admin_deactivate_mentor
+  admin_feature_mentor
+  admin_unfeature_mentor
 
   @@map("logs_action_type")
 }
@@ -177,12 +179,15 @@ model MentorProfile {
   sessionRate       Float?    @map("session_rate")
   sessionDurationMinutes  Int       @default(60) @map("session_duration_minutes")
   availability      Json
+  isFeatured        Boolean   @default(false) @map("is_featured")
+  featuredAt        DateTime? @map("featured_at")
   updatedById       String?   @map("updated_by_id")
   updatedAt         DateTime  @updatedAt @map("updated_at")
 
   user              User      @relation("mentor_base_user", fields: [userId], references: [id])
   updatedBy         User?     @relation("mentor_updated_by", fields: [updatedById], references: [id])
 
+  @@index([isFeatured])
   @@map("mentor_profiles")
 }
 

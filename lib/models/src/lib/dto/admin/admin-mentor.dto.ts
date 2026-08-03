@@ -1,5 +1,5 @@
-import { IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsBoolean, IsDateString, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, Max, MaxLength, Min } from 'class-validator';
+import { Transform, Type } from 'class-transformer';
 
 export class ListMentorsQueryDto {
   @IsOptional()
@@ -18,6 +18,16 @@ export class ListMentorsQueryDto {
   @IsOptional()
   @IsDateString()
   dateTo?: string;
+
+  /**
+   * Filter by featured status. `@Transform` rather than `@Type(() => Boolean)`
+   * because `Boolean('false')` is `true`, which would silently turn the
+   * "not featured" filter into "featured".
+   */
+  @IsOptional()
+  @Transform(({ value }) => value === true || value === 'true')
+  @IsBoolean()
+  isFeatured?: boolean;
 
   @IsOptional()
   @IsEnum(['createdAt', 'firstName', 'lastName', 'email', 'status'])
@@ -45,4 +55,9 @@ export class AdminRejectMentorDto {
   @IsNotEmpty()
   @IsString()
   reason!: string;
+}
+
+export class SetMentorFeaturedDto {
+  @IsBoolean()
+  isFeatured!: boolean;
 }

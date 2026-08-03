@@ -4,9 +4,11 @@ import {
   AdminRejectMentorDto,
   ListMentorsQueryDto,
   LogsActionType,
+  MentorAccess,
   ResponseDto,
   ResponseStatus,
   SelectFields,
+  SetMentorFeaturedDto,
   UserRole,
   UserStatus,
 } from '@gurokonekt/models';
@@ -29,6 +31,7 @@ export class AdminMentorService {
         search,
         dateFrom,
         dateTo,
+        isFeatured,
         sortBy = 'createdAt',
         sortOrder = 'desc',
         page = 1,
@@ -36,6 +39,14 @@ export class AdminMentorService {
       } = query;
 
       const where: Record<string, unknown> = { role: UserRole.Mentor };
+
+      if (typeof isFeatured === 'boolean') {
+        // `none` rather than `some: { isFeatured: false }` so a mentor with no
+        // profile row still counts as "not featured".
+        where['mentorProfiles'] = isFeatured
+          ? { some: { isFeatured: true } }
+          : { none: { isFeatured: true } };
+      }
 
       if (status !== 'all') {
         if (status === 'pending') {
@@ -70,7 +81,13 @@ export class AdminMentorService {
       const [mentors, total] = await Promise.all([
         this.prisma.db.user.findMany({
           where,
-          select: SelectFields.getUserCredentialsSelect(),
+          select: {
+            ...SelectFields.getUserCredentialsSelect(),
+            mentorProfiles: {
+              select: { isFeatured: true, featuredAt: true },
+              take: 1,
+            },
+          },
           orderBy: { [sortBy]: sortOrder },
           skip,
           take: limit,
@@ -90,6 +107,8 @@ export class AdminMentorService {
         isProfileComplete: mentor.isProfileComplete,
         createdAt: mentor.createdAt.toISOString(),
         avatarUrl: mentor.avatarAttachments[0]?.publicUrl ?? null,
+        isFeatured: mentor.mentorProfiles[0]?.isFeatured ?? false,
+        featuredAt: mentor.mentorProfiles[0]?.featuredAt?.toISOString() ?? null,
       }));
 
       return {
@@ -453,6 +472,111 @@ export class AdminMentorService {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.ADMIN_DEACTIVATE_MENTOR.code,
         message: API_RESPONSE.ERROR.ADMIN_DEACTIVATE_MENTOR.message,
+        data: error,
+      };
+    }
+  }
+
+  /**
+   * Marks a mentor as featured on the public site, or removes them.
+   *
+   * Featuring requires the mentor to pass `MentorAccess.isApprovedMentor` — the
+   * same rule the public endpoint re-applies at read time. Un-featuring is
+   * always permitted so an admin can retract a mentor whose status has since
+   * changed.
+   *
+   * No email or notification is sent: this is internal merchandising, not an
+   * account-status change the mentor needs to be told about.
+   */
+  async setMentorFeatured(
+    mentorId: string,
+    dto: SetMentorFeaturedDto,
+    adminId: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<ResponseDto> {
+    try {
+      const mentor = await this.prisma.db.user.findFirst({
+        where: { id: mentorId, role: UserRole.Mentor },
+        select: {
+          id: true,
+          role: true,
+          status: true,
+          isMentorApproved: true,
+          isMentorProfileComplete: true,
+          mentorProfiles: { select: { id: true }, take: 1 },
+        },
+      });
+
+      if (!mentor) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      const profileId = mentor.mentorProfiles[0]?.id;
+      if (!profileId) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.MENTOR_PROFILE_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.MENTOR_PROFILE_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      if (dto.isFeatured && !MentorAccess.isApprovedMentor(mentor)) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.MENTOR_INVALID_STATUS_FOR_FEATURE.code,
+          message: API_RESPONSE.ERROR.MENTOR_INVALID_STATUS_FOR_FEATURE.message,
+          data: null,
+        };
+      }
+
+      const featuredAt = dto.isFeatured ? new Date() : null;
+
+      await this.prisma.db.mentorProfile.update({
+        where: { id: profileId },
+        data: {
+          isFeatured: dto.isFeatured,
+          featuredAt,
+          updatedById: adminId,
+        },
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: dto.isFeatured
+            ? LogsActionType.AdminFeatureMentor
+            : LogsActionType.AdminUnfeatureMentor,
+          targetId: mentorId,
+          details: API_RESPONSE.SUCCESS.ADMIN_SET_MENTOR_FEATURED.message,
+          metadata: { mentorId, isFeatured: dto.isFeatured },
+          ipAddress,
+          userAgent,
+          createdById: adminId,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.ADMIN_SET_MENTOR_FEATURED.code,
+        message: API_RESPONSE.SUCCESS.ADMIN_SET_MENTOR_FEATURED.message,
+        data: {
+          mentorId,
+          isFeatured: dto.isFeatured,
+          featuredAt: featuredAt?.toISOString() ?? null,
+        },
+      };
+    } catch (error: any) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.ADMIN_SET_MENTOR_FEATURED.code,
+        message: API_RESPONSE.ERROR.ADMIN_SET_MENTOR_FEATURED.message,
         data: error,
       };
     }

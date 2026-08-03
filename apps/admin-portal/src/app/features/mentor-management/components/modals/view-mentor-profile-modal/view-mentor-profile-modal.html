@@ -15,11 +15,37 @@
     <!-- Header -->
     <div class="flex items-center justify-between px-6 py-4 border-b border-gray-200">
       <h2 class="text-lg font-semibold text-gray-900">Mentor Profile</h2>
-      <button type="button" (click)="close()" class="text-gray-400 hover:text-gray-600 transition-colors">
+
+      <div class="flex items-center gap-4">
+        <!-- Featured toggle -->
+        <label
+          class="flex items-center gap-2"
+          [class.cursor-pointer]="canBeFeatured(mentor()) || mentor().isFeatured"
+          [class.opacity-50]="!canBeFeatured(mentor()) && !mentor().isFeatured"
+          [title]="canBeFeatured(mentor()) || mentor().isFeatured
+            ? (mentor().isFeatured ? 'Remove from Featured Mentors' : 'Add to Featured Mentors')
+            : 'Only approved mentors with a complete profile can be featured'"
+        >
+          <span class="text-xs font-medium text-gray-500 uppercase">Featured</span>
+          <span class="relative inline-flex items-center">
+            <input
+              type="checkbox"
+              class="sr-only peer"
+              [checked]="mentor().isFeatured"
+              [disabled]="isFeaturing() || (!canBeFeatured(mentor()) && !mentor().isFeatured)"
+              (change)="onToggleFeatured()"
+              [attr.aria-label]="'Featured status for ' + mentor().firstName + ' ' + mentor().lastName"
+            />
+            <span class="w-9 h-5 bg-gray-200 rounded-full peer peer-checked:bg-orange-500 peer-focus:ring-2 peer-focus:ring-orange-300 peer-disabled:cursor-not-allowed after:content-[''] after:absolute after:top-0.5 after:left-0.5 after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:after:translate-x-4"></span>
+          </span>
+        </label>
+
+        <button type="button" (click)="close()" class="text-gray-400 hover:text-gray-600 transition-colors">
         <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
           <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/>
         </svg>
-      </button>
+        </button>
+      </div>
     </div>
 
     <!-- Body -->

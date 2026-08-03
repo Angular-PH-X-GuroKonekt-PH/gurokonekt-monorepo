@@ -17,6 +17,9 @@ export interface MentorListItem {
   isProfileComplete: boolean;
   createdAt: string;
   avatarUrl: string | null;
+  isFeatured: boolean;
+  /** ISO timestamp of when the mentor was featured, or null if not featured. */
+  featuredAt: string | null;
 }
 
 export interface MentorProfile {
@@ -30,6 +33,8 @@ export interface MentorProfile {
   sessionRate: number | null;
   sessionDurationMinutes: number;
   availability: unknown;
+  isFeatured: boolean;
+  featuredAt: string | null;
 }
 
 export interface DocumentAttachment {
@@ -67,11 +72,18 @@ export interface MentorDeactivationFeedback {
   createdAt: string;
 }
 
+export interface SetFeaturedResult {
+  mentorId: string;
+  isFeatured: boolean;
+  featuredAt: string | null;
+}
+
 export interface MentorsQueryParams {
   status?: 'all' | 'pending' | 'approved' | 'rejected' | 'inactive';
   search?: string;
   dateFrom?: string;
   dateTo?: string;
+  isFeatured?: boolean;
   sortBy?: 'createdAt' | 'firstName' | 'lastName' | 'email' | 'status';
   sortOrder?: 'asc' | 'desc';
   page?: number;
@@ -125,6 +137,13 @@ export class MentorManagementService {
     return this.http.patch<ApiResponse<null>>(
       buildApiUrl(API_CONFIG.endpoints.admin.deactivateMentor(id)),
       {}
+    );
+  }
+
+  setFeatured(id: string, isFeatured: boolean): Observable<ApiResponse<SetFeaturedResult>> {
+    return this.http.patch<ApiResponse<SetFeaturedResult>>(
+      buildApiUrl(API_CONFIG.endpoints.admin.setMentorFeatured(id)),
+      { isFeatured }
     );
   }
 }

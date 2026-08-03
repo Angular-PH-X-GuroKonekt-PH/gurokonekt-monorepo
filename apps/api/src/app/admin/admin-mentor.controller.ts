@@ -17,6 +17,8 @@ import {
   AdminRejectMentorDto,
   ListMentorsQueryDto,
   ResponseStatus,
+  SWAGGER_DOCUMENTATION,
+  SetMentorFeaturedDto,
 } from '@gurokonekt/models';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { AdminGuard } from '../jwt-guard/admin.guard';
@@ -114,6 +116,34 @@ export class AdminMentorController {
     @Headers('user-agent') userAgent: string,
   ) {
     const response = await this.adminMentorService.rejectMentor(
+      mentorId,
+      dto,
+      req.user.id,
+      ipAddress,
+      userAgent,
+    );
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return response;
+  }
+
+  @Patch(':mentorId/featured')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.ADMIN_SET_MENTOR_FEATURED.summary,
+    description: SWAGGER_DOCUMENTATION.ADMIN_SET_MENTOR_FEATURED.description,
+  })
+  async setMentorFeatured(
+    @Param('mentorId') mentorId: string,
+    @Body() dto: SetMentorFeaturedDto,
+    @Request() req: { user: { id: string } },
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const response = await this.adminMentorService.setMentorFeatured(
       mentorId,
       dto,
       req.user.id,
