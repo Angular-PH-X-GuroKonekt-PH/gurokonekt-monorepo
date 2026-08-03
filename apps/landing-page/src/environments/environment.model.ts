@@ -4,4 +4,6 @@ export interface EnvironmentModel {
     CONTENTFUL_EVENTS: string;
     SIGN_IN_URL: string;
     REGISTER_URL: string;
+    /** Base URL of the Gurokonekt REST API, including the `/api` prefix. */
+    API_URL: string;
 }
