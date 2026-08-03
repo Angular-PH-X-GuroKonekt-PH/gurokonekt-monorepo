@@ -4,6 +4,7 @@ import { IconComponent } from '../../../../../../shared/components/icon/icon.com
 import { FormArrayTextListComponent } from '../../../../../../shared/components/form-array-text-list/form-array-text-list.component';
 import { FormFieldErrorComponent } from '../../../../../../shared/components/form-field-error/form-field-error.component';
 import type { DayAvailability, TimeFrame } from '../../../../../../shared/interfaces/post-login.interface';
+import { ALLOWED_DOCUMENT_ACCEPT } from '../../../../../../shared/utils/document-validation.util';
 import { formatTimeRange } from '../../../../../../features/mentor/pages/mentor-manage-availability-page/availability.helpers';
 
 @Component({
@@ -33,6 +34,8 @@ export class ProfileEditMentorExtrasComponent {
   readonly verificationFilesSelected = output<Event>();
   readonly removeVerificationFile = output<number>();
   readonly manageAvailability = output<void>();
+
+  protected readonly allowedDocumentAccept = ALLOWED_DOCUMENT_ACCEPT;
 
   protected readonly expertiseRequiredMessage = {
     required: 'Please select at least one area of expertise',

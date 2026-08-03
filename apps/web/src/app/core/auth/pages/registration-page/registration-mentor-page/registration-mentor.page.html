@@ -217,16 +217,28 @@
                 #fileInput
                 type="file"
                 id="verificationFiles"
-                accept=".pdf,image/*"
+                [accept]="allowedDocumentAccept"
                 (change)="onFilesSelected($event)"
                 class="hidden"
               />
             </div>
 
             <p class="mt-2 text-xs text-gray-600">
-              Upload a document to verify your expertise (PDF or image file, max
+              Upload a document to verify your expertise (PDF, PNG, or JPEG, max
               10MB)
             </p>
+
+            @if (verificationFileError()) {
+            <div
+              class="mt-3 flex items-center gap-2 p-3 bg-red-50 border border-red-200 rounded-lg text-red-700 text-sm"
+            >
+              <app-icon
+                name="alert-warning"
+                class="w-4 h-4 shrink-0"
+              ></app-icon>
+              <span>{{ verificationFileError() }}</span>
+            </div>
+            }
 
             <!-- Selected File Display -->
             @if (selectedFiles.length > 0) {

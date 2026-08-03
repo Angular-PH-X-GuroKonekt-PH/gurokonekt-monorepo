@@ -31,6 +31,10 @@ import {
   getTimezones,
 } from '../../../../shared/utils/location-data.util';
 import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
+import {
+  DOCUMENT_TYPE_ERROR,
+  isAllowedDocumentType,
+} from '../../../../shared/utils/document-validation.util';
 import { expertiseOptions } from '../../../../shared/helpers/expertise-selection.helper';
 import { FORM_FIELD_VALIDATORS } from '../../../../shared/constants/form-validation-configs.constants';
 import { ProfileEditAvatarComponent } from './components/profile-edit-avatar/profile-edit-avatar.component';
@@ -60,12 +64,6 @@ export class ProfileEditSectionPage implements OnInit {
   private static readonly MAX_SKILLS = 8;
   private static readonly MAX_VERIFICATION_FILES = 5;
   private static readonly MAX_VERIFICATION_FILE_SIZE_BYTES = 5 * 1024 * 1024;
-  private static readonly ALLOWED_VERIFICATION_TYPES = [
-    'application/pdf',
-    'image/png',
-    'image/jpeg',
-    'image/jpg',
-  ];
 
   private readonly fb = inject(FormBuilder);
   private readonly toastService = inject(ToastService);
@@ -543,8 +541,8 @@ export class ProfileEditSectionPage implements OnInit {
 
     const nextFiles = [...this.selectedVerificationFiles()];
     for (const file of Array.from(input.files).slice(0, remainingSlots)) {
-      if (!ProfileEditSectionPage.ALLOWED_VERIFICATION_TYPES.includes(file.type)) {
-        this.verificationFileError.set('Only PDF, PNG, and JPEG documents are allowed');
+      if (!isAllowedDocumentType(file)) {
+        this.verificationFileError.set(DOCUMENT_TYPE_ERROR);
         input.value = '';
         return;
       }

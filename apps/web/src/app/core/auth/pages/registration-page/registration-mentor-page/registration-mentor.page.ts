@@ -1,4 +1,11 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, output } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  inject,
+  OnInit,
+  output,
+  signal,
+} from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
@@ -17,6 +24,10 @@ import {
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { buildVerifyEmailRedirectUrl } from 'apps/web/src/app/shared/utils/email-verification.util';
+import {
+  ALLOWED_DOCUMENT_ACCEPT,
+  validateDocumentFile,
+} from 'apps/web/src/app/shared/utils/document-validation.util';
 import { AuthSelectors } from '../../../store/auth.selectors';
 import { watchRegistrationOutcome } from '../../../helpers/registration-outcome.helper';
 import { RegistrationStepNavComponent } from '../registration-step-nav/registration-step-nav.component';
@@ -81,7 +92,10 @@ export class RegistrationMentorPage
 
   protected readonly registerForm: FormGroup;
   protected readonly expertiseOptions = expertiseOptions;
+  protected readonly allowedDocumentAccept = ALLOWED_DOCUMENT_ACCEPT;
+  private static readonly MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
   protected selectedFiles: File[] = [];
+  protected readonly verificationFileError = signal<string | null>(null);
 
   constructor() {
     super();
@@ -160,26 +174,33 @@ export class RegistrationMentorPage
 
   protected onFilesSelected(event: Event): void {
     const input = event.target as HTMLInputElement;
-    if (input.files && input.files.length > 0) {
-      const file = input.files[0];
-
-      const maxSize = 10 * 1024 * 1024;
-      if (file.size > maxSize) {
-        this.handleSubmissionError(
-          'File size exceeds 10MB limit. Please choose a smaller file.'
-        );
-        input.value = '';
-        this.selectedFiles = [];
-        return;
-      }
-
-      this.selectedFiles = [file];
-      this.registerForm.patchValue({ files: this.selectedFiles });
+    if (!input.files || input.files.length === 0) {
+      return;
     }
+
+    const file = input.files[0];
+    const validation = validateDocumentFile(
+      file,
+      RegistrationMentorPage.MAX_DOCUMENT_SIZE_BYTES
+    );
+
+    if (!validation.valid) {
+      this.verificationFileError.set(validation.error);
+      this.selectedFiles = [];
+      this.registerForm.patchValue({ files: [] });
+      input.value = '';
+      return;
+    }
+
+    this.verificationFileError.set(null);
+    this.clearSubmissionError();
+    this.selectedFiles = [file];
+    this.registerForm.patchValue({ files: this.selectedFiles });
   }
 
   protected clearSelectedFiles(): void {
     this.selectedFiles = [];
+    this.verificationFileError.set(null);
     this.registerForm.patchValue({ files: [] });
   }
 
