@@ -317,3 +317,20 @@ model AdminRejectionLog {
 
   @@map("admin_rejection_logs")
 }
+
+/// Contact form submissions from the public marketing site.
+///
+/// Intentionally has no relation to `User` — inquiries come from anonymous
+/// visitors who may not have an account. Spam is handled by reCAPTCHA at the
+/// endpoint, so no IP address or user agent is stored.
+model Inquiry {
+  id        String   @id @default(uuid())
+  fullName  String   @map("full_name")
+  email     String
+  topic     String
+  message   String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([createdAt])
+  @@map("inquiries")
+}

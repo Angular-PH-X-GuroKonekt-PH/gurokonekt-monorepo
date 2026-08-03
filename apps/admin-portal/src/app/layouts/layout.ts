@@ -16,6 +16,7 @@ export class Layout {
     { label: 'Mentor Management',            route: APP_ROUTES.MENTOR_MANAGEMENT,  icon: 'academic-cap' },
     { label: 'Mentee Management',            route: APP_ROUTES.MENTEE_MANAGEMENT,  icon: 'users' },
     { label: 'Booking Management',           route: APP_ROUTES.BOOKING_MANAGEMENT, icon: 'calendar-days' },
+    { label: 'User Inquiries',               route: APP_ROUTES.USER_INQUIRIES,     icon: 'mail' },
     { label: 'Notifications & Announcements',route: APP_ROUTES.NOTIFICATIONS,      icon: 'bell' },
     { label: 'Reporting & Analytics',        route: APP_ROUTES.REPORTS,            icon: 'chart-bar-square' },
     { label: 'Admin Roles & Permissions',    route: APP_ROUTES.ADMIN_ROLES,        icon: 'wrench-screwdriver' },

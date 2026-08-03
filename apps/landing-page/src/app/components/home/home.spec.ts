@@ -1,5 +1,10 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Home } from './home';
+import { APP_CONFIG } from '../../../environments/app-config.token';
+import { environment } from '../../../environments/environment';
+import { provideRouter } from '@angular/router';
+import { provideHttpClient, withFetch } from '@angular/common/http';
+import { provideHttpClientTesting } from '@angular/common/http/testing';
 
 describe('Home', () => {
   let component: Home;
@@ -8,6 +13,13 @@ describe('Home', () => {
   beforeEach(async () => {
     await TestBed.configureTestingModule({
       imports: [Home],
+      providers: [
+        { provide: APP_CONFIG, useValue: environment },
+        provideRouter([]),
+        // Home renders ContactUs, which submits inquiries over HTTP.
+        provideHttpClient(withFetch()),
+        provideHttpClientTesting(),
+      ],
     }).compileComponents();
 
     fixture = TestBed.createComponent(Home);

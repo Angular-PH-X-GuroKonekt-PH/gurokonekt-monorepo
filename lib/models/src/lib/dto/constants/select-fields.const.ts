@@ -111,6 +111,18 @@ export class SelectFields {
     };
   }
 
+  /** Every column of an inquiry. There are no sensitive fields to withhold. */
+  static getInquirySelect() {
+    return {
+      id: true,
+      fullName: true,
+      email: true,
+      topic: true,
+      message: true,
+      createdAt: true,
+    };
+  }
+
   /**
    * Fields for the PUBLIC featured-mentors endpoint.
    *

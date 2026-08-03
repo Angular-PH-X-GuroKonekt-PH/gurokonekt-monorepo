@@ -58,6 +58,14 @@ export const appRoutes: Route[] = [
         title: 'Booking Management',
       },
       {
+        path: APP_ROUTES.USER_INQUIRIES,
+        loadComponent: () =>
+          import('./features/user-inquiries/pages/user-inquiries-page/user-inquiries.page').then(
+            (m) => m.UserInquiriesPage
+          ),
+        title: 'User Inquiries',
+      },
+      {
         path: APP_ROUTES.NOTIFICATIONS,
         loadComponent: () =>
           import('./features/notifications/pages/notifications-page/notifications.page').then(

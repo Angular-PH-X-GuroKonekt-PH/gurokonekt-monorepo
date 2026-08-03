@@ -7,5 +7,6 @@ export const APP_ROUTES = {
   BOOKING_MANAGEMENT: 'booking-management',
   NOTIFICATIONS: 'notifications',
   REPORTS: 'reports',
+  USER_INQUIRIES: 'user-inquiries',
   ADMIN_ROLES: 'admin-roles',
 } as const;

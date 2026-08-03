@@ -1,0 +1,166 @@
+<div class="space-y-4">
+
+  <!-- Filter Bar -->
+  <div class="flex flex-wrap items-center gap-3">
+
+    <!-- Search -->
+    <div class="relative">
+      <svg class="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+        <path stroke-linecap="round" stroke-linejoin="round" d="m21 21-5.197-5.197m0 0A7.5 7.5 0 1 0 5.196 5.196a7.5 7.5 0 0 0 10.607 10.607Z"/>
+      </svg>
+      <input
+        type="text"
+        (input)="onSearchInput($any($event.target).value)"
+        placeholder="Search by name, email or subject..."
+        class="text-sm border border-gray-200 rounded-lg pl-9 pr-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white w-64"
+      />
+    </div>
+
+    <!-- Date From -->
+    <div class="flex items-center gap-2">
+      <label for="inquiry-date-from" class="text-xs text-gray-500 font-medium">From</label>
+      <input
+        id="inquiry-date-from"
+        type="date"
+        [value]="dateFrom()"
+        (change)="onDateFromChange($any($event.target).value)"
+        class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+      />
+    </div>
+
+    <!-- Date To -->
+    <div class="flex items-center gap-2">
+      <label for="inquiry-date-to" class="text-xs text-gray-500 font-medium">To</label>
+      <input
+        id="inquiry-date-to"
+        type="date"
+        [value]="dateTo()"
+        (change)="onDateToChange($any($event.target).value)"
+        class="text-sm border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:ring-2 focus:ring-orange-500 bg-white"
+      />
+    </div>
+
+    @if (dateFrom() || dateTo()) {
+      <button
+        type="button"
+        (click)="onDateFromChange(''); onDateToChange('')"
+        class="text-xs text-gray-400 hover:text-gray-600 underline"
+      >
+        Clear dates
+      </button>
+    }
+
+    <span class="ml-auto text-xs text-gray-400">{{ total() }} total</span>
+  </div>
+
+  <!-- Table Card -->
+  <div class="bg-white rounded-xl border border-gray-200">
+    <div>
+      <table class="w-full text-sm">
+        <thead class="bg-gray-50 text-gray-500 text-xs uppercase">
+          <tr>
+            <th
+              class="px-6 py-3 text-left font-medium"
+              app-sortable-header
+              field="fullName"
+              [activeField]="sortBy()"
+              [activeOrder]="sortOrder()"
+              (sort)="onSort($event)"
+            >Full Name</th>
+            <th
+              class="px-6 py-3 text-left font-medium"
+              app-sortable-header
+              field="email"
+              [activeField]="sortBy()"
+              [activeOrder]="sortOrder()"
+              (sort)="onSort($event)"
+            >Email</th>
+            <th
+              class="px-6 py-3 text-left font-medium"
+              app-sortable-header
+              field="topic"
+              [activeField]="sortBy()"
+              [activeOrder]="sortOrder()"
+              (sort)="onSort($event)"
+            >Subject</th>
+            <th class="px-6 py-3 text-left font-medium">Message</th>
+            <th
+              class="px-6 py-3 text-left font-medium"
+              app-sortable-header
+              field="createdAt"
+              [activeField]="sortBy()"
+              [activeOrder]="sortOrder()"
+              (sort)="onSort($event)"
+            >Submitted</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-100">
+
+          @if (isLoading()) {
+            <tr>
+              <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm">Loading inquiries...</td>
+            </tr>
+          } @else if (inquiries().length === 0) {
+            <tr>
+              <td colspan="5" class="px-6 py-12 text-center text-gray-400 text-sm" data-testid="inquiries-empty">
+                No inquiries yet.
+              </td>
+            </tr>
+          } @else {
+            @for (inquiry of inquiries(); track inquiry.id) {
+              <tr class="hover:bg-gray-50 transition-colors align-top" data-testid="inquiry-row">
+                <td class="px-6 py-4 font-medium text-gray-900">{{ inquiry.fullName }}</td>
+                <td class="px-6 py-4 text-gray-600">
+                  <a [href]="'mailto:' + inquiry.email" class="hover:underline">{{ inquiry.email }}</a>
+                </td>
+                <td class="px-6 py-4 text-gray-600">{{ inquiry.topic }}</td>
+                <td class="px-6 py-4 text-gray-600 max-w-md">
+                  <!-- Messages are long; keep rows readable and let the admin
+                       expand the one they care about. -->
+                  <button
+                    type="button"
+                    (click)="toggleExpanded(inquiry.id)"
+                    class="text-left w-full hover:text-gray-900 transition-colors"
+                    [attr.aria-expanded]="expandedId() === inquiry.id"
+                  >
+                    <span [class.line-clamp-2]="expandedId() !== inquiry.id" class="block whitespace-pre-line">
+                      {{ inquiry.message }}
+                    </span>
+                    <span class="text-xs text-orange-600 mt-1 inline-block">
+                      {{ expandedId() === inquiry.id ? 'Show less' : 'Show more' }}
+                    </span>
+                  </button>
+                </td>
+                <td class="px-6 py-4 text-gray-500 whitespace-nowrap">
+                  {{ inquiry.createdAt | date: 'MMM d, y, h:mm a' }}
+                </td>
+              </tr>
+            }
+          }
+
+        </tbody>
+      </table>
+    </div>
+
+    <!-- Pagination -->
+    @if (totalPages() > 1) {
+      <div class="px-6 py-4 border-t border-gray-100 flex items-center justify-between text-sm text-gray-500">
+        <span>{{ (page() - 1) * limit + 1 }}–{{ page() * limit > total() ? total() : page() * limit }} of {{ total() }}</span>
+        <div class="flex items-center gap-2">
+          <button
+            [disabled]="page() === 1"
+            (click)="onPageChange(page() - 1)"
+            class="px-3 py-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+          >Prev</button>
+          <span>{{ page() }} / {{ totalPages() }}</span>
+          <button
+            [disabled]="page() === totalPages()"
+            (click)="onPageChange(page() + 1)"
+            class="px-3 py-1 rounded-lg border border-gray-200 disabled:opacity-40 hover:bg-gray-50 transition-colors"
+          >Next</button>
+        </div>
+      </div>
+    }
+  </div>
+
+</div>
