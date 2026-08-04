@@ -145,6 +145,8 @@ describe('Hero', () => {
       expect(el.textContent).toContain('Rating');
     });
 
+    // Nullable in the API contract — a mentor with no reviews must not render
+    // "Rating null" or "Rating 0".
     it('omits the rating label for an unrated mentor', async () => {
       const el = await setup([
         buildMentor({ averageRating: null, ratingCount: 0 }),
@@ -152,6 +154,21 @@ describe('Hero', () => {
 
       expect(el.textContent).toContain('Maria Santos');
       expect(el.textContent).not.toContain('Rating');
+      expect(el.textContent).not.toContain('null');
+    });
+
+    // A clipped name ("John Leonard A. L…") is worse than a taller badge.
+    it('does not truncate a long name', async () => {
+      const el = await setup([
+        buildMentor({ firstName: 'John Leonard A.', lastName: 'Villafranca' }),
+      ]);
+
+      const badge = Array.from(el.querySelectorAll('p')).find((p) =>
+        p.textContent?.includes('John Leonard A.'),
+      );
+      expect(badge).toBeTruthy();
+      expect(badge?.className).not.toContain('truncate');
+      expect(el.textContent).toContain('John Leonard A. Villafranca');
     });
   });
 });

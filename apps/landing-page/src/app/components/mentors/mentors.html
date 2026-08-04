@@ -1,4 +1,7 @@
-<section id="mentors" class="flex items-center justify-center pt-12 pr-8 pb-24 pl-8 min-h-[80vh] bg-[#0f1c35]">
+<!-- The entire section is hidden when nothing is featured, the request failed,
+     or this is the prerendered server render. No heading, no empty carousel. -->
+@if (hasMentors() && currentMentor(); as mentor) {
+<section id="mentors" data-testid="mentors-section" class="flex items-center justify-center pt-12 pr-8 pb-24 pl-8 min-h-[80vh] bg-[#0f1c35]">
     <div class="w-full max-w-6xl">
         <h1 appScrollReveal="up" class="text-3xl sm:text-4xl font-bold text-white text-center mb-10 lg:mb-20">{{ 'mentors.title' | translate }}</h1>
 
@@ -10,56 +13,85 @@
             <div class="flex-1 w-full">
                 <div class="transition-opacity duration-500" [class.opacity-0]="isTransitioning()"
                     [class.opacity-100]="!isTransitioning()">
-                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6 items-center">
+                    <!-- Generous column gap: the name badge below is pulled left
+                         over this boundary, and real names are far longer than
+                         the placeholders this layout was built around. -->
+                    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
 
                         <!-- Left Side - Text -->
                         <div class="flex-1">
                             <h2 appScrollReveal="up" [revealDelay]="160" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{{ fullName() }}</h2>
-                            <p appScrollReveal="up" [revealDelay]="220" class="text-lg sm:text-xl text-blue-300 mb-4 lg:mb-6">{{ currentMentorExpertise() }}</p>
+                            <p appScrollReveal="up" [revealDelay]="220" class="text-lg sm:text-xl text-blue-300 mb-2">{{ displayTitle(mentor) }}</p>
+
+                            @if (showExpertiseLine(mentor)) {
+                            <p appScrollReveal="up" [revealDelay]="250" class="text-sm sm:text-base text-gray-400 mb-4 lg:mb-6">{{ currentMentorExpertise() }}</p>
+                            }
+
+                            <!-- Bio is nullable; omit the paragraph rather than leaving an empty block -->
+                            @if (currentMentorBio()) {
                             <p appScrollReveal="up" [revealDelay]="280" class="text-gray-300 text-sm sm:text-base lg:text-lg leading-relaxed">{{ currentMentorBio() }}</p>
+                            }
                         </div>
 
                         <!-- Right Side - Photo and Rating -->
                         <div appScrollReveal="right" [revealDelay]="200" class="relative mt-4 lg:mt-0">
-                            <div class="absolute top-3 left-3 lg:-left-24 text-black px-4 lg:px-6 py-2 lg:py-3 rounded-2xl shadow-lg z-10 min-w-28 lg:min-w-36 bg-[#ff8e1c]">
+                            <div class="absolute top-3 left-3 lg:-left-8 text-black px-4 lg:px-6 py-2 lg:py-3 rounded-2xl shadow-lg z-10 min-w-28 lg:min-w-36 max-w-[85%] bg-[#ff8e1c]">
                                 <div class="text-xs sm:text-sm font-semibold">{{ fullName() }}</div>
-                                <div class="text-xs sm:text-sm">{{ 'mentors.rating' | translate }} {{ currentMentor().rating }}</div>
+                                <!-- averageRating is null for a mentor with no reviews -->
+                                @if (mentor.averageRating !== null) {
+                                <div data-testid="mentor-rating" class="text-xs sm:text-sm">{{ 'mentors.rating' | translate }} {{ mentor.averageRating }}</div>
+                                }
                             </div>
 
                             <div class="mt-8 rounded-3xl overflow-hidden shadow-2xl">
-                                <img [src]="currentMentor().avatarUrl" [alt]="fullName()" class="w-full h-56 sm:h-72 lg:h-[400px] object-cover">
+                                @if (mentor.avatarUrl) {
+                                <img [src]="mentor.avatarUrl" [alt]="fullName()" class="w-full h-56 sm:h-72 lg:h-[400px] object-cover">
+                                } @else {
+                                <div data-testid="mentor-initials"
+                                    class="w-full h-56 sm:h-72 lg:h-[400px] bg-orange-500 text-white flex items-center justify-center text-6xl lg:text-8xl font-bold"
+                                    [attr.aria-label]="fullName()">
+                                    {{ initials(mentor) }}
+                                </div>
+                                }
                             </div>
                         </div>
 
                     </div>
                 </div>
 
-                <!-- Navigation Dots -->
-                <div appScrollReveal="up" [revealDelay]="320" class="flex justify-center gap-3 mt-9 lg:ml-64">
-                    @for (dotPosition of dots; track dotPosition) {
-                    <button (click)="onDotClick(dotPosition)"
-                        [class.bg-orange-500]="dotPosition === activeDotPosition()"
-                        [class.bg-blue-500]="dotPosition !== activeDotPosition()"
+                <!-- Navigation is hidden for a single mentor: controls that cannot
+                     navigate anywhere are misleading. -->
+                @if (canNavigate()) {
+                <!-- Navigation Dots — one per mentor -->
+                <div appScrollReveal="up" [revealDelay]="320" class="flex flex-wrap justify-center gap-3 mt-9 lg:ml-64">
+                    @for (dotIndex of dots(); track dotIndex) {
+                    <button (click)="goToSlide(dotIndex)"
+                        [attr.aria-label]="'Go to mentor ' + (dotIndex + 1) + ' of ' + mentors().length"
+                        [attr.aria-current]="dotIndex === currentIndex() ? 'true' : null"
+                        [class.bg-orange-500]="dotIndex === currentIndex()"
+                        [class.bg-blue-500]="dotIndex !== currentIndex()"
                         class="w-5 h-5 rounded-full transition-all duration-300 hover:scale-125">
                     </button>
                     }
                 </div>
 
                 <!-- Arrow Navigation -->
-                <button (click)="previousSlide()"
+                <button (click)="previousSlide()" data-testid="mentors-prev" aria-label="Previous mentor"
                     class="absolute left-0 top-1/2 -translate-y-1/2 -translate-x-4 sm:-translate-x-8 xl:-translate-x-16 bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-full transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100">
                     <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" />
                     </svg>
                 </button>
 
-                <button (click)="nextSlide()"
+                <button (click)="nextSlide()" data-testid="mentors-next" aria-label="Next mentor"
                     class="absolute right-0 top-1/2 -translate-y-1/2 translate-x-4 sm:translate-x-8 xl:translate-x-16 bg-white/10 hover:bg-white/20 text-white p-3 md:p-4 rounded-full transition-all duration-300 opacity-100 md:opacity-0 md:group-hover:opacity-100">
                     <svg class="w-5 h-5 md:w-6 md:h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
                     </svg>
                 </button>
+                }
             </div>
         </div>
     </div>
 </section>
+}
