@@ -16,7 +16,8 @@ describe('Home', () => {
       providers: [
         { provide: APP_CONFIG, useValue: environment },
         provideRouter([]),
-        // Home renders Hero, which fetches featured mentors.
+        // Home renders Hero (fetches featured mentors) and ContactUs (submits
+        // inquiries), both of which need HttpClient.
         provideHttpClient(withFetch()),
         provideHttpClientTesting(),
       ],

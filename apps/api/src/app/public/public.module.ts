@@ -1,7 +1,10 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
+import { RecaptchaModule } from '../recaptcha/recaptcha.module';
 import { PublicMentorController } from './public-mentor.controller';
 import { PublicMentorService } from './public-mentor.service';
+import { PublicInquiryController } from './public-inquiry.controller';
+import { PublicInquiryService } from './public-inquiry.service';
 
 /**
  * Unauthenticated endpoints for the public marketing site.
@@ -10,8 +13,8 @@ import { PublicMentorService } from './public-mentor.service';
  * than an exception hidden among guarded routes.
  */
 @Module({
-  imports: [PrismaModule],
-  controllers: [PublicMentorController],
-  providers: [PublicMentorService],
+  imports: [PrismaModule, RecaptchaModule],
+  controllers: [PublicMentorController, PublicInquiryController],
+  providers: [PublicMentorService, PublicInquiryService],
 })
 export class PublicModule {}

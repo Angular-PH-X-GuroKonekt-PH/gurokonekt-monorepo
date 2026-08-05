@@ -381,6 +381,14 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Featured mentors retrieved successfully',
     },
+    CREATE_INQUIRY: {
+      code: 201,
+      message: 'Thank you for reaching out. We will get back to you soon.',
+    },
+    ADMIN_GET_INQUIRIES: {
+      code: 200,
+      message: 'Inquiries retrieved successfully',
+    },
   },
   ERROR: {
     /**
@@ -976,6 +984,28 @@ export const API_RESPONSE = {
     PUBLIC_GET_FEATURED_MENTORS: {
       code: 500,
       message: 'Failed to retrieve featured mentors',
+    },
+    CREATE_INQUIRY: {
+      code: 500,
+      message: 'Failed to submit your inquiry. Please try again later.',
+    },
+    ADMIN_GET_INQUIRIES: {
+      code: 500,
+      message: 'Failed to retrieve inquiries',
+    },
+    // User-facing reCAPTCHA copy deliberately does not mention the score or
+    // threshold — that would tell an attacker exactly what to tune against.
+    RECAPTCHA_FAILED: {
+      code: 400,
+      message: 'Could not verify that you are human. Please try again.',
+    },
+    RECAPTCHA_UNAVAILABLE: {
+      code: 502,
+      message: 'Verification service is unavailable. Please try again shortly.',
+    },
+    RECAPTCHA_NOT_CONFIGURED: {
+      code: 500,
+      message: 'Verification is not configured on this server.',
     },
   }
 }
@@ -1741,6 +1771,82 @@ The action is written to the audit log as \`admin_feature_mentor\` or \`admin_un
 \`\`\`
 `,
     bodyExample: { isFeatured: true },
+  },
+
+  // ─── Inquiries ────────────────────────────────────────────────────────────
+
+  CREATE_INQUIRY: {
+    summary: 'Submit a contact inquiry (public, no authentication)',
+    description: `
+Accepts a submission from the "Questions About GuroKonekt" form on the marketing site.
+
+**This endpoint is public** — no bearer token is required.
+
+Every request must carry a Google reCAPTCHA v3 token in \`recaptchaToken\`. The token is verified server-side against Google before anything is stored, and is never persisted. Submissions that fail verification are rejected with \`400\`; if the verification service itself cannot be reached the request is rejected with \`502\` rather than being allowed through.
+
+The payload is validated **before** the token is verified, so a malformed body never costs an outbound verification call.
+
+**Payload:**
+\`\`\`json
+{
+  "email": "maria@example.com",
+  "fullName": "Maria Santos",
+  "topic": "Becoming a mentor",
+  "message": "I would like to know how to apply as a mentor.",
+  "recaptchaToken": "03AGdBq26…"
+}
+\`\`\`
+
+**Response \`data\` shape:**
+\`\`\`json
+{ "id": "b8b1f7c2-…", "createdAt": "2026-08-03T14:25:37.000Z" }
+\`\`\`
+
+Only the identifier and timestamp are returned — the submitted content is not echoed back.
+`,
+    bodyExample: {
+      email: 'maria@example.com',
+      fullName: 'Maria Santos',
+      topic: 'Becoming a mentor',
+      message: 'I would like to know how to apply as a mentor.',
+      recaptchaToken: '03AGdBq26…',
+    },
+  },
+
+  ADMIN_GET_INQUIRIES: {
+    summary: 'List contact inquiries with pagination, sorting and filtering',
+    description: `
+Returns submissions from the public contact form, newest first by default. Admin only.
+
+**Query parameters:**
+- \`page\` (default \`1\`), \`limit\` (default \`20\`, max \`100\`)
+- \`sortBy\` — \`createdAt\` | \`fullName\` | \`email\` | \`topic\` (default \`createdAt\`)
+- \`sortOrder\` — \`asc\` | \`desc\` (default \`desc\`)
+- \`search\` — case-insensitive match across full name, email, and subject
+- \`dateFrom\` / \`dateTo\` — ISO dates bounding \`createdAt\`
+
+**Response \`data\` shape:**
+\`\`\`json
+{
+  "data": [
+    {
+      "id": "b8b1f7c2-…",
+      "fullName": "Maria Santos",
+      "email": "maria@example.com",
+      "topic": "Becoming a mentor",
+      "message": "I would like to know how to apply as a mentor.",
+      "createdAt": "2026-08-03T14:25:37.000Z"
+    }
+  ],
+  "total": 1,
+  "page": 1,
+  "limit": 20,
+  "totalPages": 1
+}
+\`\`\`
+
+An empty result is a **200 with an empty array**, not a 404.
+`,
   },
 
   // ─── Field-level helpers ──────────────────────────────────────────────────

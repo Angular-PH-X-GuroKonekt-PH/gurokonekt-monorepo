@@ -24,6 +24,14 @@ if (typeof cryptoWithHash.hash !== 'function') {
 export default defineConfig(() => ({
   root: __dirname,
   cacheDir: '../../node_modules/.vite/apps/landing-page',
+  // css: {
+  //   postcss: {
+  //     plugins: [
+  //       require('@tailwindcss/postcss'),
+  //       require('autoprefixer'),
+  //     ],
+  //   },
+  // },
   plugins: [angular(), nxViteTsPaths(), nxCopyAssetsPlugin(['*.md'])],
   optimizeDeps: {
     exclude: [
@@ -45,6 +53,10 @@ export default defineConfig(() => ({
       ],
     },
   },
+  // Uncomment this if you are using workers.
+  // worker: {
+  //  plugins: [ nxViteTsPaths() ],
+  // },
   test: {
     name: 'landing-page',
     watch: false,

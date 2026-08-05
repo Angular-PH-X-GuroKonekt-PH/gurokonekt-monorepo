@@ -7,4 +7,5 @@ export const environment: EnvironmentModel = {
     SIGN_IN_URL: 'https://test-portal.gurokonekt.com/login',
     REGISTER_URL: 'https://test-portal.gurokonekt.com/login',
     API_URL: 'https://test-api.gurokonekt.com/api',
+    RECAPTCHA_SITE_KEY: '',
 };

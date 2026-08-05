@@ -17,6 +17,7 @@ export const API_ENDPOINTS = {
     menteeReject: (id: string) => `/admin/mentees/${id}/reject`,
     menteeRejectionLog: (id: string) => `/admin/mentees/${id}/rejection-log`,
     menteeResendVerification: (id: string) => `/admin/mentees/${id}/resend-verification`,
+    inquiries: '/admin/inquiries',
     mentors: '/admin/mentors',
     mentorById: (id: string) => `/admin/mentors/${id}`,
     mentorRejectionLog: (id: string) => `/admin/mentors/${id}/rejection-log`,

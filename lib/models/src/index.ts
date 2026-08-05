@@ -46,3 +46,5 @@ export * from './lib/interfaces/review/review.model';
 export * from './lib/dto/review/review.dto';
 export * from './lib/interfaces/public/featured-mentor.model';
 export * from './lib/dto/public/featured-mentors.dto';
+export * from './lib/interfaces/inquiry/inquiry.model';
+export * from './lib/dto/inquiry/inquiry.dto';
