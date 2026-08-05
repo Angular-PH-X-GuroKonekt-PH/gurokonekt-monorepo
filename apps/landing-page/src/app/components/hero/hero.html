@@ -66,13 +66,16 @@
                   </div>
                 }
 
+                <!-- The badge grows to fit rather than truncating — a clipped
+                     name ("John Leonard A. L…") is worse than a taller badge. -->
                 <div
                   [class]="slots[i].badge + ' ' + slots[i].badgeFill"
                   class="absolute rounded-xl px-3 py-2 z-20 shadow-md"
                 >
-                  <p class="font-bold text-xs sm:text-sm md:text-base leading-tight truncate">
+                  <p class="font-bold text-xs sm:text-sm md:text-base leading-tight break-words">
                     {{ fullName(mentor) }}
                   </p>
+                  <!-- averageRating is null for a mentor with no reviews yet -->
                   @if (mentor.averageRating !== null) {
                     <p class="text-xs sm:text-sm md:text-base leading-tight">
                       {{ 'hero.mentorRating' | translate }} {{ mentor.averageRating }}

@@ -28,12 +28,16 @@ import {
 const MENTOR_SLOTS = [
   {
     photo: 'left-[23%] top-[1%] w-[37.6%]',
-    badge: 'left-[8.7%] top-[1.2%] w-[25.6%]',
+    // Sizes to the name rather than clipping it. Anchored left so it grows
+    // rightward, capped so it cannot run past the artwork.
+    badge: 'left-[2%] top-[1.2%] min-w-[25.6%] max-w-[46%] w-max',
     badgeFill: 'bg-orange-500 text-white',
   },
   {
     photo: 'left-[52.6%] top-[28%] w-[29.3%]',
-    badge: 'left-[73.8%] top-[21.5%] w-[25%]',
+    // Anchored to the RIGHT edge so a long name grows leftward into open space
+    // instead of overflowing the container.
+    badge: 'right-[1%] top-[21.5%] min-w-[25%] max-w-[44%] w-max',
     badgeFill: 'bg-orange-200 text-gray-900',
   },
 ] as const;
