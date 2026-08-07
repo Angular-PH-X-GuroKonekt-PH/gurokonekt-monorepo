@@ -29,3 +29,10 @@ export interface ReviewListResponseInterface {
   averageRating: number | null;
   ratingCount: number;
 }
+ 
+
+export interface CreateReviewRequest {
+  bookingId: string;
+  rating: number;
+  comment?: string;
+}
