@@ -35,56 +35,71 @@
       </div>
     </div>
 
-    <div class="space-y-7">
-      <div>
-        <h2 class="text-base font-bold text-blue-950">Available Time Slots</h2>
+    <div class="space-y-4">
+      <section class="rounded-2xl bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+        <div class="flex items-center justify-between gap-4">
+          <div class="flex items-center gap-3">
+            <h2 class="text-base font-bold text-blue-950">Available Time Slots</h2>
+          </div>
+
+          <p class="text-xs font-medium text-slate-500">
+            @if (selectedDate(); as date) {
+            {{ date.date | date: 'MMM d, y' }}
+            } @else {
+            Select a date
+            }
+          </p>
+        </div>
 
         <div class="mt-5 grid gap-3 sm:grid-cols-3">
           @for (slot of availableSlots(); track slot.bookingDateTime.toISOString()) {
           <button
             type="button"
             (click)="selectSlot(slot)"
-            class="rounded-2xl border px-4 py-5 text-center transition"
-            [class.border-blue-950]="selectedSlot()?.bookingDateTime === slot.bookingDateTime"
-            [class.bg-blue-950]="selectedSlot()?.bookingDateTime === slot.bookingDateTime"
-            [class.text-white]="selectedSlot()?.bookingDateTime === slot.bookingDateTime"
-            [class.shadow-lg]="selectedSlot()?.bookingDateTime === slot.bookingDateTime"
-            [class.border-slate-200]="selectedSlot()?.bookingDateTime !== slot.bookingDateTime"
-            [class.bg-white]="selectedSlot()?.bookingDateTime !== slot.bookingDateTime"
-            [class.text-slate-500]="selectedSlot()?.bookingDateTime !== slot.bookingDateTime">
-            <span class="block text-xs font-semibold opacity-75">
-              Available
+            [disabled]="slot.isBooked"
+            class="rounded-xl border px-4 py-3 text-center transition disabled:cursor-not-allowed disabled:border-slate-200 disabled:bg-slate-100 disabled:text-slate-400"
+            [class.border-gray-500]="isSelectedSlot(slot)"
+            [class.bg-gray-500]="isSelectedSlot(slot)"
+            [class.text-white]="isSelectedSlot(slot)"
+            [class.shadow-[0_12px_24px_rgba(249,115,22,0.24)]]="isSelectedSlot(slot)"
+            [class.border-slate-200]="!isSelectedSlot(slot) && !slot.isBooked"
+            [class.bg-white]="!isSelectedSlot(slot) && !slot.isBooked"
+            [class.text-blue-950]="!isSelectedSlot(slot) && !slot.isBooked">
+            <span class="block text-2xs font-medium opacity-75">
+              {{ slot.isBooked ? 'Booked' : 'Available' }}
             </span>
-            <span class="mt-1 block text-base font-bold">{{ slot.label }}</span>
+            <span class="mt-1 block text-sm font-bold">{{ slot.label }}</span>
           </button>
           } @empty {
           <div
-            class="rounded-2xl border border-dashed border-slate-200 bg-white p-6 text-sm text-body"
+            class="rounded-xl border border-dashed border-slate-200 bg-slate-50 p-6 text-sm text-body sm:col-span-3"
           >
             Select an available date to see time slots.
           </div>
           }
         </div>
-      </div>
+      </section>
 
-      <label class="block">
-        <span
-          class="flex items-center justify-between text-base font-bold text-blue-950"
-        >
-          Optional note for the mentor
-          <span class="text-xs font-semibold text-slate-400">
-            {{ bookingNote().length }}/300
+      <section class="rounded-2xl bg-white p-5 shadow-[0_14px_40px_rgba(15,23,42,0.06)]">
+        <label class="block">
+          <span class="flex items-center justify-between gap-4">
+            <span class="flex items-center gap-3 text-base font-bold text-blue-950">
+              Add a Note
+            </span>
+            <span class="text-xs font-semibold text-slate-400">
+              Optional ({{ bookingNote().length }}/300)
+            </span>
           </span>
-        </span>
-        <textarea
-          rows="5"
-          maxlength="300"
-          [ngModel]="bookingNote()"
-          (ngModelChange)="updateBookingNote($event)"
-          placeholder="Tell your mentor what you'd like to achieve in this session..."
-          class="mt-4 w-full resize-none rounded-3xl border border-slate-200 bg-white p-5 text-base text-heading outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:ring-4 focus:ring-orange-100"
-        ></textarea>
-      </label>
+          <textarea
+            rows="5"
+            maxlength="300"
+            [ngModel]="bookingNote()"
+            (ngModelChange)="updateBookingNote($event)"
+            placeholder="Tell your mentor what you'd like to achieve in this session (e.g., resume review, algorithm help, career advice)..."
+            class="mt-5 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-heading outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
+          ></textarea>
+        </label>
+      </section>
 
       @if (errorMessage()) {
       <p class="rounded-2xl bg-rose-50 px-4 py-3 text-sm font-semibold text-rose-700">
@@ -93,12 +108,12 @@
       }
 
       <section
-        class="rounded-4xl border border-slate-200 bg-white p-5 shadow-[0_20px_60px_rgba(15,23,42,0.08)]"
+        class="rounded-2xl border border-slate-100 bg-white p-4 shadow-[0_14px_40px_rgba(15,23,42,0.06)]"
       >
-        <div class="flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div class="flex items-center gap-4">
             <div
-              class="hidden h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 md:flex"
+              class="flex h-12 w-12 items-center justify-center rounded-xl bg-slate-100 text-blue-950"
             >
               <app-icon name="calendar-days" class="h-6 w-6 text-blue-950"></app-icon>
             </div>
@@ -122,10 +137,10 @@
             type="button"
             (click)="confirmBooking()"
             [disabled]="isSubmitting() || !selectedSlot()"
-            class="inline-flex min-h-14 items-center justify-center gap-2 rounded-full bg-orange-500 px-8 text-base font-bold text-white shadow-[0_18px_34px_rgba(249,115,22,0.28)] transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+            class="inline-flex min-h-12 items-center justify-center gap-2 rounded-full bg-orange-500 px-7 text-sm font-bold text-white shadow-[0_18px_34px_rgba(249,115,22,0.28)] transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
           >
             {{ isSubmitting() ? 'Confirming...' : 'Confirm Booking' }}
-            <app-icon name="chevron-right" class="h-5 w-5 text-white"></app-icon>
+            <app-icon name="chevron-right" class="h-4 w-4 text-white"></app-icon>
           </button>
         </div>
       </section>
