@@ -36,6 +36,7 @@ export class MenteeBookingsTable {
   initialBookingId = input<string | null>(null);
 
   bookingUpdated = output<void>();
+  addReview = output<BookingCardInterface>();
 
   protected readonly activeTab = signal<BookingTab>('All');
   protected readonly selectedBooking = signal<BookingCardInterface | null>(null);
@@ -148,11 +149,8 @@ export class MenteeBookingsTable {
     return booking.status === BookingStatus.COMPLETED;
   }
 
-  protected addReview(): void {
+  protected requestReview(booking: BookingCardInterface): void {
     this.closeActionMenu();
-    this.toastService.info(
-      'Review submission is not available yet.',
-      'Add Review'
-    );
+    this.addReview.emit(booking);
   }
 }

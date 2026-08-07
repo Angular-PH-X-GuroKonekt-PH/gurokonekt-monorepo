@@ -39,9 +39,9 @@
         }
 
         @if (canAddReview(booking)) {
-          <button type="button" (click)="addReview()"
+          <button type="button" (click)="requestReview(booking)"
             class="flex w-full items-center gap-2 px-4 py-2 text-left text-sm text-orange-600 hover:bg-orange-50">
-            <app-icon name="star" class="h-4 w-4 text-orange-500" />
+            <app-icon name="star-filled" class="h-4 w-4 text-orange-500" />
             Add review
           </button>
         }

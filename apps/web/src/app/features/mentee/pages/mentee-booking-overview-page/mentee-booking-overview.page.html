@@ -2,19 +2,16 @@
   <section class="grid grid-cols-1 gap-6">
     <app-section-card>
       <div class="mb-4">
-        <app-section-title
-          title="Manage Your Bookings"
-          subtitle="Stay organized with all your mentorship sessions."
-        />
+        <app-section-title title="Manage Your Bookings" subtitle="Stay organized with all your mentorship sessions." />
       </div>
 
-      <app-mentee-bookings-table
-        [bookings]="bookings()"
-        [isLoading]="isBookingsLoading()"
-        [initialTab]="initialTab"
-        [initialBookingId]="initialBookingId"
-        (bookingUpdated)="refreshBookings()"
-      />
+      <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
+        [initialBookingId]="initialBookingId" (bookingUpdated)="refreshBookings()" (addReview)="onAddReview($event)" />
     </app-section-card>
   </section>
+
+  @if (selectedReviewBooking(); as booking) {
+  <app-mentee-review-modal [booking]="booking" [isSubmitting]="isSubmittingReview()" (closeModal)="closeReviewModal()"
+    (submitReview)="submitReview($event)" />
+  }
 </div>
