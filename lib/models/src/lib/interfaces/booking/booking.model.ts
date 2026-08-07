@@ -97,6 +97,12 @@ export interface BookingListResponse {
   totalPages: number;
 }
 
+export interface MentorBookedSlotInterface {
+  id: string;
+  sessionDateTime: Date;
+  status: BookingStatus;
+}
+
 export interface MentorBookingQuery {
   status?: BookingStatus;
   page?: number;
