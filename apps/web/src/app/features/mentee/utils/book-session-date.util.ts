@@ -76,6 +76,10 @@ export function getDateKey(date: Date): string {
   return `${year}-${month}-${day}`;
 }
 
+export function getBookingSlotKey(date: Date): string {
+  return date.toISOString().slice(0, 16);
+}
+
 export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
