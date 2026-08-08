@@ -119,6 +119,18 @@ export class MentorManageAvailabilityPage implements OnInit {
     },
     height: 'auto',
     allDaySlot: false,
+    slotLabelFormat: {
+      hour: 'numeric',
+      minute: '2-digit',
+      omitZeroMinute: false,
+      meridiem: 'short',
+    },
+    eventTimeFormat: {
+      hour: 'numeric',
+      minute: '2-digit',
+      omitZeroMinute: false,
+      meridiem: 'short',
+    },
   };
 
   ngOnInit(): void {

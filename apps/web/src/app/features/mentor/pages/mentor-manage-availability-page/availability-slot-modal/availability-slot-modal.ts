@@ -1,3 +1,4 @@
+import { TitleCasePipe } from '@angular/common';
 import { Component, input, model, output } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { DaysInWeek } from '@gurokonekt/models/interfaces/user/user.model';
@@ -5,7 +6,7 @@ import { IconComponent } from '../../../../../shared/components/icon/icon.compon
 
 @Component({
   selector: 'app-availability-slot-modal',
-  imports: [FormsModule, IconComponent],
+  imports: [FormsModule, IconComponent, TitleCasePipe],
   templateUrl: './availability-slot-modal.html',
 })
 export class AvailabilitySlotModal {
