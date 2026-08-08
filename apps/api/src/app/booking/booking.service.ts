@@ -6,6 +6,7 @@ import {
   BookingInterface,
   BookingStatus,
   CreateBookingDto,
+  MentorBookedSlotInterface,
   MentorBookingsQueryDto,
   UserBookingsQueryDto,
   NotificationInterface,
@@ -428,6 +429,44 @@ export class BookingService {
         statusCode: API_RESPONSE.SUCCESS.GET_MENTOR_BOOKINGS.code,
         message: API_RESPONSE.SUCCESS.GET_MENTOR_BOOKINGS.message,
         data: { data: bookings, total, page, limit, totalPages: Math.ceil(total / limit) },
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.GET_MENTOR_BOOKINGS.code,
+        message: API_RESPONSE.ERROR.GET_MENTOR_BOOKINGS.message,
+        data: null,
+      };
+    }
+  }
+
+  async findMentorBookedSlots(
+    mentorId: string,
+  ): Promise<ResponseDto<MentorBookedSlotInterface[]>> {
+    try {
+      const bookings = await this.prisma.db.booking.findMany({
+        where: {
+          mentorId,
+          isDeleted: false,
+          status: { in: [BookingStatus.PENDING, BookingStatus.APPROVED] },
+        },
+        orderBy: { sessionDateTime: 'asc' },
+        select: {
+          id: true,
+          sessionDateTime: true,
+          status: true,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_MENTOR_BOOKINGS.code,
+        message: 'Mentor booked slots retrieved successfully',
+        data: bookings.map((booking) => ({
+          ...booking,
+          status: booking.status as BookingStatus,
+        })),
       };
     } catch (error) {
       this.logger.error(error.message, error.stack);

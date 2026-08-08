@@ -6,6 +6,7 @@ import {
   HttpException,
   HttpStatus,
   Param,
+  ParseUUIDPipe,
   Patch,
   Post,
   Query,
@@ -137,6 +138,57 @@ export class BookingController {
     @Req() req: Request & { user: { id: string } },
   ) {
     const response = await this.bookingService.findMentorBookings(req.user.id, req.user.id, query);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
+  }
+
+  @Get('mentor/:mentorId/booked-slots')
+  @ApiOperation({
+    summary: 'Get booked slots for a mentor',
+    description: 'Returns pending and approved booking times for a mentor so clients can mark unavailable slots.',
+  })
+  @ApiParam({
+    name: 'mentorId',
+    type: String,
+    description: 'UUID of the mentor user',
+    example: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Mentor booked slots retrieved successfully.',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Mentor booked slots retrieved successfully',
+        data: [
+          {
+            id: 'c9d0e1f2-a3b4-5678-cdef-012345678901',
+            sessionDateTime: '2026-04-15T10:00:00.000Z',
+            status: 'PENDING',
+          },
+        ],
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized - missing or invalid JWT.' })
+  async findMentorBookedSlots(
+    @Param('mentorId', new ParseUUIDPipe()) mentorId: string,
+  ) {
+    const response = await this.bookingService.findMentorBookedSlots(mentorId);
 
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(

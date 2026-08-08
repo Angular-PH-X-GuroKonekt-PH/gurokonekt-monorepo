@@ -8,6 +8,7 @@ import {
   BookingCardInterface,
   CreateBookingRequestInterface,
   BookingListResponse,
+  MentorBookedSlotInterface,
   MentorBookingQuery
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import {
@@ -135,6 +136,32 @@ export class BookingService {
             { data: [], total: 0, page, limit, totalPages: 0 },
             'Failed to fetch mentor bookings'
           )
+        )
+      );
+  }
+
+  getMentorBookedSlots(
+    mentorId: string
+  ): Observable<MentorBookedSlotInterface[]> {
+    return this.http
+      .get<ApiResponse<MentorBookedSlotInterface[]>>(
+        buildApiUrl(`/booking/mentor/${mentorId}/booked-slots`)
+      )
+      .pipe(
+        map((response) =>
+          validateApiResponse<MentorBookedSlotInterface[]>(
+            response,
+            'Failed to fetch mentor booked slots.'
+          )
+        ),
+        map((bookedSlots) =>
+          bookedSlots.map((slot) => ({
+            ...slot,
+            sessionDateTime: new Date(slot.sessionDateTime),
+          }))
+        ),
+        catchError(
+          handleApiErrorWithFallback([], 'Failed to fetch mentor booked slots')
         )
       );
   }

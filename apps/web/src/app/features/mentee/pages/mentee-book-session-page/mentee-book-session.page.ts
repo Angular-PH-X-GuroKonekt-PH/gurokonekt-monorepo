@@ -7,7 +7,7 @@ import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import { FullCalendarModule } from '@fullcalendar/angular';
-import { firstValueFrom, map, switchMap } from 'rxjs';
+import { firstValueFrom, map, of, switchMap } from 'rxjs';
 
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { BookingService } from '../../../../shared/services/booking.service';
@@ -27,6 +27,7 @@ import {
   buildBookingDateTimeForApi,
   buildDisplayDateTime,
   BOOKING_DATE_RANGE_DAYS,
+  getBookingSlotKey,
   getDateKey,
 } from '../../utils/book-session-date.util';
 import { formatTimeTo12Hour } from '../../utils/mentor-availability.util';
@@ -77,6 +78,16 @@ export class MenteeBookSessionPage {
     { initialValue: null }
   );
 
+  protected readonly bookedSlots = toSignal(
+    this.route.paramMap.pipe(
+      map((params) => params.get('mentorId') ?? ''),
+      switchMap((mentorId) =>
+        mentorId ? this.bookingService.getMentorBookedSlots(mentorId) : of([])
+      )
+    ),
+    { initialValue: [] }
+  );
+
   protected readonly mentorFullName = computed(() => {
     const mentor = this.mentor();
 
@@ -101,6 +112,15 @@ export class MenteeBookSessionPage {
     () =>
       new Map(
         this.availableDates().map((date) => [getDateKey(date.date), date])
+      )
+  );
+
+  protected readonly bookedSlotTimeMap = computed(
+    () =>
+      new Set(
+        this.bookedSlots().map((slot) =>
+          getBookingSlotKey(slot.sessionDateTime)
+        )
       )
   );
 
@@ -167,6 +187,9 @@ export class MenteeBookSessionPage {
           timeFrame.from
         ),
         bookingDateTime,
+        isBooked: this.bookedSlotTimeMap().has(
+          getBookingSlotKey(bookingDateTime)
+        ),
       };
     });
   });
@@ -184,8 +207,20 @@ export class MenteeBookSessionPage {
   }
 
   protected selectSlot(slot: BookSessionSlotOption): void {
+    if (slot.isBooked) {
+      this.errorMessage.set('This time slot is already booked.');
+      return;
+    }
+
     this.selectedSlot.set(slot);
     this.errorMessage.set(null);
+  }
+
+  protected isSelectedSlot(slot: BookSessionSlotOption): boolean {
+    return (
+      this.selectedSlot()?.bookingDateTime.getTime() ===
+      slot.bookingDateTime.getTime()
+    );
   }
 
   protected updateBookingNote(note: string): void {
@@ -196,7 +231,7 @@ export class MenteeBookSessionPage {
     const mentorId = this.mentorId();
     const selectedSlot = this.selectedSlot();
 
-    if (!mentorId || !selectedSlot) {
+    if (!mentorId || !selectedSlot || selectedSlot.isBooked) {
       this.errorMessage.set('Please select an available date and time slot.');
       return;
     }

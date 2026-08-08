@@ -158,4 +158,8 @@ export class MenteeDashboardPage {
       queryParams: { tab: 'Completed' },
     });
   }
+
+  protected viewAllRecommendedMentors(): void {
+    void this.router.navigate([APP_ROUTES.FIND_MENTORS]);
+  }
 }

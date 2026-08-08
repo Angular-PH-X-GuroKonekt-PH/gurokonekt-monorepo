@@ -49,13 +49,14 @@
         </p>
       </div>
 
-      <a
-        routerLink="/find-mentors"
+      <button
+        type="button"
+        (click)="viewAllRecommendedMentors()"
         class="inline-flex shrink-0 items-center gap-1 text-sm font-semibold text-orange-600 transition hover:text-orange-700"
       >
         View all
         <app-icon name="chevron-right" class="h-4 w-4" />
-      </a>
+      </button>
     </header>
 
     @let mentors = recommendedMentors() ?? [];

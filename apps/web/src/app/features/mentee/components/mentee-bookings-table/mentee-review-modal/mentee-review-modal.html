@@ -1,0 +1,80 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/50 p-4">
+  <div class="w-full max-w-lg rounded-3xl bg-white p-6 shadow-2xl">
+    <div class="flex items-start justify-between gap-4">
+      <div>
+        <p class="text-2xs font-bold uppercase tracking-[0.18em] text-orange-500">
+          Session Review
+        </p>
+        <h2 class="mt-1 text-xl font-bold text-blue-950">
+          Review {{ mentorName() }}
+        </h2>
+        <p class="mt-2 text-sm text-slate-500">
+          Share your feedback for this completed session.
+        </p>
+      </div>
+
+      <button
+        type="button"
+        (click)="closeModal.emit()"
+        class="rounded-full p-2 transition hover:bg-slate-100"
+      >
+        <app-icon name="x-mark" class="h-5 w-5 text-slate-500"></app-icon>
+      </button>
+    </div>
+
+    <div class="mt-6">
+      <label for="rating" class="text-sm font-bold text-blue-950">Rating</label>
+
+      <div class="mt-3 flex gap-2">
+        @for (value of ratingOptions; track value) {
+          <button
+            type="button"
+            (click)="setRating(value)"
+            class="rounded-xl border px-3 py-2 transition"
+            [class.border-orange-300]="rating() >= value"
+            [class.bg-orange-50]="rating() >= value"
+            [class.text-orange-500]="rating() >= value"
+            [class.border-slate-200]="rating() < value"
+            [class.text-slate-300]="rating() < value"
+          >
+            <app-icon name="star-filled" class="h-5 w-5"></app-icon>
+          </button>
+        }
+      </div>
+    </div>
+    
+
+    <div class="mt-5">
+      <label for="comment" class="text-sm font-bold text-blue-950">Comment</label>
+
+      <textarea
+        id="comment"
+        rows="5"
+        [maxLength]="maxCommentLength"
+        [value]="comment()"
+        (input)="onCommentInput($event)"
+        placeholder="Write an optional review..."
+        class="mt-3 w-full resize-none rounded-2xl border border-slate-200 p-4 text-sm outline-none transition focus:border-orange-300 focus:ring-4 focus:ring-orange-50"
+      ></textarea>
+    </div>
+
+    <div class="mt-6 flex justify-end gap-3">
+      <button
+        type="button"
+        (click)="closeModal.emit()"
+        class="rounded-xl border border-slate-200 px-5 py-3 text-sm font-bold text-slate-600 transition hover:bg-slate-50"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        (click)="onSubmit()"
+        [disabled]="isSubmitting()"
+        class="rounded-xl bg-orange-500 px-5 py-3 text-sm font-bold text-white transition hover:bg-orange-400 disabled:cursor-not-allowed disabled:opacity-60"
+      >
+        {{ isSubmitting() ? 'Submitting...' : 'Submit Review' }}
+      </button>
+    </div>
+  </div>
+</div>
