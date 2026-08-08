@@ -20,7 +20,7 @@
           [disabled]="editingDay() !== null"
         >
           @for (dayOption of days(); track dayOption) {
-          <option [value]="dayOption">{{ dayOption }}</option>
+          <option [value]="dayOption">{{ dayOption | titlecase }}</option>
           }
         </select>
       </label>
