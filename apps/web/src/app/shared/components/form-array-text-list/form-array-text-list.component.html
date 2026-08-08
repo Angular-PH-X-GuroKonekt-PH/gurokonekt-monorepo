@@ -69,7 +69,7 @@
           <button
             type="button"
             (click)="onAddItemClick(rowIndex)"
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-orange-500 bg-orange-50 text-orange-600 shadow-sm hover:bg-orange-500 hover:text-white hover:shadow-md transition-all"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-orange-50 hover:text-orange-600 transition-colors"
             [title]="'Add this ' + itemSingularLabel()"
             [attr.aria-label]="'Add this ' + itemSingularLabel()"
           >
@@ -80,7 +80,7 @@
           <button
             type="button"
             (click)="removeItem(rowIndex)"
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-red-200 bg-red-50 text-red-600 shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-md transition-all"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors"
             [title]="'Remove this ' + itemSingularLabel()"
             [attr.aria-label]="'Remove this ' + itemSingularLabel()"
           >
