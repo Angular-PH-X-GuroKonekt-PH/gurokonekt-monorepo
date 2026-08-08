@@ -5,6 +5,7 @@ import {
   FormGroupDirective,
   ReactiveFormsModule,
 } from '@angular/forms';
+import { environment } from '../../../../../../environments/environment';
 
 @Component({
   selector: 'app-registration-review-step',
@@ -24,6 +25,9 @@ export class RegistrationReviewStepComponent {
   /** Plain checkbox row vs highlighted orange panel (mentor). */
   readonly termsVariant = input<'plain' | 'emphasized'>('plain');
   readonly termsLead = input('I accept the');
+
+  protected readonly termsUrl = `${environment.landingPageUrl}/terms-and-conditions`;
+  protected readonly privacyUrl = `${environment.landingPageUrl}/privacy-policy`;
 
   protected hasAcceptTermsError(): boolean {
     const control = this.form().get('acceptTerms');

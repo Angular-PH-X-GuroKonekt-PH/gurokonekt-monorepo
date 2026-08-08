@@ -16,14 +16,20 @@
     <span class="text-sm text-gray-700">
       {{ termsLead() }}
       <a
-        href="#"
+        [href]="termsUrl"
+        target="_blank"
+        rel="noopener noreferrer"
         class="text-orange-600 hover:text-orange-700 font-semibold"
+        (click)="$event.stopPropagation()"
         >Terms & Conditions</a
       >
       and
       <a
-        href="#"
+        [href]="privacyUrl"
+        target="_blank"
+        rel="noopener noreferrer"
         class="text-orange-600 hover:text-orange-700 font-semibold"
+        (click)="$event.stopPropagation()"
         >Privacy Policy</a
       >
       <span class="text-orange-500">*</span>
@@ -46,15 +52,21 @@
     <span class="text-sm text-gray-700">
       {{ termsLead() }}
       <a
-        href="#"
+        [href]="termsUrl"
+        target="_blank"
+        rel="noopener noreferrer"
         class="text-orange-600 hover:text-orange-700 font-semibold"
+        (click)="$event.stopPropagation()"
       >
         Terms & Conditions
       </a>
       and
       <a
-        href="#"
+        [href]="privacyUrl"
+        target="_blank"
+        rel="noopener noreferrer"
         class="text-orange-600 hover:text-orange-700 font-semibold"
+        (click)="$event.stopPropagation()"
       >
         Privacy Policy
       </a>
