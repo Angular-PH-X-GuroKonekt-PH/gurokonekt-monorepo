@@ -6,21 +6,23 @@ import {
   output,
   signal,
 } from '@angular/core';
-import { FormGroup, ReactiveFormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
+import { FormArray, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngxs/store';
+import { merge } from 'rxjs';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
 import { RegisterMentor } from '../../../store/auth.actions';
 
 import { IconComponent } from '../../../../../shared/components/icon/icon.component';
 import { BaseStepperRegistrationComponent } from '../../../../../shared/base-form/base-stepper-registration.component';
 import { ToastService } from '../../../../../shared/services/toast.service';
-import { createFormConfig } from 'apps/web/src/app/shared/constants';
-import { getCountryDisplayName, getLanguageDisplayName } from 'apps/web/src/app/shared/utils';
 import {
-  expertiseOptions,
-  handleExpertiseChange,
-  isExpertiseSelected,
-} from 'apps/web/src/app/shared/helpers/expertise-selection.helper';
+  createFormConfig,
+  FORM_FIELD_VALIDATORS,
+  VALIDATION_CONSTRAINTS,
+  EXPERTISE_OPTIONS,
+} from 'apps/web/src/app/shared/constants';
+import { getCountryDisplayName, getLanguageDisplayName } from 'apps/web/src/app/shared/utils';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { buildVerifyEmailRedirectUrl } from 'apps/web/src/app/shared/utils/email-verification.util';
@@ -28,6 +30,10 @@ import {
   ALLOWED_DOCUMENT_ACCEPT,
   validateDocumentFile,
 } from 'apps/web/src/app/shared/utils/document-validation.util';
+import {
+  FormArrayTextListComponent,
+  createFormArrayTextControl,
+} from '../../../../../shared/components/form-array-text-list/form-array-text-list.component';
 import { AuthSelectors } from '../../../store/auth.selectors';
 import { watchRegistrationOutcome } from '../../../helpers/registration-outcome.helper';
 import { RegistrationStepNavComponent } from '../registration-step-nav/registration-step-nav.component';
@@ -47,6 +53,7 @@ import { RegistrationReviewStepComponent } from '../registration-review-step/reg
   imports: [
     ReactiveFormsModule,
     IconComponent,
+    FormArrayTextListComponent,
     RegistrationStepNavComponent,
     RegistrationShellComponent,
     RegistrationStepperComponent,
@@ -90,18 +97,22 @@ export class RegistrationMentorPage
     'Review & accept terms',
   ];
 
-  protected readonly registerForm: FormGroup;
-  protected readonly expertiseOptions = expertiseOptions;
+  protected readonly registerForm = this.buildRegisterForm();
+  protected readonly maxAreasOfExpertise = VALIDATION_CONSTRAINTS.MAX_EXPERTISE_AREAS;
+  protected readonly expertiseSuggestions = EXPERTISE_OPTIONS;
   protected readonly allowedDocumentAccept = ALLOWED_DOCUMENT_ACCEPT;
   private static readonly MAX_DOCUMENT_SIZE_BYTES = 10 * 1024 * 1024;
   protected selectedFiles: File[] = [];
   protected readonly verificationFileError = signal<string | null>(null);
 
+  /** Keeps OnPush step validity in sync with free-text FormArray edits. */
+  private readonly formState = toSignal(
+    merge(this.registerForm.valueChanges, this.registerForm.statusChanges),
+    { initialValue: null }
+  );
+
   constructor() {
     super();
-
-    const formConfig = createFormConfig('MENTOR_REGISTER');
-    this.registerForm = this.fb.group(formConfig.fields, formConfig.options);
 
     this.setupFormAutoPopulation();
 
@@ -117,8 +128,25 @@ export class RegistrationMentorPage
     });
   }
 
+  private buildRegisterForm(): FormGroup {
+    const formConfig = createFormConfig('MENTOR_REGISTER');
+    const form = this.fb.group(formConfig.fields, formConfig.options);
+    form.setControl(
+      'areasOfExpertise',
+      this.fb.array(
+        [createFormArrayTextControl(this.fb)],
+        [...FORM_FIELD_VALIDATORS.EXPERTISE_AREAS]
+      )
+    );
+    return form;
+  }
+
   ngOnInit(): void {
     this.scrollToTop();
+  }
+
+  get areasOfExpertise(): FormArray {
+    return this.registerForm.get('areasOfExpertise') as FormArray;
   }
 
   protected goBackToRoleSelection(): void {
@@ -127,6 +155,7 @@ export class RegistrationMentorPage
   }
 
   protected override isCurrentStepValid(): boolean {
+    this.formState();
     const currentStep = this.currentStep();
     const form = this.registerForm;
 
@@ -151,7 +180,8 @@ export class RegistrationMentorPage
         const isLinkedInValid =
           !linkedInControl?.value || linkedInControl?.valid;
         return (
-          !!form.get('areasOfExpertise')?.valid &&
+          this.areasOfExpertise.valid &&
+          this.areasOfExpertise.length > 0 &&
           !!form.get('yearsOfExperience')?.valid &&
           isLinkedInValid &&
           this.selectedFiles.length > 0
@@ -162,14 +192,6 @@ export class RegistrationMentorPage
       default:
         return form.valid;
     }
-  }
-
-  protected onExpertiseChange(event: Event, expertise: string): void {
-    handleExpertiseChange(event, expertise, this.registerForm);
-  }
-
-  protected isExpertiseSelected(expertise: string): boolean {
-    return isExpertiseSelected(expertise, this.registerForm);
   }
 
   protected onFilesSelected(event: Event): void {
@@ -233,7 +255,9 @@ export class RegistrationMentorPage
         language: formData.language || 'en',
         yearsOfExperience: formData.yearsOfExperience,
         linkedInUrl: formData.linkedInUrl || undefined,
-        areasOfExpertise: formData.areasOfExpertise || [],
+        areasOfExpertise: (this.areasOfExpertise.value as string[])
+          .map((area) => area.trim())
+          .filter((area) => area.length > 0),
         files: this.selectedFiles,
         ...(emailRedirectTo ? { emailRedirectTo } : {}),
       };

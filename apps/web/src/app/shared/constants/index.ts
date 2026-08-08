@@ -11,6 +11,9 @@ export * from './languages.constants';
 // Expertise options
 export * from './expertise.constants';
 
+// Interest options
+export * from './interest.constants';
+
 // Phone country codes
 export * from './phone-country-codes.constants';
 

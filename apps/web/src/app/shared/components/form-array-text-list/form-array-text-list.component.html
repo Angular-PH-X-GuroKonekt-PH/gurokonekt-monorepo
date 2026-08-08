@@ -21,21 +21,54 @@
   <p class="text-sm text-gray-600 mb-4">{{ description() }}</p>
 
   <div class="space-y-3">
-    @for (control of formArray().controls; track $index) {
+    @for (control of formArray().controls; track $index; let rowIndex = $index) {
       <div class="flex gap-2">
-        <input
-          [formControl]="$any(control)"
-          type="text"
-          [attr.data-form-array-text-input]="listId() + '-' + $index"
-          [placeholder]="placeholder()"
-          class="flex-1 px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
-          [class.border-red-500]="control.invalid && control.touched"
-          (keydown.enter)="onItemEnter($index, $event)"
-        />
-        @if ($index === formArray().length - 1 && formArray().length < maxItems()) {
+        <div class="relative min-w-0 flex-1">
+          <input
+            [formControl]="$any(control)"
+            type="text"
+            [attr.data-form-array-text-input]="listId() + '-' + rowIndex"
+            [placeholder]="placeholder()"
+            autocomplete="off"
+            role="combobox"
+            [attr.aria-autocomplete]="suggestions().length ? 'list' : null"
+            [attr.aria-expanded]="showDropdown() && activeRowIndex() === rowIndex"
+            [attr.aria-controls]="listId() + '-suggestions-' + rowIndex"
+            class="w-full px-4 py-3 border-2 rounded-lg focus:ring-2 focus:ring-orange-500 focus:border-orange-500 transition-colors"
+            [class.border-red-500]="control.invalid && control.touched"
+            (focus)="onFocus(rowIndex)"
+            (input)="onInput(rowIndex, $event)"
+            (blur)="onBlur()"
+            (keydown)="onKeydown(rowIndex, $event)"
+          />
+
+          @if (showDropdown() && activeRowIndex() === rowIndex) {
+            <ul
+              [id]="listId() + '-suggestions-' + rowIndex"
+              role="listbox"
+              class="absolute z-20 mt-1 max-h-52 w-full overflow-auto rounded-xl border border-gray-200 bg-white py-1 shadow-lg"
+            >
+              @for (suggestion of filteredSuggestions(); track suggestion; let i = $index) {
+                <li role="option" [attr.aria-selected]="highlightedIndex() === i">
+                  <button
+                    type="button"
+                    class="flex w-full px-4 py-2.5 text-left text-sm text-gray-700 transition-colors hover:bg-orange-50"
+                    [class.bg-orange-50]="highlightedIndex() === i"
+                    [class.font-medium]="highlightedIndex() === i"
+                    (mousedown)="$event.preventDefault(); selectSuggestion(suggestion, rowIndex)"
+                  >
+                    {{ suggestion }}
+                  </button>
+                </li>
+              }
+            </ul>
+          }
+        </div>
+
+        @if (rowIndex === formArray().length - 1 && formArray().length < maxItems()) {
           <button
             type="button"
-            (click)="onAddItemClick($index)"
+            (click)="onAddItemClick(rowIndex)"
             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-orange-500 bg-orange-50 text-orange-600 shadow-sm hover:bg-orange-500 hover:text-white hover:shadow-md transition-all"
             [title]="'Add this ' + itemSingularLabel()"
             [attr.aria-label]="'Add this ' + itemSingularLabel()"
@@ -46,7 +79,7 @@
         @if (!required() || formArray().length > 1) {
           <button
             type="button"
-            (click)="removeItem($index)"
+            (click)="removeItem(rowIndex)"
             class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border-2 border-red-200 bg-red-50 text-red-600 shadow-sm hover:bg-red-500 hover:text-white hover:border-red-500 hover:shadow-md transition-all"
             [title]="'Remove this ' + itemSingularLabel()"
             [attr.aria-label]="'Remove this ' + itemSingularLabel()"
@@ -57,6 +90,29 @@
       </div>
     }
   </div>
+
+  @if (
+    chipSuggestions().length > 0 &&
+    (formArray().length < maxItems() || hasEmptyControl())
+  ) {
+    <div class="mt-4">
+      <p class="mb-2.5 text-xs font-medium text-gray-500">
+        Suggested for you
+      </p>
+      <div class="flex flex-wrap gap-2">
+        @for (suggestion of chipSuggestions(); track suggestion) {
+          <button
+            type="button"
+            (click)="applyChipSuggestion(suggestion)"
+            class="inline-flex items-center gap-1.5 rounded-full border border-orange-200/80 bg-white px-3 py-1.5 text-sm font-medium text-gray-700 shadow-sm transition-all hover:border-orange-400 hover:bg-orange-500 hover:text-white hover:shadow"
+          >
+            <app-icon name="plus" class="h-3.5 w-3.5 shrink-0 opacity-80"></app-icon>
+            {{ suggestion }}
+          </button>
+        }
+      </div>
+    </div>
+  }
 
   @if (helperText()) {
     <p class="text-sm text-gray-500 mt-3">{{ helperText() }}</p>
