@@ -78,6 +78,33 @@
             </a>
           }
         </nav>
+
+        <div class="border-t border-slate-200 p-3">
+          <p class="px-3.5 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+            Security
+          </p>
+          <button
+            type="button"
+            (click)="openChangePasswordModal()"
+            aria-haspopup="dialog"
+            class="group flex w-full items-center gap-3.5 rounded-xl px-3.5 py-3.5 text-left text-slate-600 transition-colors duration-150 hover:bg-slate-50 hover:text-slate-900"
+          >
+            <span
+              class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-500 transition-colors duration-150 group-hover:bg-slate-200/70 group-hover:text-slate-700"
+            >
+              <app-icon name="mail" class="h-5 w-5"></app-icon>
+            </span>
+
+            <span class="min-w-0 flex flex-col gap-0.5">
+              <span class="truncate font-semibold leading-tight text-slate-800">
+                Change Password
+              </span>
+              <span class="truncate text-sm font-normal leading-tight text-slate-400">
+                Send reset email
+              </span>
+            </span>
+          </button>
+        </div>
       </aside>
 
       <div class="min-h-96 rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-7 lg:p-8">
@@ -86,3 +113,87 @@
     </div>
   </div>
 </section>
+
+@if (isChangePasswordOpen()) {
+  <div
+    class="fixed inset-0 z-[60] flex items-center justify-center bg-slate-950/50 p-4 backdrop-blur-sm"
+    role="presentation"
+    (click)="closeChangePasswordModal()"
+  >
+    <section
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="change-password-title"
+      aria-describedby="change-password-description"
+      class="w-full max-w-md rounded-2xl border border-slate-200 bg-white p-6 shadow-2xl sm:p-7"
+      (click)="$event.stopPropagation()"
+    >
+      <div class="flex items-start gap-4">
+        <span
+          class="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl bg-orange-100 text-orange-600"
+          aria-hidden="true"
+        >
+          <app-icon name="mail" class="h-6 w-6"></app-icon>
+        </span>
+
+        <div class="min-w-0 flex-1">
+          <h2 id="change-password-title" class="text-xl font-bold text-slate-900">
+            Change your password
+          </h2>
+          <p id="change-password-description" class="mt-2 text-sm leading-6 text-slate-600">
+            We’ll send a secure password reset link to your registered email.
+            Open that link to input a new password.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          (click)="closeChangePasswordModal()"
+          [disabled]="isSendingResetLink()"
+          aria-label="Close change password dialog"
+          class="rounded-lg p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          <app-icon name="x-mark" class="h-5 w-5"></app-icon>
+        </button>
+      </div>
+
+      <div class="mt-5 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3">
+        <p class="text-xs font-semibold uppercase tracking-wider text-slate-400">
+          Reset link will be sent to
+        </p>
+        <p class="mt-1 break-all text-sm font-semibold text-slate-800">
+          {{ accountEmail() }}
+        </p>
+      </div>
+
+      <div class="mt-6 flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
+        <button
+          type="button"
+          (click)="closeChangePasswordModal()"
+          [disabled]="isSendingResetLink()"
+          class="rounded-full border border-slate-300 bg-white px-5 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+        >
+          Cancel
+        </button>
+
+        <button
+          type="button"
+          (click)="sendPasswordResetLink()"
+          [disabled]="isSendingResetLink()"
+          [attr.aria-busy]="isSendingResetLink()"
+          class="inline-flex min-w-40 items-center justify-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-orange-300"
+        >
+          @if (isSendingResetLink()) {
+            <span
+              class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+              aria-hidden="true"
+            ></span>
+            Sending...
+          } @else {
+            Send reset link
+          }
+        </button>
+      </div>
+    </section>
+  </div>
+}
