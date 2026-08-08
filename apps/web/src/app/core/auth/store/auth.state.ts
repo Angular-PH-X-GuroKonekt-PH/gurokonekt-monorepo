@@ -269,8 +269,7 @@ export class AuthState {
     return this.profileService.updateMentorProfile(
       action.payload.userId,
       action.payload.profileData,
-      action.payload.avatarFile,
-      action.payload.documentFiles
+      action.payload.avatarFile
     ).pipe(
       tap(() => {
         ctx.dispatch(new AuthActions.UpdateMentorProfileSuccess('Mentor profile updated successfully!'));

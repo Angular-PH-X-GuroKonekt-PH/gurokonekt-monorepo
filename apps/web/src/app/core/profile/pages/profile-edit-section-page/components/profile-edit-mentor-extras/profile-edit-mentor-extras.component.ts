@@ -4,7 +4,6 @@ import { IconComponent } from '../../../../../../shared/components/icon/icon.com
 import { FormArrayTextListComponent } from '../../../../../../shared/components/form-array-text-list/form-array-text-list.component';
 import { FormFieldErrorComponent } from '../../../../../../shared/components/form-field-error/form-field-error.component';
 import type { DayAvailability, TimeFrame } from '../../../../../../shared/interfaces/post-login.interface';
-import { ALLOWED_DOCUMENT_ACCEPT } from '../../../../../../shared/utils/document-validation.util';
 import { formatTimeRange } from '../../../../../../features/mentor/pages/mentor-manage-availability-page/availability.helpers';
 
 @Component({
@@ -25,17 +24,10 @@ export class ProfileEditMentorExtrasComponent {
   readonly areasOfExpertise = input.required<FormArray>();
   readonly expertiseOptions = input.required<string[]>();
   readonly maxSkills = input.required<number>();
-  readonly maxVerificationFiles = input.required<number>();
-  readonly selectedVerificationFiles = input.required<File[]>();
-  readonly verificationFileError = input<string | null>(null);
   readonly availabilitySchedule = input.required<DayAvailability[]>();
 
   readonly toggleExpertise = output<string>();
-  readonly verificationFilesSelected = output<Event>();
-  readonly removeVerificationFile = output<number>();
   readonly manageAvailability = output<void>();
-
-  protected readonly allowedDocumentAccept = ALLOWED_DOCUMENT_ACCEPT;
 
   protected readonly expertiseRequiredMessage = {
     required: 'Please select at least one area of expertise',
@@ -48,9 +40,5 @@ export class ProfileEditMentorExtrasComponent {
 
   protected formatAvailabilityTimeRange(timeFrame: TimeFrame): string {
     return formatTimeRange(timeFrame);
-  }
-
-  protected formatFileSizeMb(sizeBytes: number): string {
-    return (sizeBytes / (1024 * 1024)).toFixed(2);
   }
 }

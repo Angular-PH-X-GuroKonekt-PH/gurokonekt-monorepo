@@ -77,7 +77,6 @@ export class UpdateMentorProfile {
       userId: string;
       profileData: Partial<UpdateMentorProfileInterface>;
       avatarFile?: File;
-      documentFiles?: File[];
     }
   ) {}
 }

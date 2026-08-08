@@ -25,58 +25,65 @@
       <aside
         class="overflow-hidden rounded-2xl border border-slate-200/80 bg-white shadow-sm lg:sticky lg:top-6"
       >
-        <nav class="flex flex-col gap-1.5 p-3" aria-label="Profile settings sections">
-          @for (section of sections; track section.route) {
-            <a
-              [routerLink]="section.route"
-              routerLinkActive
-              #sectionNav="routerLinkActive"
-              [attr.aria-current]="sectionNav.isActive ? 'page' : null"
-              class="group relative flex items-center gap-3.5 overflow-hidden rounded-xl px-3.5 py-3.5 text-base transition-colors duration-150"
-              [class.bg-orange-50]="sectionNav.isActive"
-              [class.text-orange-800]="sectionNav.isActive"
-              [class.text-slate-600]="!sectionNav.isActive"
-              [class.hover:bg-slate-50]="!sectionNav.isActive"
-              [class.hover:text-slate-900]="!sectionNav.isActive"
-            >
-              <span
-                class="absolute inset-y-2.5 left-0 w-1 rounded-full transition-opacity duration-150"
-                [class.bg-orange-500]="sectionNav.isActive"
-                [class.opacity-100]="sectionNav.isActive"
-                [class.opacity-0]="!sectionNav.isActive"
-                aria-hidden="true"
-              ></span>
-
-              <span
-                class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-150"
-                [class.bg-orange-100]="sectionNav.isActive"
-                [class.text-orange-600]="sectionNav.isActive"
-                [class.bg-slate-100]="!sectionNav.isActive"
-                [class.text-slate-500]="!sectionNav.isActive"
-                [class.group-hover:bg-slate-200/70]="!sectionNav.isActive"
-                [class.group-hover:text-slate-700]="!sectionNav.isActive"
-              >
-                <app-icon [name]="section.icon" class="h-5 w-5"></app-icon>
-              </span>
-
-              <span class="min-w-0 flex flex-col gap-0.5">
-                <span
-                  class="truncate font-semibold leading-tight"
+        <nav class="p-3" aria-label="Profile settings sections">
+          <div>
+            <p class="px-3.5 pb-2 pt-1 text-xs font-semibold uppercase tracking-wider text-slate-400">
+              Profile
+            </p>
+            <div class="flex flex-col gap-1.5">
+              @for (section of sections; track section.route) {
+                <a
+                  [routerLink]="section.route"
+                  routerLinkActive
+                  #sectionNav="routerLinkActive"
+                  [attr.aria-current]="sectionNav.isActive ? 'page' : null"
+                  class="group relative flex items-center gap-3.5 overflow-hidden rounded-xl px-3.5 py-3.5 text-base transition-colors duration-150"
+                  [class.bg-orange-50]="sectionNav.isActive"
                   [class.text-orange-800]="sectionNav.isActive"
-                  [class.text-slate-800]="!sectionNav.isActive"
+                  [class.text-slate-600]="!sectionNav.isActive"
+                  [class.hover:bg-slate-50]="!sectionNav.isActive"
+                  [class.hover:text-slate-900]="!sectionNav.isActive"
                 >
-                  {{ section.label }}
-                </span>
-                <span
-                  class="truncate text-sm font-normal leading-tight"
-                  [class.text-orange-600/75]="sectionNav.isActive"
-                  [class.text-slate-400]="!sectionNav.isActive"
-                >
-                  {{ section.description }}
-                </span>
-              </span>
-            </a>
-          }
+                  <span
+                    class="absolute inset-y-2.5 left-0 w-1 rounded-full transition-opacity duration-150"
+                    [class.bg-orange-500]="sectionNav.isActive"
+                    [class.opacity-100]="sectionNav.isActive"
+                    [class.opacity-0]="!sectionNav.isActive"
+                    aria-hidden="true"
+                  ></span>
+
+                  <span
+                    class="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl transition-colors duration-150"
+                    [class.bg-orange-100]="sectionNav.isActive"
+                    [class.text-orange-600]="sectionNav.isActive"
+                    [class.bg-slate-100]="!sectionNav.isActive"
+                    [class.text-slate-500]="!sectionNav.isActive"
+                    [class.group-hover:bg-slate-200/70]="!sectionNav.isActive"
+                    [class.group-hover:text-slate-700]="!sectionNav.isActive"
+                  >
+                    <app-icon [name]="section.icon" class="h-5 w-5"></app-icon>
+                  </span>
+
+                  <span class="min-w-0 flex flex-col gap-0.5">
+                    <span
+                      class="truncate font-semibold leading-tight"
+                      [class.text-orange-800]="sectionNav.isActive"
+                      [class.text-slate-800]="!sectionNav.isActive"
+                    >
+                      {{ section.label }}
+                    </span>
+                    <span
+                      class="truncate text-sm font-normal leading-tight"
+                      [class.text-orange-600/75]="sectionNav.isActive"
+                      [class.text-slate-400]="!sectionNav.isActive"
+                    >
+                      {{ section.description }}
+                    </span>
+                  </span>
+                </a>
+              }
+            </div>
+          </div>
         </nav>
 
         <div class="border-t border-slate-200 p-3">

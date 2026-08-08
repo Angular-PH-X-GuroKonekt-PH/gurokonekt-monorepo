@@ -40,13 +40,8 @@
           [areasOfExpertise]="areasOfExpertise"
           [expertiseOptions]="expertiseOptions"
           [maxSkills]="maxSkills"
-          [maxVerificationFiles]="maxVerificationFiles"
-          [selectedVerificationFiles]="selectedVerificationFiles()"
-          [verificationFileError]="verificationFileError()"
           [availabilitySchedule]="availabilitySchedule()"
           (toggleExpertise)="toggleAreaOfExpertise($event)"
-          (verificationFilesSelected)="onVerificationFilesSelected($event)"
-          (removeVerificationFile)="removeVerificationFile($event)"
           (manageAvailability)="goToManageAvailability()"
         />
       } @else {

@@ -31,10 +31,6 @@ import {
   getTimezones,
 } from '../../../../shared/utils/location-data.util';
 import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
-import {
-  DOCUMENT_TYPE_ERROR,
-  isAllowedDocumentType,
-} from '../../../../shared/utils/document-validation.util';
 import { expertiseOptions } from '../../../../shared/helpers/expertise-selection.helper';
 import { FORM_FIELD_VALIDATORS } from '../../../../shared/constants/form-validation-configs.constants';
 import { ProfileEditAvatarComponent } from './components/profile-edit-avatar/profile-edit-avatar.component';
@@ -62,8 +58,6 @@ export class ProfileEditSectionPage implements OnInit {
   private static readonly MAX_AREAS_OF_INTEREST = 5;
   private static readonly MAX_AREAS_OF_EXPERTISE = 10;
   private static readonly MAX_SKILLS = 8;
-  private static readonly MAX_VERIFICATION_FILES = 5;
-  private static readonly MAX_VERIFICATION_FILE_SIZE_BYTES = 5 * 1024 * 1024;
 
   private readonly fb = inject(FormBuilder);
   private readonly toastService = inject(ToastService);
@@ -79,8 +73,6 @@ export class ProfileEditSectionPage implements OnInit {
   protected readonly currentAvatarUrl = signal<string | null>(null);
   protected readonly selectedAvatarFile = signal<File | null>(null);
   protected readonly avatarError = signal<string | null>(null);
-  protected readonly selectedVerificationFiles = signal<File[]>([]);
-  protected readonly verificationFileError = signal<string | null>(null);
 
   protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly isMentor = computed(
@@ -96,8 +88,6 @@ export class ProfileEditSectionPage implements OnInit {
   protected readonly overviewRoute = `/${APP_ROUTES.SETTINGS_OVERVIEW}`;
   protected readonly maxSkills = ProfileEditSectionPage.MAX_SKILLS;
   protected readonly maxLearningGoals = ProfileEditSectionPage.MAX_LEARNING_GOALS;
-  protected readonly maxVerificationFiles =
-    ProfileEditSectionPage.MAX_VERIFICATION_FILES;
 
   protected readonly areasOfInterestOptions = [
     'Web Development',
@@ -520,61 +510,6 @@ export class ProfileEditSectionPage implements OnInit {
     }
   }
 
-  protected onVerificationFilesSelected(event: Event): void {
-    const input = event.target as HTMLInputElement;
-    if (!input.files || input.files.length === 0) {
-      return;
-    }
-
-    this.verificationFileError.set(null);
-
-    const remainingSlots =
-      ProfileEditSectionPage.MAX_VERIFICATION_FILES -
-      this.selectedVerificationFiles().length;
-    if (remainingSlots <= 0) {
-      this.verificationFileError.set(
-        `You can upload up to ${ProfileEditSectionPage.MAX_VERIFICATION_FILES} documents`
-      );
-      input.value = '';
-      return;
-    }
-
-    const nextFiles = [...this.selectedVerificationFiles()];
-    for (const file of Array.from(input.files).slice(0, remainingSlots)) {
-      if (!isAllowedDocumentType(file)) {
-        this.verificationFileError.set(DOCUMENT_TYPE_ERROR);
-        input.value = '';
-        return;
-      }
-
-      if (file.size > ProfileEditSectionPage.MAX_VERIFICATION_FILE_SIZE_BYTES) {
-        this.verificationFileError.set('Each document must be less than 5MB');
-        input.value = '';
-        return;
-      }
-
-      nextFiles.push(file);
-    }
-
-    this.selectedVerificationFiles.set(nextFiles);
-    input.value = '';
-  }
-
-  protected removeVerificationFile(index: number): void {
-    const nextFiles = this.selectedVerificationFiles().filter((_, i) => i !== index);
-    this.selectedVerificationFiles.set(nextFiles);
-    this.verificationFileError.set(null);
-  }
-
-  protected clearVerificationFiles(): void {
-    this.selectedVerificationFiles.set([]);
-    this.verificationFileError.set(null);
-  }
-
-  protected formatFileSizeMb(sizeBytes: number): string {
-    return (sizeBytes / (1024 * 1024)).toFixed(2);
-  }
-
   private buildMenteeProfileData(): Partial<UpdateMenteeProfileInterface> {
     return {
       bio: this.profileForm.value.bio,
@@ -669,10 +604,6 @@ export class ProfileEditSectionPage implements OnInit {
               userId: user.id,
               profileData: this.buildMentorProfileData(),
               avatarFile: this.selectedAvatarFile() || undefined,
-              documentFiles:
-                this.selectedVerificationFiles().length > 0
-                  ? this.selectedVerificationFiles()
-                  : undefined,
             })
           )
         );
@@ -690,7 +621,6 @@ export class ProfileEditSectionPage implements OnInit {
 
       this.toastService.success('Profile updated successfully!');
       this.clearDraft();
-      this.clearVerificationFiles();
       this.commitAvatarAfterSuccessfulUpdate();
     } catch (error) {
       const message = (error as { message?: string })?.message;
