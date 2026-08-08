@@ -18,37 +18,18 @@
     </div>
 
     <div>
-      <label for="areasOfInterest" class="block text-sm font-semibold text-gray-700 mb-4">
-        Areas of Interest <span class="text-red-500">*</span>
-        <span class="text-gray-500 font-normal"> (Select at least one)</span>
-      </label>
-
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-3">
-        @for (area of areasOfInterestOptions(); track area) {
-          <label
-            class="flex items-center gap-3 p-3 border-2 rounded-lg cursor-pointer transition-all"
-            [class]="
-              isAreaSelected(area)
-                ? 'border-orange-500 bg-orange-50'
-                : 'border-gray-300 hover:border-orange-300'
-            "
-          >
-            <input
-              type="checkbox"
-              [checked]="isAreaSelected(area)"
-              (change)="toggleAreaOfInterest.emit(area)"
-              class="w-4 h-4 text-orange-600 rounded focus:ring-2 focus:ring-orange-500"
-            />
-            <span class="text-gray-700 font-medium">{{ area }}</span>
-          </label>
-        }
-      </div>
-
-      <app-form-field-error
-        [form]="form()"
-        controlName="areasOfInterest"
-        errorClass="text-red-600 text-sm mt-2"
-        [messages]="interestRequiredMessage"
+      <app-form-array-text-list
+        [formArray]="areasOfInterest()"
+        listId="area-of-interest"
+        label="Areas of Interest"
+        description="What topics are you interested in? (Add at least 1, max {{ maxAreasOfInterest() }})"
+        addButtonLabel="Add Interest"
+        itemSingularLabel="interest"
+        [maxItems]="maxAreasOfInterest()"
+        [required]="true"
+        [suggestions]="interestSuggestions"
+        placeholder="e.g., Machine Learning, Career Development"
+        helperText="Type an interest and press Enter or click + to add another."
       />
     </div>
   </div>

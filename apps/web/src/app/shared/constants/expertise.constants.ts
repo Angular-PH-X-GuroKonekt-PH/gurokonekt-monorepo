@@ -1,10 +1,7 @@
-/**
- * Standard expertise options for mentor registration
- */
 export const EXPERTISE_OPTIONS = [
   'Software Engineering',
   'Frontend Development',
-  'Backend Development', 
+  'Backend Development',
   'Full-Stack Development',
   'DevOps & Infrastructure',
   'Cloud Architecture',
@@ -17,5 +14,5 @@ export const EXPERTISE_OPTIONS = [
   'Database Design',
   'System Architecture',
   'Quality Assurance',
-  'Project Management'
-];
+  'Project Management',
+] as const;

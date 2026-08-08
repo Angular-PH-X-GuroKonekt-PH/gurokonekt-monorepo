@@ -31,7 +31,6 @@ import {
   getTimezones,
 } from '../../../../shared/utils/location-data.util';
 import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
-import { expertiseOptions } from '../../../../shared/helpers/expertise-selection.helper';
 import { FORM_FIELD_VALIDATORS } from '../../../../shared/constants/form-validation-configs.constants';
 import { ProfileEditAvatarComponent } from './components/profile-edit-avatar/profile-edit-avatar.component';
 import { ProfileEditPersonalInfoComponent } from './components/profile-edit-personal-info/profile-edit-personal-info.component';
@@ -88,23 +87,9 @@ export class ProfileEditSectionPage implements OnInit {
   protected readonly overviewRoute = `/${APP_ROUTES.SETTINGS_OVERVIEW}`;
   protected readonly maxSkills = ProfileEditSectionPage.MAX_SKILLS;
   protected readonly maxLearningGoals = ProfileEditSectionPage.MAX_LEARNING_GOALS;
+  protected readonly maxAreasOfInterest = ProfileEditSectionPage.MAX_AREAS_OF_INTEREST;
+  protected readonly maxAreasOfExpertise = ProfileEditSectionPage.MAX_AREAS_OF_EXPERTISE;
 
-  protected readonly areasOfInterestOptions = [
-    'Web Development',
-    'Mobile Development',
-    'Data Science',
-    'Machine Learning',
-    'DevOps',
-    'Cloud Computing',
-    'Cybersecurity',
-    'UI/UX Design',
-    'Project Management',
-    'Business Strategy',
-    'Digital Marketing',
-    'Career Development',
-  ];
-
-  protected readonly expertiseOptions = expertiseOptions;
   protected readonly countryOptions = getCountries();
   protected readonly timezoneOptions = getTimezones();
   protected readonly languageOptions = getLanguages();
@@ -241,22 +226,12 @@ export class ProfileEditSectionPage implements OnInit {
     const skills = Array.isArray(mentorProfile['skills'])
       ? (mentorProfile['skills'] as string[])
       : [];
-    this.skills.clear();
-    if (skills.length > 0) {
-      skills.forEach((skill) => {
-        const control = createFormArrayTextControl(this.fb);
-        control.setValue(skill);
-        this.skills.push(control);
-      });
-    }
+    this.replaceTextFormArray(this.skills, skills);
 
     const areasOfExpertise = Array.isArray(mentorProfile['areasOfExpertise'])
       ? (mentorProfile['areasOfExpertise'] as string[])
       : [];
-    this.areasOfExpertise.clear();
-    areasOfExpertise.forEach((area) => {
-      this.areasOfExpertise.push(this.fb.control(area));
-    });
+    this.replaceTextFormArray(this.areasOfExpertise, areasOfExpertise, true);
 
     const availability = Array.isArray(mentorProfile['availability'])
       ? (mentorProfile['availability'] as Array<{ day: DaysInWeek; timeFrames: TimeFrame[] }>)
@@ -281,14 +256,12 @@ export class ProfileEditSectionPage implements OnInit {
     const learningGoals = Array.isArray(menteeProfile['learningGoals'])
       ? (menteeProfile['learningGoals'] as string[])
       : [];
-    this.replaceLearningGoals(learningGoals);
+    this.replaceTextFormArray(this.learningGoals, learningGoals, true);
 
     const areasOfInterest = Array.isArray(menteeProfile['areasOfInterest'])
       ? (menteeProfile['areasOfInterest'] as string[])
       : [];
-    areasOfInterest.forEach((area) => {
-      this.areasOfInterest.push(this.fb.control(area));
-    });
+    this.replaceTextFormArray(this.areasOfInterest, areasOfInterest, true);
   }
 
   private populateAvailabilitySchedule(
@@ -365,11 +338,11 @@ export class ProfileEditSectionPage implements OnInit {
     });
 
     if (this.isMentor()) {
-      this.replaceStringFormArray(this.areasOfExpertise, draft.areasOfExpertise ?? []);
-      this.replaceSkillsFormArray(draft.skills ?? []);
+      this.replaceTextFormArray(this.areasOfExpertise, draft.areasOfExpertise ?? [], true);
+      this.replaceTextFormArray(this.skills, draft.skills ?? []);
     } else {
-      this.replaceLearningGoals(draft.learningGoals ?? []);
-      this.replaceStringFormArray(this.areasOfInterest, draft.areasOfInterest ?? []);
+      this.replaceTextFormArray(this.learningGoals, draft.learningGoals ?? [], true);
+      this.replaceTextFormArray(this.areasOfInterest, draft.areasOfInterest ?? [], true);
       this.preferredSessionTypes.clear();
       (draft.preferredSessionType ?? []).forEach((type) => {
         this.preferredSessionTypes.push(this.fb.control(type));
@@ -377,27 +350,17 @@ export class ProfileEditSectionPage implements OnInit {
     }
   }
 
-  private replaceStringFormArray(formArray: FormArray, values: string[]): void {
+  private replaceTextFormArray(
+    formArray: FormArray,
+    values: string[],
+    ensureAtLeastOne = false
+  ): void {
     formArray.clear();
-    values.forEach((value) => formArray.push(this.fb.control(value)));
-  }
-
-  private replaceSkillsFormArray(values: string[]): void {
-    this.skills.clear();
-    values.forEach((skill) => {
+    const items = values.length > 0 ? values : ensureAtLeastOne ? [''] : [];
+    items.forEach((value) => {
       const control = createFormArrayTextControl(this.fb);
-      control.setValue(skill);
-      this.skills.push(control);
-    });
-  }
-
-  private replaceLearningGoals(values: string[]): void {
-    this.learningGoals.clear();
-    const goals = values.length > 0 ? values : [''];
-    goals.forEach((goal) => {
-      const control = createFormArrayTextControl(this.fb);
-      control.setValue(goal);
-      this.learningGoals.push(control);
+      control.setValue(value);
+      formArray.push(control);
     });
   }
 
@@ -419,42 +382,6 @@ export class ProfileEditSectionPage implements OnInit {
 
   get skills(): FormArray {
     return this.profileForm.get('skills') as FormArray;
-  }
-
-  toggleAreaOfInterest(area: string): void {
-    const index = this.areasOfInterest.controls.findIndex(
-      (control) => control.value === area
-    );
-
-    if (index >= 0) {
-      this.areasOfInterest.removeAt(index);
-    } else if (
-      this.areasOfInterest.length < ProfileEditSectionPage.MAX_AREAS_OF_INTEREST
-    ) {
-      this.areasOfInterest.push(this.fb.control(area));
-    }
-  }
-
-  isAreaSelected(area: string): boolean {
-    return this.areasOfInterest.controls.some((control) => control.value === area);
-  }
-
-  toggleAreaOfExpertise(area: string): void {
-    const index = this.areasOfExpertise.controls.findIndex(
-      (control) => control.value === area
-    );
-
-    if (index >= 0) {
-      this.areasOfExpertise.removeAt(index);
-    } else if (
-      this.areasOfExpertise.length < ProfileEditSectionPage.MAX_AREAS_OF_EXPERTISE
-    ) {
-      this.areasOfExpertise.push(this.fb.control(area));
-    }
-  }
-
-  isExpertiseSelected(area: string): boolean {
-    return this.areasOfExpertise.controls.some((control) => control.value === area);
   }
 
   get preferredSessionTypes(): FormArray {
@@ -519,7 +446,7 @@ export class ProfileEditSectionPage implements OnInit {
       language: this.profileForm.value.language,
       ...(this.isMentee() && {
         learningGoals: this.learningGoals.value.filter((g: string) => g.trim()),
-        areasOfInterest: this.areasOfInterest.value,
+        areasOfInterest: this.areasOfInterest.value.filter((a: string) => a.trim()),
       }),
       preferredSessionType: this.preferredSessionTypes.value,
     };
@@ -538,7 +465,9 @@ export class ProfileEditSectionPage implements OnInit {
       timezone: this.profileForm.value.timezone,
       language: this.profileForm.value.language,
       linkedInUrl,
-      areasOfExpertise: this.areasOfExpertise.value,
+      areasOfExpertise: (this.areasOfExpertise.value as string[])
+        .map((area) => area.trim())
+        .filter((area) => area.length > 0),
       yearsOfExperience: Number(this.profileForm.value.yearsOfExperience),
       skills,
     };
@@ -546,8 +475,12 @@ export class ProfileEditSectionPage implements OnInit {
 
   private validateBeforeSubmit(): boolean {
     if (this.isMentor()) {
-      if (this.areasOfExpertise.length === 0) {
-        this.toastService.error('Please select at least one area of expertise');
+      const filledExpertise = (this.areasOfExpertise.value as string[]).filter((area) =>
+        area.trim()
+      );
+      if (filledExpertise.length === 0) {
+        this.areasOfExpertise.controls.forEach((control) => control.markAsTouched());
+        this.toastService.error('Please add at least one area of expertise');
         return false;
       }
 
@@ -562,8 +495,12 @@ export class ProfileEditSectionPage implements OnInit {
         return false;
       }
 
-      if (this.areasOfInterest.length === 0) {
-        this.toastService.error('Please select at least one area of interest');
+      const filledInterests = (this.areasOfInterest.value as string[]).filter((area) =>
+        area.trim()
+      );
+      if (filledInterests.length === 0) {
+        this.areasOfInterest.controls.forEach((control) => control.markAsTouched());
+        this.toastService.error('Please add at least one area of interest');
         return false;
       }
     }

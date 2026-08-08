@@ -2,19 +2,14 @@ import { Component, input, output } from '@angular/core';
 import { FormArray, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { IconComponent } from '../../../../../../shared/components/icon/icon.component';
 import { FormArrayTextListComponent } from '../../../../../../shared/components/form-array-text-list/form-array-text-list.component';
-import { FormFieldErrorComponent } from '../../../../../../shared/components/form-field-error/form-field-error.component';
 import type { DayAvailability, TimeFrame } from '../../../../../../shared/interfaces/post-login.interface';
 import { formatTimeRange } from '../../../../../../features/mentor/pages/mentor-manage-availability-page/availability.helpers';
+import { EXPERTISE_OPTIONS } from '../../../../../../shared/constants/expertise.constants';
 
 @Component({
   selector: 'app-profile-edit-mentor-extras',
   standalone: true,
-  imports: [
-    ReactiveFormsModule,
-    IconComponent,
-    FormArrayTextListComponent,
-    FormFieldErrorComponent,
-  ],
+  imports: [ReactiveFormsModule, IconComponent, FormArrayTextListComponent],
   templateUrl: './profile-edit-mentor-extras.component.html',
   host: { class: 'block' },
 })
@@ -22,21 +17,13 @@ export class ProfileEditMentorExtrasComponent {
   readonly form = input.required<FormGroup>();
   readonly skills = input.required<FormArray>();
   readonly areasOfExpertise = input.required<FormArray>();
-  readonly expertiseOptions = input.required<string[]>();
   readonly maxSkills = input.required<number>();
+  readonly maxAreasOfExpertise = input.required<number>();
   readonly availabilitySchedule = input.required<DayAvailability[]>();
 
-  readonly toggleExpertise = output<string>();
   readonly manageAvailability = output<void>();
 
-  protected readonly expertiseRequiredMessage = {
-    required: 'Please select at least one area of expertise',
-    minlength: 'Please select at least one area of expertise',
-  } as const;
-
-  protected isExpertiseSelected(area: string): boolean {
-    return (this.areasOfExpertise().value as string[]).includes(area);
-  }
+  protected readonly expertiseSuggestions = EXPERTISE_OPTIONS;
 
   protected formatAvailabilityTimeRange(timeFrame: TimeFrame): string {
     return formatTimeRange(timeFrame);

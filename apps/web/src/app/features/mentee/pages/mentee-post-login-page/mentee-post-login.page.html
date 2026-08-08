@@ -65,15 +65,18 @@
             helperText="Type a goal and press Enter or click + to add another. Each goal needs at least 2 characters."
           />
 
-          <app-profile-setup-option-chips
+          <app-form-array-text-list
+            [formArray]="areasOfInterest"
+            listId="area-of-interest"
             label="Areas of Interest"
-            description="Select up to 5 areas you're interested in"
-            [options]="areasOfInterestOptions"
-            [selectedCount]="areasOfInterest.length"
+            description="What topics are you interested in? (Add at least 1, max {{ maxAreasOfInterest }})"
+            addButtonLabel="Add Interest"
+            itemSingularLabel="interest"
             [maxItems]="maxAreasOfInterest"
-            emptyError="Please select at least one area of interest"
-            [isSelected]="isAreaSelected"
-            (toggled)="toggleAreaOfInterest($event)"
+            [required]="true"
+            placeholder="e.g., Machine Learning, Career Development"
+            helperText="Type an interest and press Enter or click + to add another."
+            [suggestions]="interestSuggestions"
           />
 
           <app-profile-setup-session-type
