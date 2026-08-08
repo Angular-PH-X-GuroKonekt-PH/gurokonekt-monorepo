@@ -51,15 +51,18 @@
             </p>
           </div>
 
-          <app-profile-setup-option-chips
-            label="Topics of Mentorship"
-            description="Select one or more expertise areas"
-            [options]="expertiseOptions"
-            [selectedCount]="areasOfExpertise.length"
-            emptyError="Please select at least one mentorship topic"
-            [showSelectedCount]="false"
-            [isSelected]="isExpertiseSelected"
-            (toggled)="toggleExpertise($event)"
+          <app-form-array-text-list
+            [formArray]="areasOfExpertise"
+            listId="area-of-expertise"
+            label="Areas of Expertise"
+            description="What can you mentor others in? (Add at least 1, max {{ maxAreasOfExpertise }})"
+            addButtonLabel="Add Expertise"
+            itemSingularLabel="area"
+            [maxItems]="maxAreasOfExpertise"
+            [required]="true"
+            placeholder="e.g., Web Development, Cloud Architecture"
+            helperText="Type an area and press Enter or click + to add another."
+            [suggestions]="expertiseSuggestions"
           />
 
           <app-form-array-text-list
