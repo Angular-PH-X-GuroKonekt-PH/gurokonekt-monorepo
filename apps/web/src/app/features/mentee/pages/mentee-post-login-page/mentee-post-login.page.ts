@@ -27,10 +27,10 @@ import { ProfileSetupStepperComponent } from '../../../../shared/components/prof
 import { ProfileSetupStepNavComponent } from '../../../../shared/components/profile-setup/profile-setup-step-nav/profile-setup-step-nav.component';
 import { ProfileSetupAvatarComponent } from '../../../../shared/components/profile-setup/profile-setup-avatar/profile-setup-avatar.component';
 import { ProfileSetupBioComponent } from '../../../../shared/components/profile-setup/profile-setup-bio/profile-setup-bio.component';
-import { ProfileSetupOptionChipsComponent } from '../../../../shared/components/profile-setup/profile-setup-option-chips/profile-setup-option-chips.component';
 import { ProfileSetupSessionTypeComponent } from '../../../../shared/components/profile-setup/profile-setup-session-type/profile-setup-session-type.component';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
+import { INTEREST_OPTIONS } from '../../../../shared/constants/interest.constants';
 import { isSessionExpiredError } from '../../../../shared/utils/http-error.util';
 import type { AvatarCropResult } from '../../../../shared/components/avatar-crop-modal/avatar-crop-modal.component';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
@@ -46,7 +46,6 @@ import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
     ProfileSetupStepNavComponent,
     ProfileSetupAvatarComponent,
     ProfileSetupBioComponent,
-    ProfileSetupOptionChipsComponent,
     ProfileSetupSessionTypeComponent,
   ],
   templateUrl: './mentee-post-login.page.html',
@@ -69,30 +68,20 @@ export class MenteePostLoginPage {
   protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
 
   protected readonly stepTitles = ['Basic Info', 'Interests & Goals'];
-  protected readonly areasOfInterestOptions = [
-    'Web Development',
-    'Mobile Development',
-    'Data Science',
-    'Machine Learning',
-    'DevOps',
-    'Cloud Computing',
-    'Cybersecurity',
-    'UI/UX Design',
-    'Project Management',
-    'Business Strategy',
-    'Digital Marketing',
-    'Career Development',
-  ];
   protected readonly maxLearningGoals = MenteePostLoginPage.MAX_LEARNING_GOALS;
   protected readonly maxAreasOfInterest =
     MenteePostLoginPage.MAX_AREAS_OF_INTEREST;
+  protected readonly interestSuggestions = INTEREST_OPTIONS;
 
   protected selectedAvatarFile: File | null = null;
 
   protected readonly profileForm: FormGroup = this.fb.group({
     bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
     learningGoals: this.fb.array([createFormArrayTextControl(this.fb)], Validators.required),
-    areasOfInterest: this.fb.array([], Validators.required),
+    areasOfInterest: this.fb.array(
+      [createFormArrayTextControl(this.fb)],
+      Validators.required
+    ),
     preferredSessionType: this.fb.array([], Validators.required),
   });
 
@@ -115,25 +104,6 @@ export class MenteePostLoginPage {
   get preferredSessionTypes(): FormArray {
     return this.profileForm.get('preferredSessionType') as FormArray;
   }
-
-  protected toggleAreaOfInterest(area: string): void {
-    const index = this.areasOfInterest.controls.findIndex(
-      (control) => control.value === area
-    );
-
-    if (index >= 0) {
-      this.areasOfInterest.removeAt(index);
-      return;
-    }
-
-    if (this.areasOfInterest.length < MenteePostLoginPage.MAX_AREAS_OF_INTEREST) {
-      this.areasOfInterest.push(this.fb.control(area));
-    }
-  }
-
-  protected isAreaSelected = (area: string): boolean => {
-    return this.areasOfInterest.controls.some((control) => control.value === area);
-  };
 
   protected toggleSessionType(type: MenteePreferredSessionType): void {
     const index = this.preferredSessionTypes.controls.findIndex(
@@ -200,6 +170,7 @@ export class MenteePostLoginPage {
         return (
           this.learningGoals.valid &&
           this.learningGoals.length > 0 &&
+          this.areasOfInterest.valid &&
           this.areasOfInterest.length > 0 &&
           this.preferredSessionTypes.length > 0
         );
@@ -211,8 +182,12 @@ export class MenteePostLoginPage {
   private buildProfileData(): Partial<UpdateMenteeProfileInterface> {
     return {
       bio: this.profileForm.value.bio,
-      learningGoals: this.learningGoals.value,
-      areasOfInterest: this.areasOfInterest.value,
+      learningGoals: (this.learningGoals.value as string[])
+        .map((goal) => goal.trim())
+        .filter((goal) => goal.length > 0),
+      areasOfInterest: (this.areasOfInterest.value as string[])
+        .map((area) => area.trim())
+        .filter((area) => area.length > 0),
       preferredSessionType: this.preferredSessionTypes.value,
     };
   }

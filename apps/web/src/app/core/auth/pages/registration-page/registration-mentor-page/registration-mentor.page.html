@@ -67,30 +67,19 @@
           </div>
 
           <!-- Expertise Areas -->
-          <fieldset>
-            <legend class="block text-sm font-semibold text-gray-700 mb-2">
-              Areas of Expertise <span class="text-orange-500">*</span>
-            </legend>
-            <div class="grid grid-cols-2 gap-3">
-              @for (opt of expertiseOptions; track opt) {
-              <label class="flex items-center gap-2 cursor-pointer">
-                <input
-                  type="checkbox"
-                  class="w-5 h-5 rounded border-2 border-gray-300 text-orange-500 focus:ring-2 focus:ring-orange-500"
-                  [checked]="isExpertiseSelected(opt)"
-                  (change)="onExpertiseChange($event, opt)"
-                />
-                <span class="text-sm text-gray-700">{{ opt }}</span>
-              </label>
-              }
-            </div>
-            @if (registerForm.get('areasOfExpertise')?.touched &&
-            registerForm.get('areasOfExpertise')?.invalid) {
-            <p class="mt-2 text-sm text-red-600">
-              {{ getErrorMessage('areasOfExpertise') }}
-            </p>
-            }
-          </fieldset>
+          <app-form-array-text-list
+            [formArray]="areasOfExpertise"
+            listId="registration-area-of-expertise"
+            label="Areas of Expertise"
+            description="What can you mentor others in? (Add at least 1, max {{ maxAreasOfExpertise }})"
+            addButtonLabel="Add Expertise"
+            itemSingularLabel="area"
+            [maxItems]="maxAreasOfExpertise"
+            [required]="true"
+            placeholder="e.g., Web Development, Cloud Architecture"
+            helperText="Type an area and press Enter or click + to add another."
+            [suggestions]="expertiseSuggestions"
+          />
 
           <!-- Years of Experience -->
           <div>
@@ -357,14 +346,17 @@
                 <div>
                   <p class="text-xs text-gray-500 mb-1">Areas of Expertise</p>
                   <div class="flex flex-wrap gap-2 mt-2">
-                    @for (expertise of
-                    registerForm.get('areasOfExpertise')?.value; track
-                    expertise) {
-                    <span
-                      class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
-                    >
-                      {{ expertise }}
-                    </span>
+                    @for (
+                      expertise of areasOfExpertise.value;
+                      track expertise
+                    ) {
+                      @if (expertise.trim()) {
+                        <span
+                          class="inline-flex items-center px-3 py-1 rounded-full text-xs font-medium bg-orange-100 text-orange-800"
+                        >
+                          {{ expertise }}
+                        </span>
+                      }
                     }
                   </div>
                 </div>

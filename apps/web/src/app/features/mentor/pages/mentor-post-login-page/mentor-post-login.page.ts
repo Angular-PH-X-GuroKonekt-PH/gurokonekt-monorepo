@@ -30,10 +30,9 @@ import { ProfileSetupStepperComponent } from '../../../../shared/components/prof
 import { ProfileSetupStepNavComponent } from '../../../../shared/components/profile-setup/profile-setup-step-nav/profile-setup-step-nav.component';
 import { ProfileSetupAvatarComponent } from '../../../../shared/components/profile-setup/profile-setup-avatar/profile-setup-avatar.component';
 import { ProfileSetupBioComponent } from '../../../../shared/components/profile-setup/profile-setup-bio/profile-setup-bio.component';
-import { ProfileSetupOptionChipsComponent } from '../../../../shared/components/profile-setup/profile-setup-option-chips/profile-setup-option-chips.component';
 import * as AuthActions from '../../../../core/auth/store/auth.actions';
-import { expertiseOptions } from '../../../../shared/helpers/expertise-selection.helper';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
+import { EXPERTISE_OPTIONS } from '../../../../shared/constants/expertise.constants';
 import { isSessionExpiredError } from '../../../../shared/utils/http-error.util';
 import type { AvatarCropResult } from '../../../../shared/components/avatar-crop-modal/avatar-crop-modal.component';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
@@ -51,13 +50,13 @@ import { MentorWeeklyAvailability } from './mentor-weekly-availability/mentor-we
     ProfileSetupStepNavComponent,
     ProfileSetupAvatarComponent,
     ProfileSetupBioComponent,
-    ProfileSetupOptionChipsComponent,
   ],
   templateUrl: './mentor-post-login.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class MentorPostLoginPage {
   private static readonly MAX_SKILLS = 8;
+  private static readonly MAX_AREAS_OF_EXPERTISE = 10;
 
   private readonly fb = inject(FormBuilder);
   private readonly toastService = inject(ToastService);
@@ -67,11 +66,12 @@ export class MentorPostLoginPage {
   protected readonly currentStep = signal(1);
   protected readonly totalSteps = 3;
   protected readonly isSubmitting = signal(false);
-  protected readonly expertiseOptions = expertiseOptions;
   protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly avatarPreview = signal<string | null>(null);
   protected readonly avatarError = signal<string | null>(null);
   protected readonly maxSkills = MentorPostLoginPage.MAX_SKILLS;
+  protected readonly maxAreasOfExpertise = MentorPostLoginPage.MAX_AREAS_OF_EXPERTISE;
+  protected readonly expertiseSuggestions = EXPERTISE_OPTIONS;
   protected readonly stepTitles = ['About You', 'Topics & Skills', 'Availability'];
   protected readonly availability = signal<UserAvailabilityInterface[]>([]);
 
@@ -79,7 +79,10 @@ export class MentorPostLoginPage {
 
   protected readonly profileForm: FormGroup = this.fb.group({
     bio: ['', [Validators.required, Validators.minLength(50), Validators.maxLength(500)]],
-    areasOfExpertise: this.fb.array([], Validators.required),
+    areasOfExpertise: this.fb.array(
+      [createFormArrayTextControl(this.fb)],
+      Validators.required
+    ),
     skills: this.fb.array([createFormArrayTextControl(this.fb)], Validators.required),
   });
 
@@ -98,22 +101,6 @@ export class MentorPostLoginPage {
   get skills(): FormArray {
     return this.profileForm.get('skills') as FormArray;
   }
-
-  protected toggleExpertise(area: string): void {
-    const index = this.areasOfExpertise.controls.findIndex(
-      (control) => control.value === area
-    );
-    if (index >= 0) {
-      this.areasOfExpertise.removeAt(index);
-      return;
-    }
-
-    this.areasOfExpertise.push(this.fb.control(area));
-  }
-
-  protected isExpertiseSelected = (area: string): boolean => {
-    return this.areasOfExpertise.controls.some((control) => control.value === area);
-  };
 
   protected onAvatarReady(result: AvatarCropResult): void {
     if (this.avatarPreview()?.startsWith('blob:')) {
@@ -158,7 +145,12 @@ export class MentorPostLoginPage {
       case 1:
         return (this.profileForm.get('bio')?.valid ?? false) && this.selectedAvatarFile !== null;
       case 2:
-        return this.areasOfExpertise.length > 0 && this.skills.valid && this.skills.length > 0;
+        return (
+          this.areasOfExpertise.valid &&
+          this.areasOfExpertise.length > 0 &&
+          this.skills.valid &&
+          this.skills.length > 0
+        );
       case 3:
         return this.hasAtLeastOneAvailability();
       default:
@@ -173,8 +165,12 @@ export class MentorPostLoginPage {
   private buildProfileData(): Partial<UpdateMentorProfileInterface> {
     return {
       bio: this.profileForm.value.bio,
-      areasOfExpertise: this.areasOfExpertise.value,
-      skills: this.skills.value,
+      areasOfExpertise: (this.areasOfExpertise.value as string[])
+        .map((area) => area.trim())
+        .filter((area) => area.length > 0),
+      skills: (this.skills.value as string[])
+        .map((skill) => skill.trim())
+        .filter((skill) => skill.length > 0),
       availability: this.availability(),
     };
   }
