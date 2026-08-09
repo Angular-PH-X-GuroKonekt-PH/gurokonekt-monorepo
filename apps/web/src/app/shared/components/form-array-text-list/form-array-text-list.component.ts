@@ -10,11 +10,14 @@ import { IconComponent } from '../icon/icon.component';
 
 export function createFormArrayTextControl(
   fb: FormBuilder,
-  minLength = 2
+  minLength = 2,
+  required = true
 ): FormControl<string> {
   return fb.control('', {
     nonNullable: true,
-    validators: [Validators.required, Validators.minLength(minLength)],
+    validators: required
+      ? [Validators.required, Validators.minLength(minLength)]
+      : [Validators.minLength(minLength)],
   });
 }
 
@@ -69,6 +72,18 @@ export class FormArrayTextListComponent {
     );
   });
 
+  protected readonly canAddNewItem = computed(() => {
+    this.selectionVersion();
+    const array = this.formArray();
+    if (array.length >= this.maxItems()) {
+      return false;
+    }
+
+    return array.controls.every(
+      (control) => String(control.value ?? '').trim().length >= this.minLength()
+    );
+  });
+
   private availableSuggestions(): string[] {
     const selected = new Set(
       (this.formArray().value as string[])
@@ -82,12 +97,13 @@ export class FormArrayTextListComponent {
   }
 
   addItem(focusNew = false): void {
-    const array = this.formArray();
-    if (array.length >= this.maxItems()) {
+    if (!this.canAddNewItem()) {
+      this.markIncompleteControlsTouched();
       return;
     }
 
-    array.push(createFormArrayTextControl(this.fb, this.minLength()));
+    const array = this.formArray();
+    array.push(createFormArrayTextControl(this.fb, this.minLength(), this.required()));
     this.selectionVersion.update((version) => version + 1);
 
     if (focusNew) {
@@ -97,7 +113,13 @@ export class FormArrayTextListComponent {
 
   removeItem(index: number): void {
     const array = this.formArray();
-    if (this.required() && array.length <= 1) {
+    // Always keep one row so optional lists still show a place to type.
+    if (array.length <= 1) {
+      if (!this.required()) {
+        array.at(0)?.setValue('');
+        array.at(0)?.markAsPristine();
+        array.at(0)?.markAsUntouched();
+      }
       return;
     }
 
@@ -146,15 +168,16 @@ export class FormArrayTextListComponent {
   }
 
   protected onInput(index: number, event: Event): void {
+    const value = (event.target as HTMLInputElement).value;
+    this.selectionVersion.update((version) => version + 1);
+
     if (!this.suggestions().length) {
       return;
     }
 
-    const value = (event.target as HTMLInputElement).value;
     this.activeRowIndex.set(index);
     this.filterQuery.set(value);
     this.highlightedIndex.set(-1);
-    this.selectionVersion.update((version) => version + 1);
   }
 
   protected onBlur(): void {
@@ -236,7 +259,7 @@ export class FormArrayTextListComponent {
       return;
     }
 
-    const control = createFormArrayTextControl(this.fb, this.minLength());
+    const control = createFormArrayTextControl(this.fb, this.minLength(), this.required());
     control.setValue(suggestion);
     this.formArray().push(control);
     this.closeSuggestions();
@@ -263,7 +286,15 @@ export class FormArrayTextListComponent {
       return false;
     }
 
-    return true;
+    return this.canAddNewItem();
+  }
+
+  private markIncompleteControlsTouched(): void {
+    this.formArray().controls.forEach((control) => {
+      if (String(control.value ?? '').trim().length < this.minLength()) {
+        control.markAsTouched();
+      }
+    });
   }
 
   private focusItemInput(index: number): void {

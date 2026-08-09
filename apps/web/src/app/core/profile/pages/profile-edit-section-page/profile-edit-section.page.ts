@@ -226,7 +226,7 @@ export class ProfileEditSectionPage implements OnInit {
     const skills = Array.isArray(mentorProfile['skills'])
       ? (mentorProfile['skills'] as string[])
       : [];
-    this.replaceTextFormArray(this.skills, skills);
+    this.replaceTextFormArray(this.skills, skills, true, false);
 
     const areasOfExpertise = Array.isArray(mentorProfile['areasOfExpertise'])
       ? (mentorProfile['areasOfExpertise'] as string[])
@@ -339,7 +339,7 @@ export class ProfileEditSectionPage implements OnInit {
 
     if (this.isMentor()) {
       this.replaceTextFormArray(this.areasOfExpertise, draft.areasOfExpertise ?? [], true);
-      this.replaceTextFormArray(this.skills, draft.skills ?? []);
+      this.replaceTextFormArray(this.skills, draft.skills ?? [], true, false);
     } else {
       this.replaceTextFormArray(this.learningGoals, draft.learningGoals ?? [], true);
       this.replaceTextFormArray(this.areasOfInterest, draft.areasOfInterest ?? [], true);
@@ -353,12 +353,13 @@ export class ProfileEditSectionPage implements OnInit {
   private replaceTextFormArray(
     formArray: FormArray,
     values: string[],
-    ensureAtLeastOne = false
+    ensureAtLeastOne = false,
+    required = true
   ): void {
     formArray.clear();
     const items = values.length > 0 ? values : ensureAtLeastOne ? [''] : [];
     items.forEach((value) => {
-      const control = createFormArrayTextControl(this.fb);
+      const control = createFormArrayTextControl(this.fb, 2, required);
       control.setValue(value);
       formArray.push(control);
     });
