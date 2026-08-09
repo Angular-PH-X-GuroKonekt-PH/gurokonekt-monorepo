@@ -10,7 +10,8 @@
       <button
         type="button"
         (click)="addItem(true)"
-        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100 hover:border-orange-300 rounded-lg transition-colors"
+        [disabled]="!canAddNewItem()"
+        class="inline-flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium text-orange-600 border border-orange-200 bg-orange-50 hover:bg-orange-100 hover:border-orange-300 rounded-lg transition-colors disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-orange-50 disabled:hover:border-orange-200"
       >
         <app-icon name="plus" class="w-4 h-4"></app-icon>
         {{ addButtonLabel() }}
@@ -69,14 +70,15 @@
           <button
             type="button"
             (click)="onAddItemClick(rowIndex)"
-            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-orange-50 hover:text-orange-600 transition-colors"
+            [disabled]="!canAddNewItem()"
+            class="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-gray-400 hover:bg-orange-50 hover:text-orange-600 transition-colors disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-gray-400"
             [title]="'Add this ' + itemSingularLabel()"
             [attr.aria-label]="'Add this ' + itemSingularLabel()"
           >
             <app-icon name="plus" class="w-5 h-5"></app-icon>
           </button>
         }
-        @if (!required() || formArray().length > 1) {
+        @if (formArray().length > 1) {
           <button
             type="button"
             (click)="removeItem(rowIndex)"

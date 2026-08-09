@@ -5,7 +5,7 @@ import { UpdateMenteeProfileDto, UpdateMentorProfileDto } from "../users/update-
 export class UserProfileValidator {
   static getRequiredFields(role: UserRole): string[] {
     if (role === UserRole.Mentor) {
-      return ['bio', 'skills', 'availability', 'updatedById'];
+      return ['bio', 'areasOfExpertise', 'availability', 'updatedById'];
     }
     return ['bio', 'learningGoals', 'areasOfInterest', 'preferredSessionType', 'updatedById'];
   }

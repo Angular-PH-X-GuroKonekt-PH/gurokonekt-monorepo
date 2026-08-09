@@ -83,7 +83,7 @@ export class MentorPostLoginPage {
       [createFormArrayTextControl(this.fb)],
       Validators.required
     ),
-    skills: this.fb.array([createFormArrayTextControl(this.fb)], Validators.required),
+    skills: this.fb.array([createFormArrayTextControl(this.fb, 2, false)]),
   });
 
   /**
@@ -148,8 +148,7 @@ export class MentorPostLoginPage {
         return (
           this.areasOfExpertise.valid &&
           this.areasOfExpertise.length > 0 &&
-          this.skills.valid &&
-          this.skills.length > 0
+          this.skills.valid
         );
       case 3:
         return this.hasAtLeastOneAvailability();
