@@ -16,15 +16,35 @@
     <p class="font-medium text-amber-900">What you can do</p>
     <ul class="mt-2 list-disc space-y-1.5 pl-5 marker:text-orange-400">
       <li>
-        Click the button below to request a new verification email
         @if (email()) {
-          for
-          <span class="font-medium text-gray-900">{{ email() }}</span>
-        }.
+          Click the button below to request a new verification email for
+          <span class="font-medium text-gray-900">{{ email() }}</span>.
+        } @else {
+          Enter the email you registered with, then request a new verification
+          email.
+        }
       </li>
       <li>Check your inbox and spam folder for the latest message from GuroKonekt.</li>
     </ul>
   </div>
+
+  @if (needsEmailInput()) {
+  <div resultBody class="space-y-2">
+    <label for="expired-verify-email" class="block text-sm font-medium text-gray-700">
+      Email address
+    </label>
+    <input
+      id="expired-verify-email"
+      type="email"
+      name="email"
+      autocomplete="email"
+      [value]="emailInput()"
+      (input)="onEmailInput($event)"
+      placeholder="you@example.com"
+      class="w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm text-gray-900 shadow-sm outline-none transition-colors placeholder:text-gray-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-200"
+    />
+  </div>
+  }
 
   @if (message()) {
   <div
@@ -58,7 +78,7 @@
     </button>
     <button
       type="button"
-      [disabled]="isResendLoading()"
+      [disabled]="isResendLoading() || !canResend()"
       (click)="resendVerification()"
       class="inline-flex items-center gap-1.5 rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
     >
