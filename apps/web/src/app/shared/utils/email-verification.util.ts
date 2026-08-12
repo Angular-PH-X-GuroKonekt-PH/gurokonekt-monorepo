@@ -64,6 +64,22 @@ export function getVerificationEmailFromCallback(
 }
 
 /**
+ * Picks the first non-empty email from fallback sources (query, store, storage, input).
+ * Always returns '' rather than whitespace / nullish values.
+ */
+export function resolveVerificationRecipientEmail(
+  ...candidates: Array<string | null | undefined>
+): string {
+  for (const candidate of candidates) {
+    const email = candidate?.trim().toLowerCase() ?? '';
+    if (email) {
+      return email;
+    }
+  }
+  return '';
+}
+
+/**
  * Maps Supabase redirect fragments to a verification outcome for routing.
  */
 export function resolveEmailVerificationOutcome(

@@ -9,6 +9,7 @@ import {
   hasPasswordRecoveryCallbackHash,
   redirectToPasswordRecoveryCallback,
   resolveEmailVerificationOutcome,
+  resolveVerificationRecipientEmail,
 } from '../../../../../shared/utils/email-verification.util';
 import { AuthStorageService } from '../../../../storage/auth-storage.service';
 import { AuthSelectors } from '../../../store/auth.selectors';
@@ -51,22 +52,26 @@ export class VerifyEmailCallbackPage implements OnInit {
     };
 
     if (outcome) {
-      if (outcome === 'expired') {
-        const email =
-          getVerificationEmailFromCallback() ||
-          this.store.selectSnapshot(AuthSelectors.lastRegisteredEmail) ||
-          this.authStorage.getLastRegisteredEmail() ||
-          '';
+      const email = resolveVerificationRecipientEmail(
+        getVerificationEmailFromCallback(),
+        this.store.selectSnapshot(AuthSelectors.lastRegisteredEmail),
+        this.authStorage.getLastRegisteredEmail()
+      );
 
-        if (email) {
-          this.authStorage.setLastRegisteredEmail(email);
-          this.store.dispatch(
-            new InitializeVerification({ email, role: '', message: '' })
-          );
-        }
+      if (outcome === 'expired' && email) {
+        this.authStorage.setLastRegisteredEmail(email);
+        this.store.dispatch(
+          new InitializeVerification({ email, role: '', message: '' })
+        );
       }
 
-      void this.router.navigate([destinationByOutcome[outcome]], { replaceUrl: true });
+      void this.router.navigate([destinationByOutcome[outcome]], {
+        replaceUrl: true,
+        // Keep email on the expired URL so resend still works if store is empty
+        // (e.g. hard refresh, different tab, or hash-only Supabase errors).
+        // Never attach an empty email query param.
+        queryParams: outcome === 'expired' && email ? { email } : undefined,
+      });
       return;
     }
 

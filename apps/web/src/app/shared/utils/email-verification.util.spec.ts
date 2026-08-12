@@ -5,6 +5,7 @@ import {
   withVerificationEmailQuery,
   getVerificationEmailFromCallback,
   buildVerifyEmailRedirectUrl,
+  resolveVerificationRecipientEmail,
 } from './email-verification.util';
 
 describe('resolveEmailVerificationOutcome', () => {
@@ -130,6 +131,58 @@ describe('getVerificationEmailFromCallback', () => {
         new URLSearchParams('email=fallback%40example.com')
       )
     ).toBe('fallback@example.com');
+  });
+
+  it('returns empty string when neither query nor hash has email', () => {
+    expect(
+      getVerificationEmailFromCallback(
+        '',
+        new URLSearchParams('error=access_denied&error_code=otp_expired')
+      )
+    ).toBe('');
+  });
+
+  it('returns empty string for whitespace-only email query values', () => {
+    expect(
+      getVerificationEmailFromCallback(
+        '?email=%20%20',
+        new URLSearchParams()
+      )
+    ).toBe('');
+  });
+});
+
+describe('resolveVerificationRecipientEmail', () => {
+  it('returns empty string when every candidate is nullish or blank', () => {
+    expect(
+      resolveVerificationRecipientEmail(null, undefined, '', '   ')
+    ).toBe('');
+  });
+
+  it('never returns whitespace and skips empty candidates', () => {
+    expect(
+      resolveVerificationRecipientEmail('', '  ', null, ' Mentor@Example.com ')
+    ).toBe('mentor@example.com');
+  });
+
+  it('prefers the first non-empty candidate', () => {
+    expect(
+      resolveVerificationRecipientEmail(
+        'first@example.com',
+        'second@example.com',
+        'third@example.com'
+      )
+    ).toBe('first@example.com');
+  });
+
+  it('uses later candidates when earlier ones are empty', () => {
+    expect(
+      resolveVerificationRecipientEmail(
+        '',
+        null,
+        'stored@example.com'
+      )
+    ).toBe('stored@example.com');
   });
 });
 
