@@ -524,7 +524,10 @@ export class AuthService {
         password: input.password,
       });
 
-      if (error?.code === 'email_not_confirmed' || !data?.user?.email_confirmed_at) {
+      // Only treat as unverified when Supabase explicitly reports it.
+      // Wrong passwords leave data.user null, so checking !email_confirmed_at
+      // first would misclassify invalid credentials as "email not verified".
+      if (error?.code === 'email_not_confirmed') {
         await this.logging.log({
           actionType: LogsActionType.SignIn,
           targetId: user.id,
@@ -548,6 +551,19 @@ export class AuthService {
           createdById: user.id,
         });
         return AuthResponseFactory.errorByKey('SIGNIN_ATTEMPT_INVALID_CREDENTIALS');
+      }
+
+      if (!data.user.email_confirmed_at) {
+        await this.logging.log({
+          actionType: LogsActionType.SignIn,
+          targetId: user.id,
+          details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
+          metadata: { email: input.email },
+          ipAddress,
+          userAgent,
+          createdById: user.id,
+        });
+        return AuthResponseFactory.errorByKey('SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED');
       }
 
       // Sync mentee profile completion state
