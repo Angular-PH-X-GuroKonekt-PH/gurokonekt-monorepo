@@ -18,6 +18,7 @@ import { BookingService } from '../../../../shared/services/booking.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BookingDetailsModal } from '../../../mentor/components/mentor-bookings-table/booking-details-modal/booking-details-modal';
 import { ApproveBookingModal } from '../../../mentor/components/mentor-bookings-table/approve-booking-modal/approve-booking-modal';
+import { MentorCancelBookingModal } from '../../../mentor/components/mentor-bookings-table/cancel-booking-modal/cancel-booking-modal';
 import { RejectBookingModal } from '../../../mentor/components/mentor-bookings-table/reject-booking-modal/reject-booking-modal';
 import { UpdateBookingModal } from '../../../mentor/components/mentor-bookings-table/update-booking-modal/update-booking-modal';
 
@@ -28,6 +29,7 @@ import { UpdateBookingModal } from '../../../mentor/components/mentor-bookings-t
     BookingsTable,
     BookingDetailsModal,
     ApproveBookingModal,
+    MentorCancelBookingModal,
     RejectBookingModal,
     UpdateBookingModal,
   ],
@@ -88,6 +90,9 @@ export class MentorBookingsTable {
 
   rejectBookingTarget = signal<BookingCardInterface | null>(null);
   rejectMentorNotes = signal('');
+
+  cancelBookingTarget = signal<BookingCardInterface | null>(null);
+  cancelMentorNotes = signal('');
 
   updateBookingTarget = signal<BookingCardInterface | null>(null);
   updateSessionDate = signal('');
@@ -241,6 +246,48 @@ export class MentorBookingsTable {
         error: () => {
           this.submitting.set(false);
           this.toastService.error('Failed to reject booking.');
+        },
+      });
+  }
+
+  cancelBooking(booking: BookingCardInterface): void {
+    this.closeActionMenu();
+    this.cancelBookingTarget.set(booking);
+    this.cancelMentorNotes.set(booking.mentorNotes ?? '');
+  }
+
+  closeCancelModal(): void {
+    this.cancelBookingTarget.set(null);
+    this.cancelMentorNotes.set('');
+  }
+
+  confirmCancelBooking(): void {
+    const booking = this.cancelBookingTarget();
+
+    if (!booking) return;
+
+    this.submitting.set(true);
+
+    this.bookingService
+      .cancelBooking(booking.id, {
+        mentorNotes: this.cancelMentorNotes().trim(),
+      })
+      .subscribe({
+        next: (updatedBooking) => {
+          this.submitting.set(false);
+
+          if (!updatedBooking) {
+            this.toastService.error('Failed to cancel session.');
+            return;
+          }
+
+          this.toastService.success('Session cancelled successfully.');
+          this.closeCancelModal();
+          setTimeout(() => window.location.reload(), 800);
+        },
+        error: () => {
+          this.submitting.set(false);
+          this.toastService.error('Failed to cancel session.');
         },
       });
   }
