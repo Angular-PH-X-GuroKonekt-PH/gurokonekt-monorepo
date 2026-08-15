@@ -35,6 +35,8 @@ export class BookingsTable {
   bookings = input<BookingCardInterface[] | null>(null);
   isLoading = input(false);
   counterparty = input<BookingCounterparty>('mentee');
+  showMenteeNotes = input(true);
+  showMentorNotes = input(false);
   actionsTemplate = input<TemplateRef<BookingActionContext> | null>(null);
 
   footerMode = input<BookingTableFooterMode>('none');
@@ -58,6 +60,13 @@ export class BookingsTable {
       ? bookings
       : bookings.slice(0, Math.max(0, maxRows));
   });
+
+  tableColumnCount = computed(
+    () =>
+      4 +
+      (this.showMenteeNotes() ? 1 : 0) +
+      (this.showMentorNotes() ? 1 : 0)
+  );
 
   selectTab(tab: string): void {
     if (tab !== this.activeTab()) {

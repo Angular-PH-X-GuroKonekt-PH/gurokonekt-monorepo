@@ -56,6 +56,7 @@
   [bookings]="filteredBookings()"
   [isLoading]="isLoading()"
   counterparty="mentee"
+  [showMentorNotes]="true"
   [actionsTemplate]="mentorActions"
   [footerMode]="footerMode()"
   [maxRows]="maxRows()"
@@ -74,16 +75,20 @@
 
 @if (approvalBooking(); as booking) {
 <app-approve-booking-modal [booking]="booking" [submitting]="submitting()" [(sessionLink)]="approvalSessionLink"
+  [(sessionDate)]="approvalSessionDate" [(sessionTime)]="approvalSessionTime"
+  [(mentorNotes)]="approvalMentorNotes"
   (closed)="closeApprovalModal()" (confirmed)="confirmApproval()" />
 }
 
 @if (rejectBookingTarget(); as booking) {
-<app-reject-booking-modal [booking]="booking" [submitting]="submitting()" (closed)="closeRejectModal()"
+<app-reject-booking-modal [booking]="booking" [submitting]="submitting()" [(mentorNotes)]="rejectMentorNotes"
+  (closed)="closeRejectModal()"
   (confirmed)="confirmRejectBooking()" />
 }
 
 @if (updateBookingTarget(); as booking) {
 <app-update-booking-modal [booking]="booking" [submitting]="submitting()" [(sessionDate)]="updateSessionDate"
-  [(sessionTime)]="updateSessionTime" [(sessionLink)]="updateSessionLink" [(notes)]="updateNotes"
+  [(sessionTime)]="updateSessionTime" [(sessionLink)]="updateSessionLink"
+  [(mentorNotes)]="updateMentorNotes"
   (closed)="closeUpdateModal()" (confirmed)="confirmUpdateBooking()" />
 }

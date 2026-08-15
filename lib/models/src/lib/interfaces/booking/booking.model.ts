@@ -18,7 +18,8 @@ export interface BookingInterface {
   sessionDateTime: Date;
   status: BookingStatus;
   sessionLink?: string;
-  notes?: string;
+  menteeNotes?: string | null;
+  mentorNotes?: string | null;
   cancelReason?: string | null;
   isDeleted: boolean;
   createdAt: Date;
@@ -43,7 +44,8 @@ export interface BookingSessionCardInterface {
   sessionRating: number | null;
   status: BookingStatus;
   sessionLink?: string | null;
-  notes?: string | null;
+  menteeNotes?: string | null;
+  mentorNotes?: string | null;
   isDeleted: boolean;
 }
 
@@ -72,7 +74,7 @@ export interface BookingCardInterface extends BookingInterface {
 export interface CreateBookingRequestInterface {
   mentorId: string;
   sessionDateTime: Date;
-  notes?: string;
+  menteeNotes?: string;
 }
 
 export interface UpcomingSession {

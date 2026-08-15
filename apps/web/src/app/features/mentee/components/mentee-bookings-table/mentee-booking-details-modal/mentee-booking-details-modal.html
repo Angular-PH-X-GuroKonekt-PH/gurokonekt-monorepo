@@ -43,11 +43,20 @@
         </div>
       </div>
 
-      <div class="mt-4 rounded-xl border border-orange-100 bg-orange-50/60 p-4">
-        <p class="text-xs font-semibold uppercase tracking-widest text-orange-500">Session Notes</p>
-        <p class="mt-2 text-sm leading-6 text-gray-700">
-          {{ booking().notes || 'No notes were added for this session.' }}
-        </p>
+      <div class="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
+        <div class="rounded-xl border border-orange-100 bg-orange-50/60 p-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-orange-500">Mentee Notes</p>
+          <p class="mt-2 text-sm leading-6 text-gray-700">
+            {{ booking().menteeNotes || 'You did not add notes.' }}
+          </p>
+        </div>
+
+        <div class="rounded-xl border border-blue-100 bg-blue-50/60 p-4">
+          <p class="text-xs font-semibold uppercase tracking-widest text-blue-600">Mentor Notes</p>
+          <p class="mt-2 text-sm leading-6 text-gray-700">
+            {{ booking().mentorNotes || 'The mentor has not added notes.' }}
+          </p>
+        </div>
       </div>
 
       <div class="mt-6 flex justify-end border-t border-gray-100 pt-5">

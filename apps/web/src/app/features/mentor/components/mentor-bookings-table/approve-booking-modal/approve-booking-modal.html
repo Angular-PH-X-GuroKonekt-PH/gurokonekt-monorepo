@@ -10,18 +10,59 @@
             </button>
         </div>
 
-        <div class="p-4">
-            <label for="session-link" class="mb-2 block text-sm font-medium text-gray-900">
-                Session link
-            </label>
+        <div class="space-y-4 p-4">
+            <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+                <div>
+                    <label for="approval-session-date" class="mb-2 block text-sm font-medium text-gray-900">
+                        Session date
+                    </label>
 
-            <input id="session-link" type="url" [ngModel]="sessionLink()" (ngModelChange)="sessionLink.set($event)"
-                placeholder="https://meet.google.com/..."
-                class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500" />
+                    <input id="approval-session-date" type="date" [ngModel]="sessionDate()"
+                        (ngModelChange)="sessionDate.set($event)"
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500" />
+                </div>
 
-            <p class="mt-2 text-sm text-gray-500">
-                Add the meeting link before approving this session.
-            </p>
+                <div>
+                    <label for="approval-session-time" class="mb-2 block text-sm font-medium text-gray-900">
+                        Session time
+                    </label>
+
+                    <input id="approval-session-time" type="time" [ngModel]="sessionTime()"
+                        (ngModelChange)="sessionTime.set($event)"
+                        class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500" />
+                </div>
+            </div>
+
+            <div>
+                <label for="approval-session-link" class="mb-2 block text-sm font-medium text-gray-900">
+                    Session link
+                </label>
+
+                <input id="approval-session-link" type="url" [ngModel]="sessionLink()"
+                    (ngModelChange)="sessionLink.set($event)" placeholder="https://meet.google.com/..."
+                    class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500" />
+            </div>
+
+            <div>
+                <label for="approval-mentee-notes" class="mb-2 block text-sm font-medium text-gray-900">
+                    Mentee Notes
+                </label>
+
+                <textarea id="approval-mentee-notes" rows="3"
+                    [value]="booking().menteeNotes || 'No notes were provided.'" readonly
+                    class="block w-full cursor-not-allowed resize-none rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-600"></textarea>
+            </div>
+
+            <div>
+                <label for="approval-mentor-notes" class="mb-2 block text-sm font-medium text-gray-900">
+                    Mentor Notes
+                </label>
+
+                <textarea id="approval-mentor-notes" rows="3" [ngModel]="mentorNotes()"
+                    (ngModelChange)="mentorNotes.set($event)"
+                    placeholder="Add notes or preparation details for the mentee..."
+                    class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500"></textarea>
+            </div>
         </div>
 
         <div class="flex items-center justify-end gap-3 border-t border-gray-200 p-4">

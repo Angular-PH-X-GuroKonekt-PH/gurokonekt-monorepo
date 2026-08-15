@@ -81,10 +81,16 @@
                   class="text-blue-600 hover:underline text-sm break-all">{{ d.sessionLink }}</a>
               </div>
             }
-            @if (d.notes) {
+            @if (d.menteeNotes) {
               <div class="col-span-2">
-                <p class="text-gray-400 text-xs">Notes</p>
-                <p class="text-gray-900 text-sm">{{ d.notes }}</p>
+                <p class="text-gray-400 text-xs">Mentee Notes</p>
+                <p class="text-gray-900 text-sm">{{ d.menteeNotes }}</p>
+              </div>
+            }
+            @if (d.mentorNotes) {
+              <div class="col-span-2">
+                <p class="text-gray-400 text-xs">Mentor Notes</p>
+                <p class="text-gray-900 text-sm">{{ d.mentorNotes }}</p>
               </div>
             }
           </div>

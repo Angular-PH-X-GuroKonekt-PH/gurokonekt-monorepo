@@ -60,7 +60,7 @@ export class MenteeBookSessionPage {
   // Form state
   protected readonly selectedDate = signal<BookSessionDateOption | null>(null);
   protected readonly selectedSlot = signal<BookSessionSlotOption | null>(null);
-  protected readonly bookingNote = signal('');
+  protected readonly menteeNotes = signal('');
   protected readonly isSubmitting = signal(false);
   protected readonly errorMessage = signal<string | null>(null);
 
@@ -223,8 +223,8 @@ export class MenteeBookSessionPage {
     );
   }
 
-  protected updateBookingNote(note: string): void {
-    this.bookingNote.set(note);
+  protected updateMenteeNotes(notes: string): void {
+    this.menteeNotes.set(notes);
   }
 
   protected confirmBooking(): void {
@@ -243,7 +243,7 @@ export class MenteeBookSessionPage {
       .createBooking({
         mentorId,
         sessionDateTime: selectedSlot.bookingDateTime,
-        notes: this.bookingNote().trim() || undefined,
+        menteeNotes: this.menteeNotes().trim() || undefined,
       })
       .subscribe({
         next: () => this.handleBookingSuccess(),

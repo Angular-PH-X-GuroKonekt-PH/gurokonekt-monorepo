@@ -101,7 +101,7 @@ export class MentorBookingService {
     if (!nextBooking) return null;
 
     return {
-      title: nextBooking.notes || 'Mentoring Session',
+      title: nextBooking.menteeNotes || 'Mentoring Session',
       mentor: nextBooking.mentee
         ? `${nextBooking.mentee.firstName} ${nextBooking.mentee.lastName}`
         : 'Mentee',

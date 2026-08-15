@@ -2,7 +2,7 @@ export const API_RESPONSE = {
   SUCCESS: {
     /**
      * SERVICES
-     * */ 
+     * */
     SUPABASE_SERVICE: {
       code: 200,
       message: 'Supabase service executed successfully',
@@ -14,7 +14,7 @@ export const API_RESPONSE = {
 
     /**
      * AUTH
-     * */ 
+     * */
     REGISTER_MENTEE: {
       code: 201,
       message: 'Mentee registered successfully',
@@ -203,7 +203,8 @@ export const API_RESPONSE = {
      */
     MENTOR_DOWNGRADE_INITIATED: {
       code: 200,
-      message: 'Account downgrade initiated. A confirmation email has been sent.',
+      message:
+        'Account downgrade initiated. A confirmation email has been sent.',
     },
     MENTOR_DOWNGRADED: {
       code: 200,
@@ -264,9 +265,9 @@ export const API_RESPONSE = {
     ADMIN_FORCE_CANCEL_BOOKING: {
       code: 200,
       message: 'Booking force-cancelled successfully',
-      },
+    },
 
-      /**
+    /**
      * ADMIN MENTEE MANAGEMENT
      */
     ADMIN_GET_MENTEES: {
@@ -393,7 +394,7 @@ export const API_RESPONSE = {
   ERROR: {
     /**
      * SERVICES
-     * */ 
+     * */
     SUPABASE_SERVICE: {
       code: 500,
       message: 'Supabase service error',
@@ -409,7 +410,7 @@ export const API_RESPONSE = {
 
     /**
      * AUTH
-     * */ 
+     * */
     REGISTER_MENTEE: {
       code: 500,
       message: 'Failed to register mentee',
@@ -490,7 +491,8 @@ export const API_RESPONSE = {
     },
     PASSWORD_REGEX_MISMATCH: {
       code: 400,
-      message: 'Password must be minimum 8 characters, include uppercase, lowercase, number, and symbol',
+      message:
+        'Password must be minimum 8 characters, include uppercase, lowercase, number, and symbol',
     },
     PASSWORD_MISMATCH: {
       code: 400,
@@ -511,7 +513,7 @@ export const API_RESPONSE = {
 
     /**
      * STORAGE
-     * */ 
+     * */
     UNSUPPORTED_FILE_TYPE: {
       code: 400,
       message: 'Unsupported file type',
@@ -520,11 +522,11 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Invalid or missing bucket name',
     },
-    UPLOAD_FILES:{
+    UPLOAD_FILES: {
       code: 400,
       message: 'Error uploading file, please try again',
     },
-    UPLOAD_AVATAR:{
+    UPLOAD_AVATAR: {
       code: 400,
       message: 'Error uploading avatar, please try again',
     },
@@ -548,8 +550,7 @@ export const API_RESPONSE = {
     },
     RESEND_VERIFICATION_TOO_SOON: {
       code: 429,
-      message:
-        'Please wait before requesting another verification email.',
+      message: 'Please wait before requesting another verification email.',
     },
     RESEND_VERIFICATION_RATE_LIMITED: {
       code: 429,
@@ -627,7 +628,8 @@ export const API_RESPONSE = {
     },
     NOTIFICATION_ACCESS_DENIED: {
       code: 403,
-      message: 'Access denied: notification does not belong to the authenticated user',
+      message:
+        'Access denied: notification does not belong to the authenticated user',
     },
 
     /**
@@ -659,7 +661,8 @@ export const API_RESPONSE = {
     },
     BOOKING_ACCESS_DENIED: {
       code: 403,
-      message: 'Access denied: booking does not belong to the authenticated user',
+      message:
+        'Access denied: booking does not belong to the authenticated user',
     },
     GET_MENTOR_BOOKINGS: {
       code: 500,
@@ -763,7 +766,8 @@ export const API_RESPONSE = {
     },
     AVAILABILITY_FRAME_TOO_SHORT: {
       code: 400,
-      message: 'Each time frame must be at least as long as the session duration',
+      message:
+        'Each time frame must be at least as long as the session duration',
     },
     SET_SESSION_DURATION_FAILED: {
       code: 500,
@@ -779,7 +783,7 @@ export const API_RESPONSE = {
     },
     BOOKING_OUTSIDE_AVAILABILITY: {
       code: 400,
-      message: 'The selected time is outside the mentor\'s available hours',
+      message: "The selected time is outside the mentor's available hours",
     },
     BOOKING_MENTOR_NOT_AVAILABLE_DAY: {
       code: 400,
@@ -787,7 +791,8 @@ export const API_RESPONSE = {
     },
     BOOKING_SLOT_TOO_SHORT: {
       code: 400,
-      message: 'The selected time frame does not fit a full session within the mentor\'s available window',
+      message:
+        "The selected time frame does not fit a full session within the mentor's available window",
     },
 
     /**
@@ -831,10 +836,11 @@ export const API_RESPONSE = {
     },
     BOOKING_CANNOT_BE_CANCELLED: {
       code: 400,
-      message: 'Booking cannot be cancelled: it is already completed, cancelled, or deleted',
-      },
+      message:
+        'Booking cannot be cancelled: it is already completed, cancelled, or deleted',
+    },
 
-      /**
+    /**
      * ADMIN MENTEE MANAGEMENT
      */
     ADMIN_GET_MENTEES: {
@@ -1007,8 +1013,8 @@ export const API_RESPONSE = {
       code: 500,
       message: 'Verification is not configured on this server.',
     },
-  }
-}
+  },
+};
 
 export const SWAGGER_DOCUMENTATION = {
   // ─── Auth ────────────────────────────────────────────────────────────────
@@ -1277,7 +1283,8 @@ Returns a counts summary of the authenticated mentee's bookings broken down by s
   },
 
   INITIATE_DEACTIVATION: {
-    summary: 'Initiate account deactivation — verifies password and sends confirmation email',
+    summary:
+      'Initiate account deactivation — verifies password and sends confirmation email',
     description: `
 Step 1 of the account deactivation flow for mentee accounts.
 
@@ -1303,7 +1310,8 @@ Final step of the account deactivation flow. Validates the deactivation token (f
 `,
     bodyExample: {
       token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',
-      reason: 'I found a mentor outside the platform and no longer need the service.',
+      reason:
+        'I found a mentor outside the platform and no longer need the service.',
     },
   },
 
@@ -1408,7 +1416,8 @@ Creates a new session booking request from the authenticated mentee to a mentor.
     bodyExample: {
       mentorId: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21',
       sessionDateTime: '2026-04-15T10:00:00.000Z',
-      notes: 'I would like to discuss transitioning into backend engineering.',
+      menteeNotes:
+        'I would like to discuss transitioning into backend engineering.',
     },
   },
 
@@ -1422,7 +1431,9 @@ Approves a booking that is currently in \`PENDING\` status. Only the mentor assi
 **Status transition:** \`PENDING\` → \`APPROVED\` only. Attempting to approve a booking that is not \`PENDING\` returns \`400\`.
 `,
     bodyExample: {
+      sessionDateTime: '2026-04-15T10:00:00.000Z',
       sessionLink: 'https://meet.google.com/abc-defg-hij',
+      mentorNotes: 'Please prepare your current resume before the session.',
     },
   },
 
@@ -1437,7 +1448,7 @@ Partially updates a booking. All fields are optional — send only the fields yo
 `,
     bodyExample: {
       sessionDateTime: '2026-04-20T14:00:00.000Z',
-      notes: 'Rescheduled — please confirm the new time.',
+      mentorNotes: 'Please prepare your current resume before the session.',
     },
   },
 
@@ -1655,7 +1666,13 @@ Completely replaces the mentor's weekly availability schedule and updates the se
     bodyExample: {
       sessionDurationMinutes: 60,
       availability: [
-        { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
+        {
+          day: 'monday',
+          timeFrames: [
+            { from: '09:00', to: '12:00' },
+            { from: '14:00', to: '17:00' },
+          ],
+        },
         { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
       ],
     },
@@ -1853,70 +1870,69 @@ An empty result is a **200 with an empty array**, not a 404.
 
   PHONE_NUMBER: {
     example: '+639123456789',
-    description: 'Mobile number in E.164 international format. Must start with "+" followed by country code and subscriber number (no spaces or dashes).'
+    description:
+      'Mobile number in E.164 international format. Must start with "+" followed by country code and subscriber number (no spaces or dashes).',
   },
   MENTEE_BIO: {
-    example: 'I am a software engineer with 5 years of experience. I am passionate about building software that makes people life easier.',
-    description: 'Bio of the mentee. Must be at least 10 characters long.'
+    example:
+      'I am a software engineer with 5 years of experience. I am passionate about building software that makes people life easier.',
+    description: 'Bio of the mentee. Must be at least 10 characters long.',
   },
   COUNTRY: {
     example: 'US',
-    description: 'Country of the mentee. Must be a valid ISO 3166-1 alpha-2 country code.'
+    description:
+      'Country of the mentee. Must be a valid ISO 3166-1 alpha-2 country code.',
   },
   LANGUAGE: {
     example: 'en',
-    description: 'Language of the mentee. Must be a valid ISO 639-1 language code.'
+    description:
+      'Language of the mentee. Must be a valid ISO 639-1 language code.',
   },
   TIMEZONE: {
     example: 'Asia/Manila',
-    description: 'IANA timezone identifier (e.g., "Asia/Manila", "America/New_York"). Used for scheduling and time-based features.'
+    description:
+      'IANA timezone identifier (e.g., "Asia/Manila", "America/New_York"). Used for scheduling and time-based features.',
   },
   UPDATED_BY_ID: {
     description: 'UUID of the user performing the update',
-    example: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21'
-  }
-}
+    example: 'b8b1f7c2-3a21-4c9b-9c3a-7e3d7a9d9a21',
+  },
+};
 
-export const REDIRECT_LINKS  = {
+export const REDIRECT_LINKS = {
   DEFAULT: 'localhost:4200',
   ADMIN_DASHBOARD: '/admin/dashboard',
   RESET_PASSWORD: '/reset-password',
   DEACTIVATE_ACCOUNT: '/deactivate',
   PASSWORD_CHANGE_VERIFY: '/update-password/verify',
   VERIFY_EMAIL: '/verify-email',
-}
+};
 
 export const RESEND_EMAIL_CONFIRMATION = {
   MAX_ATTEMPTS_PER_DAY: 3,
-  MIN_INTERVAL_SECONDS: 60
-}
+  MIN_INTERVAL_SECONDS: 60,
+};
 
 export const SIGN_IN_WITH_PASSWORD = {
-  MAX_ATTEMPTS_PER_DAY: 3
-}
+  MAX_ATTEMPTS_PER_DAY: 3,
+};
 
 export const UPDATE_PASSWORD = {
-  MAX_INCORRECT_ATTEMPTS_PER_DAY: 3
-}
+  MAX_INCORRECT_ATTEMPTS_PER_DAY: 3,
+};
 
 export const BUCKET_NAMES = {
   AVATARS: 'avatars',
   MENTOR_DOCUMENTS: 'mentor_documents',
   MENTEE_DOCUMENTS: 'mentee_documents',
-}
+};
 
-export const DOCUMENTS_ALLOWED_TYPES = [
-  'application/pdf',
-]
+export const DOCUMENTS_ALLOWED_TYPES = ['application/pdf'];
 
-export const IMAGES_ALLOWED_TYPES = [
-  'image/jpeg',
-  'image/jpg',
-  'image/png'
-]
+export const IMAGES_ALLOWED_TYPES = ['image/jpeg', 'image/jpg', 'image/png'];
 
 export const REGEX = {
   PASSWORD: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[!@#$%^&*]).{8,}$/,
   EMAIL: /^[^\s@]+@[^\s@]+\.[^\s@]+$/,
   PHONE: /^\+\d{10,15}$/,
-}
+};

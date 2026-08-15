@@ -10,7 +10,11 @@ import { BookingCardInterface } from '@gurokonekt/models/interfaces/booking/book
 export class ApproveBookingModal {
   booking = input.required<BookingCardInterface>();
   submitting = input(false);
+
+  sessionDate = model('');
+  sessionTime = model('');
   sessionLink = model('');
+  mentorNotes = model('');
 
   closed = output<void>();
   confirmed = output<void>();

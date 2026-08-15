@@ -6,7 +6,8 @@ export interface MenteeSessionHistoryItem {
   sessionDateTime: Date;
   status: string;
   sessionLink: string | null;
-  notes: string | null;
+  menteeNotes: string | null;
+  mentorNotes: string | null;
   mentor: {
     id: string;
     firstName: string;

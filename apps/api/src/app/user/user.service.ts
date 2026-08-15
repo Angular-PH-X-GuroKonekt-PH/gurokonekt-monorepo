@@ -429,7 +429,8 @@ export class UserService {
             sessionDateTime: true,
             status: true,
             sessionLink: true,
-            notes: true,
+            menteeNotes: true,
+            mentorNotes: true,
             mentor: {
               select: {
                 id: true,

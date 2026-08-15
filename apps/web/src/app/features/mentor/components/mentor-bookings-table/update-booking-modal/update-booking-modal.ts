@@ -14,7 +14,7 @@ export class UpdateBookingModal {
   sessionDate = model('');
   sessionTime = model('');
   sessionLink = model('');
-  notes = model('');
+  mentorNotes = model('');
 
   closed = output<void>();
   confirmed = output<void>();  

@@ -30,6 +30,7 @@ import {
   BookingStatus,
   CreateBookingDto,
   MentorBookingsQueryDto,
+  RejectBookingDto,
   UserBookingsQueryDto,
   ResponseDto,
   ResponseStatus,
@@ -287,7 +288,8 @@ export class BookingController {
           status: 'APPROVED',
           sessionDateTime: '2026-04-15T10:00:00.000Z',
           sessionLink: 'https://meet.google.com/abc-defg-hij',
-          notes: 'Discuss career transition.',
+          menteeNotes: 'Discuss career transition.',
+          mentorNotes: 'Please bring your current resume.',
         },
       },
     },
@@ -392,6 +394,18 @@ export class BookingController {
     description: 'UUID of the booking to reject',
     example: 'c9d0e1f2-a3b4-5678-cdef-012345678901',
   })
+  @ApiBody({
+    type: RejectBookingDto,
+    examples: {
+      default: {
+        summary: 'Reject with mentor notes',
+        value: {
+          mentorNotes:
+            'I am unavailable at the requested time. Please choose another slot.',
+        },
+      },
+    },
+  })
   @ApiResponse({
     status: 200,
     description: 'Booking rejected. Status changed to REJECTED.',
@@ -411,9 +425,14 @@ export class BookingController {
   @ApiResponse({ status: 404, description: 'Booking not found.' })
   async rejectBooking(
     @Param('id') id: string,
+    @Body() dto: RejectBookingDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.bookingService.rejectBooking(id, req.user.id);
+    const response = await this.bookingService.rejectBooking(
+      id,
+      req.user.id,
+      dto,
+    );
 
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(

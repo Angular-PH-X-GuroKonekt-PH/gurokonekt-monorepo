@@ -9,7 +9,7 @@ import {
   CreateBookingRequestInterface,
   BookingListResponse,
   MentorBookedSlotInterface,
-  MentorBookingQuery
+  MentorBookingQuery,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import {
   handleApiError,
@@ -25,7 +25,7 @@ export class BookingService {
   private readonly http = inject(HttpClient);
 
   createBooking(
-    request: CreateBookingRequestInterface
+    request: CreateBookingRequestInterface,
   ): Observable<BookingCardInterface> {
     return this.http
       .post<ApiResponse<BookingCardInterface>>(buildApiUrl('/booking'), request)
@@ -46,28 +46,28 @@ export class BookingService {
           createdAt: new Date(booking.createdAt),
           updatedAt: new Date(booking.updatedAt),
         })),
-        catchError(handleApiError)
+        catchError(handleApiError),
       );
   }
 
   getBookingsByUserId(userId: string): Observable<BookingCardInterface[]> {
     return this.http
-      .get<ApiResponse<BookingListResponse>>(
-        buildApiUrl(`/booking/user/${userId}`)
-      )
+      .get<
+        ApiResponse<BookingListResponse>
+      >(buildApiUrl(`/booking/user/${userId}`))
       .pipe(
         map((response) =>
           validateApiResponse<BookingListResponse>(
             response,
-            'Failed to fetch bookings.'
-          )
+            'Failed to fetch bookings.',
+          ),
         ),
         map((result) => result.data),
         map((bookings) =>
           bookings.filter(
             (booking) =>
-              booking.status !== BookingStatus.DELETED && !booking.isDeleted
-          )
+              booking.status !== BookingStatus.DELETED && !booking.isDeleted,
+          ),
         ),
         map((bookings) =>
           bookings.map((booking) => ({
@@ -75,54 +75,51 @@ export class BookingService {
             sessionDateTime: new Date(booking.sessionDateTime),
             createdAt: new Date(booking.createdAt),
             updatedAt: new Date(booking.updatedAt),
-          }))
+          })),
         ),
-        catchError(handleApiErrorWithFallback([], 'Failed to fetch bookings'))
+        catchError(handleApiErrorWithFallback([], 'Failed to fetch bookings')),
       );
   }
 
   getBookingsByStatuses(
     userId: string,
-    statuses: BookingStatus[]
+    statuses: BookingStatus[],
   ): Observable<BookingCardInterface[]> {
     return this.getBookingsByUserId(userId).pipe(
       map((booking) =>
-        booking.filter((booking) => statuses.includes(booking.status))
-      )
+        booking.filter((booking) => statuses.includes(booking.status)),
+      ),
     );
   }
 
   getMentorBookings(
-    query: MentorBookingQuery = {}
+    query: MentorBookingQuery = {},
   ): Observable<BookingListResponse> {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    let params = new HttpParams()
-      .set('page', page)
-      .set('limit', limit);
+    let params = new HttpParams().set('page', page).set('limit', limit);
 
     if (query.status) {
       params = params.set('status', query.status);
     }
 
     return this.http
-      .get<ApiResponse<BookingListResponse>>(
-        buildApiUrl('/booking/mentor'),
-        { params }
-      )
+      .get<
+        ApiResponse<BookingListResponse>
+      >(buildApiUrl('/booking/mentor'), { params })
       .pipe(
         map((response) =>
           validateApiResponse<BookingListResponse>(
             response,
-            'Failed to fetch mentor bookings.'
-          )
+            'Failed to fetch mentor bookings.',
+          ),
         ),
         map((result) => ({
           ...result,
           data: result.data
             .filter(
               (booking) =>
-                booking.status !== BookingStatus.DELETED && !booking.isDeleted
+                booking.status !== BookingStatus.DELETED && !booking.isDeleted,
             )
             .map((booking) => ({
               ...booking,
@@ -134,46 +131,50 @@ export class BookingService {
         catchError(
           handleApiErrorWithFallback(
             { data: [], total: 0, page, limit, totalPages: 0 },
-            'Failed to fetch mentor bookings'
-          )
-        )
+            'Failed to fetch mentor bookings',
+          ),
+        ),
       );
   }
 
   getMentorBookedSlots(
-    mentorId: string
+    mentorId: string,
   ): Observable<MentorBookedSlotInterface[]> {
     return this.http
-      .get<ApiResponse<MentorBookedSlotInterface[]>>(
-        buildApiUrl(`/booking/mentor/${mentorId}/booked-slots`)
-      )
+      .get<
+        ApiResponse<MentorBookedSlotInterface[]>
+      >(buildApiUrl(`/booking/mentor/${mentorId}/booked-slots`))
       .pipe(
         map((response) =>
           validateApiResponse<MentorBookedSlotInterface[]>(
             response,
-            'Failed to fetch mentor booked slots.'
-          )
+            'Failed to fetch mentor booked slots.',
+          ),
         ),
         map((bookedSlots) =>
           bookedSlots.map((slot) => ({
             ...slot,
             sessionDateTime: new Date(slot.sessionDateTime),
-          }))
+          })),
         ),
         catchError(
-          handleApiErrorWithFallback([], 'Failed to fetch mentor booked slots')
-        )
+          handleApiErrorWithFallback([], 'Failed to fetch mentor booked slots'),
+        ),
       );
   }
 
   approveBooking(
     id: string,
-    sessionLink: string
+    dto: {
+      sessionDateTime?: string;
+      sessionLink: string;
+      mentorNotes?: string;
+    }
   ): Observable<BookingCardInterface | null> {
     return this.http
       .patch<ApiResponse<BookingCardInterface>>(
         buildApiUrl(`/booking/${id}/approve`),
-        { sessionLink }
+        dto
       )
       .pipe(
         map((response) =>
@@ -188,41 +189,42 @@ export class BookingService {
       );
   }
 
-  rejectBooking(id: string): Observable<BookingCardInterface | null> {
+  rejectBooking(
+    id: string,
+    dto: { mentorNotes?: string }
+  ): Observable<BookingCardInterface | null> {
     return this.http
-      .patch<ApiResponse<BookingCardInterface>>(
-        buildApiUrl(`/booking/${id}/reject`),
-        {}
-      )
+      .patch<
+        ApiResponse<BookingCardInterface>
+      >(buildApiUrl(`/booking/${id}/reject`), dto)
       .pipe(
         map((response) =>
           validateApiResponse<BookingCardInterface>(
             response,
-            'Failed to reject booking.'
-          )
+            'Failed to reject booking.',
+          ),
         ),
         catchError(
-          handleApiErrorWithFallback(null, 'Failed to reject booking')
-        )
+          handleApiErrorWithFallback(null, 'Failed to reject booking'),
+        ),
       );
   }
 
   completeBooking(id: string): Observable<BookingCardInterface | null> {
     return this.http
-      .patch<ApiResponse<BookingCardInterface>>(
-        buildApiUrl(`/booking/${id}/complete`),
-        {}
-      )
+      .patch<
+        ApiResponse<BookingCardInterface>
+      >(buildApiUrl(`/booking/${id}/complete`), {})
       .pipe(
         map((response) =>
           validateApiResponse<BookingCardInterface>(
             response,
-            'Failed to complete booking.'
-          )
+            'Failed to complete booking.',
+          ),
         ),
         catchError(
-          handleApiErrorWithFallback(null, 'Failed to complete booking')
-        )
+          handleApiErrorWithFallback(null, 'Failed to complete booking'),
+        ),
       );
   }
 
@@ -232,22 +234,23 @@ export class BookingService {
       sessionDateTime?: string;
       status?: BookingStatus;
       sessionLink?: string;
-      notes?: string;
-    }
+      mentorNotes?: string;
+    },
   ): Observable<BookingCardInterface | null> {
     return this.http
-      .patch<ApiResponse<BookingCardInterface>>(
-        buildApiUrl(`/booking/${id}`),
-        dto
-      )
+      .patch<
+        ApiResponse<BookingCardInterface>
+      >(buildApiUrl(`/booking/${id}`), dto)
       .pipe(
         map((response) =>
           validateApiResponse<BookingCardInterface>(
             response,
-            'Failed to update booking.'
-          )
+            'Failed to update booking.',
+          ),
         ),
-        catchError(handleApiErrorWithFallback(null, 'Failed to update booking'))
+        catchError(
+          handleApiErrorWithFallback(null, 'Failed to update booking'),
+        ),
       );
   }
 }
