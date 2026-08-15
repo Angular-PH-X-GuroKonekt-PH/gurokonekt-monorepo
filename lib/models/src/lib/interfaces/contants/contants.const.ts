@@ -177,6 +177,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Booking rejected successfully',
     },
+    CANCEL_BOOKING: {
+      code: 200,
+      message: 'Session cancelled successfully',
+    },
     COMPLETE_BOOKING: {
       code: 200,
       message: 'Session marked as completed',
@@ -675,6 +679,10 @@ export const API_RESPONSE = {
     REJECT_BOOKING: {
       code: 500,
       message: 'Failed to reject booking',
+    },
+    CANCEL_BOOKING: {
+      code: 500,
+      message: 'Failed to cancel session',
     },
     COMPLETE_BOOKING: {
       code: 500,

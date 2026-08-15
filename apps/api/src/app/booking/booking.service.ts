@@ -5,6 +5,7 @@ import {
   ApproveBookingDto,
   BookingInterface,
   BookingStatus,
+  CancelBookingDto,
   CreateBookingDto,
   MentorBookedSlotInterface,
   MentorBookingsQueryDto,
@@ -690,6 +691,86 @@ export class BookingService {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.REJECT_BOOKING.code,
         message: API_RESPONSE.ERROR.REJECT_BOOKING.message,
+        data: null,
+      };
+    }
+  }
+
+  // ====================================================
+  // CANCEL SESSION
+  // ====================================================
+
+  async cancelBooking(
+    id: string,
+    authenticatedUserId: string,
+    dto: CancelBookingDto = {},
+  ): Promise<ResponseDto<BookingInterface>> {
+    try {
+      const existing = await this.prisma.db.booking.findUnique({
+        where: { id },
+      });
+
+      if (!existing || existing.isDeleted) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.BOOKING_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.BOOKING_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      if (existing.mentorId !== authenticatedUserId) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.BOOKING_ACCESS_DENIED.code,
+          message: API_RESPONSE.ERROR.BOOKING_ACCESS_DENIED.message,
+          data: null,
+        };
+      }
+
+      if (existing.status !== BookingStatus.APPROVED) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.BOOKING_INVALID_TRANSITION.code,
+          message: API_RESPONSE.ERROR.BOOKING_INVALID_TRANSITION.message,
+          data: null,
+        };
+      }
+
+      const updated = await this.prisma.db.booking.update({
+        where: { id },
+        data: {
+          status: BookingStatus.CANCELLED,
+          ...(dto.mentorNotes !== undefined && {
+            mentorNotes: dto.mentorNotes,
+          }),
+        },
+        include: {
+          mentor: { select: BOOKING_USER_SELECT },
+          mentee: { select: BOOKING_USER_SELECT },
+        },
+      });
+
+      await this.createNotification(
+        existing.menteeId,
+        'Session Cancelled',
+        'Your approved session has been cancelled by the mentor.',
+        NotificationType.BOOKING,
+        id,
+      );
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.CANCEL_BOOKING.code,
+        message: API_RESPONSE.SUCCESS.CANCEL_BOOKING.message,
+        data: updated as unknown as BookingInterface,
+      };
+    } catch (error) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.CANCEL_BOOKING.code,
+        message: API_RESPONSE.ERROR.CANCEL_BOOKING.message,
         data: null,
       };
     }

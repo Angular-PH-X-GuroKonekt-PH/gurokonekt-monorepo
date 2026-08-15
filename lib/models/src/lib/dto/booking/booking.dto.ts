@@ -162,6 +162,17 @@ export class RejectBookingDto {
   mentorNotes?: string;
 }
 
+export class CancelBookingDto {
+  @ApiPropertyOptional({
+    description: 'Notes from the mentor explaining or documenting the cancellation',
+    example:
+      'I am no longer available for this session. Please book another slot.',
+  })
+  @IsOptional()
+  @IsString()
+  mentorNotes?: string;
+}
+
 export class CreateBookingDto implements Partial<BookingInterface> {
   @ApiProperty({
     description: 'UUID of the mentor to book a session with',

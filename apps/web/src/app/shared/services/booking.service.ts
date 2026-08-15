@@ -210,6 +210,27 @@ export class BookingService {
       );
   }
 
+  cancelBooking(
+    id: string,
+    dto: { mentorNotes?: string }
+  ): Observable<BookingCardInterface | null> {
+    return this.http
+      .patch<
+        ApiResponse<BookingCardInterface>
+      >(buildApiUrl(`/booking/${id}/cancel`), dto)
+      .pipe(
+        map((response) =>
+          validateApiResponse<BookingCardInterface>(
+            response,
+            'Failed to cancel session.',
+          ),
+        ),
+        catchError(
+          handleApiErrorWithFallback(null, 'Failed to cancel session'),
+        ),
+      );
+  }
+
   completeBooking(id: string): Observable<BookingCardInterface | null> {
     return this.http
       .patch<

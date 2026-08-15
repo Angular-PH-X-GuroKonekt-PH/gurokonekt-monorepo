@@ -1,7 +1,7 @@
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
   <div class="relative w-full max-w-md rounded-lg bg-white shadow">
     <div class="flex items-center justify-between border-b border-gray-200 p-4">
-      <h3 class="text-lg font-semibold text-gray-900">Reject Booking</h3>
+      <h3 class="text-lg font-semibold text-gray-900">Cancel Session</h3>
 
       <button
         type="button"
@@ -16,12 +16,12 @@
     <div class="space-y-4 p-4">
       <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
         <div>
-          <label for="reject-session-date" class="mb-2 block text-sm font-medium text-gray-900">
+          <label for="cancel-session-date" class="mb-2 block text-sm font-medium text-gray-900">
             Session date
           </label>
 
           <input
-            id="reject-session-date"
+            id="cancel-session-date"
             type="date"
             [value]="booking().sessionDateTime | date:'yyyy-MM-dd'"
             readonly
@@ -30,12 +30,12 @@
         </div>
 
         <div>
-          <label for="reject-session-time" class="mb-2 block text-sm font-medium text-gray-900">
+          <label for="cancel-session-time" class="mb-2 block text-sm font-medium text-gray-900">
             Session time
           </label>
 
           <input
-            id="reject-session-time"
+            id="cancel-session-time"
             type="time"
             [value]="booking().sessionDateTime | date:'HH:mm'"
             readonly
@@ -45,12 +45,12 @@
       </div>
 
       <div>
-        <label for="reject-session-link" class="mb-2 block text-sm font-medium text-gray-900">
+        <label for="cancel-session-link" class="mb-2 block text-sm font-medium text-gray-900">
           Session link
         </label>
 
         <input
-          id="reject-session-link"
+          id="cancel-session-link"
           type="text"
           [value]="booking().sessionLink || 'Not provided'"
           readonly
@@ -59,12 +59,12 @@
       </div>
 
       <div>
-        <label for="reject-mentee-notes" class="mb-2 block text-sm font-medium text-gray-900">
+        <label for="cancel-mentee-notes" class="mb-2 block text-sm font-medium text-gray-900">
           Mentee Notes
         </label>
 
         <textarea
-          id="reject-mentee-notes"
+          id="cancel-mentee-notes"
           rows="3"
           [value]="booking().menteeNotes || 'No notes were provided.'"
           readonly
@@ -73,22 +73,18 @@
       </div>
 
       <div>
-        <label
-          for="reject-mentor-notes"
-          class="mb-2 block text-sm font-medium text-gray-900"
-        >
+        <label for="cancel-mentor-notes" class="mb-2 block text-sm font-medium text-gray-900">
           Mentor Notes
         </label>
 
         <textarea
-          id="reject-mentor-notes"
+          id="cancel-mentor-notes"
           rows="3"
           [ngModel]="mentorNotes()"
           (ngModelChange)="mentorNotes.set($event)"
-          placeholder="Add a short rejection explanation for the mentee..."
+          placeholder="Add a short cancellation explanation for the mentee..."
           class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-red-500 focus:ring-red-500"
         ></textarea>
-
       </div>
     </div>
 
@@ -107,7 +103,7 @@
         [disabled]="submitting()"
         class="relative overflow-hidden rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed"
       >
-        <span [class.opacity-0]="submitting()">Reject</span>
+        <span [class.opacity-0]="submitting()">Cancel</span>
 
         @if (submitting()) {
         <span class="absolute inset-0 z-10 flex items-center justify-center bg-gray-300/30">

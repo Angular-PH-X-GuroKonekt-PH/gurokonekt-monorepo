@@ -28,6 +28,7 @@ import { BookingService } from './booking.service';
 import {
   ApproveBookingDto,
   BookingStatus,
+  CancelBookingDto,
   CreateBookingDto,
   MentorBookingsQueryDto,
   RejectBookingDto,
@@ -429,6 +430,75 @@ export class BookingController {
     @Req() req: Request & { user: { id: string } },
   ) {
     const response = await this.bookingService.rejectBooking(
+      id,
+      req.user.id,
+      dto,
+    );
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+
+    return response;
+  }
+
+  // ====================================================
+  // PATCH - Cancel Session (mentor only, APPROVED → CANCELLED)
+  // ====================================================
+
+  @Patch(':id/cancel')
+  @ApiOperation({
+    summary: 'Cancel an approved session (mentor only)',
+    description:
+      'Cancels an approved session. Only the assigned mentor can cancel it. Optional mentor notes are saved with the booking.',
+  })
+  @ApiParam({
+    name: 'id',
+    type: String,
+    description: 'UUID of the booking to cancel',
+    example: 'c9d0e1f2-a3b4-5678-cdef-012345678901',
+  })
+  @ApiBody({
+    type: CancelBookingDto,
+    examples: {
+      default: {
+        summary: 'Cancel with mentor notes',
+        value: {
+          mentorNotes:
+            'I am no longer available for this session. Please book another slot.',
+        },
+      },
+    },
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Session cancelled successfully.',
+    type: ResponseDto,
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Invalid status transition — booking is not approved.',
+  })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied — you are not the assigned mentor.',
+  })
+  @ApiResponse({ status: 404, description: 'Booking not found.' })
+  async cancelBooking(
+    @Param('id') id: string,
+    @Body() dto: CancelBookingDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    const response = await this.bookingService.cancelBooking(
       id,
       req.user.id,
       dto,
