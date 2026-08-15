@@ -24,20 +24,47 @@
 
   <div>
     <table class="w-full table-fixed text-left text-sm">
+      @if (showMenteeNotes() && showMentorNotes()) {
+      <colgroup>
+        <col class="w-[18%]" />
+        <col class="w-[22%]" />
+        <col class="w-[22%]" />
+        <col class="w-[18%]" />
+        <col class="w-[12%]" />
+        <col class="w-[8%]" />
+      </colgroup>
+      } @else {
+      <colgroup>
+        <col class="w-[22%]" />
+        <col class="w-[28%]" />
+        <col class="w-[22%]" />
+        <col class="w-[18%]" />
+        <col class="w-[10%]" />
+      </colgroup>
+      }
       <thead>
         <tr class="border-b border-gray-100">
-          <th class="w-[22%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
+          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
             {{ getCounterpartyLabel().toUpperCase() }}
           </th>
-          <th class="w-[28%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">SESSION NOTES</th>
-          <th class="w-[22%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">DATE &amp; TIME</th>
-          <th class="w-[18%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">STATUS</th>
-          <th class="w-[10%] px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">ACTIONS</th>
+          @if (showMentorNotes()) {
+          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">MENTOR NOTES</th>
+          }
+          @if (showMenteeNotes()) {
+          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">MENTEE NOTES</th>
+          }
+          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">DATE &amp; TIME</th>
+          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">STATUS</th>
+          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">ACTIONS</th>
         </tr>
       </thead>
 
       @if (isLoading()) {
-      <app-booking-table-skeleton [count]="maxRows() ?? pageSize()" />
+      <app-booking-table-skeleton
+        [count]="maxRows() ?? pageSize()"
+        [showMenteeNotes]="showMenteeNotes()"
+        [showMentorNotes]="showMentorNotes()"
+      />
       } @else {
       <tbody class="divide-y divide-gray-50">
         @for (booking of displayedBookings(); track booking.id) {
@@ -59,7 +86,20 @@
             <span class="text-gray-400">{{ getCounterpartyLabel() }}</span>
             }
           </td>
-          <td class="px-6 py-4 font-medium text-gray-700">{{ booking.notes || 'Mentoring Session' }}</td>
+          @if (showMentorNotes()) {
+          <td class="max-w-56 px-6 py-4 font-medium text-gray-700">
+            <p class="truncate" [title]="booking.mentorNotes || 'No notes provided'">
+              {{ booking.mentorNotes || '—' }}
+            </p>
+          </td>
+          }
+          @if (showMenteeNotes()) {
+          <td class="px-6 py-4 font-medium text-gray-700">
+            <p class="truncate" [title]="booking.menteeNotes || 'No notes provided'">
+              {{ booking.menteeNotes || '—' }}
+            </p>
+          </td>
+          }
           <td class="px-6 py-4">
             <p class="font-medium text-gray-800">{{ booking.sessionDateTime | date:'MMM d, y' }}</p>
             <p class="text-xs text-gray-400">{{ booking.sessionDateTime | date:'h:mm a' }}</p>
@@ -94,7 +134,7 @@
           </td>
         </tr>
         } @empty {
-        <tr><td colspan="5" class="px-6 py-10 text-center text-gray-400">No bookings found.</td></tr>
+        <tr><td [attr.colspan]="tableColumnCount()" class="px-6 py-10 text-center text-gray-400">No bookings found.</td></tr>
         }
       </tbody>
       }

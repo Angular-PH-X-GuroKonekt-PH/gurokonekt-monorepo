@@ -1,6 +1,17 @@
-import { Component, computed, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { BookingCardInterface, BookingStatus, BookingTab } from '@gurokonekt/models/interfaces/booking/booking.model';
+import {
+  BookingCardInterface,
+  BookingStatus,
+  BookingTab,
+} from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { BookingsTable } from '../../../../shared/components/bookings-table/bookings-table';
 import { BookingService } from '../../../../shared/services/booking.service';
@@ -62,7 +73,7 @@ export class MentorBookingsTable {
     if (tab === 'All') return bookings;
 
     return bookings.filter(
-      (booking) => booking.status === (tab.toUpperCase() as BookingStatus)
+      (booking) => booking.status === (tab.toUpperCase() as BookingStatus),
     );
   });
 
@@ -70,15 +81,19 @@ export class MentorBookingsTable {
   openActionBookingId = signal<string | null>(null);
 
   approvalBooking = signal<BookingCardInterface | null>(null);
+  approvalSessionDate = signal('');
+  approvalSessionTime = signal('');
   approvalSessionLink = signal('');
+  approvalMentorNotes = signal('');
 
   rejectBookingTarget = signal<BookingCardInterface | null>(null);
+  rejectMentorNotes = signal('');
 
   updateBookingTarget = signal<BookingCardInterface | null>(null);
   updateSessionDate = signal('');
   updateSessionTime = signal('');
   updateSessionLink = signal('');
-  updateNotes = signal('');
+  updateMentorNotes = signal('');
 
   submitting = signal(false);
 
@@ -101,7 +116,7 @@ export class MentorBookingsTable {
 
   toggleActionMenu(bookingId: string): void {
     this.openActionBookingId.update((current) =>
-      current === bookingId ? null : bookingId
+      current === bookingId ? null : bookingId,
     );
   }
 
@@ -120,13 +135,24 @@ export class MentorBookingsTable {
 
   approveBooking(booking: BookingCardInterface): void {
     this.closeActionMenu();
+
+    const date = new Date(booking.sessionDateTime);
+    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    const localValue = localDate.toISOString();
+
     this.approvalBooking.set(booking);
-    this.approvalSessionLink.set('');
+    this.approvalSessionDate.set(localValue.slice(0, 10));
+    this.approvalSessionTime.set(localValue.slice(11, 16));
+    this.approvalSessionLink.set(booking.sessionLink ?? '');
+    this.approvalMentorNotes.set(booking.mentorNotes ?? '');
   }
 
   closeApprovalModal(): void {
     this.approvalBooking.set(null);
+    this.approvalSessionDate.set('');
+    this.approvalSessionTime.set('');
     this.approvalSessionLink.set('');
+    this.approvalMentorNotes.set('');
   }
 
   confirmApproval(): void {
@@ -135,6 +161,11 @@ export class MentorBookingsTable {
 
     if (!booking) return;
 
+    if (!this.approvalSessionDate() || !this.approvalSessionTime()) {
+      this.toastService.warning('Session date and time are required.');
+      return;
+    }
+
     if (!sessionLink) {
       this.toastService.warning('Session link is required.');
       return;
@@ -142,33 +173,45 @@ export class MentorBookingsTable {
 
     this.submitting.set(true);
 
-    this.bookingService.approveBooking(booking.id, sessionLink).subscribe({
-      next: (updatedBooking) => {
-        this.submitting.set(false);
+    const sessionDateTime = new Date(
+      `${this.approvalSessionDate()}T${this.approvalSessionTime()}`
+    );
 
-        if (!updatedBooking) {
+    this.bookingService
+      .approveBooking(booking.id, {
+        sessionDateTime: sessionDateTime.toISOString(),
+        sessionLink,
+        mentorNotes: this.approvalMentorNotes().trim(),
+      })
+      .subscribe({
+        next: (updatedBooking) => {
+          this.submitting.set(false);
+
+          if (!updatedBooking) {
+            this.toastService.error('Failed to approve booking.');
+            return;
+          }
+
+          this.toastService.success('Booking approved successfully.');
+          this.closeApprovalModal();
+          setTimeout(() => window.location.reload(), 800);
+        },
+        error: () => {
+          this.submitting.set(false);
           this.toastService.error('Failed to approve booking.');
-          return;
-        }
-
-        this.toastService.success('Booking approved successfully.');
-        this.closeApprovalModal();
-        setTimeout(() => window.location.reload(), 800);
-      },
-      error: () => {
-        this.submitting.set(false);
-        this.toastService.error('Failed to approve booking.');
-      },
-    });
+        },
+      });
   }
 
   rejectBooking(booking: BookingCardInterface): void {
     this.closeActionMenu();
     this.rejectBookingTarget.set(booking);
+    this.rejectMentorNotes.set(booking.mentorNotes ?? '');
   }
 
   closeRejectModal(): void {
     this.rejectBookingTarget.set(null);
+    this.rejectMentorNotes.set('');
   }
 
   confirmRejectBooking(): void {
@@ -178,24 +221,28 @@ export class MentorBookingsTable {
 
     this.submitting.set(true);
 
-    this.bookingService.rejectBooking(booking.id).subscribe({
-      next: (updatedBooking) => {
-        this.submitting.set(false);
+    this.bookingService
+      .rejectBooking(booking.id, {
+        mentorNotes: this.rejectMentorNotes().trim(),
+      })
+      .subscribe({
+        next: (updatedBooking) => {
+          this.submitting.set(false);
 
-        if (!updatedBooking) {
+          if (!updatedBooking) {
+            this.toastService.error('Failed to reject booking.');
+            return;
+          }
+
+          this.toastService.success('Booking rejected successfully.');
+          this.closeRejectModal();
+          setTimeout(() => window.location.reload(), 800);
+        },
+        error: () => {
+          this.submitting.set(false);
           this.toastService.error('Failed to reject booking.');
-          return;
-        }
-
-        this.toastService.success('Booking rejected successfully.');
-        this.closeRejectModal();
-        setTimeout(() => window.location.reload(), 800);
-      },
-      error: () => {
-        this.submitting.set(false);
-        this.toastService.error('Failed to reject booking.');
-      },
-    });
+        },
+      });
   }
 
   markAsCompleted(booking: BookingCardInterface): void {
@@ -203,7 +250,7 @@ export class MentorBookingsTable {
 
     if (!this.canMarkAsCompleted(booking)) {
       this.toastService.warning(
-        'This session can only be marked completed after its scheduled time.'
+        'This session can only be marked completed after its scheduled time.',
       );
       return;
     }
@@ -240,14 +287,16 @@ export class MentorBookingsTable {
     this.closeActionMenu();
 
     const date = new Date(booking.sessionDateTime);
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    const localDate = new Date(
+      date.getTime() - date.getTimezoneOffset() * 60000,
+    );
     const localValue = localDate.toISOString();
 
     this.updateBookingTarget.set(booking);
     this.updateSessionDate.set(localValue.slice(0, 10));
     this.updateSessionTime.set(localValue.slice(11, 16));
     this.updateSessionLink.set(booking.sessionLink ?? '');
-    this.updateNotes.set(booking.notes ?? '');
+    this.updateMentorNotes.set(booking.mentorNotes ?? '');
   }
 
   closeUpdateModal(): void {
@@ -255,7 +304,7 @@ export class MentorBookingsTable {
     this.updateSessionDate.set('');
     this.updateSessionTime.set('');
     this.updateSessionLink.set('');
-    this.updateNotes.set('');
+    this.updateMentorNotes.set('');
   }
 
   confirmUpdateBooking(): void {
@@ -269,7 +318,7 @@ export class MentorBookingsTable {
     }
 
     const sessionDateTime = new Date(
-      `${this.updateSessionDate()}T${this.updateSessionTime()}`
+      `${this.updateSessionDate()}T${this.updateSessionTime()}`,
     );
 
     this.submitting.set(true);
@@ -277,7 +326,7 @@ export class MentorBookingsTable {
     this.bookingService
       .updateBooking(booking.id, {
         sessionDateTime: sessionDateTime.toISOString(),
-        notes: this.updateNotes().trim() || undefined,
+        mentorNotes: this.updateMentorNotes().trim(),
         sessionLink: this.updateSessionLink().trim() || undefined,
       })
       .subscribe({

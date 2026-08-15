@@ -54,11 +54,23 @@
             </div>
 
             <div>
-                <label for="update-notes" class="mb-2 block text-sm font-medium text-gray-900">
-                    Notes
+                <label for="update-mentee-notes" class="mb-2 block text-sm font-medium text-gray-900">
+                    Mentee Notes
                 </label>
 
-                <textarea id="update-notes" rows="3" [ngModel]="notes()" (ngModelChange)="notes.set($event)"
+                <textarea id="update-mentee-notes" rows="3"
+                    [value]="booking().menteeNotes || 'No notes were provided.'" readonly
+                    class="block w-full cursor-not-allowed resize-none rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-600"></textarea>
+            </div>
+
+            <div>
+                <label for="update-mentor-notes" class="mb-2 block text-sm font-medium text-gray-900">
+                    Mentor Notes
+                </label>
+
+                <textarea id="update-mentor-notes" rows="3" [ngModel]="mentorNotes()"
+                    (ngModelChange)="mentorNotes.set($event)"
+                    placeholder="Add notes or preparation details for the mentee..."
                     class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500"></textarea>
             </div>
         </div>

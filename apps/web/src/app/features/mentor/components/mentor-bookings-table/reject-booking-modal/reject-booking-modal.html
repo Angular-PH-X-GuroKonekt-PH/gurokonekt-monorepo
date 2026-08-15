@@ -1,35 +1,122 @@
 <div class="fixed inset-0 z-50 flex items-center justify-center bg-gray-900/50 p-4">
-    <div class="relative w-full max-w-md rounded-lg bg-white shadow">
-        <div class="p-6 text-center">
-            <svg class="mx-auto mb-4 h-12 w-12 text-gray-400" aria-hidden="true" fill="none" viewBox="0 0 20 20">
-                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                    d="M10 11V6m0 8h.01M19 10a9 9 0 1 1-18 0 9 9 0 0 1 18 0Z" />
-            </svg>
+  <div class="relative w-full max-w-md rounded-lg bg-white shadow">
+    <div class="flex items-center justify-between border-b border-gray-200 p-4">
+      <h3 class="text-lg font-semibold text-gray-900">Reject Booking</h3>
 
-            <h3 class="mb-5 text-lg font-normal text-gray-500">
-                Reject this booking request?
-            </h3>
-
-            <p class="mb-5 text-sm text-gray-400">
-                This will notify the mentee that their request was declined.
-            </p>
-
-            <button type="button" (click)="confirmed.emit()" [disabled]="submitting()"
-                class="relative me-2 overflow-hidden rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-800 disabled:cursor-not-allowed">
-                <span [class.opacity-0]="submitting()">Yes, reject</span>
-
-                @if (submitting()) {
-                <span class="absolute inset-0 z-10 flex items-center justify-center bg-gray-300/50">
-                    <span
-                        class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
-                </span>
-                }
-            </button>
-
-            <button type="button" (click)="closed.emit()"
-                class="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-500 hover:bg-gray-100 hover:text-gray-900">
-                Cancel
-            </button>
-        </div>
+      <button
+        type="button"
+        (click)="closed.emit()"
+        class="ms-auto inline-flex h-8 w-8 items-center justify-center rounded-lg bg-transparent text-sm text-gray-400 hover:bg-gray-200 hover:text-gray-900"
+      >
+        <span class="sr-only">Close modal</span>
+        &times;
+      </button>
     </div>
+
+    <div class="space-y-4 p-4">
+      <div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+        <div>
+          <label for="reject-session-date" class="mb-2 block text-sm font-medium text-gray-900">
+            Session date
+          </label>
+
+          <input
+            id="reject-session-date"
+            type="date"
+            [value]="booking().sessionDateTime | date:'yyyy-MM-dd'"
+            readonly
+            class="block w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-600"
+          />
+        </div>
+
+        <div>
+          <label for="reject-session-time" class="mb-2 block text-sm font-medium text-gray-900">
+            Session time
+          </label>
+
+          <input
+            id="reject-session-time"
+            type="time"
+            [value]="booking().sessionDateTime | date:'HH:mm'"
+            readonly
+            class="block w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-600"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label for="reject-session-link" class="mb-2 block text-sm font-medium text-gray-900">
+          Session link
+        </label>
+
+        <input
+          id="reject-session-link"
+          type="text"
+          [value]="booking().sessionLink || 'Not provided'"
+          readonly
+          class="block w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-600"
+        />
+      </div>
+
+      <div>
+        <label for="reject-mentee-notes" class="mb-2 block text-sm font-medium text-gray-900">
+          Mentee Notes
+        </label>
+
+        <textarea
+          id="reject-mentee-notes"
+          rows="3"
+          [value]="booking().menteeNotes || 'No notes were provided.'"
+          readonly
+          class="block w-full cursor-not-allowed resize-none rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-600"
+        ></textarea>
+      </div>
+
+      <div>
+        <label
+          for="reject-mentor-notes"
+          class="mb-2 block text-sm font-medium text-gray-900"
+        >
+          Mentor Notes
+        </label>
+
+        <textarea
+          id="reject-mentor-notes"
+          rows="3"
+          [ngModel]="mentorNotes()"
+          (ngModelChange)="mentorNotes.set($event)"
+          placeholder="Add a short explanation for the mentee..."
+          class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-red-500 focus:ring-red-500"
+        ></textarea>
+
+      </div>
+    </div>
+
+    <div class="flex items-center justify-end gap-3 border-t border-gray-200 p-4">
+      <button
+        type="button"
+        (click)="closed.emit()"
+        class="rounded-lg border border-gray-200 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-100"
+      >
+        Cancel
+      </button>
+
+      <button
+        type="button"
+        (click)="confirmed.emit()"
+        [disabled]="submitting()"
+        class="relative overflow-hidden rounded-lg bg-red-600 px-5 py-2.5 text-sm font-medium text-white hover:bg-red-700 disabled:cursor-not-allowed"
+      >
+        <span [class.opacity-0]="submitting()">Reject</span>
+
+        @if (submitting()) {
+        <span class="absolute inset-0 z-10 flex items-center justify-center bg-gray-300/30">
+          <span
+            class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+          ></span>
+        </span>
+        }
+      </button>
+    </div>
+  </div>
 </div>

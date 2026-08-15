@@ -12,6 +12,7 @@ import {
   NotificationInterface,
   NotificationStatus,
   NotificationType,
+  RejectBookingDto,
   ResponseDto,
   ResponseStatus,
   UpdateBookingDto,
@@ -55,7 +56,12 @@ export class BookingService {
       // client, so validate it here rather than relying on search filtering.
       const mentor = await this.prisma.db.user.findUnique({
         where: { id: dto.mentorId },
-        select: { role: true, status: true, isMentorApproved: true, isMentorProfileComplete: true },
+        select: {
+          role: true,
+          status: true,
+          isMentorApproved: true,
+          isMentorProfileComplete: true,
+        },
       });
 
       if (!MentorAccess.isApprovedMentor(mentor)) {
@@ -67,7 +73,10 @@ export class BookingService {
         };
       }
 
-      const conflict = await this.checkBookingConflict(dto.mentorId, new Date(dto.sessionDateTime));
+      const conflict = await this.checkBookingConflict(
+        dto.mentorId,
+        new Date(dto.sessionDateTime),
+      );
       if (conflict) return conflict as ResponseDto<BookingInterface>;
 
       const booking = await this.prisma.db.booking.create({
@@ -75,7 +84,7 @@ export class BookingService {
           menteeId,
           mentorId: dto.mentorId,
           sessionDateTime: dto.sessionDateTime,
-          notes: dto.notes ?? null,
+          menteeNotes: dto.menteeNotes ?? null,
           status: BookingStatus.PENDING,
         },
         include: {
@@ -130,7 +139,6 @@ export class BookingService {
   // ====================================================
   // GET ALL
   // ====================================================
-
 
   // ====================================================
   // GET BY ID
@@ -237,7 +245,13 @@ export class BookingService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.GET_BOOKINGS.code,
         message: API_RESPONSE.SUCCESS.GET_BOOKINGS.message,
-        data: { data: bookings, total, page, limit, totalPages: Math.ceil(total / limit) },
+        data: {
+          data: bookings,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
       };
     } catch (error) {
       this.logger.error(error.message, error.stack);
@@ -260,7 +274,9 @@ export class BookingService {
     authenticatedUserId: string,
   ): Promise<ResponseDto<BookingInterface>> {
     try {
-      const existing = await this.prisma.db.booking.findUnique({ where: { id } });
+      const existing = await this.prisma.db.booking.findUnique({
+        where: { id },
+      });
 
       if (!existing || existing.isDeleted) {
         return {
@@ -285,8 +301,23 @@ export class BookingService {
         };
       }
 
+      const isMentorOwner = existing.mentorId === authenticatedUserId;
+
+      if (dto.mentorNotes !== undefined && !isAdmin && !isMentorOwner) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.BOOKING_ACCESS_DENIED.code,
+          message: API_RESPONSE.ERROR.BOOKING_ACCESS_DENIED.message,
+          data: null,
+        };
+      }
+
       if (dto.sessionDateTime !== undefined) {
-        const conflict = await this.checkBookingConflict(existing.mentorId, new Date(dto.sessionDateTime), id);
+        const conflict = await this.checkBookingConflict(
+          existing.mentorId,
+          new Date(dto.sessionDateTime),
+          id,
+        );
         if (conflict) return conflict as ResponseDto<BookingInterface>;
       }
 
@@ -297,8 +328,12 @@ export class BookingService {
             sessionDateTime: dto.sessionDateTime,
           }),
           ...(dto.status !== undefined && { status: dto.status }),
-          ...(dto.sessionLink !== undefined && { sessionLink: dto.sessionLink }),
-          ...(dto.notes !== undefined && { notes: dto.notes }),
+          ...(dto.sessionLink !== undefined && {
+            sessionLink: dto.sessionLink,
+          }),
+          ...(dto.mentorNotes !== undefined && {
+            mentorNotes: dto.mentorNotes,
+          }),
         },
         include: {
           mentor: { select: BOOKING_USER_SELECT },
@@ -332,7 +367,9 @@ export class BookingService {
     authenticatedUserId: string,
   ): Promise<ResponseDto<null>> {
     try {
-      const existing = await this.prisma.db.booking.findUnique({ where: { id } });
+      const existing = await this.prisma.db.booking.findUnique({
+        where: { id },
+      });
 
       if (!existing || existing.isDeleted) {
         return {
@@ -428,7 +465,13 @@ export class BookingService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.GET_MENTOR_BOOKINGS.code,
         message: API_RESPONSE.SUCCESS.GET_MENTOR_BOOKINGS.message,
-        data: { data: bookings, total, page, limit, totalPages: Math.ceil(total / limit) },
+        data: {
+          data: bookings,
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
       };
     } catch (error) {
       this.logger.error(error.message, error.stack);
@@ -489,7 +532,9 @@ export class BookingService {
     dto: ApproveBookingDto,
   ): Promise<ResponseDto<BookingInterface>> {
     try {
-      const existing = await this.prisma.db.booking.findUnique({ where: { id } });
+      const existing = await this.prisma.db.booking.findUnique({
+        where: { id },
+      });
 
       if (!existing || existing.isDeleted) {
         return {
@@ -518,9 +563,27 @@ export class BookingService {
         };
       }
 
+      if (dto.sessionDateTime !== undefined) {
+        const conflict = await this.checkBookingConflict(
+          existing.mentorId,
+          new Date(dto.sessionDateTime),
+          id,
+        );
+        if (conflict) return conflict as ResponseDto<BookingInterface>;
+      }
+
       const updated = await this.prisma.db.booking.update({
         where: { id },
-        data: { status: BookingStatus.APPROVED, sessionLink: dto.sessionLink },
+        data: {
+          status: BookingStatus.APPROVED,
+          sessionLink: dto.sessionLink,
+          ...(dto.sessionDateTime !== undefined && {
+            sessionDateTime: dto.sessionDateTime,
+          }),
+          ...(dto.mentorNotes !== undefined && {
+            mentorNotes: dto.mentorNotes,
+          }),
+        },
         include: {
           mentor: { select: BOOKING_USER_SELECT },
           mentee: { select: BOOKING_USER_SELECT },
@@ -559,9 +622,12 @@ export class BookingService {
   async rejectBooking(
     id: string,
     authenticatedUserId: string,
+    dto: RejectBookingDto = {},
   ): Promise<ResponseDto<BookingInterface>> {
     try {
-      const existing = await this.prisma.db.booking.findUnique({ where: { id } });
+      const existing = await this.prisma.db.booking.findUnique({
+        where: { id },
+      });
 
       if (!existing || existing.isDeleted) {
         return {
@@ -592,7 +658,12 @@ export class BookingService {
 
       const updated = await this.prisma.db.booking.update({
         where: { id },
-        data: { status: BookingStatus.REJECTED },
+        data: {
+          status: BookingStatus.REJECTED,
+          ...(dto.mentorNotes !== undefined && {
+            mentorNotes: dto.mentorNotes,
+          }),
+        },
         include: {
           mentor: { select: BOOKING_USER_SELECT },
           mentee: { select: BOOKING_USER_SELECT },
@@ -633,7 +704,9 @@ export class BookingService {
     authenticatedUserId: string,
   ): Promise<ResponseDto<BookingInterface>> {
     try {
-      const existing = await this.prisma.db.booking.findUnique({ where: { id } });
+      const existing = await this.prisma.db.booking.findUnique({
+        where: { id },
+      });
 
       if (!existing || existing.isDeleted) {
         return {
@@ -733,7 +806,9 @@ export class BookingService {
         NOTIFICATION_EVENTS.CREATED,
       );
     } catch (error) {
-      this.logger.warn(`Failed to create notification for userId=${userId}: ${error.message}`);
+      this.logger.warn(
+        `Failed to create notification for userId=${userId}: ${error.message}`,
+      );
     }
   }
 
@@ -753,7 +828,7 @@ export class BookingService {
         select: { id: true },
       });
       await Promise.all(
-        admins.map(admin =>
+        admins.map((admin) =>
           this.createNotification(admin.id, title, message, type, referenceId),
         ),
       );
@@ -795,12 +870,25 @@ export class BookingService {
     if (!profile) return null; // no profile — let the DB FK handle it
 
     const duration = profile.sessionDurationMinutes ?? 60;
-    const availability = (profile.availability as unknown as { day: string; timeFrames: { from: string; to: string }[] }[]) ?? [];
+    const availability =
+      (profile.availability as unknown as {
+        day: string;
+        timeFrames: { from: string; to: string }[];
+      }[]) ?? [];
 
-    const DAYS = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const dayName = DAYS[sessionDateTime.getDay()];
+    const DAYS = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
+    // const dayName = DAYS[sessionDateTime.getDay()];
+    const dayName = DAYS[sessionDateTime.getUTCDay()];
 
-    const daySlot = availability.find(s => s.day === dayName);
+    const daySlot = availability.find((s) => s.day === dayName);
     if (!daySlot || daySlot.timeFrames.length === 0) {
       return {
         status: ResponseStatus.Error,
@@ -811,7 +899,8 @@ export class BookingService {
     }
 
     // Convert session to minutes-since-midnight (UTC)
-    const sessionStart = sessionDateTime.getUTCHours() * 60 + sessionDateTime.getUTCMinutes();
+    const sessionStart =
+      sessionDateTime.getUTCHours() * 60 + sessionDateTime.getUTCMinutes();
     const sessionEnd = sessionStart + duration;
 
     const timeToMinutes = (t: string) => {
@@ -819,7 +908,7 @@ export class BookingService {
       return h * 60 + m;
     };
 
-    const fitsInFrame = daySlot.timeFrames.some(f => {
+    const fitsInFrame = daySlot.timeFrames.some((f) => {
       const fStart = timeToMinutes(f.from);
       const fEnd = timeToMinutes(f.to);
       return sessionStart >= fStart && sessionEnd <= fEnd;
@@ -852,7 +941,9 @@ export class BookingService {
     });
 
     for (const existing of existingBookings) {
-      const existStart = existing.sessionDateTime.getUTCHours() * 60 + existing.sessionDateTime.getUTCMinutes();
+      const existStart =
+        existing.sessionDateTime.getUTCHours() * 60 +
+        existing.sessionDateTime.getUTCMinutes();
       const existEnd = existStart + duration;
       // Overlap if: sessionStart < existEnd AND existStart < sessionEnd
       if (sessionStart < existEnd && existStart < sessionEnd) {

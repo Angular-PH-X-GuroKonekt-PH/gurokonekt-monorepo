@@ -29,7 +29,8 @@ export interface BookingListItem {
   sessionDateTime: string;
   status: string;
   sessionLink: string | null;
-  notes: string | null;
+  menteeNotes: string | null;
+  mentorNotes: string | null;
   cancelReason: string | null;
   isDeleted: boolean;
   createdAt: string;

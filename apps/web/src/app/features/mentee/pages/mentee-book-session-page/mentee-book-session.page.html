@@ -84,17 +84,17 @@
         <label class="block">
           <span class="flex items-center justify-between gap-4">
             <span class="flex items-center gap-3 text-base font-bold text-blue-950">
-              Add a Note
+              Mentee Notes
             </span>
             <span class="text-xs font-semibold text-slate-400">
-              Optional ({{ bookingNote().length }}/300)
+              Optional ({{ menteeNotes().length }}/300)
             </span>
           </span>
           <textarea
             rows="5"
             maxlength="300"
-            [ngModel]="bookingNote()"
-            (ngModelChange)="updateBookingNote($event)"
+            [ngModel]="menteeNotes()"
+            (ngModelChange)="updateMenteeNotes($event)"
             placeholder="Tell your mentor what you'd like to achieve in this session (e.g., resume review, algorithm help, career advice)..."
             class="mt-5 w-full resize-none rounded-xl border border-slate-200 bg-slate-50 p-4 text-sm text-heading outline-none transition placeholder:text-slate-400 focus:border-orange-300 focus:bg-white focus:ring-4 focus:ring-orange-100"
           ></textarea>
