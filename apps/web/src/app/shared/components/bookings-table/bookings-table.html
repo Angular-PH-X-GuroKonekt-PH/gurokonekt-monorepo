@@ -45,7 +45,19 @@
       <thead>
         <tr class="border-b border-gray-100">
           <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
-            {{ getCounterpartyLabel().toUpperCase() }}
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 tracking-widest transition-colors hover:text-gray-700"
+              [attr.aria-label]="'Sort by ' + getCounterpartyLabel()"
+              [attr.aria-sort]="getSortDirection('counterparty')"
+              (click)="sortBy('counterparty')"
+            >
+              {{ getCounterpartyLabel().toUpperCase() }}
+              <app-icon
+                [name]="getSortIconName('counterparty')"
+                class="h-3.5 w-3.5 shrink-0 text-gray-300"
+              />
+            </button>
           </th>
           @if (showMentorNotes()) {
           <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">MENTOR NOTES</th>
@@ -53,8 +65,36 @@
           @if (showMenteeNotes()) {
           <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">MENTEE NOTES</th>
           }
-          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">DATE &amp; TIME</th>
-          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">STATUS</th>
+          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 tracking-widest transition-colors hover:text-gray-700"
+              aria-label="Sort by date and time"
+              [attr.aria-sort]="getSortDirection('sessionDateTime')"
+              (click)="sortBy('sessionDateTime')"
+            >
+              DATE &amp; TIME
+              <app-icon
+                [name]="getSortIconName('sessionDateTime')"
+                class="h-3.5 w-3.5 shrink-0 text-gray-300"
+              />
+            </button>
+          </th>
+          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
+            <button
+              type="button"
+              class="inline-flex items-center gap-1 tracking-widest transition-colors hover:text-gray-700"
+              aria-label="Sort by status"
+              [attr.aria-sort]="getSortDirection('status')"
+              (click)="sortBy('status')"
+            >
+              STATUS
+              <app-icon
+                [name]="getSortIconName('status')"
+                class="h-3.5 w-3.5 shrink-0 text-gray-300"
+              />
+            </button>
+          </th>
           <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">ACTIONS</th>
         </tr>
       </thead>
