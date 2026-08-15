@@ -1,13 +1,15 @@
 import { Component, effect, inject, signal } from '@angular/core';
 import { FormBuilder, ReactiveFormsModule } from '@angular/forms';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { debounceTime, distinctUntilChanged } from 'rxjs';
 import {
   AvailabilityOption,
   MentorSearchFilter,
 } from '@gurokonekt/models/interfaces/search/search.model';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { EXPERTISE_OPTIONS, LANGUAGES } from '../../../../shared/constants';
+import { LANGUAGES } from '../../../../shared/constants';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import {
   MENTOR_SEARCH_AVAILABILITY_OPTIONS,
@@ -15,8 +17,6 @@ import {
   MENTOR_SEARCH_RATING_OPTIONS,
 } from '../../constants/mentor-search-filter.constants';
 import { MentorSearchDropdown } from '../../interfaces/search-mentor.interface';
-import { debounceTime, distinctUntilChanged } from 'rxjs';
-import { toSignal } from '@angular/core/rxjs-interop';
 
 @Component({
   selector: 'app-mentor-search',
@@ -40,8 +40,7 @@ export class MentorSearch {
     minRating: null,
   };
 
-  // Dropdown options
-  readonly expertiseOptions = EXPERTISE_OPTIONS;
+  // Filter options
   readonly languageOptions = LANGUAGES;
   readonly experienceOptions = MENTOR_SEARCH_EXPERIENCE_OPTIONS;
   readonly ratingOptions = MENTOR_SEARCH_RATING_OPTIONS;
@@ -62,7 +61,9 @@ export class MentorSearch {
   readonly selectedSkills = signal<string[]>([]);
   readonly selectedExpertise = signal<string[]>([]);
   readonly skillQuery = signal('');
+  readonly expertiseQuery = signal('');
 
+  // Keep the name search reactive so clearing the field also clears the URL filter.
   private readonly nameSearchValue = toSignal(
     this.filterForm.controls.name.valueChanges.pipe(
       debounceTime(300),
@@ -81,21 +82,6 @@ export class MentorSearch {
     this.clearNameSearchParam();
   });
 
-  private clearNameSearchParam(): void {
-    const currentName = this.route.snapshot.queryParamMap.get('name');
-
-    if (!currentName) {
-      return;
-    }
-
-    this.router.navigate([], {
-      relativeTo: this.route,
-      queryParams: { name: null, page: 1 },
-      queryParamsHandling: 'merge',
-      replaceUrl: true,
-    });
-  }
-
   constructor() {
     const params = this.route.snapshot.queryParams;
 
@@ -104,7 +90,7 @@ export class MentorSearch {
     }
   }
 
-  // Main search actions
+  // Search actions
   onSubmit(event: SubmitEvent): void {
     event.preventDefault();
     this.findMentors();
@@ -112,6 +98,7 @@ export class MentorSearch {
 
   findMentors(): void {
     this.addSkill(this.skillQuery());
+    this.addExpertise(this.expertiseQuery());
 
     const filters = this.getFilters();
     this.activeFilterDropdown.set(null);
@@ -127,12 +114,13 @@ export class MentorSearch {
     this.selectedSkills.set([]);
     this.selectedExpertise.set([]);
     this.skillQuery.set('');
+    this.expertiseQuery.set('');
     this.activeFilterDropdown.set(null);
 
     this.router.navigate([], { queryParams: {}, replaceUrl: true });
   }
 
-  // Filter dropdown state
+  // Filter dropdown state and labels
   activeFilterCount(): number {
     const value = this.filterForm.value ?? {};
 
@@ -146,6 +134,16 @@ export class MentorSearch {
       value.maxYearsExperience != null,
       value.minRating != null,
     ].filter(Boolean).length;
+  }
+
+  getMultiSelectLabel(values: string[]): string {
+    if (!values.length) {
+      return 'All';
+    }
+
+    return values.length === 1
+      ? values[0]
+      : `${values[0]} +${values.length - 1} more`;
   }
 
   toggleFilterDropdown(dropdown: Exclude<MentorSearchDropdown, null>): void {
@@ -175,21 +173,32 @@ export class MentorSearch {
     );
   }
 
-  trackBySkill(_: number, skill: string): string {
-    return skill;
+  trackByTag(_: number, tag: string): string {
+    return tag;
   }
 
   // Expertise filter handlers
-  toggleExpertise(option: string): void {
-    this.selectedExpertise.update((current) =>
-      current.includes(option)
-        ? current.filter((item) => item !== option)
-        : [...current, option]
-    );
+  addExpertise(expertise: string): void {
+    const trimmedExpertise = expertise.trim();
+
+    if (!trimmedExpertise) {
+      return;
+    }
+
+    if (!this.selectedExpertise().includes(trimmedExpertise)) {
+      this.selectedExpertise.update((expertiseList) => [
+        ...expertiseList,
+        trimmedExpertise,
+      ]);
+    }
+
+    this.expertiseQuery.set('');
   }
 
-  isExpertiseSelected(option: string): boolean {
-    return this.selectedExpertise().includes(option);
+  removeExpertise(expertise: string): void {
+    this.selectedExpertise.update((expertiseList) =>
+      expertiseList.filter((item) => item !== expertise)
+    );
   }
 
   // Availability filter handlers
@@ -273,7 +282,7 @@ export class MentorSearch {
     );
   }
 
-  // Build data used for searching and URL navigation
+  // Search query mapping
   private getFilters(): MentorSearchFilter {
     const formValue = this.filterForm.value;
 
@@ -310,7 +319,7 @@ export class MentorSearch {
     };
   }
 
-  // Read filter values from the current URL
+  // URL filter mapping
   private setFiltersFromUrl(params: Record<string, string>): void {
     this.setFilterValue('name', params['name']);
     this.setFilterValue('language', params['language']);
@@ -327,6 +336,21 @@ export class MentorSearch {
     this.setNumberFilterFromUrl(params, 'minYearsExperience');
     this.setNumberFilterFromUrl(params, 'maxYearsExperience');
     this.setNumberFilterFromUrl(params, 'minRating');
+  }
+
+  private clearNameSearchParam(): void {
+    const currentName = this.route.snapshot.queryParamMap.get('name');
+
+    if (!currentName) {
+      return;
+    }
+
+    this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { name: null, page: 1 },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   private getListFromUrlParam(
