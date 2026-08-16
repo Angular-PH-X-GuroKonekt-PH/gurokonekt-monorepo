@@ -105,7 +105,9 @@ export class MentorBookingService {
       mentor: nextBooking.mentee
         ? `${nextBooking.mentee.firstName} ${nextBooking.mentee.lastName}`
         : 'Mentee',
-      dateTime: new Date(nextBooking.sessionDateTime).toLocaleString(),
+      dateTime: new Date(nextBooking.sessionDateTime).toLocaleString('en-US', {
+        timeZone: 'UTC',
+      }),
       sessionLink: nextBooking.sessionLink,
     };
   });

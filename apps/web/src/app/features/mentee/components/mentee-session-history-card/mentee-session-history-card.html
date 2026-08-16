@@ -28,7 +28,7 @@
 
                     <span class="inline-flex items-center gap-1.5 text-sm text-body">
                         <app-icon name="calendar-days" class="h-4 w-4 text-orange-500"></app-icon>
-                        {{ session.sessionDateTime | date: 'MMM d, y, h:mm a z' }}
+                        {{ session.sessionDateTime | date: 'MMM d, y, h:mm a':'UTC' }}
                     </span>
                     <app-session-badge [status]="session.status"></app-session-badge>
 

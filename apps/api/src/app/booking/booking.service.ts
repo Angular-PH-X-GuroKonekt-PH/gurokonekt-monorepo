@@ -98,7 +98,7 @@ export class BookingService {
       await this.createNotification(
         dto.mentorId,
         'New Booking Request',
-        `You have received a new booking request for ${new Date(dto.sessionDateTime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}.`,
+        `You have received a new booking request for ${new Date(dto.sessionDateTime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short', timeZone: 'UTC' })}.`,
         NotificationType.BOOKING,
         booking.id,
       );

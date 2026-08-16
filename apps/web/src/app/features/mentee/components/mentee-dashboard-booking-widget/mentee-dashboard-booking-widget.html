@@ -59,9 +59,9 @@
                 }
               </p>
               <p class="mt-1 flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-slate-500">
-                <span>{{ booking.sessionDateTime | date: 'MMM d, y' }}</span>
+                <span>{{ booking.sessionDateTime | date: 'MMM d, y':'UTC' }}</span>
                 <span aria-hidden="true">&bull;</span>
-                <span>{{ booking.sessionDateTime | date: 'h:mm a' }}</span>
+                <span>{{ booking.sessionDateTime | date: 'h:mm a':'UTC' }}</span>
               </p>
             </div>
 

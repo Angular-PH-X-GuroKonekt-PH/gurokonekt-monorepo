@@ -60,14 +60,14 @@
                 <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-widest text-gray-400">Date</p>
                     <p class="mt-1 text-base font-bold text-gray-900">
-                        {{ booking().sessionDateTime | date:'MMM d, y' }}
+                        {{ booking().sessionDateTime | date:'MMM d, y':'UTC' }}
                     </p>
                 </div>
 
                 <div class="rounded-xl border border-gray-100 bg-gray-50 p-4">
                     <p class="text-xs font-semibold uppercase tracking-widest text-gray-400">Time</p>
                     <p class="mt-1 text-base font-bold text-gray-900">
-                        {{ booking().sessionDateTime | date:'h:mm a' }}
+                        {{ booking().sessionDateTime | date:'h:mm a':'UTC' }}
                     </p>
                 </div>
             </div>

@@ -23,7 +23,7 @@
           <input
             id="cancel-session-date"
             type="date"
-            [value]="booking().sessionDateTime | date:'yyyy-MM-dd'"
+            [value]="booking().sessionDateTime | date:'yyyy-MM-dd':'UTC'"
             readonly
             class="block w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-600"
           />
@@ -37,7 +37,7 @@
           <input
             id="cancel-session-time"
             type="time"
-            [value]="booking().sessionDateTime | date:'HH:mm'"
+            [value]="booking().sessionDateTime | date:'HH:mm':'UTC'"
             readonly
             class="block w-full cursor-not-allowed rounded-lg border border-gray-300 bg-gray-100 p-2.5 text-sm text-gray-600"
           />

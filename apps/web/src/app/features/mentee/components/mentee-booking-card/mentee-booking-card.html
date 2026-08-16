@@ -36,7 +36,7 @@
               name="calendar-days"
               class="h-4 w-4 text-orange-500"
             ></app-icon>
-            {{ booking().sessionDateTime | date: 'MMM d, y' }}
+            {{ booking().sessionDateTime | date: 'MMM d, y':'UTC' }}
           </span>
 
           <span
@@ -46,7 +46,7 @@
               name="clock"
               class="h-4 w-4 text-slate-500"
             ></app-icon>
-            {{ booking().sessionDateTime | date: 'h:mm a z' }}
+            {{ booking().sessionDateTime | date: 'h:mm a':'UTC' }}
           </span>
 
           <app-session-badge [status]="booking().status"></app-session-badge>

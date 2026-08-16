@@ -17,7 +17,7 @@
 
         <span class="inline-flex items-center gap-1.5 text-sm text-body">
           <app-icon name="calendar-days" class="h-4 w-4 text-orange-500"></app-icon>
-           {{ completedBooking().sessionDateTime | date: 'MMM d, y' }}
+           {{ completedBooking().sessionDateTime | date: 'MMM d, y':'UTC' }}
         </span>
         <app-session-badge [status]="completedBooking().status"></app-session-badge>
 

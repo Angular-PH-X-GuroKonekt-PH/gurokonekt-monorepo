@@ -141,13 +141,11 @@ export class MentorBookingsTable {
   approveBooking(booking: BookingCardInterface): void {
     this.closeActionMenu();
 
-    const date = new Date(booking.sessionDateTime);
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    const localValue = localDate.toISOString();
+    const utcValue = new Date(booking.sessionDateTime).toISOString();
 
     this.approvalBooking.set(booking);
-    this.approvalSessionDate.set(localValue.slice(0, 10));
-    this.approvalSessionTime.set(localValue.slice(11, 16));
+    this.approvalSessionDate.set(utcValue.slice(0, 10));
+    this.approvalSessionTime.set(utcValue.slice(11, 16));
     this.approvalSessionLink.set(booking.sessionLink ?? '');
     this.approvalMentorNotes.set(booking.mentorNotes ?? '');
   }
@@ -179,7 +177,7 @@ export class MentorBookingsTable {
     this.submitting.set(true);
 
     const sessionDateTime = new Date(
-      `${this.approvalSessionDate()}T${this.approvalSessionTime()}`
+      `${this.approvalSessionDate()}T${this.approvalSessionTime()}:00.000Z`,
     );
 
     this.bookingService
@@ -333,15 +331,11 @@ export class MentorBookingsTable {
   updateBooking(booking: BookingCardInterface): void {
     this.closeActionMenu();
 
-    const date = new Date(booking.sessionDateTime);
-    const localDate = new Date(
-      date.getTime() - date.getTimezoneOffset() * 60000,
-    );
-    const localValue = localDate.toISOString();
+    const utcValue = new Date(booking.sessionDateTime).toISOString();
 
     this.updateBookingTarget.set(booking);
-    this.updateSessionDate.set(localValue.slice(0, 10));
-    this.updateSessionTime.set(localValue.slice(11, 16));
+    this.updateSessionDate.set(utcValue.slice(0, 10));
+    this.updateSessionTime.set(utcValue.slice(11, 16));
     this.updateSessionLink.set(booking.sessionLink ?? '');
     this.updateMentorNotes.set(booking.mentorNotes ?? '');
   }
@@ -365,7 +359,7 @@ export class MentorBookingsTable {
     }
 
     const sessionDateTime = new Date(
-      `${this.updateSessionDate()}T${this.updateSessionTime()}`,
+      `${this.updateSessionDate()}T${this.updateSessionTime()}:00.000Z`,
     );
 
     this.submitting.set(true);

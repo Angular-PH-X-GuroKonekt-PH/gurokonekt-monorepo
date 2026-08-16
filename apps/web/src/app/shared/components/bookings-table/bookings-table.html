@@ -101,8 +101,8 @@
           </td>
           }
           <td class="px-6 py-4">
-            <p class="font-medium text-gray-800">{{ booking.sessionDateTime | date:'MMM d, y' }}</p>
-            <p class="text-xs text-gray-400">{{ booking.sessionDateTime | date:'h:mm a' }}</p>
+            <p class="font-medium text-gray-800">{{ booking.sessionDateTime | date:'MMM d, y':'UTC' }}</p>
+            <p class="text-xs text-gray-400">{{ booking.sessionDateTime | date:'h:mm a':'UTC' }}</p>
           </td>
           <td class="px-6 py-4">
             <span
