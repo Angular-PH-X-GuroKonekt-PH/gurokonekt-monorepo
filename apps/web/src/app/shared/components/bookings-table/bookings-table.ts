@@ -1,5 +1,5 @@
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, output, TemplateRef } from '@angular/core';
+import { Component, computed, input, output, signal, TemplateRef } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import {
@@ -8,10 +8,14 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { Pagination } from '@gurokonekt/ui';
 
+import { IconComponent, IconName } from '../icon/icon.component';
 import { BookingTableSkeleton } from '../skeleton-loaders/booking-table-skeleton/booking-table-skeleton.component';
-
-export type BookingTableFooterMode = 'pagination' | 'viewAll' | 'none';
-export type BookingCounterparty = 'mentor' | 'mentee';
+import {
+  BookingCounterparty,
+  BookingSortKey,
+  BookingTableFooterMode,
+  SortDirection,
+} from './bookings-table.types';
 
 export interface BookingActionContext {
   $implicit: BookingCardInterface;
@@ -23,6 +27,7 @@ export interface BookingActionContext {
     DatePipe,
     NgTemplateOutlet,
     RouterLink,
+    IconComponent,
     BookingTableSkeleton,
     Pagination,
   ],
@@ -48,18 +53,81 @@ export class BookingsTable {
   totalItems = input(0);
   pageSizeOptions = input<number[]>([10, 20, 50]);
 
+  protected readonly sortKey = signal<BookingSortKey | null>(null);
+  protected readonly sortDirection = signal<SortDirection>('asc');
+
   tabChange = output<string>();
   pageChange = output<number>();
   pageSizeChange = output<number>();
 
-  displayedBookings = computed(() => {
+  sortedBookings = computed(() => {
     const bookings = this.bookings() ?? [];
+    const sortKey = this.sortKey();
+
+    if (!sortKey) {
+      return bookings;
+    }
+
+    const direction = this.sortDirection() === 'asc' ? 1 : -1;
+
+    return [...bookings].sort((first, second) => {
+      let comparison = 0;
+
+      if (sortKey === 'counterparty') {
+        comparison = this.getCounterpartyName(first).localeCompare(
+          this.getCounterpartyName(second),
+          undefined,
+          { sensitivity: 'base' },
+        );
+      } else if (sortKey === 'sessionDateTime') {
+        comparison =
+          new Date(first.sessionDateTime).getTime() -
+          new Date(second.sessionDateTime).getTime();
+      } else {
+        comparison = first.status.localeCompare(second.status, undefined, {
+          sensitivity: 'base',
+        });
+      }
+
+      return comparison * direction;
+    });
+  });
+
+  displayedBookings = computed(() => {
     const maxRows = this.maxRows();
 
     return maxRows === null
-      ? bookings
-      : bookings.slice(0, Math.max(0, maxRows));
+      ? this.sortedBookings()
+      : this.sortedBookings().slice(0, Math.max(0, maxRows));
   });
+
+  sortBy(key: BookingSortKey): void {
+    if (this.sortKey() === key) {
+      this.sortDirection.update((direction) =>
+        direction === 'asc' ? 'desc' : 'asc',
+      );
+      return;
+    }
+
+    this.sortKey.set(key);
+    this.sortDirection.set('asc');
+  }
+
+  getSortDirection(key: BookingSortKey): string {
+    if (this.sortKey() !== key) {
+      return 'none';
+    }
+
+    return this.sortDirection() === 'asc' ? 'ascending' : 'descending';
+  }
+
+  getSortIconName(key: BookingSortKey): IconName {
+    if (this.sortKey() !== key) {
+      return 'sort-none';
+    }
+
+    return this.sortDirection() === 'asc' ? 'sort-asc' : 'sort-desc';
+  }
 
   tableColumnCount = computed(
     () =>
@@ -92,5 +160,13 @@ export class BookingsTable {
 
   getCounterpartyLabel(): string {
     return this.counterparty() === 'mentor' ? 'Mentor' : 'Mentee';
+  }
+
+  private getCounterpartyName(booking: BookingCardInterface): string {
+    const participant = this.getCounterparty(booking);
+
+    return participant
+      ? `${participant.firstName} ${participant.lastName}`.trim()
+      : '';
   }
 }
