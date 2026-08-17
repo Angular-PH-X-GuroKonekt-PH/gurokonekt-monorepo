@@ -1100,7 +1100,7 @@ Authenticates a user with email and password via Supabase.
 
 **Returns:** a JWT access token on success. Store this token and send it as \`Authorization: Bearer <token>\` on all protected requests.
 
-**Rate limiting:** failed attempts are counted per email over a rolling 24-hour window and lock the account progressively — 5 failures locks it for 15 minutes, 10 for 1 hour, 15 for 24 hours. The lockout is measured from the most recent failure, and the \`429\` message states how long is left. A successful sign-in or a completed password reset clears the counter, so resetting the password restores access immediately without waiting out the lockout.
+**Rate limiting:** failed attempts are counted per email over a rolling 24-hour window. Mentees and mentors are locked out for 24 hours after 5 failures. Admin accounts escalate instead — 5 failures locks for 15 minutes, 10 for 1 hour, 15 for 24 hours — so a mistyped admin password does not cost a full day. The lockout is measured from the most recent failure, and the \`429\` message states how long is left. A successful sign-in or a completed password reset clears the counter, so resetting the password restores access immediately without waiting out the lockout.
 
 **Possible failures:**
 - \`401\` — wrong email or password.

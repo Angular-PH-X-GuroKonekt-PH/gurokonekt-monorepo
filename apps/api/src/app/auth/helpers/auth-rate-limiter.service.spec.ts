@@ -159,6 +159,34 @@ describe('AuthRateLimiterService', () => {
     });
   });
 
+  describe('a single-tier (flat) policy', () => {
+    const FLAT: TieredRateLimitConfig = {
+      ...CONFIG,
+      tiers: [{ attempts: 5, lockoutMs: DAY }],
+    };
+
+    it('allows sign-in below the threshold', async () => {
+      withFailures(4);
+      expect(await service.checkTieredRateLimit(FLAT, EMAIL)).toBeNull();
+    });
+
+    it('locks out for a full day at the threshold', async () => {
+      withFailures(5);
+
+      const result = await service.checkTieredRateLimit(FLAT, EMAIL);
+
+      expect(result?.message).toBe('Too many failed login attempts. Try again in 24 hours.');
+    });
+
+    it('does not shorten the lockout as failures pile up', async () => {
+      withFailures(20);
+
+      const result = await service.checkTieredRateLimit(FLAT, EMAIL);
+
+      expect(result?.message).toBe('Too many failed login attempts. Try again in 24 hours.');
+    });
+  });
+
   describe('counting window', () => {
     it('only counts failures newer than the reset point', async () => {
       const resetAt = new Date(NOW - 2 * HOUR);

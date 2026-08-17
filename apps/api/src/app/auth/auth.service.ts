@@ -13,6 +13,7 @@ import {
   AuthRateLimiterService,
   AuthErrorHandlerService,
   AUTH_RATE_LIMITS,
+  signInRateLimitFor,
   withVerificationEmailQuery,
 } from './helpers';
 import bcrypt from 'bcrypt';
@@ -490,15 +491,22 @@ export class AuthService {
    */
   async signInWithPassword(input: SignInWithPasswordDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     try {
+      // Looked up before the rate limit check because the lockout policy is
+      // role-dependent: admins escalate, everyone else gets a flat 24 hours.
+      // An unknown email falls back to the flat policy, so the check runs
+      // identically whether or not the address exists.
+      const user = await this.validation.getUserByEmail(input.email);
+
       // Rate limit check
       if (process.env.NODE_ENV !== 'test') {
+        const policy = signInRateLimitFor(user?.role);
         const rateLimitError = await this.rateLimiter.checkTieredRateLimit(
           {
             actionType: LogsActionType.SignIn,
-            tiers: AUTH_RATE_LIMITS.SIGN_IN.tiers,
-            countWindowMs: AUTH_RATE_LIMITS.SIGN_IN.countWindowMs,
+            tiers: policy.tiers,
+            countWindowMs: policy.countWindowMs,
             errorKey: 'SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS',
-            lockoutMessageTemplate: AUTH_RATE_LIMITS.SIGN_IN.lockoutMessageTemplate,
+            lockoutMessageTemplate: policy.lockoutMessageTemplate,
             // Completing a password reset proves mailbox control, so it
             // releases the lockout without waiting out the timer. Both reset
             // flows count: the link-based one (ResetPassword) and the PIN one
@@ -515,7 +523,6 @@ export class AuthService {
       }
 
       // Validate user exists
-      const user = await this.validation.getUserByEmail(input.email);
       if (!user) {
         await this.logging.log({
           actionType: LogsActionType.SignIn,
