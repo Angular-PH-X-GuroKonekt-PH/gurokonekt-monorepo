@@ -1,6 +1,6 @@
 import { Component, inject, effect } from '@angular/core';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
+import { Router, RouterLink } from '@angular/router';
 import { Store, createSelectMap } from '@ngxs/store';
 import { AuthSelectors } from '../../store/auth.selectors';
 import * as AuthActions from '../../store/auth.actions';
@@ -8,12 +8,15 @@ import { APP_ROUTES } from '../../../../shared/constants/routes';
 
 @Component({
   selector: 'app-login-page',
-  imports: [FormsModule],
+  imports: [FormsModule, RouterLink],
   templateUrl: './login.page.html',
 })
 export class LoginPage {
   private readonly store = inject(Store);
   private readonly router = inject(Router);
+
+  /** Escape hatch when an account is locked out by failed sign-in attempts. */
+  protected readonly forgotPasswordRoute = `/${APP_ROUTES.FORGOT_PASSWORD}`;
 
   protected readonly selectors = createSelectMap({
     isLoginLoading: AuthSelectors.isLoginLoading,

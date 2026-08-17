@@ -183,7 +183,7 @@ export class AuthController {
   })
   @ApiResponse({ status: 401, description: 'Invalid email or password.' })
   @ApiResponse({ status: 403, description: 'Email address is not yet verified. Resend confirmation link first.' })
-  @ApiResponse({ status: 429, description: 'Too many failed login attempts. Try again later.' })
+  @ApiResponse({ status: 429, description: 'Too many failed login attempts. Mentees and mentors are locked out for 24 hours after 5 failures; admin accounts escalate instead (15 minutes, then 1 hour, then 24 hours). The response message states how long is left. Completing a password reset clears the lockout.' })
   async signIn(
     @Body() input: SignInWithPasswordDto,
     @Ip() ipAddress: string,

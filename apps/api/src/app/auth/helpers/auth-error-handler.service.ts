@@ -22,7 +22,7 @@ export class AuthErrorHandlerService {
     return AuthResponseFactory.errorByKey('INTERNAL_SERVER_ERROR', error);
   }
 
-  handleUnexpectedError(error: any, fallbackErrorKey: string = 'INTERNAL_SERVER_ERROR'): ResponseDto {
+  handleUnexpectedError(error: any, fallbackErrorKey = 'INTERNAL_SERVER_ERROR'): ResponseDto {
     this.logger.error('Unexpected error:', error?.message, error?.stack);
     return AuthResponseFactory.errorByKey(fallbackErrorKey as any, error);
   }
