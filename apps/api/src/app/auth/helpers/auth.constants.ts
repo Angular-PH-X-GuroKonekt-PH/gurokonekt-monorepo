@@ -15,9 +15,22 @@ export const AUTH_RATE_LIMITS = {
     minIntervalSeconds: 60,
     timeWindowMs: 86400000, // 24 hours
   },
+  /**
+   * Progressive lockout. A mistyped password costs 15 minutes; sustained
+   * brute force escalates to a day. Keeping the first tier short means an
+   * attacker cannot cheaply lock a known admin address out for 24 hours,
+   * while a successful sign-in or completed password reset clears the count
+   * outright (see `resetActionTypes` in the sign-in check).
+   */
   SIGN_IN: {
-    maxAttemptsPerDay: 5,
-    timeWindowMs: 86400000, // 24 hours
+    countWindowMs: 86400000, // failures are counted over a rolling 24 hours
+    tiers: [
+      { attempts: 5, lockoutMs: 15 * 60 * 1000 }, // 15 minutes
+      { attempts: 10, lockoutMs: 60 * 60 * 1000 }, // 1 hour
+      { attempts: 15, lockoutMs: 24 * 60 * 60 * 1000 }, // 24 hours
+    ],
+    lockoutMessageTemplate:
+      'Too many failed login attempts. Try again in {duration}, or reset your password to regain access now.',
   },
   UPDATE_PASSWORD: {
     maxIncorrectAttemptsPerDay: 3,

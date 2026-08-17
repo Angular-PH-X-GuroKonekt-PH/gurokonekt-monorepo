@@ -1,6 +1,12 @@
 export const API_ENDPOINTS = {
   auth: {
     login: '/auth/login',
+    // Link-based recovery, the same flow the web app uses: request a reset
+    // email, then complete it with the recovery token from the link. Fires
+    // Supabase's Reset Password template (not Magic Link). Completing this
+    // also clears any sign-in lockout on the account.
+    forgotPassword: '/auth/forgot-password',
+    completePasswordReset: '/auth/complete-password-reset',
   },
   admin: {
     dashboard: '/admin/dashboard',

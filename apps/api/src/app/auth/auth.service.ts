@@ -492,12 +492,22 @@ export class AuthService {
     try {
       // Rate limit check
       if (process.env.NODE_ENV !== 'test') {
-        const rateLimitError = await this.rateLimiter.checkRateLimit(
+        const rateLimitError = await this.rateLimiter.checkTieredRateLimit(
           {
             actionType: LogsActionType.SignIn,
-            maxAttempts: AUTH_RATE_LIMITS.SIGN_IN.maxAttemptsPerDay,
-            timeWindowMs: AUTH_RATE_LIMITS.SIGN_IN.timeWindowMs,
+            tiers: AUTH_RATE_LIMITS.SIGN_IN.tiers,
+            countWindowMs: AUTH_RATE_LIMITS.SIGN_IN.countWindowMs,
             errorKey: 'SIGNIN_ATTEMPT_TOO_MANY_ATTEMPTS',
+            lockoutMessageTemplate: AUTH_RATE_LIMITS.SIGN_IN.lockoutMessageTemplate,
+            // Completing a password reset proves mailbox control, so it
+            // releases the lockout without waiting out the timer. Both reset
+            // flows count: the link-based one (ResetPassword) and the PIN one
+            // (VerifyResetPin).
+            resetActionTypes: [
+              LogsActionType.SignIn,
+              LogsActionType.ResetPassword,
+              LogsActionType.VerifyResetPin,
+            ],
           },
           input.email
         );
@@ -511,7 +521,7 @@ export class AuthService {
           actionType: LogsActionType.SignIn,
           targetId: '',
           details: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
-          metadata: { email: input.email },
+          metadata: { email: input.email, outcome: 'failed' },
           ipAddress,
           userAgent,
         });
@@ -532,7 +542,7 @@ export class AuthService {
           actionType: LogsActionType.SignIn,
           targetId: user.id,
           details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
-          metadata: { email: input.email },
+          metadata: { email: input.email, outcome: 'failed' },
           ipAddress,
           userAgent,
           createdById: user.id,
@@ -545,7 +555,7 @@ export class AuthService {
           actionType: LogsActionType.SignIn,
           targetId: user.id,
           details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_INVALID_CREDENTIALS.message,
-          metadata: { email: input.email },
+          metadata: { email: input.email, outcome: 'failed' },
           ipAddress,
           userAgent,
           createdById: user.id,
@@ -558,7 +568,7 @@ export class AuthService {
           actionType: LogsActionType.SignIn,
           targetId: user.id,
           details: API_RESPONSE.ERROR.SIGNIN_ATTEMPT_EMAIL_NOT_VERIFIED.message,
-          metadata: { email: input.email },
+          metadata: { email: input.email, outcome: 'failed' },
           ipAddress,
           userAgent,
           createdById: user.id,
@@ -584,7 +594,7 @@ export class AuthService {
             actionType: LogsActionType.SignIn,
             targetId: user.id,
             details: API_RESPONSE.ERROR.SIGNIN_MENTOR_PENDING_REVIEW.message,
-            metadata: { email: input.email, status: userData.status },
+            metadata: { email: input.email, status: userData.status, outcome: 'failed' },
             ipAddress,
             userAgent,
             createdById: user.id,
@@ -597,7 +607,7 @@ export class AuthService {
             actionType: LogsActionType.SignIn,
             targetId: user.id,
             details: API_RESPONSE.ERROR.SIGNIN_MENTOR_REJECTED.message,
-            metadata: { email: input.email, status: userData.status },
+            metadata: { email: input.email, status: userData.status, outcome: 'failed' },
             ipAddress,
             userAgent,
             createdById: user.id,
@@ -626,7 +636,7 @@ export class AuthService {
         actionType: LogsActionType.SignIn,
         targetId: user.id,
         details: API_RESPONSE.SUCCESS.SIGN_WITH_PASSWORD.message,
-        metadata: { email: input.email },
+        metadata: { email: input.email, outcome: 'success' },
         ipAddress,
         userAgent,
         createdById: user.id,
@@ -1003,7 +1013,11 @@ export class AuthService {
           actionType: LogsActionType.ResetPassword,
           targetId: data.user.id,
           details: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
-          metadata: { email: data.user.email },
+          // 'success' marks this as a lockout reset point — completing a
+          // reset clears any accumulated failed sign-in attempts. The PIN-send
+          // step logs the same action type without an outcome, so only a
+          // genuinely completed reset counts here.
+          metadata: { email: data.user.email, outcome: 'success' },
           ipAddress,
           userAgent,
           createdById: data.user.id,
@@ -1188,7 +1202,9 @@ export class AuthService {
           actionType: LogsActionType.VerifyResetPin,
           targetId: data.user.id,
           details: API_RESPONSE.SUCCESS.UPDATE_PASSWORD.message,
-          metadata: { email: dto.email },
+          // 'success' marks this as a lockout reset point — completing a
+          // reset clears any accumulated failed sign-in attempts.
+          metadata: { email: dto.email, outcome: 'success' },
           ipAddress,
           userAgent,
           createdById: data.user.id,

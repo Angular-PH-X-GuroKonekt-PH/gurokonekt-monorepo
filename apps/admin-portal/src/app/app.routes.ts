@@ -13,6 +13,24 @@ export const appRoutes: Route[] = [
     title: 'Admin Login',
   },
   {
+    path: APP_ROUTES.FORGOT_PASSWORD,
+    canActivate: [unauthenticatedGuard],
+    loadComponent: () =>
+      import('./core/auth/pages/forgot-password-page/forgot-password.page').then(
+        (m) => m.ForgotPasswordPage
+      ),
+    title: 'Forgot Password',
+  },
+  {
+    path: APP_ROUTES.RESET_PASSWORD,
+    canActivate: [unauthenticatedGuard],
+    loadComponent: () =>
+      import('./core/auth/pages/reset-password-page/reset-password.page').then(
+        (m) => m.ResetPasswordPage
+      ),
+    title: 'Reset Password',
+  },
+  {
     path: '',
     canActivate: [authGuard],
     component: Layout,
