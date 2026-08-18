@@ -16,6 +16,8 @@ import {
 import {
   BookingInterface,
   BookingStatus,
+  BookingSortBy,
+  BookingSortOrder,
 } from '../../interfaces/booking/booking.model';
 
 export class MentorBookingsQueryDto {
@@ -41,9 +43,30 @@ export class MentorBookingsQueryDto {
   @Min(1)
   @Max(100)
   limit?: number;
+
+  @ApiPropertyOptional({
+    enum: ['sessionDateTime', 'status', 'mentor', 'mentee'],
+    description: 'Sort field',
+  })
+  @IsOptional()
+  @IsEnum(['sessionDateTime', 'status', 'mentor', 'mentee'])
+  sortBy?: BookingSortBy;
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], description: 'Sort direction' })
+  @IsOptional()
+  @IsEnum(['asc', 'desc'])
+  sortOrder?: BookingSortOrder;
 }
 
 export class UserBookingsQueryDto {
+  @ApiPropertyOptional({
+    enum: BookingStatus,
+    description: 'Filter bookings by status',
+  })
+  @IsOptional()
+  @IsEnum(BookingStatus)
+  status?: BookingStatus;
+
   @ApiPropertyOptional({ description: 'Page number', example: 1 })
   @IsOptional()
   @Type(() => Number)
@@ -58,6 +81,19 @@ export class UserBookingsQueryDto {
   @Min(1)
   @Max(100)
   limit?: number;
+
+  @ApiPropertyOptional({
+    enum: ['sessionDateTime', 'status', 'mentor', 'mentee'],
+    description: 'Sort field',
+  })
+  @IsOptional()
+  @IsEnum(['sessionDateTime', 'status', 'mentor', 'mentee'])
+  sortBy?: BookingSortBy;
+
+  @ApiPropertyOptional({ enum: ['asc', 'desc'], description: 'Sort direction' })
+  @IsOptional()
+  @IsEnum(['asc', 'desc'])
+  sortOrder?: BookingSortOrder;
 }
 
 export class AdminListBookingsQueryDto {

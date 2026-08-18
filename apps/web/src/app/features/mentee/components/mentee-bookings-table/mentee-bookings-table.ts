@@ -6,6 +6,10 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { BookingsTable } from '../../../../shared/components/bookings-table/bookings-table';
+import {
+  BookingSortChange,
+  BookingTableFooterMode,
+} from '../../../../shared/components/bookings-table/bookings-table.types';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { BookingService } from '../../../../shared/services/booking.service';
 import { ToastService } from '../../../../shared/services/toast.service';
@@ -34,9 +38,18 @@ export class MenteeBookingsTable {
   isLoading = input(false);
   initialTab = input<BookingTab>('All');
   initialBookingId = input<string | null>(null);
+  footerMode = input<BookingTableFooterMode>('none');
+  currentPage = input(1);
+  pageSize = input(10);
+  totalItems = input(0);
+  pageSizeOptions = input<number[]>([10, 20, 50]);
 
   bookingUpdated = output<void>();
   addReview = output<BookingCardInterface>();
+  pageChange = output<number>();
+  pageSizeChange = output<number>();
+  tabChange = output<BookingTab>();
+  sortChange = output<BookingSortChange>();
 
   protected readonly activeTab = signal<BookingTab>('All');
   protected readonly selectedBooking = signal<BookingCardInterface | null>(null);
@@ -49,7 +62,9 @@ export class MenteeBookingsTable {
     const bookings = this.bookings() ?? [];
     const activeTab = this.activeTab();
 
-    if (activeTab === 'All') return bookings;
+    if (this.footerMode() === 'pagination' || activeTab === 'All') {
+      return bookings;
+    }
 
     return bookings.filter(
       (booking) => booking.status === (activeTab.toUpperCase() as BookingStatus)
@@ -79,7 +94,22 @@ export class MenteeBookingsTable {
 
   protected setActiveTab(tab: string): void {
     const bookingTab = tab as BookingTab;
-    if (this.tabs().includes(bookingTab)) this.activeTab.set(bookingTab);
+    if (!this.tabs().includes(bookingTab)) return;
+
+    this.activeTab.set(bookingTab);
+    this.tabChange.emit(bookingTab);
+  }
+
+  protected changePage(page: number): void {
+    this.pageChange.emit(page);
+  }
+
+  protected changePageSize(pageSize: number): void {
+    this.pageSizeChange.emit(pageSize);
+  }
+
+  protected changeSort(sort: BookingSortChange): void {
+    this.sortChange.emit(sort);
   }
 
   protected toggleActionMenu(bookingId: string): void {
