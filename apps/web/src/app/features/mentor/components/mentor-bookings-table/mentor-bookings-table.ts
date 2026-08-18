@@ -15,6 +15,9 @@ import {
 
 import { BookingsTable } from '../../../../shared/components/bookings-table/bookings-table';
 import { BookingService } from '../../../../shared/services/booking.service';
+import {
+  BookingSortChange,
+} from '../../../../shared/components/bookings-table/bookings-table.types';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BookingDetailsModal } from '../../../mentor/components/mentor-bookings-table/booking-details-modal/booking-details-modal';
 import { ApproveBookingModal } from '../../../mentor/components/mentor-bookings-table/approve-booking-modal/approve-booking-modal';
@@ -57,6 +60,7 @@ export class MentorBookingsTable {
   pageChange = output<number>();
   pageSizeChange = output<number>();
   tabChange = output<BookingTab>();
+  sortChange = output<BookingSortChange>();
 
   bookingService = inject(BookingService);
   toastService = inject(ToastService);
@@ -117,6 +121,10 @@ export class MentorBookingsTable {
 
   changePageSize(pageSize: number): void {
     this.pageSizeChange.emit(pageSize);
+  }
+
+  changeSort(sort: BookingSortChange): void {
+    this.sortChange.emit(sort);
   }
 
   toggleActionMenu(bookingId: string): void {

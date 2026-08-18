@@ -60,8 +60,15 @@
   [showMenteeNotes]="true"
   [showMentorNotes]="true"
   [actionsTemplate]="menteeActions"
-  footerMode="none"
+  [footerMode]="footerMode()"
+  [currentPage]="currentPage()"
+  [pageSize]="pageSize()"
+  [totalItems]="totalItems()"
+  [pageSizeOptions]="pageSizeOptions()"
   (tabChange)="setActiveTab($event)"
+  (pageChange)="changePage($event)"
+  (pageSizeChange)="changePageSize($event)"
+  (sortChange)="changeSort($event)"
 />
 
 @if (selectedBooking(); as booking) {

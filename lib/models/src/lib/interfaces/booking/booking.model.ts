@@ -99,6 +99,9 @@ export interface BookingListResponse {
   totalPages: number;
 }
 
+export type BookingSortBy = 'sessionDateTime' | 'status' | 'mentor' | 'mentee';
+export type BookingSortOrder = 'asc' | 'desc';
+
 export interface MentorBookedSlotInterface {
   id: string;
   sessionDateTime: Date;
@@ -109,4 +112,14 @@ export interface MentorBookingQuery {
   status?: BookingStatus;
   page?: number;
   limit?: number;
+  sortBy?: BookingSortBy;
+  sortOrder?: BookingSortOrder;
+}
+
+export interface UserBookingQuery {
+  status?: BookingStatus;
+  page?: number;
+  limit?: number;
+  sortBy?: BookingSortBy;
+  sortOrder?: BookingSortOrder;
 }

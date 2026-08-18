@@ -18,6 +18,7 @@
           (pageChange)="mentorBookings.setPage($event)"
           (pageSizeChange)="mentorBookings.setPageSize($event)"
           (tabChange)="mentorBookings.setActiveTab($event)"
+          (sortChange)="mentorBookings.setSort($event.key === 'counterparty' ? 'mentee' : $event.key, $event.direction)"
         />
     </div>
 </div>

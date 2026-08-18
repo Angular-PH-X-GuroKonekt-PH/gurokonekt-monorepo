@@ -7,6 +7,10 @@ import { firstValueFrom, of, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
+  BookingListResponse,
+  BookingSortBy,
+  BookingSortOrder,
+  BookingStatus,
   BookingTab,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
@@ -19,6 +23,7 @@ import { ReviewService } from '../../services/review.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { CreateReviewRequest } from '@gurokonekt/models';
 import { MenteeReviewModal } from "../../components/mentee-bookings-table/mentee-review-modal/mentee-review-modal";
+import { BookingSortChange } from '../../../../shared/components/bookings-table/bookings-table.types';
 
 @Component({
   selector: 'app-mentee-booking-overview-page',
@@ -45,19 +50,45 @@ export class MenteeBookingOverviewPage {
       ? 'Completed'
       : 'All';
   private readonly bookingRefresh = signal(0);
+  private readonly requestedPage = signal(1);
+  private readonly requestedPageSize = signal(10);
+  private readonly requestedStatus = signal<BookingStatus | undefined>(
+    this.initialTab === 'All'
+      ? undefined
+      : (this.initialTab.toUpperCase() as BookingStatus),
+  );
+  private readonly requestedSortBy = signal<BookingSortBy>('sessionDateTime');
+  private readonly requestedSortOrder = signal<BookingSortOrder>('asc');
   private readonly bookingRequest = computed(() => ({
     userId: this.userId(),
     refresh: this.bookingRefresh(),
+    page: this.requestedPage(),
+    limit: this.requestedPageSize(),
+    status: this.requestedStatus(),
+    sortBy: this.requestedSortBy(),
+    sortOrder: this.requestedSortOrder(),
   }));
 
-  protected readonly fetchBookings = toSignal<BookingCardInterface[] | null>(
+  protected readonly fetchBookings = toSignal<BookingListResponse | null>(
     toObservable(this.bookingRequest).pipe(
-      switchMap(({ userId }) => {
+      switchMap(({ userId, page, limit, status, sortBy, sortOrder }) => {
         if (!userId) {
-          return of([] as BookingCardInterface[]);
+          return of<BookingListResponse>({
+            data: [],
+            total: 0,
+            page,
+            limit,
+            totalPages: 0,
+          });
         }
 
-        return this.bookingService.getBookingsByUserId(userId);
+        return this.bookingService.getPaginatedBookingsByUserId(userId, {
+          page,
+          limit,
+          status,
+          sortBy,
+          sortOrder,
+        });
       }),
     ),
     { initialValue: null },
@@ -68,11 +99,43 @@ export class MenteeBookingOverviewPage {
   );
 
   protected readonly bookings = computed<BookingCardInterface[]>(
-    () => this.fetchBookings() ?? [],
+    () => this.fetchBookings()?.data ?? [],
+  );
+
+  protected readonly currentPage = computed(
+    () => this.fetchBookings()?.page ?? this.requestedPage(),
+  );
+  protected readonly pageSize = computed(() => this.requestedPageSize());
+  protected readonly totalBookings = computed(
+    () => this.fetchBookings()?.total ?? 0,
   );
 
   protected refreshBookings(): void {
     this.bookingRefresh.update((value) => value + 1);
+  }
+
+  protected setPage(page: number): void {
+    this.requestedPage.set(Math.max(1, page));
+  }
+
+  protected setPageSize(pageSize: number): void {
+    this.requestedPageSize.set(Math.max(1, pageSize));
+    this.requestedPage.set(1);
+  }
+
+  protected setActiveTab(tab: BookingTab): void {
+    this.requestedStatus.set(
+      tab === 'All' ? undefined : (tab.toUpperCase() as BookingStatus),
+    );
+    this.requestedPage.set(1);
+  }
+
+  protected setSort(sort: BookingSortChange): void {
+    this.requestedSortBy.set(
+      sort.key === 'counterparty' ? 'mentor' : sort.key,
+    );
+    this.requestedSortOrder.set(sort.direction);
+    this.requestedPage.set(1);
   }
 
 
