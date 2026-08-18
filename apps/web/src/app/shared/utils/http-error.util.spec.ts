@@ -40,4 +40,29 @@ describe('getErrorMessage', () => {
 
     expect(getErrorMessage(error)).not.toContain('Http failure');
   });
+
+  describe('transport failures (status 0)', () => {
+    it('reports a dropped connection as unreachable, not as an unknown error', () => {
+      const error = new HttpErrorResponse({
+        status: 0,
+        statusText: 'Unknown Error',
+        url: 'https://test-api.gurokonekt.com/api/user/1/profile',
+        error: new ProgressEvent('error'),
+      });
+
+      expect(getErrorMessage(error)).toBe(
+        'We could not reach the server. Check your connection and try again.'
+      );
+    });
+
+    it('does not leak the Angular transport summary', () => {
+      const error = new HttpErrorResponse({
+        status: 0,
+        statusText: 'Unknown Error',
+        url: 'https://test-api.gurokonekt.com/api/user/1/profile',
+      });
+
+      expect(getErrorMessage(error)).not.toContain('Http failure');
+    });
+  });
 });
