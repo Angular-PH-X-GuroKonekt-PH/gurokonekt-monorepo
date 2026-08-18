@@ -11,9 +11,9 @@ import type { Request, Response } from 'express';
 /**
  * Nest's default filter writes the error response the moment a guard throws.
  * On a multipart upload that is still in flight, the client is mid-body when
- * the stream closes — Chrome discards the response entirely and the XHR
- * surfaces as `status 0`, so a perfectly good 401 never reaches the app and
- * the token-refresh path can never run.
+ * the connection is torn down — Chrome discards the response entirely and
+ * the XHR surfaces as `status 0`, so a perfectly good 401 never reaches the
+ * app and the token-refresh path can never run.
  *
  * Reading (and discarding) whatever is left of the request before responding
  * costs nothing on ordinary JSON routes and turns those dropped uploads back
@@ -87,7 +87,7 @@ export class DrainRequestExceptionFilter implements ExceptionFilter {
       readableEnded?: boolean;
       complete?: boolean;
       readable?: boolean;
-      destroy?: (error?: Error) => void;
+      pause?: () => void;
     };
 
     if (stream.readableEnded || stream.complete || stream.readable === false) {
@@ -107,12 +107,19 @@ export class DrainRequestExceptionFilter implements ExceptionFilter {
         stream.removeListener('error', finish);
         stream.removeListener('aborted', finish);
         stream.removeListener('close', finish);
-        // Once we stop listening, an unfinished stream in flowing mode keeps
-        // calling its internal _read() in a tight loop with nothing to
+        // Once we stop listening, an unfinished stream left in flowing mode
+        // keeps calling its internal _read() in a tight loop with nothing to
         // consume the output — that pins the event loop indefinitely on a
-        // slow/malicious upload. Destroying it (a no-op if it already ended
-        // naturally) guarantees the loop actually stops.
-        stream.destroy?.();
+        // slow/malicious upload. Pausing it breaks that loop.
+        //
+        // Deliberately NOT destroy(): on a real `http.IncomingMessage` that
+        // hasn't fully ended, _destroy() tears down the underlying socket —
+        // the same socket `res` is about to write the error response on.
+        // That would silently reintroduce the exact #395 symptom (dropped
+        // connection, no delivered 401) for the oversized/slow-upload case
+        // this cap exists to handle. pause() only stops the read loop; it
+        // never touches the socket, so the response can still be written.
+        stream.pause?.();
         resolve();
       };
 
