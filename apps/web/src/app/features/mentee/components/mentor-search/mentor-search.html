@@ -9,8 +9,16 @@
           </div>
 
           <input type="text" formControlName="name"
-            class="block w-full rounded-xl border-0 bg-slate-50 px-4 py-4 ps-12 text-sm text-slate-900 outline-none ring-0 placeholder:text-slate-400 focus:bg-white focus:ring-0"
+            class="block w-full rounded-xl border-0 bg-slate-50 px-4 py-4 ps-12 pe-12 text-sm text-slate-900 outline-none ring-0 placeholder:text-slate-400 focus:bg-white focus:ring-0"
             placeholder="Search by name, expertise or skills..." autocomplete="off" />
+
+          @if (hasNameSearch()) {
+          <button type="button" (click)="clearNameSearch()"
+            class="absolute inset-y-0 end-3 z-10 my-auto inline-flex h-8 w-8 items-center justify-center rounded-full text-slate-400 transition hover:bg-slate-100 hover:text-slate-700 focus:outline-none focus:ring-2 focus:ring-slate-300"
+            aria-label="Clear mentor search" title="Clear search">
+            <app-icon name="x-mark" class="h-4 w-4" />
+          </button>
+          }
         </div>
 
         <button type="submit"
