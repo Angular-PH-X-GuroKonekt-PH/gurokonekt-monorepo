@@ -42,8 +42,8 @@ export class AuthLoggingService {
   async getFailedAttemptCount(
     actionType: LogsActionType,
     identifier: string,
-    metadataKey: string = 'email',
-    timeWindowMs: number = 86400000 // 24 hours
+    metadataKey = 'email',
+    timeWindowMs = 86400000 // 24 hours
   ): Promise<number> {
     const timeStart = new Date(Date.now() - timeWindowMs);
     const timeEnd = new Date();
@@ -57,10 +57,63 @@ export class AuthLoggingService {
     });
   }
 
+  /**
+   * Failure count and most recent failure for an identifier since `since`.
+   * Drives the tiered sign-in lockout.
+   */
+  async getFailedAttemptStats(
+    actionType: LogsActionType,
+    identifier: string,
+    metadataKey: string,
+    since: Date
+  ): Promise<{ count: number; lastFailureAt: Date | null }> {
+    const where = {
+      actionType,
+      AND: [
+        { metadata: { path: [metadataKey], equals: identifier } },
+        { metadata: { path: ['outcome'], equals: 'failed' } },
+      ],
+      createdAt: { gte: since },
+    };
+
+    const [count, latest] = await Promise.all([
+      this.prisma.db.logs.count({ where }),
+      this.prisma.db.logs.findFirst({ where, orderBy: { createdAt: 'desc' } }),
+    ]);
+
+    return { count, lastFailureAt: latest?.createdAt ?? null };
+  }
+
+  /**
+   * Timestamp of the most recent event that clears a lockout counter — a
+   * successful sign-in or a completed password reset. Returns null when no
+   * such event exists after `since`.
+   */
+  async getLockoutResetPoint(
+    actionTypes: LogsActionType[],
+    identifier: string,
+    metadataKey: string,
+    since: Date
+  ): Promise<Date | null> {
+    const latest = await this.prisma.db.logs.findFirst({
+      where: {
+        actionType: { in: actionTypes },
+        AND: [
+          { metadata: { path: [metadataKey], equals: identifier } },
+          { metadata: { path: ['outcome'], equals: 'success' } },
+        ],
+        createdAt: { gte: since },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    return latest?.createdAt ?? null;
+  }
+
   async getLastAttempt(
     actionType: LogsActionType,
     identifier: string,
-    metadataKey: string = 'email'
+    metadataKey = 'email'
   ) {
     return this.prisma.db.logs.findFirst({
       where: {
@@ -75,7 +128,7 @@ export class AuthLoggingService {
     actionType: LogsActionType,
     identifier: string,
     timeWindowMs: number,
-    metadataKey: string = 'email'
+    metadataKey = 'email'
   ) {
     const timeThreshold = new Date(Date.now() - timeWindowMs);
     return this.prisma.db.logs.findFirst({
