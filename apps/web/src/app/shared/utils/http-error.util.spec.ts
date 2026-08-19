@@ -63,6 +63,7 @@ describe('getErrorMessage', () => {
       });
 
       expect(getErrorMessage(error)).not.toContain('Http failure');
+      expect(getErrorMessage(error)).not.toBe('An unexpected error occurred. Please try again.');
     });
   });
 });
