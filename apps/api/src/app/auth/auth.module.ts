@@ -4,6 +4,7 @@ import { AuthController } from './auth.controller';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { StorageModule } from '../storage/storage.module';
+import { JwtGuardModule } from '../jwt-guard/jwt-guard.module';
 import {
   AuthValidationService,
   AuthLoggingService,
@@ -12,7 +13,7 @@ import {
 } from './helpers';
 
 @Module({
-  imports: [PrismaModule, StorageModule, SupabaseModule],
+  imports: [PrismaModule, StorageModule, SupabaseModule, JwtGuardModule],
   controllers: [AuthController],
   providers: [
     AuthService,
