@@ -92,6 +92,7 @@ function createSessionExpiredClientError(originalError: HttpErrorResponse) {
   return {
     message: SESSION_EXPIRED_MESSAGE,
     statusCode: 401,
+    errorCode: SESSION_EXPIRED_CODE,
     originalError,
   };
 }
