@@ -123,13 +123,13 @@ export class MentorManageAvailabilityPage implements OnInit {
       hour: 'numeric',
       minute: '2-digit',
       omitZeroMinute: false,
-      meridiem: 'short',
-    },
+      meridiem: true,
+    }, 
     eventTimeFormat: {
       hour: 'numeric',
       minute: '2-digit',
       omitZeroMinute: false,
-      meridiem: 'short',
+      meridiem: true,
     },
   };
 

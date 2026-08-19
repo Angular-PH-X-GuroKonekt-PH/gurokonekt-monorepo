@@ -45,9 +45,36 @@
         />
       </label>
 
-      <p class="text-xs text-gray-500">
-        This availability repeats weekly. Each bookable session is {{ sessionDurationMinutes() }} minutes.
-      </p>
+      <div class="flex items-center gap-1.5 text-xs text-gray-500">
+        <span>
+          This availability repeats weekly. Each bookable session is {{ sessionDurationMinutes() }} min.
+        </span>
+
+        <span class="group relative inline-flex shrink-0">
+          <button
+            type="button"
+            class="inline-flex rounded-full"
+            aria-label="More information about mentor availability time slots"
+            aria-describedby="availability-session-tooltip"
+          >
+            <app-icon name="alert-info" class="h-4 w-4"></app-icon>
+          </button>
+
+          <span
+            id="availability-session-tooltip"
+            role="tooltip"
+            class="pointer-events-none invisible absolute bottom-full right-0 z-20 mb-2 w-72 translate-y-1 rounded-lg bg-blue-950 p-3 text-left text-xs leading-5 text-white opacity-0 shadow-lg transition-all group-hover:visible group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:visible group-focus-within:translate-y-0 group-focus-within:opacity-100"
+          >
+            <span class="block font-semibold">Each session is 60 minutes.</span>
+            <span class="mt-1 block">Example: From 9:00 AM to 1:00 PM</span>
+            <span class="mt-1 block font-medium">Time slots created:</span>
+            <span class="block">9:00 AM–10:00 AM</span>
+            <span class="block">10:00 AM–11:00 AM</span>
+            <span class="block">11:00 AM–12:00 PM</span>
+            <span class="block">12:00 PM–1:00 PM</span>
+          </span>
+        </span>
+      </div>
     </div>
 
     <div class="mt-6 flex justify-end gap-2">
