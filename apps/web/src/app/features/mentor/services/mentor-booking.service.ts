@@ -8,7 +8,9 @@ import {
   BookingStatus,
   BookingTab,
   UpcomingSession,
-  BookingListResponse
+  BookingListResponse,
+  BookingSortBy,
+  BookingSortOrder,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { AuthSelectors } from '../../../core/auth/store/auth.selectors';
@@ -29,6 +31,8 @@ export class MentorBookingService {
   private readonly requestedStatus = signal<BookingStatus | undefined>(
     undefined
   );
+  private readonly requestedSortBy = signal<BookingSortBy>('sessionDateTime');
+  private readonly requestedSortOrder = signal<BookingSortOrder>('asc');
 
   readonly pageSize = computed(() => this.requestedPageSize());
 
@@ -37,11 +41,13 @@ export class MentorBookingService {
     page: this.requestedPage(),
     limit: this.requestedPageSize(),
     status: this.requestedStatus(),
+    sortBy: this.requestedSortBy(),
+    sortOrder: this.requestedSortOrder(),
   }));
 
   bookingPage = toSignal<BookingListResponse | null>(
     toObservable(this.bookingQuery).pipe(
-      switchMap(({ userId, page, limit, status }) => {
+      switchMap(({ userId, page, limit, status, sortBy, sortOrder }) => {
         if (!userId) {
           return of<BookingListResponse>({
             data: [],
@@ -53,7 +59,7 @@ export class MentorBookingService {
         }
 
         return this.bookingService
-          .getMentorBookings({ page, limit, status })
+          .getMentorBookings({ page, limit, status, sortBy, sortOrder })
           .pipe(startWith(null));
       })
     ),
@@ -126,9 +132,17 @@ export class MentorBookingService {
     this.requestedPage.set(1);
   }
 
+  setSort(sortBy: BookingSortBy, sortOrder: BookingSortOrder): void {
+    this.requestedSortBy.set(sortBy);
+    this.requestedSortOrder.set(sortOrder);
+    this.requestedPage.set(1);
+  }
+
   resetPagination(): void {
     this.requestedStatus.set(undefined);
     this.requestedPage.set(1);
     this.requestedPageSize.set(10);
+    this.requestedSortBy.set('sessionDateTime');
+    this.requestedSortOrder.set('asc');
   }
 }

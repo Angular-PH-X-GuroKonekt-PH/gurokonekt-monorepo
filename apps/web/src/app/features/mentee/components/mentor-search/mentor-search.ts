@@ -120,6 +120,15 @@ export class MentorSearch {
     this.router.navigate([], { queryParams: {}, replaceUrl: true });
   }
 
+  clearNameSearch(): void {
+    this.filterForm.controls.name.setValue('');
+    this.clearNameSearchParam();
+  }
+
+  hasNameSearch(): boolean {
+    return !!this.filterForm.controls.name.value?.trim();
+  }
+
   // Filter dropdown state and labels
   activeFilterCount(): number {
     const value = this.filterForm.value ?? {};

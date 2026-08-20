@@ -10,6 +10,7 @@ import {
   BookingListResponse,
   MentorBookedSlotInterface,
   MentorBookingQuery,
+  UserBookingQuery,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import {
   handleApiError,
@@ -81,6 +82,53 @@ export class BookingService {
       );
   }
 
+  getPaginatedBookingsByUserId(
+    userId: string,
+    query: UserBookingQuery = {},
+  ): Observable<BookingListResponse> {
+    const page = query.page ?? 1;
+    const limit = query.limit ?? 20;
+    let params = new HttpParams().set('page', page).set('limit', limit);
+
+    if (query.status) params = params.set('status', query.status);
+    if (query.sortBy) params = params.set('sortBy', query.sortBy);
+    if (query.sortOrder) params = params.set('sortOrder', query.sortOrder);
+
+    return this.http
+      .get<ApiResponse<BookingListResponse>>(
+        buildApiUrl(`/booking/user/${userId}`),
+        { params },
+      )
+      .pipe(
+        map((response) =>
+          validateApiResponse<BookingListResponse>(
+            response,
+            'Failed to fetch bookings.',
+          ),
+        ),
+        map((result) => ({
+          ...result,
+          data: result.data
+            .filter(
+              (booking) =>
+                booking.status !== BookingStatus.DELETED && !booking.isDeleted,
+            )
+            .map((booking) => ({
+              ...booking,
+              sessionDateTime: new Date(booking.sessionDateTime),
+              createdAt: new Date(booking.createdAt),
+              updatedAt: new Date(booking.updatedAt),
+            })),
+        })),
+        catchError(
+          handleApiErrorWithFallback(
+            { data: [], total: 0, page, limit, totalPages: 0 },
+            'Failed to fetch bookings',
+          ),
+        ),
+      );
+  }
+
   getBookingsByStatuses(
     userId: string,
     statuses: BookingStatus[],
@@ -102,6 +150,8 @@ export class BookingService {
     if (query.status) {
       params = params.set('status', query.status);
     }
+    if (query.sortBy) params = params.set('sortBy', query.sortBy);
+    if (query.sortOrder) params = params.set('sortOrder', query.sortOrder);
 
     return this.http
       .get<

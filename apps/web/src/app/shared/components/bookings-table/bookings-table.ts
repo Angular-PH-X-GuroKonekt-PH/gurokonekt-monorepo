@@ -12,6 +12,7 @@ import { IconComponent, IconName } from '../icon/icon.component';
 import { BookingTableSkeleton } from '../skeleton-loaders/booking-table-skeleton/booking-table-skeleton.component';
 import {
   BookingCounterparty,
+  BookingSortChange,
   BookingSortKey,
   BookingTableFooterMode,
   SortDirection,
@@ -59,46 +60,51 @@ export class BookingsTable {
   tabChange = output<string>();
   pageChange = output<number>();
   pageSizeChange = output<number>();
+  sortChange = output<BookingSortChange>();
 
   sortedBookings = computed(() => {
     const bookings = this.bookings() ?? [];
     const sortKey = this.sortKey();
 
-    if (!sortKey) {
+    if (this.footerMode() === 'pagination' || !sortKey) {
       return bookings;
     }
 
     const direction = this.sortDirection() === 'asc' ? 1 : -1;
 
     return [...bookings].sort((first, second) => {
-      let comparison = 0;
-
       if (sortKey === 'counterparty') {
-        comparison = this.getCounterpartyName(first).localeCompare(
-          this.getCounterpartyName(second),
-          undefined,
-          { sensitivity: 'base' },
-        );
-      } else if (sortKey === 'sessionDateTime') {
-        comparison =
-          new Date(first.sessionDateTime).getTime() -
-          new Date(second.sessionDateTime).getTime();
-      } else {
-        comparison = first.status.localeCompare(second.status, undefined, {
+        const firstName = this.getCounterpartyName(first);
+        const secondName = this.getCounterpartyName(second);
+
+        return firstName.localeCompare(secondName, undefined, {
           sensitivity: 'base',
-        });
+        }) * direction;
       }
 
-      return comparison * direction;
+      if (sortKey === 'sessionDateTime') {
+        return (
+          (new Date(first.sessionDateTime).getTime() -
+            new Date(second.sessionDateTime).getTime()) *
+          direction
+        );
+      }
+
+      return (
+        first.status.localeCompare(second.status, undefined, {
+          sensitivity: 'base',
+        }) * direction
+      );
     });
   });
 
   displayedBookings = computed(() => {
     const maxRows = this.maxRows();
+    const bookings = this.sortedBookings();
 
     return maxRows === null
-      ? this.sortedBookings()
-      : this.sortedBookings().slice(0, Math.max(0, maxRows));
+      ? bookings
+      : bookings.slice(0, Math.max(0, maxRows));
   });
 
   sortBy(key: BookingSortKey): void {
@@ -106,11 +112,14 @@ export class BookingsTable {
       this.sortDirection.update((direction) =>
         direction === 'asc' ? 'desc' : 'asc',
       );
-      return;
+    } else {
+      this.sortKey.set(key);
+      this.sortDirection.set('asc');
     }
 
-    this.sortKey.set(key);
-    this.sortDirection.set('asc');
+    if (this.footerMode() === 'pagination') {
+      this.sortChange.emit({ key, direction: this.sortDirection() });
+    }
   }
 
   getSortDirection(key: BookingSortKey): string {
@@ -169,4 +178,5 @@ export class BookingsTable {
       ? `${participant.firstName} ${participant.lastName}`.trim()
       : '';
   }
+
 }

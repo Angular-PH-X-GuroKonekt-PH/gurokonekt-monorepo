@@ -6,7 +6,17 @@
       </div>
 
       <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
-        [initialBookingId]="initialBookingId" (bookingUpdated)="refreshBookings()" (addReview)="onAddReview($event)" />
+        [initialBookingId]="initialBookingId"
+        footerMode="pagination"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalItems]="totalBookings()"
+        (bookingUpdated)="refreshBookings()"
+        (addReview)="onAddReview($event)"
+        (pageChange)="setPage($event)"
+        (pageSizeChange)="setPageSize($event)"
+        (tabChange)="setActiveTab($event)"
+        (sortChange)="setSort($event)" />
     </app-section-card>
   </section>
 

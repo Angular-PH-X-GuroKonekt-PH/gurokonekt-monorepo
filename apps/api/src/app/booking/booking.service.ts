@@ -222,16 +222,23 @@ export class BookingService {
       const page = query.page ?? 1;
       const limit = query.limit ?? 20;
       const skip = (page - 1) * limit;
+      const sortBy = query.sortBy ?? 'sessionDateTime';
+      const sortOrder = query.sortOrder ?? 'asc';
+      const orderBy =
+        sortBy === 'mentor' || sortBy === 'mentee'
+          ? { [sortBy]: { firstName: sortOrder } }
+          : { [sortBy]: sortOrder };
 
       const where = {
         isDeleted: false,
         OR: [{ menteeId: userId }, { mentorId: userId }],
+        ...(query.status !== undefined && { status: query.status }),
       };
 
       const [bookings, total] = await Promise.all([
         this.prisma.db.booking.findMany({
           where,
-          orderBy: { sessionDateTime: 'asc' },
+          orderBy,
           include: {
             mentor: { select: BOOKING_USER_SELECT },
             mentee: { select: BOOKING_USER_SELECT },
@@ -441,6 +448,12 @@ export class BookingService {
       const page = query.page ?? 1;
       const limit = query.limit ?? 20;
       const skip = (page - 1) * limit;
+      const sortBy = query.sortBy ?? 'sessionDateTime';
+      const sortOrder = query.sortOrder ?? 'asc';
+      const orderBy =
+        sortBy === 'mentor' || sortBy === 'mentee'
+          ? { [sortBy]: { firstName: sortOrder } }
+          : { [sortBy]: sortOrder };
 
       const where = {
         mentorId,
@@ -451,7 +464,7 @@ export class BookingService {
       const [bookings, total] = await Promise.all([
         this.prisma.db.booking.findMany({
           where,
-          orderBy: { sessionDateTime: 'asc' },
+          orderBy,
           include: {
             mentor: { select: BOOKING_USER_SELECT },
             mentee: { select: BOOKING_USER_SELECT },
