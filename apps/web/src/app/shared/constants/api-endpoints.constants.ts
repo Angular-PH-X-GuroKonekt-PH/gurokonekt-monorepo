@@ -4,6 +4,7 @@ export const API_ENDPOINTS = {
     registerMentor: '/auth/register-mentor',
     login: '/auth/login',
     refreshToken: '/auth/refresh-token',
+    session: '/auth/session',
     verifyEmail: '/auth/verify-email',
     resendConfirmation: '/auth/resend-confirmation-link',
     forgotPassword: '/auth/forgot-password',
