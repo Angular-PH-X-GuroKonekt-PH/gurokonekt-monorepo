@@ -96,6 +96,50 @@ describe('AuthState / RestoreSession', () => {
     expect(store.selectSnapshot(AuthSelectors.isRestoringSession)).toBe(false);
   });
 
+  it('clears the session when the server rejects the token as forbidden', async () => {
+    const done = firstValueFrom(store.dispatch(new RestoreSession()));
+
+    httpMock
+      .expectOne((req) => req.url.includes('/auth/session'))
+      .flush({ statusCode: 403, message: 'Forbidden' },
+             { status: 403, statusText: 'Forbidden' });
+
+    await done;
+
+    expect(storage.clear).toHaveBeenCalled();
+    expect(store.selectSnapshot(AuthSelectors.user)).toBeNull();
+    expect(store.selectSnapshot(AuthSelectors.isRestoringSession)).toBe(false);
+  });
+
+  it('keeps the cached session when the server errors transiently (500)', async () => {
+    const done = firstValueFrom(store.dispatch(new RestoreSession()));
+
+    httpMock
+      .expectOne((req) => req.url.includes('/auth/session'))
+      .flush({ statusCode: 500, message: 'Internal Server Error' },
+             { status: 500, statusText: 'Internal Server Error' });
+
+    await done;
+
+    expect(storage.clear).not.toHaveBeenCalled();
+    expect(store.selectSnapshot(AuthSelectors.user)).toEqual(STALE_USER);
+    expect(store.selectSnapshot(AuthSelectors.isRestoringSession)).toBe(false);
+  });
+
+  it('keeps the cached session when the request fails at the transport layer (offline)', async () => {
+    const done = firstValueFrom(store.dispatch(new RestoreSession()));
+
+    httpMock
+      .expectOne((req) => req.url.includes('/auth/session'))
+      .error(new ProgressEvent('error'), { status: 0, statusText: 'Unknown Error' });
+
+    await done;
+
+    expect(storage.clear).not.toHaveBeenCalled();
+    expect(store.selectSnapshot(AuthSelectors.user)).toEqual(STALE_USER);
+    expect(store.selectSnapshot(AuthSelectors.isRestoringSession)).toBe(false);
+  });
+
   it('does not call the API when nothing is stored', async () => {
     storage.getToken.mockReturnValue(null);
     storage.getUser.mockReturnValue(null);

@@ -95,9 +95,20 @@ export class AuthState {
           isRestoringSession: false,
         });
       }),
-      catchError(() => {
-        this.storage.clear();
-        ctx.setState({ ...initialAuthState, isRestoringSession: false });
+      catchError((error) => {
+        const status = (error as { originalError?: { status?: number } })?.originalError?.status;
+        const rejected = status === 401 || status === 403;
+
+        if (rejected) {
+          this.storage.clear();
+          ctx.setState({ ...initialAuthState, isRestoringSession: false });
+          return of(null);
+        }
+
+        // The server could not answer — that is not proof the session is invalid.
+        // Degrade to the cached snapshot rather than destroying a working session;
+        // the interceptor still challenges a genuinely dead token on the next request.
+        ctx.patchState({ isRestoringSession: false });
         return of(null);
       })
     );
