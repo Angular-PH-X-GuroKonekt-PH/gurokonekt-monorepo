@@ -688,6 +688,37 @@ export class AuthService {
   }
 
   /**
+   * Returns the authenticated user for the token's `sub`, in the same shape the
+   * login response uses. The client stores identity in localStorage; without a
+   * way to re-check it, a stale snapshot can pin a user to a page they have
+   * already finished (issue #395). The id comes from the verified JWT, never
+   * from the caller.
+   */
+  async getSession(userId: string): Promise<ResponseDto> {
+    try {
+      const user = await this.prisma.db.user.findUnique({
+        where: { id: userId },
+        select: SelectFields.getUserCredentialsSelect(),
+      });
+
+      if (!user) {
+        return AuthResponseFactory.errorByKey('USER_NOT_FOUND');
+      }
+
+      return AuthResponseFactory.successByKey('GET_SESSION', {
+        id: user.id,
+        email: user.email,
+        fullName: `${user.firstName} ${user.lastName}`,
+        role: user.role,
+        isProfileComplete: user.isProfileComplete,
+        isMentorProfileComplete: user.isMentorProfileComplete,
+      });
+    } catch (error) {
+      return this.errorHandler.handleUnexpectedError(error, 'INTERNAL_SERVER_ERROR');
+    }
+  }
+
+  /**
    * Update Password (authenticated Mentee/Mentor) - Simplified
    * Uses rate limiting and validation helpers
    */

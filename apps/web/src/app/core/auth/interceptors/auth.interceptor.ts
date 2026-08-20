@@ -2,6 +2,7 @@ import {
   HttpBackend,
   HttpClient,
   HttpErrorResponse,
+  HttpEvent,
   HttpInterceptorFn,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
@@ -13,6 +14,7 @@ import { API_CONFIG } from '../../config/api.config';
 import type { RefreshTokenApiResponse } from '../../../shared/interfaces/auth-api.interface';
 import { SessionExpired } from '../store/auth.actions';
 import { SESSION_EXPIRED_MESSAGE } from '../../../shared/utils/http-error.util';
+import { isTokenExpired } from '../../../shared/utils/jwt.util';
 
 const SESSION_EXPIRED_CODE = 'SESSION_EXPIRED';
 
@@ -90,8 +92,26 @@ function createSessionExpiredClientError(originalError: HttpErrorResponse) {
   return {
     message: SESSION_EXPIRED_MESSAGE,
     statusCode: 401,
+    errorCode: SESSION_EXPIRED_CODE,
     originalError,
   };
+}
+
+function createExpiredBeforeSendError(url: string) {
+  return {
+    message: SESSION_EXPIRED_MESSAGE,
+    statusCode: 401,
+    errorCode: SESSION_EXPIRED_CODE,
+    url,
+  };
+}
+
+function isSessionExpiredClientError(error: unknown): boolean {
+  return (
+    !!error &&
+    typeof error === 'object' &&
+    (error as { errorCode?: string }).errorCode === SESSION_EXPIRED_CODE
+  );
 }
 
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
@@ -100,35 +120,66 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const refreshHttp = new HttpClient(inject(HttpBackend));
 
   const token = storage.getToken();
-  const authReq = token
-    ? req.clone({ setHeaders: { Authorization: `Bearer ${token}` } })
-    : req;
 
-  return next(authReq).pipe(
-    catchError((error: HttpErrorResponse) => {
-      if (!isRecoverableUnauthorized(error, req.url, !!token)) {
-        return throwError(() => error);
-      }
+  const send = (bearer: string | null): Observable<HttpEvent<unknown>> => {
+    const authReq = bearer
+      ? req.clone({ setHeaders: { Authorization: `Bearer ${bearer}` } })
+      : req;
 
-      const refreshToken = storage.getRefreshToken();
-      if (!refreshToken) {
-        store.dispatch(new SessionExpired());
-        return throwError(() => createSessionExpiredClientError(error));
-      }
+    return next(authReq).pipe(
+      catchError((error: HttpErrorResponse) => {
+        if (!isRecoverableUnauthorized(error, req.url, !!bearer)) {
+          return throwError(() => error);
+        }
 
-      return refreshTokens(refreshHttp, storage, refreshToken).pipe(
-        switchMap(({ accessToken }) =>
-          next(
-            req.clone({
-              setHeaders: { Authorization: `Bearer ${accessToken}` },
-            })
-          )
-        ),
-        catchError(() => {
+        const refreshToken = storage.getRefreshToken();
+        if (!refreshToken) {
           store.dispatch(new SessionExpired());
           return throwError(() => createSessionExpiredClientError(error));
-        })
-      );
+        }
+
+        return refreshTokens(refreshHttp, storage, refreshToken).pipe(
+          switchMap(({ accessToken }) =>
+            next(
+              req.clone({
+                setHeaders: { Authorization: `Bearer ${accessToken}` },
+              })
+            )
+          ),
+          catchError(() => {
+            store.dispatch(new SessionExpired());
+            return throwError(() => createSessionExpiredClientError(error));
+          })
+        );
+      })
+    );
+  };
+
+  // A token that has provably expired must never be spent on a request. On a
+  // multipart upload the server's 401 can be lost when the stream is torn down
+  // mid-body, and the client is left with a bare `status 0` it cannot act on
+  // (issue #395). Refresh first, and fail loudly if that is not possible.
+  const mustRefreshFirst =
+    !!token && !isPublicAuthRequest(req.url) && isTokenExpired(token);
+
+  if (!mustRefreshFirst) {
+    return send(token);
+  }
+
+  const refreshToken = storage.getRefreshToken();
+  if (!refreshToken) {
+    store.dispatch(new SessionExpired());
+    return throwError(() => createExpiredBeforeSendError(req.url));
+  }
+
+  return refreshTokens(refreshHttp, storage, refreshToken).pipe(
+    switchMap(({ accessToken }) => send(accessToken)),
+    catchError((error) => {
+      if (isSessionExpiredClientError(error)) {
+        return throwError(() => error);
+      }
+      store.dispatch(new SessionExpired());
+      return throwError(() => createExpiredBeforeSendError(req.url));
     })
   );
 };

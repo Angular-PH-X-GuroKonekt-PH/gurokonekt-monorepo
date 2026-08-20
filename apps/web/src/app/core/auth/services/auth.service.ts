@@ -5,10 +5,12 @@ import { catchError, map } from 'rxjs/operators';
 import { AuthResponse } from '@gurokonekt/models/interfaces/auth/auth-response.interface';
 import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
+import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
 import { getAuthErrorMessage, logError } from '../../../shared/utils/http-error.util';
 import type {
   LoginApiResponse,
   RefreshTokenApiResponse,
+  SessionApiResponse,
 } from '../../../shared/interfaces/auth-api.interface';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 import { API_CONFIG } from '../../config/api.config';
@@ -142,6 +144,34 @@ export class AuthService {
           accessToken: response.data.accessToken,
           refreshToken: response.data.refreshToken,
         };
+      }),
+      catchError(this.handleError)
+    );
+  }
+
+  /**
+   * Ask the API who the bearer token belongs to. The interceptor refreshes an
+   * expired token before this leaves, so a failure here means the session is
+   * genuinely over.
+   */
+  getSession(): Observable<AuthUser> {
+    return this.http.get<SessionApiResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.session)
+    ).pipe(
+      map((response) => {
+        const data = response.data;
+        if (!data?.id || !data.email || !data.role) {
+          throw { message: response.message || 'Session lookup failed', statusCode: 401 };
+        }
+
+        return {
+          id: data.id,
+          email: data.email,
+          fullName: data.fullName,
+          role: data.role,
+          isProfileComplete: data.isProfileComplete,
+          isMentorProfileComplete: data.isMentorProfileComplete,
+        } as AuthUser;
       }),
       catchError(this.handleError)
     );
