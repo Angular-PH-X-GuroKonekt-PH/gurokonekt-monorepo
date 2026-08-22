@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 
 import { APP_ROUTES } from './shared/constants/routes';
 import { dashboardAccessGuard } from './shared/guards/dashboard-access.guard';
+import { profileSettingsAccessGuard } from './shared/guards/profile-settings-access.guard';
 import { profileSetupAccessGuard } from './shared/guards/profile-setup-access.guard';
 import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
 import { registrationConfirmationGuard } from './shared/guards/registration-confirmation.guard';
@@ -44,6 +45,22 @@ export const appRoutes: Route[] = [
         (m) => m.ResetPasswordPage
       ),
     title: 'Reset Password',
+  },
+  {
+    path: APP_ROUTES.DEACTIVATE_ACCOUNT,
+    loadComponent: () =>
+      import('./core/profile/pages/account-deactivation-page/account-deactivation.page').then(
+        (m) => m.AccountDeactivationPage,
+      ),
+    title: 'Deactivate Account',
+  },
+  {
+    path: APP_ROUTES.ACTIVATE_ACCOUNT,
+    loadComponent: () =>
+      import('./core/profile/pages/account-deactivation-page/account-activation.page').then(
+        (m) => m.AccountActivationPage,
+      ),
+    title: 'Activate Account',
   },
   {
     path: APP_ROUTES.REGISTER_MENTOR_CONFIRMATION,
@@ -220,7 +237,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: APP_ROUTES.SETTINGS.replace('/', ''),
-    canActivate: [dashboardAccessGuard],
+    canActivate: [profileSettingsAccessGuard],
     loadComponent: () =>
       import('./core/profile/pages/profile-settings-page/profile-settings.page').then(
         (m) => m.ProfileSettingsPage

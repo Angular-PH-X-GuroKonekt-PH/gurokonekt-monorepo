@@ -21,6 +21,11 @@ export class LoginFailure {
   constructor(public error: string) {}
 }
 
+export class UpdateCurrentUserStatus {
+  static readonly type = '[Auth] Update Current User Status';
+  constructor(public status: string) {}
+}
+
 export class RestoreSession {
   static readonly type = '[Auth] Restore Session';
 }

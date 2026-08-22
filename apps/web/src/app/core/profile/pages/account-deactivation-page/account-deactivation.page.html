@@ -1,0 +1,129 @@
+<main class="flex min-h-dvh items-center bg-linear-to-br from-blue-50 via-orange-50 to-blue-50 px-4 py-6 sm:px-6 sm:py-8">
+  <div class="mx-auto w-full max-w-lg">
+    <header class="text-center">
+      <img src="assets/logos/logo-light.svg" alt="GuroKonekt logo" class="mx-auto h-12 w-12" />
+      <div class="mt-3 mb-6 flex items-center justify-center gap-1">
+        <span class="text-2xl font-bold text-blue-900">Guro</span>
+        <span class="text-2xl font-bold text-orange-500">Konekt</span>
+      </div>
+
+      <div class="mb-6 text-center">
+        <h1
+          class="bg-linear-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-3xl font-bold text-transparent sm:text-4xl"
+        >
+          Before you deactivate
+        </h1>
+        <p class="mx-auto mt-2 max-w-sm text-sm text-gray-700">
+          We are sorry to see you go. Share your feedback before leaving GuroKonekt.
+        </p>
+      </div>
+    </header>
+
+    <section
+      class="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg sm:p-8"
+      aria-labelledby="deactivation-title"
+    >
+      @if (isLoading()) {
+        <div class="flex flex-col items-center gap-3 py-8 text-center" aria-live="polite">
+          <span
+            class="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"
+            aria-hidden="true"
+          ></span>
+          <p class="text-sm text-slate-600">Verifying your deactivation link...</p>
+        </div>
+      } @else if (isComplete()) {
+        <div class="text-center">
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-emerald-50 text-emerald-600">
+            <app-icon name="check-mark" class="h-6 w-6"></app-icon>
+          </div>
+          <h2 id="deactivation-title" class="mt-4 text-xl font-semibold text-slate-900">
+            Account deactivated
+          </h2>
+          <p class="mt-2 text-sm leading-6 text-slate-600">
+            Your account is now inactive. You can log in again when you are ready to reactivate it.
+          </p>
+          <button
+            type="button"
+            (click)="goToLogin()"
+            class="mt-6 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
+          >
+            Return to login
+          </button>
+        </div>
+      } @else if (isTokenValid()) {
+        <div>
+          <div class="mb-5 flex items-start gap-3 border-b border-slate-100 pb-5">
+            <div class="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+              <app-icon name="alert-warning" class="h-5 w-5"></app-icon>
+            </div>
+            <div>
+              <h2 id="deactivation-title" class="text-lg font-semibold text-slate-900">
+                Tell us why you are leaving
+              </h2>
+              <p class="mt-1 text-sm leading-6 text-slate-600">
+                Your account will be deactivated after you submit this form. Your feedback helps us improve GuroKonekt.
+              </p>
+            </div>
+          </div>
+
+          <label for="deactivation-reason" class="block text-sm font-semibold text-slate-700">
+            Reason for deactivating your account
+          </label>
+          <textarea
+            #reasonInput
+            id="deactivation-reason"
+            rows="4"
+            maxlength="1000"
+            placeholder="Tell us your reason..."
+            class="mt-2 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"
+          ></textarea>
+
+          <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+            <button
+              type="button"
+              (click)="goToLogin()"
+              [disabled]="isSubmitting()"
+              class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:opacity-60"
+            >
+              Cancel
+            </button>
+            <button
+              type="button"
+              (click)="submitReason(reasonInput.value)"
+              [disabled]="isSubmitting()"
+              [attr.aria-busy]="isSubmitting()"
+              class="inline-flex items-center justify-center gap-2 rounded-lg bg-red-600 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+            >
+              @if (isSubmitting()) {
+                <span
+                  class="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+                  aria-hidden="true"
+                ></span>
+                Deactivating...
+              } @else {
+                Deactivate account
+              }
+            </button>
+          </div>
+        </div>
+      } @else {
+        <div class="py-4 text-center">
+          <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-red-50 text-red-600">
+            <app-icon name="alert-error" class="h-6 w-6"></app-icon>
+          </div>
+          <h2 id="deactivation-title" class="mt-4 text-xl font-semibold text-slate-900">
+            Deactivation link unavailable
+          </h2>
+          <p class="mx-auto mt-2 max-w-md text-sm leading-6 text-slate-600">{{ errorMessage() }}</p>
+          <button
+            type="button"
+            (click)="goToLogin()"
+            class="mt-6 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
+          >
+            Return to login
+          </button>
+        </div>
+      }
+    </section>
+  </div>
+</main>

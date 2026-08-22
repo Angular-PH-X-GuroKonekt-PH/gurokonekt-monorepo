@@ -2,11 +2,10 @@ import { inject } from '@angular/core';
 import { CanActivateFn, Router, UrlTree } from '@angular/router';
 import { Store } from '@ngxs/store';
 
-import { requiresProfileSetup } from '../utils/profile-completion.util';
 import { APP_ROUTES } from '../constants/routes';
 import { AuthSelectors } from '../../core/auth/store/auth.selectors';
 
-export const dashboardAccessGuard: CanActivateFn = (): boolean | UrlTree => {
+export const profileSettingsAccessGuard: CanActivateFn = (): boolean | UrlTree => {
   const store = inject(Store);
   const router = inject(Router);
 
@@ -18,10 +17,6 @@ export const dashboardAccessGuard: CanActivateFn = (): boolean | UrlTree => {
 
   if (user.status === 'inactive') {
     return router.createUrlTree([`/${APP_ROUTES.ACTIVATE_ACCOUNT}`]);
-  }
-
-  if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
-    return router.createUrlTree([APP_ROUTES.PROFILE_SETUP]);
   }
 
   return true;
