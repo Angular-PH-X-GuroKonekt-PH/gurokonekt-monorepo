@@ -322,6 +322,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Announcement broadcast successfully',
     },
+    ADMIN_GET_ANNOUNCEMENTS: {
+      code: 200,
+      message: 'Announcements retrieved successfully',
+    },
 
     /**
      * ADMIN REPORTS
@@ -916,6 +920,10 @@ export const API_RESPONSE = {
     ADMIN_BROADCAST_ANNOUNCEMENT: {
       code: 500,
       message: 'Failed to broadcast announcement',
+    },
+    ADMIN_GET_ANNOUNCEMENTS: {
+      code: 500,
+      message: 'Failed to retrieve announcements',
     },
 
     /**
