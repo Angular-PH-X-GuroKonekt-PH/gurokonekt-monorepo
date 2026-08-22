@@ -1,4 +1,16 @@
-import { IsEnum, IsIn, IsNotEmpty, IsOptional, IsString, MaxLength } from 'class-validator';
+import { Type } from 'class-transformer';
+import {
+  IsDateString,
+  IsEnum,
+  IsIn,
+  IsInt,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+} from 'class-validator';
 
 export class GetGrowthChartQueryDto {
   @IsOptional()
@@ -28,4 +40,40 @@ export class BroadcastAnnouncementDto {
   @IsOptional()
   @IsEnum(['mentor', 'mentee', 'all'])
   targetRole?: 'mentor' | 'mentee' | 'all';
+}
+
+export class ListAnnouncementsQueryDto {
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  search?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateFrom?: string;
+
+  @IsOptional()
+  @IsDateString()
+  dateTo?: string;
+
+  @IsOptional()
+  @IsEnum(['createdAt', 'title', 'recipientCount'])
+  sortBy?: 'createdAt' | 'title' | 'recipientCount';
+
+  @IsOptional()
+  @IsEnum(['asc', 'desc'])
+  sortOrder?: 'asc' | 'desc';
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  page?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(100)
+  limit?: number;
 }

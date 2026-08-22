@@ -12,6 +12,7 @@ export const API_ENDPOINTS = {
     dashboard: '/admin/dashboard',
     dashboardGrowth: '/admin/dashboard/growth',
     broadcastAnnouncement: '/admin/announcements/broadcast',
+    announcements: '/admin/announcements',
     reportsOverview: '/admin/reports/overview',
     reportsSessions: '/admin/reports/sessions',
     reportsMentors: '/admin/reports/mentors',
