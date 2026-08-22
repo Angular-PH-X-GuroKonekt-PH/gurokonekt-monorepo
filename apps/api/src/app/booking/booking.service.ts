@@ -74,6 +74,15 @@ export class BookingService {
         };
       }
 
+      if (new Date(dto.sessionDateTime) <= new Date()) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.code,
+          message: API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.message,
+          data: null,
+        };
+      }
+
       const conflict = await this.checkBookingConflict(
         dto.mentorId,
         new Date(dto.sessionDateTime),
@@ -321,6 +330,15 @@ export class BookingService {
       }
 
       if (dto.sessionDateTime !== undefined) {
+        if (new Date(dto.sessionDateTime) <= new Date()) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.code,
+            message: API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.message,
+            data: null,
+          };
+        }
+
         const conflict = await this.checkBookingConflict(
           existing.mentorId,
           new Date(dto.sessionDateTime),
@@ -577,7 +595,27 @@ export class BookingService {
         };
       }
 
+      // A backdated request is dead on arrival — the session it asks for has
+      // already passed, so approving it can never produce a real session.
+      if (existing.sessionDateTime <= new Date()) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.BOOKING_BACKDATED_NOT_ACTIONABLE.code,
+          message: API_RESPONSE.ERROR.BOOKING_BACKDATED_NOT_ACTIONABLE.message,
+          data: null,
+        };
+      }
+
       if (dto.sessionDateTime !== undefined) {
+        if (new Date(dto.sessionDateTime) <= new Date()) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.code,
+            message: API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.message,
+            data: null,
+          };
+        }
+
         const conflict = await this.checkBookingConflict(
           existing.mentorId,
           new Date(dto.sessionDateTime),
