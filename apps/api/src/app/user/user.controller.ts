@@ -29,6 +29,7 @@ import {
 } from '@nestjs/swagger';
 import {
   AddAvailabilitySlotDto,
+  ActivateAccountDto,
   DeactivationFeedbackDto,
   DeleteAvailabilitySlotDto,
   DowngradeMentorDto,
@@ -219,7 +220,7 @@ export class UserController {
   @ApiParam({
     name: 'userId',
     type: String,
-    description: 'UUID of the mentee',
+    description: 'UUID of the account owner',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
   @ApiResponse({
@@ -476,7 +477,7 @@ export class UserController {
     },
   })
   @ApiResponse({ status: 401, description: 'Password is incorrect.' })
-  @ApiResponse({ status: 403, description: 'Access denied — account is not a mentee.' })
+  @ApiResponse({ status: 403, description: 'Access denied for the account owner.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async initiateDeactivation(
     @Param('userId') userId: string,
@@ -892,7 +893,7 @@ export class UserController {
   @ApiParam({
     name: 'userId',
     type: String,
-    description: 'UUID of the mentee',
+    description: 'UUID of the account owner',
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
   @ApiBody({
@@ -923,6 +924,30 @@ export class UserController {
     @Headers('user-agent') userAgent: string,
   ) {
     const response = await this.userService.submitDeactivationFeedback(userId, dto, ipAddress, userAgent);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
+
+  @Patch(':userId/activate')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Activate an inactive account or submit a mentor activation request' })
+  @ApiParam({ name: 'userId', type: String, description: 'UUID of the authenticated user' })
+  @ApiBody({ type: ActivateAccountDto })
+  @ApiResponse({ status: 200, description: 'Account activation processed successfully.', type: ResponseDto })
+  async activateAccount(
+    @Param('userId') userId: string,
+    @Body() dto: ActivateAccountDto,
+    @Req() req: Request & { user: { id: string } },
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const response = await this.userService.activateAccount(userId, dto, req.user.id, ipAddress, userAgent);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },

@@ -1,8 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_RESPONSE, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorAccess, MenteePreferredSessionType, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateAvailabilitySlotDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
+import { API_RESPONSE, ActivateAccountDto, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorAccess, MenteePreferredSessionType, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateAvailabilitySlotDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
 import { StorageService } from '../storage/storage.service';
 import { SupabaseService } from '../supabase/supabase.service';
+import { MailService } from '../mail/mail.service';
 import { instanceToPlain } from 'class-transformer';
 import { MENTOR_DASHBOARD_SHORTCUTS, MENTOR_DASHBOARD_NAV_ITEMS, MENTEE_DASHBOARD_SHORTCUTS, MENTEE_DASHBOARD_NAV_ITEMS } from '@gurokonekt/utils';
 import * as crypto from 'crypto';
@@ -84,6 +85,7 @@ export class UserService {
     private readonly prisma: PrismaService,
     private readonly storageService: StorageService,
     private readonly supabase: SupabaseService,
+    private readonly mailService: MailService,
   ) {}
 
   // ====================================================
@@ -1592,6 +1594,18 @@ export class UserService {
   // ACCOUNT DEACTIVATION
   // ====================================================
 
+  private buildDeactivationRedirectUrl(origin: string, token: string): string {
+    const configuredWebAppUrl = process.env.WEB_APP_URL?.trim();
+    const requestOrigin = origin?.trim();
+    const webAppUrl = (configuredWebAppUrl || requestOrigin)?.replace(/\/+$/, '');
+
+    if (!webAppUrl) {
+      throw new Error('WEB_APP_URL or request origin must be configured');
+    }
+
+    return `${webAppUrl}${REDIRECT_LINKS.DEACTIVATE_ACCOUNT}?token=${encodeURIComponent(token)}`;
+  }
+
   async initiateDeactivation(
     userId: string,
     dto: InitiateDeactivationDto,
@@ -1602,7 +1616,7 @@ export class UserService {
     try {
       const user = await this.prisma.db.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, role: true, hashPassword: true },
+        select: { id: true, email: true, firstName: true, role: true, hashPassword: true },
       });
 
       if (!user) {
@@ -1610,15 +1624,6 @@ export class UserService {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
           message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
-          data: null,
-        };
-      }
-
-      if (user.role !== UserRole.Mentee) {
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.MENTEE_ACCESS_DENIED.code,
-          message: API_RESPONSE.ERROR.MENTEE_ACCESS_DENIED.message,
           data: null,
         };
       }
@@ -1652,21 +1657,12 @@ export class UserService {
         data: { deactivationToken: token, deactivationTokenExpiresAt: expiresAt },
       });
 
-      const redirectTo = `${origin}${REDIRECT_LINKS.DEACTIVATE_ACCOUNT}?token=${token}`;
-      const { error } = await this.supabase.client.auth.signInWithOtp({
-        email: user.email,
-        options: { shouldCreateUser: false, emailRedirectTo: redirectTo },
-      });
-
-      if (error) {
-        this.logger.error(error.message, error);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.DEACTIVATION_INITIATE.code,
-          message: API_RESPONSE.ERROR.DEACTIVATION_INITIATE.message,
-          data: null,
-        };
-      }
+      const redirectTo = this.buildDeactivationRedirectUrl(origin, token);
+      await this.mailService.sendAccountDeactivationEmail(
+        user.email,
+        user.firstName,
+        redirectTo,
+      );
 
       await this.prisma.db.logs.create({
         data: {
@@ -1808,6 +1804,100 @@ export class UserService {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.ACCOUNT_DEACTIVATION_FAILED.code,
         message: API_RESPONSE.ERROR.ACCOUNT_DEACTIVATION_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  async activateAccount(
+    userId: string,
+    dto: ActivateAccountDto,
+    requesterId: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<ResponseDto> {
+    if (userId !== requesterId) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: 403,
+        message: 'You can only activate your own account',
+        data: null,
+      };
+    }
+
+    try {
+      const user = await this.prisma.db.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true, status: true },
+      });
+
+      if (!user) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      if (user.status !== UserStatus.Inactive) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Only inactive accounts can be activated',
+          data: null,
+        };
+      }
+
+      const isMentee = user.role === UserRole.Mentee;
+      const activationStatus = isMentee ? 'approved' : 'pending';
+      const reviewedAt = isMentee ? new Date() : null;
+
+      await this.prisma.db.$transaction(async (tx) => {
+        await tx.$executeRaw`
+          INSERT INTO "account_activation_requests" ("id", "user_id", "reason", "status", "reviewed_at")
+          VALUES (${crypto.randomUUID()}, ${userId}, ${dto.reason}, CAST(${activationStatus} AS "account_activation_request_status"), ${reviewedAt})
+          ON CONFLICT ("user_id") DO UPDATE SET
+            "reason" = EXCLUDED."reason",
+            "status" = EXCLUDED."status",
+            "reviewed_at" = EXCLUDED."reviewed_at"
+        `;
+
+        if (isMentee) {
+          await tx.user.update({
+            where: { id: userId },
+            data: { status: UserStatus.Active },
+          });
+        }
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.Update,
+          targetId: userId,
+          details: isMentee ? 'Mentee account activated' : 'Mentor account activation requested',
+          metadata: { userId, activationStatus },
+          ipAddress,
+          userAgent,
+          createdById: userId,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: 200,
+        message: isMentee
+          ? 'Your account has been activated successfully'
+          : 'Your activation request has been submitted for approval',
+        data: { status: isMentee ? UserStatus.Active : UserStatus.Inactive, activationStatus },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: 500,
+        message: 'Failed to process account activation',
         data: null,
       };
     }
