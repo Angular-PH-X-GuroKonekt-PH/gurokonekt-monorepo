@@ -182,12 +182,20 @@
   </div>
 
   @if (footerMode() === 'viewAll') {
-  <div class="border-t border-gray-100 px-6 py-4 text-center">
+  <!-- <div class="border-t border-gray-100 px-6 py-4 text-center">
     <a [routerLink]="viewAllLink()"
       class="inline-flex items-center gap-1 text-sm font-semibold text-gray-700 transition-colors hover:text-orange-500">
       View All Bookings <span aria-hidden="true">&rarr;</span>
+      
     </a>
-  </div>
+  </div> -->
+  <div class="border-t border-gray-100 px-6 py-4 text-center">
+    <a [routerLink]="viewAllLink()"
+      class="inline-flex items-center justify-center gap-1 text-sm font-semibold text-gray-700 transition-colors hover:text-orange-500">
+      View All Bookings
+      <app-icon name="arrow-long-right" class="h-5 w-5 flex items-center justify-center" />
+    </a>
+  </div>  
   }
 
   @if (footerMode() === 'pagination') {
