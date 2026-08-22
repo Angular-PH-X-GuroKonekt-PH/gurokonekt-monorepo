@@ -6,9 +6,10 @@ import { MentorBookingService } from '../../services/mentor-booking.service';
 import { Store } from '@ngxs/store';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 import { BookingTab } from '@gurokonekt/models/interfaces/booking/booking.model';
+import { IconComponent } from "apps/web/src/app/shared/components/icon/icon.component";
 @Component({
   selector: 'app-mentor-dashboard-page',
-  imports: [DatePipe, MentorBookingsTable],
+  imports: [DatePipe, MentorBookingsTable, IconComponent],
   templateUrl: './mentor-dashboard.page.html',
 })
 export class MentorDashboardPage {

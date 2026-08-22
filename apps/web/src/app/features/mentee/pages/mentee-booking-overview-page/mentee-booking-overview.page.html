@@ -1,25 +1,24 @@
-<div class="flex flex-col gap-8">
-  <section class="grid grid-cols-1 gap-6">
-    <app-section-card>
-      <div class="mb-4">
-        <app-section-title title="Manage Your Bookings" subtitle="Stay organized with all your mentorship sessions." />
-      </div>
+<div class="mt-6 space-y-4">
+  
+  <div class="mb-4">
+    <app-section-title title="Manage Your Bookings" subtitle="Stay organized with all your mentorship sessions." />
+  </div>
 
-      <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
-        [initialBookingId]="initialBookingId"
-        footerMode="pagination"
-        [currentPage]="currentPage()"
-        [pageSize]="pageSize()"
-        [totalItems]="totalBookings()"
-        (bookingUpdated)="refreshBookings()"
-        (addReview)="onAddReview($event)"
-        (pageChange)="setPage($event)"
-        (pageSizeChange)="setPageSize($event)"
-        (tabChange)="setActiveTab($event)"
-        (sortChange)="setSort($event)" />
-    </app-section-card>
-  </section>
-
+  <div>
+    <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
+      [initialBookingId]="initialBookingId"
+      footerMode="pagination"
+      [currentPage]="currentPage()"
+      [pageSize]="pageSize()"
+      [totalItems]="totalBookings()"
+      (bookingUpdated)="refreshBookings()"
+      (addReview)="onAddReview($event)"
+      (pageChange)="setPage($event)"
+      (pageSizeChange)="setPageSize($event)"
+      (tabChange)="setActiveTab($event)"
+      (sortChange)="setSort($event)" />
+  </div>
+  
   @if (selectedReviewBooking(); as booking) {
   <app-mentee-review-modal [booking]="booking" [isSubmitting]="isSubmittingReview()" (closeModal)="closeReviewModal()"
     (submitReview)="submitReview($event)" />
