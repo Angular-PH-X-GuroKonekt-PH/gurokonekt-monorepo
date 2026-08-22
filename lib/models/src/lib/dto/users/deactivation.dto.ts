@@ -40,6 +40,13 @@ export class DeactivationFeedbackDto {
   reason!: string;
 }
 
+export class ActivateAccountDto {
+  @ApiProperty({ description: 'Reason for requesting account activation' })
+  @IsString()
+  @IsNotEmpty()
+  reason!: string;
+}
+
 export class SetSessionDurationDto {
   @ApiProperty({
     description: 'Standard session length in minutes. All bookable time slots will use this duration.',

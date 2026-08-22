@@ -32,6 +32,14 @@ enum UserStatus {
   @@map("user_status")
 }
 
+enum AccountActivationRequestStatus {
+  pending
+  approved
+  rejected
+
+  @@map("account_activation_request_status")
+}
+
 enum MenteePreferredSessionType {
   online
   in_person
@@ -143,6 +151,7 @@ model User {
   bookingsAsMentee      Booking[]             @relation("MenteeBookings")
   bookingsAsMentor      Booking[]             @relation("MentorBookings")
   deactivationFeedback  DeactivationFeedback?
+  activationRequest     AccountActivationRequest?
   bookingFeedback       BookingFeedback[]
   adminRejections       AdminRejectionLog[]   @relation("mentee_rejections")
   mentorRejections      AdminRejectionLog[]   @relation("mentor_rejections")
@@ -302,6 +311,19 @@ model DeactivationFeedback {
   user User @relation(fields: [userId], references: [id])
 
   @@map("deactivation_feedback")
+}
+
+model AccountActivationRequest {
+  id         String                         @id @default(uuid())
+  userId     String                         @unique @map("user_id")
+  reason     String
+  status     AccountActivationRequestStatus @default(pending)
+  createdAt  DateTime                       @default(now()) @map("created_at")
+  reviewedAt DateTime?                      @map("reviewed_at")
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@map("account_activation_requests")
 }
 
 model AdminRejectionLog {
