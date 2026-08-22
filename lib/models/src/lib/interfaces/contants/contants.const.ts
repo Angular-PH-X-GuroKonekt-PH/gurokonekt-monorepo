@@ -803,6 +803,15 @@ export const API_RESPONSE = {
       message:
         "The selected time frame does not fit a full session within the mentor's available window",
     },
+    BOOKING_SESSION_IN_PAST: {
+      code: 400,
+      message: 'The selected session date and time is already in the past',
+    },
+    BOOKING_BACKDATED_NOT_ACTIONABLE: {
+      code: 400,
+      message:
+        'This booking request has expired because its session date has already passed',
+    },
 
     /**
      * ACCOUNT DEACTIVATION
