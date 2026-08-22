@@ -4,6 +4,8 @@ export const APP_ROUTES = {
   REGISTER: 'register',
   FORGOT_PASSWORD: 'forgot-password',
   RESET_PASSWORD: 'reset-password',
+  DEACTIVATE_ACCOUNT: 'deactivate',
+  ACTIVATE_ACCOUNT: 'activate-account',
   REGISTER_MENTOR_CONFIRMATION: 'register/mentor/confirmation',
   REGISTER_MENTEE_CONFIRMATION: 'register/mentee/confirmation',
   VERIFY_EMAIL: 'verify-email',

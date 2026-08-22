@@ -1,0 +1,95 @@
+<main class="flex min-h-dvh items-center bg-linear-to-br from-blue-50 via-orange-50 to-blue-50 px-4 py-6 sm:px-6 sm:py-8">
+  <div class="mx-auto w-full max-w-lg">
+    <header class="text-center">
+      <img src="assets/logos/logo-light.svg" alt="GuroKonekt logo" class="mx-auto h-12 w-12" />
+      <div class="mt-3 mb-6 flex items-center justify-center gap-1">
+        <span class="text-2xl font-bold text-blue-900">Guro</span>
+        <span class="text-2xl font-bold text-orange-500">Konekt</span>
+      </div>
+
+      <div class="mb-6 text-center">
+        <h1
+          class="text-3xl sm:text-4xl font-bold bg-linear-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent">
+          Reactivate your account
+        </h1>
+      <p class="mx-auto mt-2 max-w-sm text-sm text-gray-700">
+          Tell us why you are returning so we can restore your access.
+        </p>
+      </div>
+
+    </header>
+
+    <section class="rounded-2xl border border-slate-200 bg-white p-6 shadow-lg sm:p-8"
+      aria-labelledby="activation-title">
+      @if (isLoading()) {
+      <div class="flex flex-col items-center gap-3 py-8 text-center" aria-live="polite">
+        <span class="h-8 w-8 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></span>
+        <p class="text-sm text-slate-600">Loading your account...</p>
+      </div>
+      } @else if (activationRequestSubmitted()) {
+      <div class="text-center">
+        <div class="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-orange-50 text-orange-600">
+          <app-icon name="check-mark" class="h-6 w-6"></app-icon>
+        </div>
+        <h2 id="activation-title" class="mt-4 text-xl font-semibold text-slate-900">Request submitted</h2>
+        <p class="mt-2 text-sm leading-6 text-slate-600">
+          Your activation request is waiting for admin approval. We will restore your access once it is approved.
+        </p>
+      </div>
+      } @else {
+      @if (profile(); as currentProfile) {
+      <div class="mb-6 flex items-center gap-3 border-b border-slate-100 pb-5">
+        @if (currentProfile.avatarUrl) {
+        <img [src]="currentProfile.avatarUrl" alt="Profile picture" class="h-12 w-12 rounded-full object-cover" />
+        } @else {
+        <div
+          class="flex h-12 w-12 items-center justify-center rounded-full bg-blue-50 text-sm font-semibold text-blue-900">
+          {{ initials() }}
+        </div>
+        }
+        <div class="min-w-0">
+          <p class="truncate font-semibold text-slate-900">{{ currentProfile.fullName }}</p>
+          <p class="truncate text-sm text-slate-500">{{ currentProfile.email }}</p>
+        </div>
+      </div>
+      }
+
+      <h2 id="activation-title" class="text-lg font-semibold text-slate-900">Activate your account</h2>
+      <p class="mt-2 text-sm leading-6 text-slate-600">
+        Your account is inactive. Please provide a reason before continuing.
+        @if (isMentor()) {
+        An admin will review your request.
+        }
+      </p>
+
+      @if (errorMessage()) {
+      <p class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+        {{ errorMessage() }}
+      </p>
+      }
+
+      <label for="activation-reason" class="mt-5 block text-sm font-semibold text-slate-700">Reason for
+        activation</label>
+      <textarea id="activation-reason" rows="4" [value]="activationReason()"
+        (input)="activationReason.set($any($event.target).value)"
+        placeholder="Explain why you want to activate your account"
+        class="mt-2 w-full resize-none rounded-lg border border-slate-300 px-3 py-2 text-sm text-slate-900 outline-none transition focus:border-orange-500 focus:ring-2 focus:ring-orange-100"></textarea>
+
+      <div class="mt-5 flex flex-col gap-3 sm:flex-row sm:justify-end">
+        <button type="button" (click)="goToLogin()"
+          class="rounded-lg border border-slate-300 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50">
+          Sign out
+        </button>
+        <button type="button" (click)="activateAccount()" [disabled]="isActivating()"
+          class="inline-flex items-center justify-center gap-2 rounded-lg bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60">
+          @if (isActivating()) {
+          Processing...
+          } @else {
+          Activate account
+          }
+        </button>
+      </div>
+      }
+    </section>
+  </div>
+</main>

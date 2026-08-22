@@ -110,9 +110,10 @@ export class AuthService {
           user: {
             id: user.id,
             email: user.email,
-            fullName: `${user.firstName} ${user.lastName}`,
-            role: user.role,
-            isProfileComplete: user.isProfileComplete,
+              fullName: `${user.firstName} ${user.lastName}`,
+              role: user.role,
+              status: user.status as AuthResponse['user']['status'],
+              isProfileComplete: user.isProfileComplete,
             isMentorProfileComplete: user.isMentorProfileComplete,
           },
           accessToken,

@@ -6,6 +6,7 @@ export interface LoginApiUser {
   firstName: string;
   lastName: string;
   role: string;
+  status?: string;
   isProfileComplete?: boolean;
   isMentorProfileComplete?: boolean;
 }
