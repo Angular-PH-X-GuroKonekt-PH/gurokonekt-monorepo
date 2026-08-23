@@ -40,7 +40,18 @@
 
                 <input id="approval-session-link" type="url" [ngModel]="sessionLink()"
                     (ngModelChange)="sessionLink.set($event)" placeholder="https://meet.google.com/..."
-                    class="block w-full rounded-lg border border-gray-300 bg-gray-50 p-2.5 text-sm text-gray-900 focus:border-orange-500 focus:ring-orange-500" />
+                    [attr.aria-invalid]="isSessionLinkInvalid()"
+                    [attr.aria-describedby]="isSessionLinkInvalid() ? 'approval-session-link-error' : null"
+                    class="block w-full rounded-lg border bg-gray-50 p-2.5 text-sm text-gray-900"
+                    [class]="isSessionLinkInvalid()
+                        ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
+                        : 'border-gray-300 focus:border-orange-500 focus:ring-orange-500'" />
+
+                @if (isSessionLinkInvalid()) {
+                <p id="approval-session-link-error" class="mt-1.5 text-sm text-red-600">
+                    Session link is required.
+                </p>
+                }
             </div>
 
             <div>
@@ -71,7 +82,7 @@
                 Close
             </button>
 
-            <button type="button" (click)="confirmed.emit()" [disabled]="submitting()"
+            <button type="button" (click)="confirmApproval()" [disabled]="submitting()"
                 class="relative overflow-hidden rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-medium text-white hover:bg-orange-600 disabled:cursor-not-allowed">
                 <span [class.opacity-0]="submitting()">Approve</span>
 
