@@ -1,88 +1,259 @@
 <div>
-  <h1 class="text-2xl font-bold text-gray-900 mb-1">Notifications & Announcements</h1>
-  <p class="text-sm text-gray-500 mb-6">Broadcast announcements to all users or a specific role.</p>
+  <h1 class="text-2xl font-bold text-gray-900 mb-1">
+    Notifications & Announcements
+  </h1>
+  <p class="text-sm text-gray-500 mb-6">
+    Broadcast announcements to all users or a specific role.
+  </p>
 
-  <div class="max-w-2xl bg-white rounded-xl border border-gray-200 p-6">
-    <h2 class="text-lg font-semibold text-gray-800 mb-4">Send Announcement</h2>
+  <div class="flex flex-col gap-6 xl:flex-row">
+    <div
+      class="max-w-2xl flex-1 bg-white rounded-xl border border-gray-200 p-6"
+    >
+      <h2 class="text-lg font-semibold text-gray-800 mb-4">
+        Send Announcement
+      </h2>
 
-    @if (successMessage()) {
-      <div class="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800">
+      @if (successMessage()) {
+      <div
+        class="mb-4 rounded-lg bg-green-50 border border-green-200 px-4 py-3 text-sm text-green-800"
+      >
         {{ successMessage() }}
       </div>
-    }
-    @if (errorMessage()) {
-      <div class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+      } @if (errorMessage()) {
+      <div
+        class="mb-4 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800"
+      >
         {{ errorMessage() }}
       </div>
-    }
+      }
 
-    <form (ngSubmit)="onSubmit()" novalidate>
-      <!-- Title -->
-      <div class="mb-4">
-        <label for="announce-title" class="block text-sm font-medium text-gray-700 mb-1">Title <span class="text-red-500">*</span></label>
-        <input
-          id="announce-title"
-          type="text"
-          [ngModel]="title()"
-          (ngModelChange)="title.set($event)"
-          name="title"
-          maxlength="100"
-          placeholder="e.g. Platform Maintenance Notice"
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
-          [class.border-red-400]="touched() && title().trim().length === 0"
-        />
-        @if (touched() && title().trim().length === 0) {
+      <form (ngSubmit)="onSubmit()" novalidate>
+        <!-- Title -->
+        <div class="mb-4">
+          <label
+            for="announce-title"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Title <span class="text-red-500">*</span></label
+          >
+          <input
+            id="announce-title"
+            type="text"
+            [ngModel]="title()"
+            (ngModelChange)="title.set($event)"
+            name="title"
+            maxlength="100"
+            placeholder="e.g. Platform Maintenance Notice"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+            [class.border-red-400]="touched() && title().trim().length === 0"
+          />
+          @if (touched() && title().trim().length === 0) {
           <p class="mt-1 text-xs text-red-600">Title is required.</p>
-        }
+          }
+        </div>
+
+        <!-- Target role -->
+        <div class="mb-4">
+          <label
+            for="announce-role"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Send to</label
+          >
+          <select
+            id="announce-role"
+            [ngModel]="targetRole()"
+            (ngModelChange)="targetRole.set($event)"
+            name="targetRole"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+          >
+            <option value="all">All users</option>
+            <option value="mentor">Mentors only</option>
+            <option value="mentee">Mentees only</option>
+          </select>
+        </div>
+
+        <!-- Message -->
+        <div class="mb-6">
+          <label
+            for="announce-message"
+            class="block text-sm font-medium text-gray-700 mb-1"
+            >Message <span class="text-red-500">*</span></label
+          >
+          <textarea
+            id="announce-message"
+            [ngModel]="message()"
+            (ngModelChange)="message.set($event)"
+            name="message"
+            rows="5"
+            maxlength="1000"
+            placeholder="Write your announcement here..."
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 resize-none"
+            [class.border-red-400]="touched() && message().trim().length === 0"
+          ></textarea>
+          <div class="flex justify-between mt-1">
+            @if (touched() && message().trim().length === 0) {
+            <p class="text-xs text-red-600">Message is required.</p>
+            } @else {
+            <span></span>
+            }
+            <p class="text-xs text-gray-400 ml-auto">
+              {{ message().length }}/1000
+            </p>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          [disabled]="submitting()"
+          class="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+        >
+          {{ submitting() ? 'Sending...' : 'Send Announcement' }}
+        </button>
+      </form>
+    </div>
+
+    <section
+      class="w-full max-w-2xl rounded-xl border border-gray-200 bg-white p-6 xl:max-w-none xl:flex-1"
+      aria-labelledby="sent-announcements-heading"
+    >
+      <div class="mb-4">
+        <h2
+          id="sent-announcements-heading"
+          class="text-lg font-semibold text-gray-800"
+        >
+          Sent announcements
+        </h2>
+        <p class="mt-1 text-sm text-gray-500">
+          Announcements sent to platform users.
+        </p>
       </div>
 
-      <!-- Target role -->
-      <div class="mb-4">
-        <label for="announce-role" class="block text-sm font-medium text-gray-700 mb-1">Send to</label>
+      <div class="mb-4 grid gap-3 sm:grid-cols-2">
+        <input
+          type="search"
+          [ngModel]="announcementSearch()"
+          (ngModelChange)="updateAnnouncementSearch($event)"
+          name="announcementSearch"
+          placeholder="Search title or message"
+          aria-label="Search sent announcements"
+          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+        />
         <select
-          id="announce-role"
-          [ngModel]="targetRole()"
-          (ngModelChange)="targetRole.set($event)"
-          name="targetRole"
+          [ngModel]="announcementSort()"
+          (ngModelChange)="updateAnnouncementSort($event)"
+          name="announcementSort"
+          aria-label="Sort sent announcements"
           class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
         >
-          <option value="all">All users</option>
-          <option value="mentor">Mentors only</option>
-          <option value="mentee">Mentees only</option>
+          <option value="createdAt:desc">Newest first</option>
+          <option value="createdAt:asc">Oldest first</option>
+          <option value="title:asc">Title: A to Z</option>
+          <option value="title:desc">Title: Z to A</option>
+          <option value="recipientCount:desc">Most recipients</option>
+          <option value="recipientCount:asc">Fewest recipients</option>
         </select>
+        <label class="text-sm text-gray-600">
+          <span class="mb-1 block">From</span>
+          <input
+            type="date"
+            [ngModel]="announcementDateFrom()"
+            (ngModelChange)="updateAnnouncementDateFrom($event)"
+            name="announcementDateFrom"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+          />
+        </label>
+        <label class="text-sm text-gray-600">
+          <span class="mb-1 block">To</span>
+          <input
+            type="date"
+            [ngModel]="announcementDateTo()"
+            (ngModelChange)="updateAnnouncementDateTo($event)"
+            name="announcementDateTo"
+            class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400"
+          />
+        </label>
+      </div>
+      <div class="mb-4 flex justify-end">
+        <button
+          type="button"
+          (click)="clearAnnouncementFilters()"
+          class="text-sm font-medium text-orange-600 hover:text-orange-700"
+        >
+          Clear filters
+        </button>
       </div>
 
-      <!-- Message -->
-      <div class="mb-6">
-        <label for="announce-message" class="block text-sm font-medium text-gray-700 mb-1">Message <span class="text-red-500">*</span></label>
-        <textarea
-          id="announce-message"
-          [ngModel]="message()"
-          (ngModelChange)="message.set($event)"
-          name="message"
-          rows="5"
-          maxlength="1000"
-          placeholder="Write your announcement here..."
-          class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm text-gray-900 placeholder-gray-400 focus:border-orange-400 focus:outline-none focus:ring-1 focus:ring-orange-400 resize-none"
-          [class.border-red-400]="touched() && message().trim().length === 0"
-        ></textarea>
-        <div class="flex justify-between mt-1">
-          @if (touched() && message().trim().length === 0) {
-            <p class="text-xs text-red-600">Message is required.</p>
-          } @else {
-            <span></span>
-          }
-          <p class="text-xs text-gray-400 ml-auto">{{ message().length }}/1000</p>
+      @if (loadingAnnouncements()) {
+      <p class="py-8 text-center text-sm text-gray-500">
+        Loading announcements...
+      </p>
+      } @else if (announcementsError()) {
+      <p
+        class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800"
+      >
+        {{ announcementsError() }}
+      </p>
+      } @else if (announcements().length === 0) {
+      <p
+        class="rounded-lg bg-gray-50 px-4 py-8 text-center text-sm text-gray-500"
+      >
+        No announcements have been sent yet.
+      </p>
+      } @else {
+      <ol class="space-y-3">
+        @for (announcement of announcements(); track announcement.id) {
+        <li class="rounded-lg border border-gray-200 p-4">
+          <div class="flex items-start justify-between gap-3">
+            <h3 class="font-semibold text-gray-900">
+              {{ announcement.title }}
+            </h3>
+            <span
+              class="shrink-0 rounded-full bg-orange-50 px-2.5 py-1 text-xs font-medium text-orange-700"
+            >
+              {{ announcement.recipientCount }} recipient{{
+              announcement.recipientCount === 1 ? '' : 's' }}
+            </span>
+          </div>
+          <p class="mt-2 whitespace-pre-line text-sm text-gray-600">
+            {{ announcement.message }}
+          </p>
+          <time
+            class="mt-3 block text-xs text-gray-400"
+            [attr.datetime]="announcement.createdAt"
+          >
+            Sent {{ announcement.createdAt | date:'medium' }}
+          </time>
+        </li>
+        }
+      </ol>
+      @if (announcementTotalPages() > 1) {
+      <div
+        class="mt-4 flex items-center justify-between gap-3 border-t border-gray-100 pt-4 text-sm text-gray-600"
+      >
+        <span
+          >Page {{ announcementPage() }} of {{ announcementTotalPages() }} ({{
+          announcementTotal() }} total)</span
+        >
+        <div class="flex gap-2">
+          <button
+            type="button"
+            (click)="changeAnnouncementPage(announcementPage() - 1)"
+            [disabled]="announcementPage() === 1"
+            class="rounded-lg border border-gray-300 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Previous
+          </button>
+          <button
+            type="button"
+            (click)="changeAnnouncementPage(announcementPage() + 1)"
+            [disabled]="announcementPage() === announcementTotalPages()"
+            class="rounded-lg border border-gray-300 px-3 py-1.5 font-medium text-gray-700 hover:bg-gray-50 disabled:cursor-not-allowed disabled:opacity-50"
+          >
+            Next
+          </button>
         </div>
       </div>
-
-      <button
-        type="submit"
-        [disabled]="submitting()"
-        class="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-400 focus:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
-      >
-        {{ submitting() ? 'Sending...' : 'Send Announcement' }}
-      </button>
-    </form>
+      } }
+    </section>
   </div>
 </div>

@@ -326,6 +326,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Announcement broadcast successfully',
     },
+    ADMIN_GET_ANNOUNCEMENTS: {
+      code: 200,
+      message: 'Announcements retrieved successfully',
+    },
 
     /**
      * ADMIN REPORTS
@@ -807,6 +811,15 @@ export const API_RESPONSE = {
       message:
         "The selected time frame does not fit a full session within the mentor's available window",
     },
+    BOOKING_SESSION_IN_PAST: {
+      code: 400,
+      message: 'The selected session date and time is already in the past',
+    },
+    BOOKING_BACKDATED_NOT_ACTIONABLE: {
+      code: 400,
+      message:
+        'This booking request has expired because its session date has already passed',
+    },
 
     /**
      * ACCOUNT DEACTIVATION
@@ -911,6 +924,10 @@ export const API_RESPONSE = {
     ADMIN_BROADCAST_ANNOUNCEMENT: {
       code: 500,
       message: 'Failed to broadcast announcement',
+    },
+    ADMIN_GET_ANNOUNCEMENTS: {
+      code: 500,
+      message: 'Failed to retrieve announcements',
     },
 
     /**

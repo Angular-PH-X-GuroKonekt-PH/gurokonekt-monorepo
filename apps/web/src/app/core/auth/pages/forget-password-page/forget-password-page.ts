@@ -47,12 +47,7 @@ export class ForgetPasswordPage extends BaseFormComponent {
   };
 
   protected async onSubmit(): Promise<void> {
-    if (
-      !preSubmissionValidation(
-        this.loginForm,
-        this.isSubmitting()
-      )
-    ) {
+    if (!preSubmissionValidation(this.loginForm, this.isSubmitting())) {
       return;
     }
 
@@ -62,25 +57,23 @@ export class ForgetPasswordPage extends BaseFormComponent {
       const { email } = this.loginForm.getRawValue();
 
       const response = await firstValueFrom(
-        this.authService.forgotPassword(email.trim())
+        this.authService.forgotPassword(email.trim()),
       );
 
       this.toastService.success(
         response.message ||
           'If an account exists for this email, a password reset link has been sent.',
-        'Check your email'
+        'Check your email',
       );
 
       this.loginForm.reset();
-    } catch {
-      /*
-       * Avoid revealing whether an email address is registered.
-       * Detailed technical errors are already processed by AuthService.
-       */
-      this.toastService.success(
-        'If an account exists for this email, a password reset link has been sent.',
-        'Check your email'
-      );
+    } catch (error: unknown) {
+      const message =
+        typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : 'Unable to send the password reset link. Please try again.';
+
+      this.toastService.error(message, 'Unable to send reset link');
     } finally {
       this.isSubmitting.set(false);
     }

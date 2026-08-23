@@ -922,8 +922,10 @@ export class AuthService {
    */
   async forgotPassword(dto: ForgotPasswordDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     try {
+      const normalizedEmail = this.validation.normalizeEmail(dto.email);
+
       const user = await this.prisma.db.user.findUnique({
-        where: { email: dto.email },
+        where: { email: normalizedEmail },
       });
 
       if (!user) {
@@ -937,7 +939,7 @@ export class AuthService {
 
       const redirectTo = `${origin ?? ''}${REDIRECT_LINKS.RESET_PASSWORD}`;
 
-      const { error } = await this.supabase.client.auth.resetPasswordForEmail(dto.email, {
+      const { error } = await this.supabase.client.auth.resetPasswordForEmail(normalizedEmail, {
         redirectTo,
       });
 
@@ -956,7 +958,7 @@ export class AuthService {
           actionType: LogsActionType.ForgotPassword,
           targetId: user.id,
           details: API_RESPONSE.SUCCESS.FORGOT_PASSWORD_EMAIL_SENT.message,
-          metadata: { email: dto.email },
+          metadata: { email: normalizedEmail },
           ipAddress,
           userAgent,
           createdById: user.id,
