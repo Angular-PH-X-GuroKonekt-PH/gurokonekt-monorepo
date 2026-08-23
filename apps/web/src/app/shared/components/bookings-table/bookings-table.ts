@@ -1,5 +1,13 @@
 import { DatePipe, NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, output, signal, TemplateRef } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  input,
+  output,
+  signal,
+  TemplateRef,
+} from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import {
@@ -106,6 +114,40 @@ export class BookingsTable {
       ? bookings
       : bookings.slice(0, Math.max(0, maxRows));
   });
+
+  private readonly cachedBookings = signal<BookingCardInterface[]>([]);
+  private readonly cachedTotalItems = signal(0);
+
+  protected readonly skeletonRowCount = computed(() => {
+    const rowLimit = this.maxRows() ?? this.pageSize();
+
+    return Math.max(1, Math.min(5, rowLimit));
+  });
+
+  protected readonly hasCachedBookings = computed(
+    () => this.cachedBookings().length > 0,
+  );
+
+  protected readonly bookingsToRender = computed(() =>
+    this.isLoading() && this.hasCachedBookings()
+      ? this.cachedBookings()
+      : this.displayedBookings(),
+  );
+
+  protected readonly paginationTotalItems = computed(() =>
+    this.isLoading() && this.hasCachedBookings()
+      ? this.cachedTotalItems()
+      : this.totalItems(),
+  );
+
+  constructor() {
+    effect(() => {
+      if (!this.isLoading()) {
+        this.cachedBookings.set(this.displayedBookings());
+        this.cachedTotalItems.set(this.totalItems());
+      }
+    });
+  }
 
   sortBy(key: BookingSortKey): void {
     if (this.sortKey() === key) {

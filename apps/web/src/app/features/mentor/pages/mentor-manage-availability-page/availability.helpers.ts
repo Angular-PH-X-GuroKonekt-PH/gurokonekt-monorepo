@@ -288,9 +288,9 @@ export function getTimeFrameStatus(
 
 export function getBookingBadgeClasses(status: BookingStatus): string {
   const baseClasses =
-    'inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset';
+    'inline-flex items-center whitespace-nowrap rounded-full px-2.5 py-0.5 text-xs font-medium';
 
   return status === BookingStatus.PENDING
-    ? `${baseClasses} bg-amber-50 text-amber-700 ring-amber-200`
-    : `${baseClasses} bg-red-50 text-red-700 ring-red-200`;
+    ? `${baseClasses} bg-yellow-50 text-yellow-700`
+    : `${baseClasses} bg-green-50 text-green-700`;
 }
