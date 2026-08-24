@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { firstValueFrom, of, switchMap } from 'rxjs';
+import { firstValueFrom, map, of, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
@@ -24,6 +24,7 @@ import { ToastService } from '../../../../shared/services/toast.service';
 import { CreateReviewRequest } from '@gurokonekt/models';
 import { MenteeReviewModal } from "../../components/mentee-bookings-table/mentee-review-modal/mentee-review-modal";
 import { BookingSortChange } from '../../../../shared/components/bookings-table/bookings-table.types';
+import { ProfileService } from '../../../../core/profile/profile.service';
 
 @Component({
   selector: 'app-mentee-booking-overview-page',
@@ -36,9 +37,28 @@ export class MenteeBookingOverviewPage {
   private readonly toastService = inject(ToastService);
   private readonly store = inject(Store);
   private readonly route = inject(ActivatedRoute);
+  private readonly profileService = inject(ProfileService);
 
   protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
+
+  protected readonly viewerTimezone = toSignal(
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of<string | null>(null);
+        }
+
+        return this.profileService.getUserProfile(userId).pipe(
+          map((response) => {
+            const profile = response.data as { timezone?: string | null } | null;
+            return profile?.timezone ?? null;
+          })
+        );
+      })
+    ),
+    { initialValue: null }
+  );
 
   protected readonly selectedReviewBooking = signal<BookingCardInterface | null>(null);
   protected readonly isSubmittingReview = signal(false);

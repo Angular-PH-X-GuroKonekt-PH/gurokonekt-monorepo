@@ -2,6 +2,7 @@ import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, RouterLink } from '@angular/router';
+import { Store } from '@ngxs/store';
 import { map, of, switchMap } from 'rxjs';
 
 import { APP_ROUTES } from '../../../../shared/constants/routes';
@@ -9,9 +10,12 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { getCountryDisplayName } from '../../../../shared/utils/location-data.util';
 import { getLanguageLabel } from '../../../../shared/utils';
 import { MentorService } from '../../../mentor/services/mentor.service';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
+import { ProfileService } from '../../../../core/profile/profile.service';
 import { MenteePageLoader } from '../../components/mentee-page-loader/mentee-page-loader';
 import { MentorProfileHero } from '../../components/mentor-profile-hero/mentor-profile-hero';
 import {
+  convertAvailabilityForViewer,
   formatDayLabel,
   formatTimeTo12Hour,
 } from '../../utils/mentor-availability.util';
@@ -41,6 +45,28 @@ export class MenteeMentorProfilePage {
   private readonly route = inject(ActivatedRoute);
   private readonly mentorService = inject(MentorService);
   private readonly reviewService = inject(ReviewService);
+  private readonly store = inject(Store);
+  private readonly profileService = inject(ProfileService);
+
+  protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
+  protected readonly userId = computed(() => this.authUser()?.id);
+  protected readonly viewerTimezone = toSignal(
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of<string | null>(null);
+        }
+
+        return this.profileService.getUserProfile(userId).pipe(
+          map((response) => {
+            const profile = response.data as { timezone?: string | null } | null;
+            return profile?.timezone ?? null;
+          })
+        );
+      })
+    ),
+    { initialValue: null }
+  );
 
   protected readonly bookSessionRoute = APP_ROUTES.BOOK_SESSION;
   protected readonly findMentorsRoute = APP_ROUTES.FIND_MENTORS;
@@ -69,6 +95,18 @@ export class MenteeMentorProfilePage {
     return [mentor.user.firstName, mentor.user.lastName]
       .filter(Boolean)
       .join(' ');
+  });
+
+  protected readonly convertedAvailability = computed(() => {
+    const mentor = this.mentor();
+
+    return mentor
+      ? convertAvailabilityForViewer(
+          mentor.availability,
+          mentor.user.timezone,
+          this.viewerTimezone() || undefined
+        )
+      : [];
   });
 
   protected readonly mentorReviews = toSignal(

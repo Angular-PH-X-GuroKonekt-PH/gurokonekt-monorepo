@@ -1,11 +1,9 @@
-import { TimeFrameInterface } from '@gurokonekt/models/interfaces/user/user.model';
-
 export interface BookSessionDateOption {
   date: Date;
   day: string;
   dayLabel: string;
   dateLabel: string;
-  timeFrames: TimeFrameInterface[];
+  slots: BookSessionSlotOption[];
 }
 
 export interface BookSessionSlotOption {

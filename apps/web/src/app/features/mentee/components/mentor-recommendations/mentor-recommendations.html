@@ -17,7 +17,10 @@ state.mentors.length > 0) {
   } @if (!state.isLoading && !state.error && hasMentors()) {
   <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
     @for (mentor of state.mentors; track mentor.id) {
-    <app-mentor-info-card [mentor]="mentor" />
+    <app-mentor-info-card
+      [mentor]="mentor"
+      [viewerTimezone]="viewerTimezone()"
+    />
     }
   </div>
   }

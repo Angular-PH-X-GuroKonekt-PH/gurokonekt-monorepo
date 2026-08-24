@@ -63,6 +63,7 @@
   [bookings]="filteredBookings()"
   [isLoading]="isLoading()"
   counterparty="mentee"
+  [viewerTimezone]="viewerTimezone()"
   [showMentorNotes]="true"
   [actionsTemplate]="mentorActions"
   [footerMode]="footerMode()"
@@ -78,7 +79,11 @@
 />
 
 @if (selectedBooking(); as booking) {
-<app-booking-details-modal [booking]="booking" (closed)="closeDetails()" />
+<app-booking-details-modal
+  [booking]="booking"
+  [viewerTimezone]="viewerTimezone()"
+(closed)="closeDetails()"
+/>
 }
 
 @if (approvalBooking(); as booking) {

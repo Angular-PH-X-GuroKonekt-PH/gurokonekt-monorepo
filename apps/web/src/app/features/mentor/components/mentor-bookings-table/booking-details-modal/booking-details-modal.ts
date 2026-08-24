@@ -9,5 +9,6 @@ import { BookingCardInterface } from '@gurokonekt/models/interfaces/booking/book
 })
 export class BookingDetailsModal {
   booking = input.required<BookingCardInterface>();
+  viewerTimezone = input<string | null>(null);
   closed = output<void>();  
 }
