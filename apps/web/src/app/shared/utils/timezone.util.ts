@@ -1,8 +1,6 @@
 import { COUNTRY_TIMEZONES } from '../constants/timezone-mapping.constants';
 
-/**
- * Timezone helper for country-based timezone detection
- */
+/** Timezone helpers for country-based detection and date formatting. */
 
 /**
  * Get default timezone for a country
@@ -29,4 +27,26 @@ export function getTimezoneForCountry(country: string): string {
   }
 
   return '';
+}
+
+/**
+ * Format an instant using an IANA timezone such as `Europe/Paris`.
+ * Intl is used here because Angular's DatePipe timezone argument only
+ * reliably accepts UTC offsets, not IANA timezone identifiers.
+ */
+export function formatDateInTimezone(
+  value: Date | string | number,
+  timezone: string | null | undefined,
+  options: Intl.DateTimeFormatOptions,
+): string {
+  const date = value instanceof Date ? value : new Date(value);
+
+  if (Number.isNaN(date.getTime())) {
+    return '';
+  }
+
+  return new Intl.DateTimeFormat('en-US', {
+    ...options,
+    ...(timezone ? { timeZone: timezone } : {}),
+  }).format(date);
 }

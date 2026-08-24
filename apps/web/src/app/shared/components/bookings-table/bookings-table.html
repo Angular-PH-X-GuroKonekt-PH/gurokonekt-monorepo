@@ -147,9 +147,9 @@
             </p>
           </td>
           }
-          <td class="px-6 py-2">
-            <p class="font-medium text-gray-800">{{ booking.sessionDateTime | date:'MMM d, y' }}</p>
-            <p class="text-xs text-gray-400">{{ booking.sessionDateTime | date:'h:mm a' }}</p>
+          <td class="px-6 py-4">
+            <p class="font-medium text-gray-800">{{ formatSessionDate(booking.sessionDateTime) }}</p>
+            <p class="text-xs text-gray-400">{{ formatSessionTime(booking.sessionDateTime) }}</p>
           </td>
           <td class="px-6 py-2">
             <span

@@ -36,6 +36,7 @@ export class MenteeBookingsTable {
   ]);
   bookings = input<BookingCardInterface[] | null>(null);
   isLoading = input(false);
+  viewerTimezone = input<string | null>(null);
   initialTab = input<BookingTab>('All');
   initialBookingId = input<string | null>(null);
   footerMode = input<BookingTableFooterMode>('none');

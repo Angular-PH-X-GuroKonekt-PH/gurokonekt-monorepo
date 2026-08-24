@@ -12,6 +12,7 @@ import { RecommendedMentorsState } from '../../interfaces/search-mentor.interfac
 })
 export class MentorRecommendations {
   state = input.required<RecommendedMentorsState>();
+  viewerTimezone = input<string | null>(null);
 
   protected readonly heading = computed(() =>
     this.state().isPersonalized ? 'Recommended for you' : 'Featured mentors',

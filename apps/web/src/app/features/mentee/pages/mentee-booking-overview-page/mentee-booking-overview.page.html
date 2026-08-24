@@ -4,21 +4,22 @@
     <app-section-title title="Manage Your Bookings" subtitle="Stay organized with all your mentorship sessions." />
   </div>
 
-  <div>
-    <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
-      [initialBookingId]="initialBookingId"
-      footerMode="pagination"
-      [currentPage]="currentPage()"
-      [pageSize]="pageSize()"
-      [totalItems]="totalBookings()"
-      (bookingUpdated)="refreshBookings()"
-      (addReview)="onAddReview($event)"
-      (pageChange)="setPage($event)"
-      (pageSizeChange)="setPageSize($event)"
-      (tabChange)="setActiveTab($event)"
-      (sortChange)="setSort($event)" />
-  </div>
-  
+      <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
+        [viewerTimezone]="viewerTimezone()"
+        [initialBookingId]="initialBookingId"
+        footerMode="pagination"
+        [currentPage]="currentPage()"
+        [pageSize]="pageSize()"
+        [totalItems]="totalBookings()"
+        (bookingUpdated)="refreshBookings()"
+        (addReview)="onAddReview($event)"
+        (pageChange)="setPage($event)"
+        (pageSizeChange)="setPageSize($event)"
+        (tabChange)="setActiveTab($event)"
+        (sortChange)="setSort($event)" />
+    </app-section-card>
+  </section>
+
   @if (selectedReviewBooking(); as booking) {
   <app-mentee-review-modal [booking]="booking" [isSubmitting]="isSubmittingReview()" (closeModal)="closeReviewModal()"
     (submitReview)="submitReview($event)" />

@@ -289,13 +289,13 @@
         </div>
 
         <span class="shrink-0 rounded-full bg-blue-50 px-3 py-1 text-2xs font-bold text-blue-950">
-          {{ mentorProfile.availability.length || 0 }} days
+          {{ convertedAvailability().length || 0 }} days
         </span>
       </div>
 
       <div class="mt-6 space-y-3">
-        @for (availability of mentorProfile.availability; track
-        availability.day) {
+        @for (availability of convertedAvailability(); track
+        availability.dayLabel) {
         <article class="relative overflow-hidden rounded-2xl border border-slate-100 bg-slate-50 p-4">
           <div class="absolute inset-y-4 left-0 w-1 rounded-r-full bg-orange-400"></div>
 
@@ -307,14 +307,13 @@
 
             <div class="min-w-0">
               <h3 class="text-xs font-bold text-blue-950">
-                {{ getAvailabilityDay(availability.day) }}
+                {{ availability.dayLabel }}
               </h3>
               <div class="mt-2 flex flex-wrap gap-1.5">
-                @for (timeFrame of availability.timeFrames; track timeFrame.from
-                + timeFrame.to) {
+                @for (timeLabel of availability.timeLabels; track timeLabel) {
                 <span
                   class="rounded-full bg-white px-3 py-1 text-2xs font-semibold text-slate-600 ring-1 ring-slate-100">
-                  {{ getAvailabilityTime(timeFrame.from, timeFrame.to) }}
+                  {{ timeLabel }}
                 </span>
                 }
               </div>

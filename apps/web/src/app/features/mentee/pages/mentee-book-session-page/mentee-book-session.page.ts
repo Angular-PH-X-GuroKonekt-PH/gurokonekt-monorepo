@@ -1,8 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Store } from '@ngxs/store';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
@@ -14,6 +15,8 @@ import { BookingService } from '../../../../shared/services/booking.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { ToastService } from '../../../../shared/services/toast.service';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
+import { ProfileService } from '../../../../core/profile/profile.service';
 import { MentorService } from '../../../mentor/services/mentor.service';
 import { MenteePageLoader } from '../../components/mentee-page-loader/mentee-page-loader';
 import { MentorProfileHero } from '../../components/mentor-profile-hero/mentor-profile-hero';
@@ -24,13 +27,11 @@ import {
 import {
   addDays,
   buildAvailableBookingDates,
-  buildBookingDateTimeForApi,
-  buildDisplayDateTime,
   BOOKING_DATE_RANGE_DAYS,
+  getBrowserTimezone,
   getBookingSlotKey,
   getDateKey,
 } from '../../utils/book-session-date.util';
-import { formatTimeTo12Hour } from '../../utils/mentor-availability.util';
 
 @Component({
   selector: 'app-mentee-book-session-page',
@@ -53,6 +54,11 @@ export class MenteeBookSessionPage {
   private readonly bookingService = inject(BookingService);
   private readonly notificationService = inject(NotificationService);
   private readonly toastService = inject(ToastService);
+  private readonly store = inject(Store);
+  private readonly profileService = inject(ProfileService);
+
+  protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
+  protected readonly userId = computed(() => this.authUser()?.id);
 
   protected readonly mentorProfileRoute = APP_ROUTES.MENTOR_PROFILE;
   protected readonly bookingOverviewRoute = APP_ROUTES.BOOKING_OVERVIEW;
@@ -100,11 +106,35 @@ export class MenteeBookSessionPage {
       .join(' ');
   });
 
+  protected readonly viewerTimezone = toSignal(
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of<string | null>(null);
+        }
+
+        return this.profileService.getUserProfile(userId).pipe(
+          map((response) => {
+            const profile = response.data as { timezone?: string | null } | null;
+            return profile?.timezone ?? null;
+          })
+        );
+      })
+    ),
+    { initialValue: null }
+  );
+
+  protected readonly mentorTimezone = computed(
+    () => this.mentor()?.user.timezone || getBrowserTimezone()
+  );
+
   // Calendar state
   protected readonly availableDates = computed(() =>
     buildAvailableBookingDates(
       this.mentor()?.availability ?? [],
-      BOOKING_DATE_RANGE_DAYS
+      BOOKING_DATE_RANGE_DAYS,
+      this.mentorTimezone(),
+      this.viewerTimezone() || getBrowserTimezone()
     )
   );
 
@@ -172,26 +202,12 @@ export class MenteeBookSessionPage {
       return [];
     }
 
-    return selectedDate.timeFrames.map((timeFrame) => {
-      const bookingDateTime = buildBookingDateTimeForApi(
-        selectedDate.date,
-        timeFrame.from
-      );
-
-      return {
-        label: `${formatTimeTo12Hour(timeFrame.from)} - ${formatTimeTo12Hour(
-          timeFrame.to
-        )}`,
-        displayDateTime: buildDisplayDateTime(
-          selectedDate.date,
-          timeFrame.from
-        ),
-        bookingDateTime,
-        isBooked: this.bookedSlotTimeMap().has(
-          getBookingSlotKey(bookingDateTime)
-        ),
-      };
-    });
+    return selectedDate.slots.map((slot) => ({
+      ...slot,
+      isBooked: this.bookedSlotTimeMap().has(
+        getBookingSlotKey(slot.bookingDateTime)
+      ),
+    }));
   });
 
   // User actions
