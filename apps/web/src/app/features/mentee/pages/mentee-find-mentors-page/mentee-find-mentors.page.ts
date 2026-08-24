@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute, Router } from '@angular/router';
+import { Store } from '@ngxs/store';
 import { Pagination } from '@gurokonekt/ui';
 import { catchError, map, of, startWith, switchMap } from 'rxjs';
 
@@ -11,6 +12,8 @@ import {
   MentorSearchResultInterface,
 } from '@gurokonekt/models/interfaces/search/search.model';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
+import { ProfileService } from '../../../../core/profile/profile.service';
 import { MentorCardListSkeleton } from '../../components/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
 import { MenteeSearchMentorService } from '../../services/mentee-search-mentor.service';
 import { MentorInfoCard } from '../../components/mentor-info-card/mentor-info-card';
@@ -49,7 +52,29 @@ const FILTER_QUERY_PARAMS = [
 export class MenteeFindMentorsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
+  private readonly store = inject(Store);
+  private readonly profileService = inject(ProfileService);
   private readonly menteeSearchMentorService = inject(MenteeSearchMentorService);
+
+  protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
+  protected readonly userId = computed(() => this.authUser()?.id);
+  protected readonly viewerTimezone = toSignal(
+    toObservable(this.userId).pipe(
+      switchMap((userId) => {
+        if (!userId) {
+          return of<string | null>(null);
+        }
+
+        return this.profileService.getUserProfile(userId).pipe(
+          map((response) => {
+            const profile = response.data as { timezone?: string | null } | null;
+            return profile?.timezone ?? null;
+          })
+        );
+      })
+    ),
+    { initialValue: null }
+  );
 
   protected readonly searchState = toSignal(
     this.route.queryParams.pipe(

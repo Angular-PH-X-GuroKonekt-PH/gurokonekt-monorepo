@@ -64,6 +64,7 @@ export class MentorBookingsTable {
 
   bookingService = inject(BookingService);
   toastService = inject(ToastService);
+  viewerTimezone = input<string | null>(null);
 
   activeTab = signal<BookingTab>('All');
 

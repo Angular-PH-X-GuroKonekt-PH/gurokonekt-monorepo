@@ -6,6 +6,7 @@
       </div>
 
       <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
+        [viewerTimezone]="viewerTimezone()"
         [initialBookingId]="initialBookingId"
         footerMode="pagination"
         [currentPage]="currentPage()"

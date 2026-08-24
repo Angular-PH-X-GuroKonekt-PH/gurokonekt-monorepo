@@ -8,6 +8,7 @@ import { UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/us
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
+import { convertAvailabilityForViewer } from '../../../mentee/utils/mentor-availability.util';
 
 @Component({
   selector: 'app-mentor-recommended-card',
@@ -16,6 +17,7 @@ import { APP_ROUTES } from '../../../../shared/constants/routes';
 })
 export class MentorRecommendedCard {
   mentor = input<MentorSearchItemInterface | null>(null);
+  viewerTimezone = input<string | null>(null);
 
   protected readonly mentorProfileRoute = APP_ROUTES.MENTOR_PROFILE;
 
@@ -38,6 +40,16 @@ export class MentorRecommendedCard {
   }
 
   getAvailabilityLabel(mentor: MentorSearchItemInterface): string {
+    const converted = convertAvailabilityForViewer(
+      this.getAvailability(mentor),
+      mentor.timezone,
+      this.viewerTimezone() || undefined
+    );
+
+    if (converted.length && converted[0].timeLabels.length) {
+      return `${converted[0].dayLabel} - ${converted[0].timeLabels[0].split(' - ')[0]}`;
+    }
+
     const firstAvailability = this.getAvailability(mentor)[0];
 
     if (!firstAvailability?.day) {

@@ -10,6 +10,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { getLanguageLabel } from '../../../../shared/utils';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import {
+  convertAvailabilityForViewer,
   formatAvailabilityLabel,
   formatDayLabel,
 } from '../../utils/mentor-availability.util';
@@ -22,6 +23,7 @@ import {
 })
 export class MentorInfoCard {
   mentor = input<MentorSearchItemInterface | null>(null);
+  viewerTimezone = input<string | null>(null);
 
   protected readonly mentorProfileRoute = APP_ROUTES.MENTOR_PROFILE;
 
@@ -62,6 +64,18 @@ export class MentorInfoCard {
   }
 
   getAvailabilityLabels(mentor: MentorSearchItemInterface): string[] {
+    const converted = convertAvailabilityForViewer(
+      this.getAvailability(mentor),
+      mentor.timezone,
+      this.viewerTimezone() || undefined
+    );
+
+    if (converted.length) {
+      return converted.flatMap((group) =>
+        group.timeLabels.map((timeLabel) => `${group.dayLabel}, ${timeLabel}`)
+      );
+    }
+
     return this.getAvailability(mentor).flatMap((availability) => {
       if (!availability.day) {
         return [];

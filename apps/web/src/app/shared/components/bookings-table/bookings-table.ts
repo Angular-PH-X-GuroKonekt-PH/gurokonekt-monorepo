@@ -1,4 +1,4 @@
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import { Component, computed, input, output, signal, TemplateRef } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
@@ -8,6 +8,7 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { Pagination } from '@gurokonekt/ui';
 
+import { formatDateInTimezone } from '../../utils/timezone.util';
 import { IconComponent, IconName } from '../icon/icon.component';
 import { BookingTableSkeleton } from '../skeleton-loaders/booking-table-skeleton/booking-table-skeleton.component';
 import {
@@ -25,7 +26,6 @@ export interface BookingActionContext {
 @Component({
   selector: 'app-bookings-table',
   imports: [
-    DatePipe,
     NgTemplateOutlet,
     RouterLink,
     IconComponent,
@@ -41,6 +41,7 @@ export class BookingsTable {
   bookings = input<BookingCardInterface[] | null>(null);
   isLoading = input(false);
   counterparty = input<BookingCounterparty>('mentee');
+  viewerTimezone = input<string | null>(null);
   showMenteeNotes = input(true);
   showMentorNotes = input(false);
   actionsTemplate = input<TemplateRef<BookingActionContext> | null>(null);
@@ -169,6 +170,21 @@ export class BookingsTable {
 
   getCounterpartyLabel(): string {
     return this.counterparty() === 'mentor' ? 'Mentor' : 'Mentee';
+  }
+
+  protected formatSessionDate(sessionDateTime: Date): string {
+    return formatDateInTimezone(sessionDateTime, this.viewerTimezone(), {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  }
+
+  protected formatSessionTime(sessionDateTime: Date): string {
+    return formatDateInTimezone(sessionDateTime, this.viewerTimezone(), {
+      hour: 'numeric',
+      minute: '2-digit',
+    });
   }
 
   private getCounterpartyName(booking: BookingCardInterface): string {
