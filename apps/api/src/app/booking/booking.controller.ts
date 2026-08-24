@@ -159,7 +159,7 @@ export class BookingController {
   @Get('mentor/:mentorId/booked-slots')
   @ApiOperation({
     summary: 'Get booked slots for a mentor',
-    description: 'Returns pending and approved booking times for a mentor so clients can mark unavailable slots.',
+    description: 'Returns approved booking times for a mentor and the requesting mentee\'s pending booking times so clients can mark unavailable slots.',
   })
   @ApiParam({
     name: 'mentorId',
@@ -189,8 +189,12 @@ export class BookingController {
   @ApiResponse({ status: 401, description: 'Unauthorized - missing or invalid JWT.' })
   async findMentorBookedSlots(
     @Param('mentorId', new ParseUUIDPipe()) mentorId: string,
+    @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.bookingService.findMentorBookedSlots(mentorId);
+    const response = await this.bookingService.findMentorBookedSlots(
+      mentorId,
+      req.user.id,
+    );
 
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
