@@ -518,13 +518,17 @@ export class BookingService {
 
   async findMentorBookedSlots(
     mentorId: string,
+    requesterId: string,
   ): Promise<ResponseDto<MentorBookedSlotInterface[]>> {
     try {
       const bookings = await this.prisma.db.booking.findMany({
         where: {
           mentorId,
           isDeleted: false,
-          status: { in: [BookingStatus.PENDING, BookingStatus.APPROVED] },
+          OR: [
+            { status: BookingStatus.APPROVED },
+            { status: BookingStatus.PENDING, menteeId: requesterId },
+          ],
         },
         orderBy: { sessionDateTime: 'asc' },
         select: {
@@ -996,7 +1000,11 @@ export class BookingService {
   ): Promise<ResponseDto<null> | null> {
     const profile = await this.prisma.db.mentorProfile.findUnique({
       where: { userId: mentorId },
-      select: { availability: true, sessionDurationMinutes: true },
+      select: {
+        availability: true,
+        sessionDurationMinutes: true,
+        user: { select: { timezone: true } },
+      },
     });
 
     if (!profile) return null; // no profile — let the DB FK handle it
@@ -1017,8 +1025,11 @@ export class BookingService {
       'friday',
       'saturday',
     ];
-    // const dayName = DAYS[sessionDateTime.getDay()];
-    const dayName = DAYS[sessionDateTime.getUTCDay()];
+    const mentorLocalDateTime = this.getDateTimeInTimezone(
+      sessionDateTime,
+      profile.user.timezone,
+    );
+    const dayName = DAYS[mentorLocalDateTime.dayIndex];
 
     const daySlot = availability.find((s) => s.day === dayName);
     if (!daySlot || daySlot.timeFrames.length === 0) {
@@ -1030,9 +1041,8 @@ export class BookingService {
       };
     }
 
-    // Convert session to minutes-since-midnight (UTC)
-    const sessionStart =
-      sessionDateTime.getUTCHours() * 60 + sessionDateTime.getUTCMinutes();
+    // Availability is stored as the mentor's local wall-clock time.
+    const sessionStart = mentorLocalDateTime.minutes;
     const sessionEnd = sessionStart + duration;
 
     const timeToMinutes = (t: string) => {
@@ -1073,12 +1083,12 @@ export class BookingService {
     });
 
     for (const existing of existingBookings) {
-      const existStart =
-        existing.sessionDateTime.getUTCHours() * 60 +
-        existing.sessionDateTime.getUTCMinutes();
-      const existEnd = existStart + duration;
+      const existingStart = existing.sessionDateTime.getTime();
+      const existingEnd = existingStart + duration * 60_000;
+      const sessionStartUtc = sessionDateTime.getTime();
+      const sessionEndUtc = sessionStartUtc + duration * 60_000;
       // Overlap if: sessionStart < existEnd AND existStart < sessionEnd
-      if (sessionStart < existEnd && existStart < sessionEnd) {
+      if (sessionStartUtc < existingEnd && existingStart < sessionEndUtc) {
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.BOOKING_SCHEDULE_CONFLICT.code,
@@ -1089,5 +1099,32 @@ export class BookingService {
     }
 
     return null;
+  }
+
+  private getDateTimeInTimezone(
+    date: Date,
+    timezone: string | null,
+  ): { dayIndex: number; minutes: number } {
+    const formatter = new Intl.DateTimeFormat('en-US', {
+      timeZone: timezone || 'UTC',
+      weekday: 'short',
+      hour: '2-digit',
+      minute: '2-digit',
+      hourCycle: 'h23',
+    });
+    const parts = formatter.formatToParts(date);
+    const values = Object.fromEntries(
+      parts
+        .filter(({ type }) => type !== 'literal')
+        .map(({ type, value }) => [type, value]),
+    );
+    const dayIndex = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].indexOf(
+      values['weekday'],
+    );
+
+    return {
+      dayIndex: dayIndex === -1 ? date.getUTCDay() : dayIndex,
+      minutes: Number(values['hour']) * 60 + Number(values['minute']),
+    };
   }
 }
