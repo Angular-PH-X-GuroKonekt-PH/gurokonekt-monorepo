@@ -191,7 +191,7 @@
                   $index) {
                   <tr>
                     <td
-                      class="border-b border-gray-100 px-5 py-3 font-medium text-gray-900"
+                      class="border-b border-gray-100 px-5 py-3 text-sm font-medium text-gray-900"
                     >
                       {{ formatTimeRange(frame) }}
                     </td>
@@ -199,7 +199,7 @@
                     getActiveBookingForFrame(day, frame); @let bookedTime =
                     getBlockedTimeForFrame(day, frame); @let status =
                     getTimeFrameStatus(day, frame);
-                    <td class="border-b border-gray-100 px-5 py-3">
+                    <td class="border-b border-gray-100 px-5 py-3 text-sm">
                       @if (booking && bookedTime) {
                       <span [class]="getBookingBadgeClasses(booking.status)"
                         >{{ bookedTime }}</span
@@ -208,16 +208,16 @@
                       <span class="text-gray-400">None</span>
                       }
                     </td>
-                    <td class="border-b border-gray-100 px-5 py-3">
+                    <td class="border-b border-gray-100 px-5 py-3 text-sm">
                       <span
-                        class="inline-flex rounded-full px-3 py-1 text-xs font-medium ring-1 ring-inset"
-                        [class]="status === 'Approved' ? 'bg-red-50 text-red-700 ring-red-200' : status === 'Pending' ? 'bg-amber-50 text-amber-700 ring-amber-200' : 'bg-green-50 text-green-700 ring-green-200'"
+                        class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
+                        [class]="status === 'Approved' ? 'bg-green-50 text-green-700' : status === 'Pending' ? 'bg-yellow-50 text-yellow-700' : 'bg-green-50 text-green-700'"
                       >
                         {{ status }}
                       </span>
                     </td>
                     }
-                    <td class="border-b border-gray-100 px-5 py-3">
+                    <td class="border-b border-gray-100 px-5 py-3 text-sm">
                       <div class="flex justify-start gap-2">
                         <button
                           type="button"

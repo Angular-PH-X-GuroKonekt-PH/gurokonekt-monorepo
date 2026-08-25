@@ -23,7 +23,11 @@
   </div>
 
   <div>
-    <table class="w-full table-fixed text-left text-sm">
+    <table
+      class="w-full table-fixed text-left text-sm transition-opacity"
+      [class.opacity-50]="isLoading() && hasCachedBookings()"
+      [attr.aria-busy]="isLoading()"
+    >
       @if (showMenteeNotes() && showMentorNotes()) {
       <colgroup>
         <col class="w-[18%]" />
@@ -99,23 +103,26 @@
         </tr>
       </thead>
 
-      @if (isLoading()) {
+      @if (isLoading() && !hasCachedBookings()) {
       <app-booking-table-skeleton
-        [count]="maxRows() ?? pageSize()"
+        [count]="skeletonRowCount()"
         [showMenteeNotes]="showMenteeNotes()"
         [showMentorNotes]="showMentorNotes()"
       />
       } @else {
-      <tbody class="divide-y divide-gray-50">
-        @for (booking of displayedBookings(); track booking.id) {
-        <tr class="transition-colors hover:bg-gray-50">
-          <td class="px-6 py-4">
+      <tbody
+        class="divide-y divide-gray-50"
+        [class.pointer-events-none]="isLoading()"
+      >
+        @for (booking of bookingsToRender(); track booking.id) {
+        <tr class="h-16 transition-colors hover:bg-gray-50">
+          <td class="px-6 py-2">
             @if (getCounterparty(booking); as participant) {
             <div class="flex items-center gap-3">
               <img
                 [src]="participant.avatarAttachments?.[0]?.publicUrl || 'assets/img/no_profile_avatar.png'"
                 [alt]="participant.firstName + ' ' + participant.lastName"
-                class="h-10 w-10 rounded-full border-2 border-gray-100 object-cover"
+                class="h-8 w-8 rounded-full border-2 border-gray-100 object-cover"
               />
               <div class="min-w-0">
                 <p class="truncate font-semibold text-gray-800">{{ participant.firstName }} {{ participant.lastName }}</p>
@@ -127,44 +134,37 @@
             }
           </td>
           @if (showMentorNotes()) {
-          <td class="max-w-56 px-6 py-4 font-medium text-gray-700">
+          <td class="max-w-56 px-6 py-2 font-medium text-gray-700">
             <p class="truncate" [title]="booking.mentorNotes || 'No notes provided'">
               {{ booking.mentorNotes || '—' }}
             </p>
           </td>
           }
           @if (showMenteeNotes()) {
-          <td class="px-6 py-4 font-medium text-gray-700">
+          <td class="px-6 py-2 font-medium text-gray-700">
             <p class="truncate" [title]="booking.menteeNotes || 'No notes provided'">
               {{ booking.menteeNotes || '—' }}
             </p>
           </td>
           }
-          <td class="px-6 py-4">
+          <td class="px-6 py-2">
             <p class="font-medium text-gray-800">{{ booking.sessionDateTime | date:'MMM d, y' }}</p>
             <p class="text-xs text-gray-400">{{ booking.sessionDateTime | date:'h:mm a' }}</p>
           </td>
-          <td class="px-6 py-4">
+          <td class="px-6 py-2">
             <span
-              class="inline-flex items-center rounded-full border px-3 py-1 text-[11px] font-bold tracking-wide"
+              class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium"
               [class.bg-green-50]="booking.status === 'APPROVED'"
-              [class.text-green-600]="booking.status === 'APPROVED'"
-              [class.border-green-200]="booking.status === 'APPROVED'"
-              [class.bg-orange-50]="booking.status === 'PENDING'"
-              [class.text-orange-500]="booking.status === 'PENDING'"
-              [class.border-orange-200]="booking.status === 'PENDING'"
+              [class.text-green-700]="booking.status === 'APPROVED'"
+              [class.bg-yellow-50]="booking.status === 'PENDING'"
+              [class.text-yellow-700]="booking.status === 'PENDING'"
               [class.bg-blue-50]="booking.status === 'COMPLETED'"
-              [class.text-blue-600]="booking.status === 'COMPLETED'"
-              [class.border-blue-200]="booking.status === 'COMPLETED'"
-              [class.bg-red-50]="booking.status === 'CANCELLED'"
-              [class.text-red-500]="booking.status === 'CANCELLED'"
-              [class.border-red-200]="booking.status === 'CANCELLED'"
-              [class.bg-gray-100]="booking.status === 'REJECTED'"
-              [class.text-gray-600]="booking.status === 'REJECTED'"
-              [class.border-gray-300]="booking.status === 'REJECTED'"
-            >{{ booking.status }}</span>
+              [class.text-blue-700]="booking.status === 'COMPLETED'"
+              [class.bg-red-50]="booking.status === 'CANCELLED' || booking.status === 'REJECTED'"
+              [class.text-red-700]="booking.status === 'CANCELLED' || booking.status === 'REJECTED'"
+            >{{ booking.status.charAt(0) + booking.status.slice(1).toLowerCase() }}</span>
           </td>
-          <td class="px-6 py-4">
+          <td class="px-6 py-2">
             @if (actionsTemplate(); as actions) {
             <ng-container
               [ngTemplateOutlet]="actions"
@@ -184,10 +184,11 @@
   @if (footerMode() === 'viewAll') {
   <div class="border-t border-gray-100 px-6 py-4 text-center">
     <a [routerLink]="viewAllLink()"
-      class="inline-flex items-center gap-1 text-sm font-semibold text-gray-700 transition-colors hover:text-orange-500">
-      View All Bookings <span aria-hidden="true">&rarr;</span>
+      class="inline-flex items-center justify-center gap-1 text-sm font-semibold text-gray-700 transition-colors hover:text-orange-500">
+      View All Bookings
+      <app-icon name="arrow-long-right" class="h-5 w-5 flex items-center justify-center" />
     </a>
-  </div>
+  </div>  
   }
 
   @if (footerMode() === 'pagination') {
@@ -208,7 +209,7 @@
     <gk-pagination
       [currentPage]="currentPage()"
       [pageSize]="pageSize()"
-      [totalItems]="totalItems()"
+      [totalItems]="paginationTotalItems()"
       (pageChange)="pageChange.emit($event)"
     />
   </div>
