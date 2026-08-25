@@ -132,6 +132,11 @@ function mapStatusToMessage(
   }
 
   switch (status) {
+    case 0:
+      // Angular reports every transport-level failure as status 0: offline,
+      // DNS failure, a proxy hangup, or a response the browser discarded
+      // because the stream died mid-request (see #395).
+      return 'We could not reach the server. Check your connection and try again.';
     case 400:
       return serverMessage || 'Please check your information and try again.';
     case 401:

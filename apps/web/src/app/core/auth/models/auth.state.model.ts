@@ -5,6 +5,7 @@ export interface AuthStateModel {
   token: string | null;
   refreshToken: string | null;
   isAuthenticated: boolean;
+  isRestoringSession: boolean;
 
   isLoading: boolean;
   isLoginLoading: boolean;
@@ -22,6 +23,7 @@ export const initialAuthState: AuthStateModel = {
   token: null,
   refreshToken: null,
   isAuthenticated: false,
+  isRestoringSession: false,
 
   isLoading: false,
   isLoginLoading: false,

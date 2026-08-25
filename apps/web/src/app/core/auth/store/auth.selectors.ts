@@ -14,6 +14,11 @@ export class AuthSelectors {
   }
 
   @Selector([AuthState])
+  static isRestoringSession(state: AuthStateModel) {
+    return state.isRestoringSession;
+  }
+
+  @Selector([AuthState])
   static isLoading(state: AuthStateModel) {
     return state.isLoading;
   }

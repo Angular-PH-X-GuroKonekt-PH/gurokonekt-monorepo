@@ -59,6 +59,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Token refreshed successfully',
     },
+    GET_SESSION: {
+      code: 200,
+      message: 'Session retrieved successfully',
+    },
 
     UPLOAD_FILES: {
       code: 200,

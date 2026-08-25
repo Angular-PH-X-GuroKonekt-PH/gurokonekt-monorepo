@@ -4,6 +4,7 @@ import {
   ApiResponse,
   ApiConsumes,
   ApiBody,
+  ApiBearerAuth,
 } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import {
@@ -16,7 +17,11 @@ import {
   UseInterceptors,
   HttpException,
   HttpStatus,
+  Get,
+  Req,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import {
   ForgotPasswordDto,
   CompletePasswordResetDto,
@@ -239,6 +244,58 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Refresh token is invalid or expired.' })
   async refreshToken(@Body() input: RefreshTokenDto) {
     const response = await this.authService.refreshToken(input);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.UNAUTHORIZED
+      );
+    }
+
+    return response;
+  }
+
+  // ====================================================
+  // GET - Current Session (JWT required)
+  // ====================================================
+
+  @Get('session')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Get the current authenticated user',
+    description:
+      'Returns the user behind the bearer token, in the same shape as the login response. ' +
+      'Clients call this on start-up to replace a cached identity that may be days old.',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Session retrieved successfully',
+    type: ResponseDto,
+    schema: {
+      example: {
+        status: 'success',
+        statusCode: 200,
+        message: 'Session retrieved successfully',
+        data: {
+          id: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+          email: 'jane.delacruz@example.com',
+          fullName: 'Jane Dela Cruz',
+          role: 'mentor',
+          isProfileComplete: true,
+          isMentorProfileComplete: true,
+        },
+      },
+    },
+  })
+  @ApiResponse({ status: 401, description: 'Token missing, expired, or unverifiable.' })
+  async session(@Req() request: { user: { id: string } }) {
+    const response = await this.authService.getSession(request.user.id);
 
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(

@@ -8,6 +8,7 @@ import {
 import { provideRouter } from '@angular/router';
 import { provideHttpClient, withInterceptors } from '@angular/common/http';
 import { provideStore } from '@ngxs/store';
+import { firstValueFrom } from 'rxjs';
 import { withNgxsLoggerPlugin } from '@ngxs/logger-plugin';
 import { withNgxsReduxDevtoolsPlugin } from '@ngxs/devtools-plugin';
 import { Store } from '@ngxs/store';
@@ -20,7 +21,9 @@ import { AvailabilityState } from './core/availability/store/availability.state'
 import { RestoreSession } from './core/auth/store/auth.actions';
 
 function restoreSession(store: Store) {
-  return () => store.dispatch(new RestoreSession());
+  // Returning the promise makes Angular hold routing until the session has been
+  // verified against the API — guards must never run on a cached snapshot.
+  return () => firstValueFrom(store.dispatch(new RestoreSession()));
 }
 
 export const appConfig: ApplicationConfig = {

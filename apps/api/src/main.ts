@@ -9,6 +9,7 @@ import { AppModule } from './app/app.module';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { ValidationPipe } from '@nestjs/common';
 import { isAllowedOrigin } from '@gurokonekt/models';
+import { DrainRequestExceptionFilter } from './app/common/filters/drain-request.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,6 +25,10 @@ async function bootstrap() {
     whitelist: true,
     forbidNonWhitelisted: true,
   }));
+
+  // Guards reject before Multer reads the body; without this the response is
+  // written mid-upload and the browser throws the whole thing away. See #395.
+  app.useGlobalFilters(new DrainRequestExceptionFilter());
 
   app.enableCors({
     origin: (requestOrigin: string | undefined, 

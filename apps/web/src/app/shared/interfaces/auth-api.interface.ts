@@ -36,3 +36,17 @@ export interface LoginApiData {
 }
 
 export type LoginApiResponse = ApiResponse<LoginApiData>;
+
+export interface SessionApiResponse {
+  status?: string;
+  statusCode: number;
+  message?: string;
+  data?: {
+    id: string;
+    email: string;
+    fullName: string;
+    role: string;
+    isProfileComplete: boolean;
+    isMentorProfileComplete: boolean;
+  } | null;
+}

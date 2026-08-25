@@ -2,7 +2,7 @@ import { Injectable, inject } from '@angular/core';
 import { Router } from '@angular/router';
 import { State, Action, StateContext, Selector } from '@ngxs/store';
 import { catchError, tap } from 'rxjs/operators';
-import { throwError } from 'rxjs';
+import { of, throwError } from 'rxjs';
 import { AuthResponse } from '@gurokonekt/models/interfaces/auth/auth-response.interface';
 
 import { AuthService } from '../services/auth.service';
@@ -66,17 +66,52 @@ export class AuthState {
     const refreshToken = this.storage.getRefreshToken();
     const user = this.storage.getUser();
 
-    if (!token || !user) {
-      return;
-    }
-
-    if (!user.id || !user.email || !user.role) {
+    if (!token || !user?.id || !user.email || !user.role) {
       this.storage.clear();
       ctx.setState(initialAuthState);
-      return;
+      return of(null);
     }
 
-    ctx.patchState({ user, token, refreshToken, isAuthenticated: true });
+    // Hydrate optimistically so the shell has something to render, but mark the
+    // session as unverified — guards must wait for the server's answer. The
+    // cached snapshot can be days old and describe a profile that has since
+    // been completed in another browser (issue #395).
+    ctx.patchState({
+      user,
+      token,
+      refreshToken,
+      isAuthenticated: true,
+      isRestoringSession: true,
+    });
+
+    return this.authService.getSession().pipe(
+      tap((freshUser) => {
+        this.storage.setUser(freshUser);
+        ctx.patchState({
+          user: freshUser,
+          token: this.storage.getToken(),
+          refreshToken: this.storage.getRefreshToken(),
+          isAuthenticated: true,
+          isRestoringSession: false,
+        });
+      }),
+      catchError((error) => {
+        const status = (error as { originalError?: { status?: number } })?.originalError?.status;
+        const rejected = status === 401 || status === 403;
+
+        if (rejected) {
+          this.storage.clear();
+          ctx.setState({ ...initialAuthState, isRestoringSession: false });
+          return of(null);
+        }
+
+        // The server could not answer — that is not proof the session is invalid.
+        // Degrade to the cached snapshot rather than destroying a working session;
+        // the interceptor still challenges a genuinely dead token on the next request.
+        ctx.patchState({ isRestoringSession: false });
+        return of(null);
+      })
+    );
   }
 
   @Action(AuthActions.LoginSuccess)
