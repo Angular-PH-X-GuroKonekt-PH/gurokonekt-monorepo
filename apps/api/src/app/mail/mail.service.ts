@@ -93,4 +93,40 @@ export class MailService {
       );
     }
   }
+
+  async sendAccountDeactivationEmail(
+    to: string,
+    firstName: string,
+    deactivationUrl: string,
+  ): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: this.from,
+        to,
+        subject: 'Confirm Your Account Deactivation',
+        html: `
+          <p>Hi ${this.escapeHtml(firstName)},</p>
+          <p>We received a request to deactivate your Gurokonekt account.</p>
+          <p>If you made this request, click the button below to continue:</p>
+          <p>
+            <a
+              href="${this.escapeHtml(deactivationUrl)}"
+              style="display:inline-block;padding:12px 20px;background:#f97316;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;"
+            >
+              Deactivate my account
+            </a>
+          </p>
+          <p>This link expires in 24 hours. Your account will not be deactivated until you submit the reason on the confirmation page.</p>
+          <p>If you did not request this, you can safely ignore this email.</p>
+          <p>-- The Gurokonekt Team</p>
+        `,
+      });
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to send account deactivation email to ${to}: ${error.message}`,
+        error.stack,
+      );
+      throw error;
+    }
+  }
 }

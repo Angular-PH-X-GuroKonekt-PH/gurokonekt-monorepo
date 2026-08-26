@@ -89,6 +89,11 @@ export class LoginPage extends BaseFormComponent implements OnInit {
 
       const user = this.store.selectSnapshot(AuthSelectors.user);
       if (user) {
+        if (user.status === 'inactive') {
+          await this.router.navigate([`/${APP_ROUTES.ACTIVATE_ACCOUNT}`]);
+          return;
+        }
+
         if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
           await this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
           return;

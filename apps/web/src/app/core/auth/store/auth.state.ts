@@ -4,6 +4,7 @@ import { State, Action, StateContext, Selector } from '@ngxs/store';
 import { catchError, tap } from 'rxjs/operators';
 import { of, throwError } from 'rxjs';
 import { AuthResponse } from '@gurokonekt/models/interfaces/auth/auth-response.interface';
+import { UserStatus } from '@gurokonekt/models/interfaces/user/user.model';
 
 import { AuthService } from '../services/auth.service';
 import { ProfileService } from '../../../core/profile/profile.service';
@@ -154,6 +155,25 @@ export class AuthState {
       errorMessage: action.error,
       successMessage: null
     });
+  }
+
+  @Action(AuthActions.UpdateCurrentUserStatus)
+  updateCurrentUserStatus(
+    ctx: StateContext<AuthStateModel>,
+    action: AuthActions.UpdateCurrentUserStatus,
+  ) {
+    const state = ctx.getState();
+    if (!state.user) {
+      return;
+    }
+
+    const updatedUser = {
+      ...state.user,
+      status: action.status as UserStatus,
+    };
+
+    this.storage.setUser(updatedUser);
+    ctx.patchState({ user: updatedUser });
   }
 
   @Action(AuthActions.RegisterMentee)

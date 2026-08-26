@@ -10,6 +10,13 @@ import type {
 import { getErrorMessage } from '../../shared/utils/http-error.util';
 import { ApiResponse } from '../../shared/interfaces/api-response.interface';
 import { buildApiUrl } from '../../shared/utils/api.util';
+import { API_CONFIG } from '../config/api.config';
+import type {
+  DeactivationFeedbackRequest,
+  ActivateAccountResponse,
+  InitiateDeactivationRequest,
+  VerifyDeactivationTokenResponse,
+} from '../../shared/interfaces/account-deactivation.interface';
 
 @Injectable({
   providedIn: 'root',
@@ -73,6 +80,73 @@ export class ProfileService {
    */
   getMenteeProfile(userId: string): Observable<ApiResponse> {
     return this.getUserProfile(userId);
+  }
+
+  initiateAccountDeactivation(
+    userId: string,
+    request: InitiateDeactivationRequest,
+  ): Observable<ApiResponse<null>> {
+    return this.http
+      .post<ApiResponse<null>>(
+        buildApiUrl(API_CONFIG.endpoints.user.initiateDeactivation(userId)),
+        request,
+      )
+      .pipe(
+        mergeMap((response) =>
+          this.validateApiResponse(response, 'Failed to initiate account deactivation'),
+        ),
+        catchError(this.handleError),
+      );
+  }
+
+  verifyDeactivationToken(
+    token: string,
+  ): Observable<ApiResponse<VerifyDeactivationTokenResponse>> {
+    return this.http
+      .post<ApiResponse<VerifyDeactivationTokenResponse>>(
+        buildApiUrl(API_CONFIG.endpoints.user.verifyDeactivation),
+        { token },
+      )
+      .pipe(
+        mergeMap((response) =>
+          this.validateApiResponse(response, 'Unable to verify the deactivation link'),
+        ),
+        catchError(this.handleError),
+      );
+  }
+
+  submitDeactivationFeedback(
+    userId: string,
+    request: DeactivationFeedbackRequest,
+  ): Observable<ApiResponse<null>> {
+    return this.http
+      .post<ApiResponse<null>>(
+        buildApiUrl(API_CONFIG.endpoints.user.submitDeactivationFeedback(userId)),
+        request,
+      )
+      .pipe(
+        mergeMap((response) =>
+          this.validateApiResponse(response, 'Failed to deactivate account'),
+        ),
+        catchError(this.handleError),
+      );
+  }
+
+  activateAccount(
+    userId: string,
+    reason: string,
+  ): Observable<ApiResponse<ActivateAccountResponse>> {
+    return this.http
+      .patch<ApiResponse<ActivateAccountResponse>>(
+        buildApiUrl(API_CONFIG.endpoints.user.activateAccount(userId)),
+        { reason },
+      )
+      .pipe(
+        mergeMap((response) =>
+          this.validateApiResponse(response, 'Failed to process account activation'),
+        ),
+        catchError(this.handleError),
+      );
   }
 
   private buildMenteeProfileFormData(
@@ -149,7 +223,10 @@ export class ProfileService {
     });
   }
 
-  private validateApiResponse(response: ApiResponse, fallbackMessage: string): Observable<ApiResponse> {
+  private validateApiResponse<T>(
+    response: ApiResponse<T>,
+    fallbackMessage: string,
+  ): Observable<ApiResponse<T>> {
     if (response.statusCode && response.statusCode !== ProfileService.SUCCESS_STATUS_CODE) {
       return throwError(() => ({
         message: response.message || fallbackMessage,

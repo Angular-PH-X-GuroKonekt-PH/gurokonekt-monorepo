@@ -111,7 +111,9 @@ export class JwtGuardStrategy extends PassportStrategy(Strategy) {
       return null;
     }
 
-    const blockedStatuses = ['inactive', 'banned', 'deleted', 'suspended'];
+    // Inactive users must be able to authenticate so they can access
+    // Profile Settings and complete the account reactivation flow.
+    const blockedStatuses = ['banned', 'deleted', 'suspended'];
 
     try {
       const dbUser = await this.prisma.db.user.findUnique({
