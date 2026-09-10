@@ -18,6 +18,7 @@ const BOOKING_ID = 'booking-1';
 const NOW = new Date('2026-08-21T10:00:00.000Z');
 const PAST = new Date('2026-08-18T09:00:00.000Z'); // 3 days before NOW
 const FUTURE = new Date('2026-08-28T09:00:00.000Z'); // 7 days after NOW
+const AMSTERDAM_SLOT = new Date('2026-08-24T07:00:00.000Z'); // Monday 09:00 CEST
 
 type PrismaMock = {
   db: {
@@ -207,6 +208,44 @@ describe('BookingService — backdated bookings (issue #374)', () => {
         API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.code,
       );
       expect(prisma.db.booking.create).not.toHaveBeenCalled();
+    });
+
+    it('validates a UTC request against the availability entry timezone', async () => {
+      prisma.db.user.findUnique.mockResolvedValue({
+        role: UserRole.Mentor,
+        status: UserStatus.Approved,
+        isMentorApproved: true,
+        isMentorProfileComplete: true,
+      });
+      prisma.db.mentorProfile.findUnique.mockResolvedValue({
+        availability: [
+          {
+            day: 'monday',
+            timezone: 'Europe/Amsterdam',
+            timeFrames: [{ from: '09:00', to: '10:00' }],
+          },
+        ],
+        sessionDurationMinutes: 60,
+        user: { timezone: 'Asia/Manila' },
+      });
+      prisma.db.booking.create.mockResolvedValue(
+        buildBooking({ sessionDateTime: AMSTERDAM_SLOT }),
+      );
+
+      const result = await service.create(
+        {
+          mentorId: MENTOR_ID,
+          sessionDateTime: AMSTERDAM_SLOT.toISOString(),
+        } as never,
+        MENTEE_ID,
+      );
+
+      expect(result.status).toBe(ResponseStatus.Success);
+      expect(prisma.db.booking.create).toHaveBeenCalledWith(
+        expect.objectContaining({
+          data: expect.objectContaining({ sessionDateTime: AMSTERDAM_SLOT }),
+        }),
+      );
     });
   });
 });

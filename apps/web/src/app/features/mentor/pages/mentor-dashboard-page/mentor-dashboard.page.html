@@ -35,8 +35,8 @@
 
           <p class="text-blue-200 text-sm mt-1">
             with {{ session.mentor }} &bull;
-            {{ session.dateTime | date:'MMM d, y' }} &bull;
-            {{ session.dateTime | date:'h:mm a' }}
+            {{ session.dateTime | date:'MMM d, y':mentorBookings.viewerTimezone() }} &bull;
+            {{ session.dateTime | date:'h:mm a':mentorBookings.viewerTimezone() }}
           </p>
         </div>
 
@@ -131,6 +131,6 @@
     [maxRows]="3"
     [bookings]="mentorBookings.bookings()"
     [isLoading]="mentorBookings.isBookingsLoading()"
-    [viewerTimezone]="mentorBookings.mentorTimezone()"
+    [viewerTimezone]="mentorBookings.viewerTimezone()"
   />
 </div>

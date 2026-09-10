@@ -3,13 +3,14 @@ import { provideHttpClient } from '@angular/common/http';
 import { provideHttpClientTesting } from '@angular/common/http/testing';
 import { ActivatedRoute } from '@angular/router';
 import { provideRouter } from '@angular/router';
+import { NgxsModule } from '@ngxs/store';
 import { of } from 'rxjs';
 import { MenteeFindMentorsPage } from './mentee-find-mentors.page';
 
 describe('MenteeFindMentorsPage', () => {
   const createComponent = (queryParams: Record<string, unknown>) => {
     TestBed.configureTestingModule({
-      imports: [MenteeFindMentorsPage],
+      imports: [MenteeFindMentorsPage, NgxsModule.forRoot([])],
       providers: [
         provideHttpClient(),
         provideHttpClientTesting(),

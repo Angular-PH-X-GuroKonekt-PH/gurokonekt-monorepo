@@ -13,5 +13,6 @@ import { StarRating } from 'apps/web/src/app/shared/components/star-rating/star-
 export class MenteeCompletedBookingCard {
 
   readonly completedBooking = input.required<BookingCardInterface>();
+  readonly viewerTimezone = input<string | null>(null);
 
-} 
+}

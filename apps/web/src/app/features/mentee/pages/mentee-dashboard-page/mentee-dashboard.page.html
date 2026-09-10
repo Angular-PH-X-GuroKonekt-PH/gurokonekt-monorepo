@@ -12,7 +12,7 @@
       [bookings]="upcomingSessionPreview()"
       [totalCount]="upcomingSessionsCount()"
       [loading]="upcomingSessionLoading()"
-      [viewerTimezone]="viewerTimezone()"
+      [viewerTimezone]="viewerTimezone"
       (viewDetails)="onViewDetails($event)"
       (viewAll)="viewAllUpcomingSessions()"
     />
@@ -23,7 +23,7 @@
       [bookings]="completedSessionHistory()"
       [totalCount]="completedSessionsCount()"
       [loading]="completedSessionLoading()"
-      [viewerTimezone]="viewerTimezone()"
+      [viewerTimezone]="viewerTimezone"
       (viewDetails)="onViewDetails($event)"
       (viewAll)="viewAllCompletedSessions()"
     />
@@ -93,7 +93,7 @@
             <app-mentor-recommended-card
               class="block h-full"
               [mentor]="mentor"
-              [viewerTimezone]="viewerTimezone()"
+              [viewerTimezone]="viewerTimezone"
             />
           </div>
           }

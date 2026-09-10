@@ -4,8 +4,8 @@
     <app-section-title title="Manage Your Bookings" subtitle="Stay organized with all your mentorship sessions." />
   </div>
 
-      <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
-        [viewerTimezone]="viewerTimezone()"
+  <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
+        [viewerTimezone]="viewerTimezone"
         [initialBookingId]="initialBookingId"
         footerMode="pagination"
         [currentPage]="currentPage()"
@@ -16,9 +16,7 @@
         (pageChange)="setPage($event)"
         (pageSizeChange)="setPageSize($event)"
         (tabChange)="setActiveTab($event)"
-        (sortChange)="setSort($event)" />
-    </app-section-card>
-  </section>
+    (sortChange)="setSort($event)" />
 
   @if (selectedReviewBooking(); as booking) {
   <app-mentee-review-modal [booking]="booking" [isSubmitting]="isSubmittingReview()" (closeModal)="closeReviewModal()"

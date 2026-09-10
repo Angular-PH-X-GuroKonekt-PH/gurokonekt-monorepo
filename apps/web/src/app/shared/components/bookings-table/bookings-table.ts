@@ -1,5 +1,5 @@
 import { NgTemplateOutlet } from '@angular/common';
-import { Component, computed, input, output, signal, TemplateRef } from '@angular/core';
+import { Component, computed, effect, input, output, signal, TemplateRef } from '@angular/core';
 import { RouterLink } from '@angular/router';
 
 import {

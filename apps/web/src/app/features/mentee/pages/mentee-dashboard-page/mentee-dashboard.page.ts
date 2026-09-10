@@ -15,10 +15,10 @@ import { MentorSearchItemInterface } from '@gurokonekt/models/interfaces/search/
 import { MentorCardListSkeleton } from '../../components/mentor-card-list-skeleton/mentor-card-list-skeleton.component';
 import { GreetingCard } from '../../../../shared/components/greeting-card/greeting-card.component';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
-import { ProfileService } from '../../../../core/profile/profile.service';
 import { MentorRecommendedCard } from '../../../mentor/components/mentor-recommended-card/mentor-recommended-card';
 import { MenteeDashboardBookingWidget } from '../../components/mentee-dashboard-booking-widget/mentee-dashboard-booking-widget';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
+import { getBrowserTimezone } from '../../../../shared/utils/timezone.util';
 
 @Component({
   selector: 'app-mentee-dashboard-page',
@@ -39,25 +39,7 @@ export class MenteeDashboardPage {
 
   private readonly bookingService = inject(BookingService);
   private readonly menteeSearchMentorService = inject(MenteeSearchMentorService);
-  private readonly profileService = inject(ProfileService);
-
-  protected readonly viewerTimezone = toSignal(
-    toObservable(this.userId).pipe(
-      switchMap((userId) => {
-        if (!userId) {
-          return of<string | null>(null);
-        }
-
-        return this.profileService.getUserProfile(userId).pipe(
-          map((response) => {
-            const profile = response.data as { timezone?: string | null } | null;
-            return profile?.timezone ?? null;
-          })
-        );
-      })
-    ),
-    { initialValue: null }
-  );
+  protected readonly viewerTimezone = getBrowserTimezone();
 
   protected readonly fullName = computed<string>(() => {
     const value = this.authUser()?.['fullName'];

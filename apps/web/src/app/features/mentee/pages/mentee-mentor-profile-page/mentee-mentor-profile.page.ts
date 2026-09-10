@@ -11,7 +11,6 @@ import { getCountryDisplayName } from '../../../../shared/utils/location-data.ut
 import { getLanguageLabel } from '../../../../shared/utils';
 import { MentorService } from '../../../mentor/services/mentor.service';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
-import { ProfileService } from '../../../../core/profile/profile.service';
 import { MenteePageLoader } from '../../components/mentee-page-loader/mentee-page-loader';
 import { MentorProfileHero } from '../../components/mentor-profile-hero/mentor-profile-hero';
 import {
@@ -19,6 +18,7 @@ import {
   formatDayLabel,
   formatTimeTo12Hour,
 } from '../../utils/mentor-availability.util';
+import { getBrowserTimezone } from '../../../../shared/utils/timezone.util';
 import { ReviewService } from '../../services/review.service';
 import { REVIEW_DEFAULT_LIMIT } from '../../constants/review.constants';
 
@@ -46,27 +46,10 @@ export class MenteeMentorProfilePage {
   private readonly mentorService = inject(MentorService);
   private readonly reviewService = inject(ReviewService);
   private readonly store = inject(Store);
-  private readonly profileService = inject(ProfileService);
 
   protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
-  protected readonly viewerTimezone = toSignal(
-    toObservable(this.userId).pipe(
-      switchMap((userId) => {
-        if (!userId) {
-          return of<string | null>(null);
-        }
-
-        return this.profileService.getUserProfile(userId).pipe(
-          map((response) => {
-            const profile = response.data as { timezone?: string | null } | null;
-            return profile?.timezone ?? null;
-          })
-        );
-      })
-    ),
-    { initialValue: null }
-  );
+  protected readonly viewerTimezone = getBrowserTimezone();
 
   protected readonly bookSessionRoute = APP_ROUTES.BOOK_SESSION;
   protected readonly findMentorsRoute = APP_ROUTES.FIND_MENTORS;
@@ -104,7 +87,7 @@ export class MenteeMentorProfilePage {
       ? convertAvailabilityForViewer(
           mentor.availability,
           mentor.user.timezone,
-          this.viewerTimezone() || undefined
+          this.viewerTimezone
         )
       : [];
   });

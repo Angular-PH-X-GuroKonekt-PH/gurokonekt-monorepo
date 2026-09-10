@@ -53,6 +53,8 @@ export class BookingService {
     menteeId: string,
   ): Promise<ResponseDto<BookingInterface>> {
     try {
+      const sessionDateTime = new Date(dto.sessionDateTime);
+
       // Only approved mentors are bookable — the mentorId may come from any
       // client, so validate it here rather than relying on search filtering.
       const mentor = await this.prisma.db.user.findUnique({
@@ -74,7 +76,7 @@ export class BookingService {
         };
       }
 
-      if (new Date(dto.sessionDateTime) <= new Date()) {
+      if (sessionDateTime <= new Date()) {
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.code,
@@ -85,7 +87,7 @@ export class BookingService {
 
       const conflict = await this.checkBookingConflict(
         dto.mentorId,
-        new Date(dto.sessionDateTime),
+        sessionDateTime,
       );
       if (conflict) return conflict as ResponseDto<BookingInterface>;
 
@@ -93,7 +95,7 @@ export class BookingService {
         data: {
           menteeId,
           mentorId: dto.mentorId,
-          sessionDateTime: dto.sessionDateTime,
+          sessionDateTime,
           menteeNotes: dto.menteeNotes ?? null,
           status: BookingStatus.PENDING,
         },
@@ -107,7 +109,7 @@ export class BookingService {
       await this.createNotification(
         dto.mentorId,
         'New Booking Request',
-        `You have received a new booking request for ${new Date(dto.sessionDateTime).toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}.`,
+        `You have received a new booking request for ${sessionDateTime.toLocaleString('en-US', { dateStyle: 'medium', timeStyle: 'short' })}.`,
         NotificationType.BOOKING,
         booking.id,
       );
@@ -1013,26 +1015,29 @@ export class BookingService {
     const availability =
       (profile.availability as unknown as {
         day: string;
+        timezone?: string | null;
         timeFrames: { from: string; to: string }[];
       }[]) ?? [];
 
-    const DAYS = [
-      'sunday',
-      'monday',
-      'tuesday',
-      'wednesday',
-      'thursday',
-      'friday',
-      'saturday',
-    ];
-    const mentorLocalDateTime = this.getDateTimeInTimezone(
+    const fallbackTimezone = this.isValidTimezone(profile.user.timezone)
+      ? profile.user.timezone
+      : 'UTC';
+    const dayName = this.getDateTimeInTimezone(
       sessionDateTime,
-      profile.user.timezone,
-    );
-    const dayName = DAYS[mentorLocalDateTime.dayIndex];
+      fallbackTimezone,
+    ).dayName;
+    const matchingDaySlots = availability.filter((slot) => {
+      const sourceTimezone = this.isValidTimezone(slot.timezone)
+        ? slot.timezone
+        : fallbackTimezone;
 
-    const daySlot = availability.find((s) => s.day === dayName);
-    if (!daySlot || daySlot.timeFrames.length === 0) {
+      return (
+        this.getDateTimeInTimezone(sessionDateTime, sourceTimezone).dayName ===
+        slot.day.toLowerCase()
+      );
+    });
+
+    if (!matchingDaySlots.some((slot) => slot.timeFrames.length > 0)) {
       return {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.BOOKING_MENTOR_NOT_AVAILABLE_DAY.code,
@@ -1041,19 +1046,27 @@ export class BookingService {
       };
     }
 
-    // Availability is stored as the mentor's local wall-clock time.
-    const sessionStart = mentorLocalDateTime.minutes;
-    const sessionEnd = sessionStart + duration;
-
     const timeToMinutes = (t: string) => {
       const [h, m] = t.split(':').map(Number);
       return h * 60 + m;
     };
 
-    const fitsInFrame = daySlot.timeFrames.some((f) => {
-      const fStart = timeToMinutes(f.from);
-      const fEnd = timeToMinutes(f.to);
-      return sessionStart >= fStart && sessionEnd <= fEnd;
+    const fitsInFrame = matchingDaySlots.some((daySlot) => {
+      const sourceTimezone = this.isValidTimezone(daySlot.timezone)
+        ? daySlot.timezone
+        : fallbackTimezone;
+      const localSession = this.getDateTimeInTimezone(
+        sessionDateTime,
+        sourceTimezone,
+      );
+      const sessionStart = localSession.minutes;
+      const sessionEnd = sessionStart + duration;
+
+      return daySlot.timeFrames.some((frame) => {
+        const frameStart = timeToMinutes(frame.from);
+        const frameEnd = timeToMinutes(frame.to);
+        return sessionStart >= frameStart && sessionEnd <= frameEnd;
+      });
     });
 
     if (!fitsInFrame) {
@@ -1066,17 +1079,22 @@ export class BookingService {
     }
 
     // Check for overlapping existing bookings
-    const startOfDay = new Date(sessionDateTime);
-    startOfDay.setUTCHours(0, 0, 0, 0);
-    const endOfDay = new Date(sessionDateTime);
-    endOfDay.setUTCHours(23, 59, 59, 999);
+    const overlapWindowStart = new Date(
+      sessionDateTime.getTime() - duration * 60_000,
+    );
+    const overlapWindowEnd = new Date(
+      sessionDateTime.getTime() + duration * 60_000,
+    );
 
     const existingBookings = await this.prisma.db.booking.findMany({
       where: {
         mentorId,
         isDeleted: false,
         status: { in: [BookingStatus.PENDING, BookingStatus.APPROVED] },
-        sessionDateTime: { gte: startOfDay, lte: endOfDay },
+        sessionDateTime: {
+          gte: overlapWindowStart,
+          lte: overlapWindowEnd,
+        },
         ...(excludeBookingId ? { id: { not: excludeBookingId } } : {}),
       },
       select: { sessionDateTime: true },
@@ -1104,9 +1122,9 @@ export class BookingService {
   private getDateTimeInTimezone(
     date: Date,
     timezone: string | null,
-  ): { dayIndex: number; minutes: number } {
+  ): { dayName: string; minutes: number } {
     const formatter = new Intl.DateTimeFormat('en-US', {
-      timeZone: timezone || 'UTC',
+      timeZone: this.isValidTimezone(timezone) ? timezone : 'UTC',
       weekday: 'short',
       hour: '2-digit',
       minute: '2-digit',
@@ -1118,13 +1136,35 @@ export class BookingService {
         .filter(({ type }) => type !== 'literal')
         .map(({ type, value }) => [type, value]),
     );
-    const dayIndex = ['sun', 'mon', 'tue', 'wed', 'thu', 'fri', 'sat'].indexOf(
-      values['weekday'],
-    );
-
     return {
-      dayIndex: dayIndex === -1 ? date.getUTCDay() : dayIndex,
+      dayName: this.expandWeekday(values['weekday']),
       minutes: Number(values['hour']) * 60 + Number(values['minute']),
     };
+  }
+
+  private isValidTimezone(timezone: string | null | undefined): timezone is string {
+    if (!timezone?.trim()) return false;
+
+    try {
+      new Intl.DateTimeFormat('en-US', { timeZone: timezone }).format();
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  private expandWeekday(value: string): string {
+    const weekdays: Record<string, string> = {
+      sun: 'sunday',
+      mon: 'monday',
+      tue: 'tuesday',
+      wed: 'wednesday',
+      thu: 'thursday',
+      fri: 'friday',
+      sat: 'saturday',
+    };
+
+    const normalizedValue = value.toLowerCase();
+    return weekdays[normalizedValue] ?? normalizedValue;
   }
 }

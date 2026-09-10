@@ -12,6 +12,7 @@ import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/s
 })
 export class MenteeBookingCard {
   readonly booking = input.required<BookingCardInterface>();
+  readonly viewerTimezone = input<string | null>(null);
   readonly viewDetails = output<BookingCardInterface>();
   readonly cancelRequest = output<BookingCardInterface>();
   readonly addReview = output<BookingCardInterface>();

@@ -117,6 +117,8 @@ export interface UpdateMentorProfileInterface {
 
 export interface UserAvailabilityInterface {
   day: DaysInWeek;
+  /** IANA timezone in effect when this availability was created. */
+  timezone?: string;
   timeFrames: TimeFrameInterface[]; 
 }
 

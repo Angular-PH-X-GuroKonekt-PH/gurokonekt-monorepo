@@ -10,5 +10,9 @@ export interface BookSessionSlotOption {
   label: string;
   displayDateTime: Date;
   bookingDateTime: Date;
+  sourceDay: string;
+  sourceFrom: string;
+  sourceTo: string;
+  sourceTimezone: string;
   isBooked: boolean;
 }

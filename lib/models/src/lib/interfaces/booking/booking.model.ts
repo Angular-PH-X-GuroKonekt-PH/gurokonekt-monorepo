@@ -73,14 +73,15 @@ export interface BookingCardInterface extends BookingInterface {
 
 export interface CreateBookingRequestInterface {
   mentorId: string;
-  sessionDateTime: Date;
+  /** ISO 8601 instant; the frontend sends UTC and the API persists the instant. */
+  sessionDateTime: string;
   menteeNotes?: string;
 }
 
 export interface UpcomingSession {
   title: string;
   mentor: string;
-  dateTime: string;
+  dateTime: Date;
   sessionLink?: string | null;
 }
 

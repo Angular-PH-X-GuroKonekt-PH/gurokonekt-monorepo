@@ -25,7 +25,7 @@ export interface MentorProfileSearch {
   bio: string | null;
   skills: string[];
   sessionRate: number | null;
-  availability: unknown;
+  availability: UserAvailabilityInterface[];
   linkedInUrl: string | null;
   updatedAt: Date;
 }
@@ -38,7 +38,7 @@ export interface MentorProfileDetailInterface {
   yearsOfExperience: number | null;
   skills: string[];
   sessionRate: number | null;
-  availability: unknown;
+  availability: UserAvailabilityInterface[];
   linkedInUrl: string | null;
   updatedAt: Date;
   user: {

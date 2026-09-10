@@ -564,7 +564,8 @@ export class SearchService {
         yearsOfExperience: profile.yearsOfExperience,
         skills: profile.skills,
         sessionRate: profile.sessionRate,
-        availability: profile.availability,
+        availability:
+          profile.availability as unknown as MentorProfileDetailInterface['availability'],
         linkedInUrl: profile.linkedInUrl,
         updatedAt: profile.updatedAt,
         user: {

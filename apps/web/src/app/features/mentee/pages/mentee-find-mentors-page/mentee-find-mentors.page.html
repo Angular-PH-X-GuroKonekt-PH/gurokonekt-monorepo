@@ -16,7 +16,7 @@
     @if (!hasActiveFilters()) {
       <app-mentor-recommendations
         [state]="recommendedState()"
-        [viewerTimezone]="viewerTimezone()"
+        [viewerTimezone]="viewerTimezone"
       />
 
       <hr class="border-slate-200" />
@@ -69,7 +69,7 @@
           @for (mentor of searchState.mentors; track mentor.id) {
           <app-mentor-info-card
             [mentor]="mentor"
-            [viewerTimezone]="viewerTimezone()"
+            [viewerTimezone]="viewerTimezone"
           />
           }
         </div>

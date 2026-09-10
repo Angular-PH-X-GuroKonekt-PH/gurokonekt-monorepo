@@ -1,6 +1,6 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { toObservable, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngxs/store';
@@ -16,7 +16,6 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
-import { ProfileService } from '../../../../core/profile/profile.service';
 import { MentorService } from '../../../mentor/services/mentor.service';
 import { MenteePageLoader } from '../../components/mentee-page-loader/mentee-page-loader';
 import { MentorProfileHero } from '../../components/mentor-profile-hero/mentor-profile-hero';
@@ -55,7 +54,6 @@ export class MenteeBookSessionPage {
   private readonly notificationService = inject(NotificationService);
   private readonly toastService = inject(ToastService);
   private readonly store = inject(Store);
-  private readonly profileService = inject(ProfileService);
 
   protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
@@ -106,23 +104,7 @@ export class MenteeBookSessionPage {
       .join(' ');
   });
 
-  protected readonly viewerTimezone = toSignal(
-    toObservable(this.userId).pipe(
-      switchMap((userId) => {
-        if (!userId) {
-          return of<string | null>(null);
-        }
-
-        return this.profileService.getUserProfile(userId).pipe(
-          map((response) => {
-            const profile = response.data as { timezone?: string | null } | null;
-            return profile?.timezone ?? null;
-          })
-        );
-      })
-    ),
-    { initialValue: null }
-  );
+  protected readonly viewerTimezone = computed(() => getBrowserTimezone());
 
   protected readonly mentorTimezone = computed(
     () => this.mentor()?.user.timezone || getBrowserTimezone()
@@ -134,7 +116,7 @@ export class MenteeBookSessionPage {
       this.mentor()?.availability ?? [],
       BOOKING_DATE_RANGE_DAYS,
       this.mentorTimezone(),
-      this.viewerTimezone() || getBrowserTimezone()
+      this.viewerTimezone()
     )
   );
 
@@ -258,7 +240,7 @@ export class MenteeBookSessionPage {
     this.bookingService
       .createBooking({
         mentorId,
-        sessionDateTime: selectedSlot.bookingDateTime,
+        sessionDateTime: selectedSlot.bookingDateTime.toISOString(),
         menteeNotes: this.menteeNotes().trim() || undefined,
       })
       .subscribe({

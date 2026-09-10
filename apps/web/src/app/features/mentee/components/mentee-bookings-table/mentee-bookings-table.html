@@ -73,7 +73,7 @@
 />
 
 @if (selectedBooking(); as booking) {
-  <app-mentee-booking-details-modal [booking]="booking" (closed)="closeDetails()" />
+  <app-mentee-booking-details-modal [booking]="booking" [viewerTimezone]="viewerTimezone()" (closed)="closeDetails()" />
 }
 
 @if (cancelBookingTarget(); as booking) {

@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
-import { catchError, map, of, startWith, switchMap } from 'rxjs';
+import { of, startWith, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
@@ -15,7 +15,7 @@ import {
 
 import { AuthSelectors } from '../../../core/auth/store/auth.selectors';
 import { BookingService } from '../../../shared/services/booking.service';
-import { ProfileService } from '../../../core/profile/profile.service';
+import { getBrowserTimezone } from '../../../shared/utils/timezone.util';
 
 @Injectable({
   providedIn: 'root',
@@ -23,7 +23,6 @@ import { ProfileService } from '../../../core/profile/profile.service';
 export class MentorBookingService {
   store = inject(Store);
   bookingService = inject(BookingService);
-  private readonly profileService = inject(ProfileService);
 
   authUser = this.store.selectSignal(AuthSelectors.user);
   userId = computed(() => this.authUser()?.id);
@@ -68,28 +67,7 @@ export class MentorBookingService {
     { initialValue: null }
   );
 
-  private readonly timezoneUserId = computed(
-    () => this.bookingPage()?.data[0]?.mentorId ?? this.userId(),
-  );
-
-  readonly mentorTimezone = toSignal(
-    toObservable(this.timezoneUserId).pipe(
-      switchMap((userId) => {
-        if (!userId) {
-          return of<string | null>(null);
-        }
-
-        return this.profileService.getUserProfile(userId).pipe(
-          map((response) => {
-            const profile = response.data as { timezone?: string | null } | null;
-            return profile?.timezone ?? null;
-          }),
-          catchError(() => of<string | null>(null)),
-        );
-      }),
-    ),
-    { initialValue: null },
-  );
+  readonly viewerTimezone = computed(() => getBrowserTimezone());
 
   bookings = computed<BookingCardInterface[] | null>(
     () => this.bookingPage()?.data ?? null
@@ -131,17 +109,12 @@ export class MentorBookingService {
 
     if (!nextBooking) return null;
 
-    const mentorTimezone = this.mentorTimezone();
-
     return {
       title: nextBooking.menteeNotes || 'Mentoring Session',
       mentor: nextBooking.mentee
         ? `${nextBooking.mentee.firstName} ${nextBooking.mentee.lastName}`
         : 'Mentee',
-      dateTime: new Date(nextBooking.sessionDateTime).toLocaleString(
-        undefined,
-        mentorTimezone ? { timeZone: mentorTimezone } : undefined,
-      ),
+      dateTime: new Date(nextBooking.sessionDateTime),
       sessionLink: nextBooking.sessionLink,
     };
   });
