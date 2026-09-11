@@ -828,6 +828,10 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Invalid or expired deactivation token',
     },
+    DEACTIVATION_PASSWORD_INCORRECT: {
+      code: 400,
+      message: 'Password incorrect',
+    },
     DEACTIVATION_INITIATE: {
       code: 500,
       message: 'Failed to initiate account deactivation',
