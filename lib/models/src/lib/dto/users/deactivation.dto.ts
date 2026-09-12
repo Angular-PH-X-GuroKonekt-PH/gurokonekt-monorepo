@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -11,7 +12,10 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { DaysInWeek } from '../../interfaces/user/user.model';
+import {
+  AvailabilityOverrideType,
+  DaysInWeek,
+} from '../../interfaces/user/user.model';
 import { TimeFrameDto, UserAvailabilityDto } from './update-user-profile.dto';
 
 export class InitiateDeactivationDto {
@@ -69,6 +73,14 @@ export class DowngradeMentorDto {
 }
 
 export class ManageAvailabilityDto {
+  @ApiPropertyOptional({
+    description: 'IANA timezone used by the recurring weekly schedule.',
+    example: 'Europe/Amsterdam',
+  })
+  @IsOptional()
+  @IsString()
+  availabilityTimezone?: string;
+
   @ApiProperty({
     description: 'Standard session length in minutes. Each time frame must be at least this long. Minimum 15.',
     example: 60,
@@ -93,6 +105,14 @@ export class ManageAvailabilityDto {
 }
 
 export class AddAvailabilitySlotDto {
+  @ApiPropertyOptional({
+    description: 'IANA timezone used by the recurring weekly schedule.',
+    example: 'Europe/Amsterdam',
+  })
+  @IsOptional()
+  @IsString()
+  availabilityTimezone?: string;
+
   @ApiProperty({
     enum: DaysInWeek,
     description: 'Day of the week for this availability slot',
@@ -124,6 +144,14 @@ export class AddAvailabilitySlotDto {
 }
 
 export class UpdateAvailabilitySlotDto {
+  @ApiPropertyOptional({
+    description: 'IANA timezone used by the recurring weekly schedule.',
+    example: 'Europe/Amsterdam',
+  })
+  @IsOptional()
+  @IsString()
+  availabilityTimezone?: string;
+
   @ApiProperty({
     enum: DaysInWeek,
     description: 'Day of the week for the availability slot to update',
@@ -167,4 +195,44 @@ export class DeleteAvailabilitySlotDto {
   @IsInt()
   @Min(0)
   timeFrameIndex?: number;
+}
+
+export class AddAvailabilityOverrideDto {
+  @ApiProperty({ enum: AvailabilityOverrideType })
+  @IsEnum(AvailabilityOverrideType)
+  type!: AvailabilityOverrideType;
+
+  @ApiProperty({ example: '2026-09-08' })
+  @IsDateString({ strict: true })
+  startDate!: string;
+
+  @ApiProperty({ example: '2026-09-08' })
+  @IsDateString({ strict: true })
+  endDate!: string;
+
+  @ApiProperty({ example: 'Europe/Amsterdam' })
+  @IsString()
+  @IsNotEmpty()
+  timezone!: string;
+
+  @ApiPropertyOptional({
+    type: [TimeFrameDto],
+    description: 'Required for custom hours and temporary availability; omitted when unavailable.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => TimeFrameDto)
+  timeFrames?: TimeFrameDto[];
+}
+
+export class AvailabilitySlotsQueryDto {
+  @ApiProperty({ example: '2026-09-01' })
+  @IsDateString({ strict: true })
+  startDate!: string;
+
+  @ApiProperty({ example: '2026-11-30' })
+  @IsDateString({ strict: true })
+  endDate!: string;
 }

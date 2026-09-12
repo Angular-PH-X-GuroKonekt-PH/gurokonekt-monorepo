@@ -14,6 +14,16 @@ export class AvailabilitySelectors {
   }
 
   @Selector([AvailabilityState])
+  static availabilityTimezone(state: AvailabilityStateModel) {
+    return state.availabilityTimezone;
+  }
+
+  @Selector([AvailabilityState])
+  static availabilityOverrides(state: AvailabilityStateModel) {
+    return state.availabilityOverrides;
+  }
+
+  @Selector([AvailabilityState])
   static isLoading(state: AvailabilityStateModel) {
     return state.isLoading;
   }

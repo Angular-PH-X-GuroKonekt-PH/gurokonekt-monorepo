@@ -8,6 +8,8 @@ import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin from '@fullcalendar/interaction';
 import listPlugin from '@fullcalendar/list';
 import {
+  AvailabilityOverrideInterface,
+  AvailabilityOverrideType,
   DeleteAvailabilityTargetInterface,
   DaysInWeek,
   TimeFrameInterface,
@@ -38,6 +40,20 @@ import { AvailabilitySlotModal } from './availability-slot-modal/availability-sl
 import { DeleteAvailabilityModal } from './delete-availability-modal/delete-availability-modal';
 import { AvailabilityTable } from '../../components/availability-table/availability-table';
 
+function getIanaTimezoneOptions(): { value: string; label: string }[] {
+  const supportedValuesOf = (
+    Intl as unknown as { supportedValuesOf?: (key: 'timeZone') => string[] }
+  ).supportedValuesOf;
+  const values = supportedValuesOf
+    ? supportedValuesOf('timeZone')
+    : [Intl.DateTimeFormat().resolvedOptions().timeZone, 'UTC'];
+
+  return [...new Set([...values.filter(Boolean), 'UTC'])].map((value) => ({
+    value,
+    label: value,
+  }));
+}
+
 @Component({
   selector: 'app-mentor-manage-availability-page',
   standalone: true,
@@ -63,6 +79,8 @@ export class MentorManageAvailabilityPage implements OnInit {
   selectors = createSelectMap({
     availabilities: AvailabilitySelectors.availabilities,
     sessionDurationMinutes: AvailabilitySelectors.sessionDurationMinutes,
+    availabilityTimezone: AvailabilitySelectors.availabilityTimezone,
+    availabilityOverrides: AvailabilitySelectors.availabilityOverrides,
     isLoading: AvailabilitySelectors.isLoading,
     errorMessage: AvailabilitySelectors.errorMessage,
   });
@@ -73,7 +91,10 @@ export class MentorManageAvailabilityPage implements OnInit {
   showSlotModal = signal(false);
   editingDay = signal<DaysInWeek | null>(null);
   editingTimeFrameIndex = signal<number | null>(null);
-  deleteAvailabilityTarget = signal<DeleteAvailabilityTargetInterface | null>(null);
+  editingOverrideId = signal<string | null>(null);
+  deleteAvailabilityTarget = signal<DeleteAvailabilityTargetInterface | null>(
+    null,
+  );
   deleteAvailabilitySubmitting = signal(false);
 
   selectedWeekValue = toWeekInputValue(new Date());
@@ -87,19 +108,24 @@ export class MentorManageAvailabilityPage implements OnInit {
     DaysInWeek.Saturday,
     DaysInWeek.Sunday,
   ];
+  timezoneOptions = getIanaTimezoneOptions();
 
   slotForm = {
+    scheduleType: 'recurring' as 'recurring' | AvailabilityOverrideType,
     day: DaysInWeek.Monday,
     from: '09:00',
     to: '10:00',
+    startDate: '',
+    endDate: '',
+    timezone: Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
   };
 
   calendarEvents = computed(() =>
     mapAvailabilityToCalendarEvents(
       this.selectors.availabilities(),
       this.blockedBookings(),
-      this.selectors.sessionDurationMinutes()
-    )
+      this.selectors.sessionDurationMinutes(),
+    ),
   );
 
   calendarOptions: CalendarOptions = {
@@ -124,7 +150,7 @@ export class MentorManageAvailabilityPage implements OnInit {
       minute: '2-digit',
       omitZeroMinute: false,
       meridiem: true,
-    }, 
+    },
     eventTimeFormat: {
       hour: 'numeric',
       minute: '2-digit',
@@ -163,7 +189,7 @@ export class MentorManageAvailabilityPage implements OnInit {
     this.expandedDays.update((expandedDays) =>
       expandedDays.includes(day)
         ? expandedDays.filter((expandedDay) => expandedDay !== day)
-        : [...expandedDays, day]
+        : [...expandedDays, day],
     );
   }
 
@@ -174,30 +200,59 @@ export class MentorManageAvailabilityPage implements OnInit {
   onAddSlot(): void {
     this.editingDay.set(null);
     this.editingTimeFrameIndex.set(null);
+    this.editingOverrideId.set(null);
 
     this.slotForm = {
+      scheduleType: 'recurring',
       day: DaysInWeek.Monday,
       from: '09:00',
       to: '10:00',
+      startDate: this.todayDateKey,
+      endDate: this.todayDateKey,
+      timezone:
+        this.selectors.availabilityTimezone() ||
+        Intl.DateTimeFormat().resolvedOptions().timeZone ||
+        'UTC',
     };
 
     this.showSlotModal.set(true);
   }
 
+  onEditOverride(override: AvailabilityOverrideInterface): void {
+    this.editingDay.set(null);
+    this.editingTimeFrameIndex.set(null);
+    this.editingOverrideId.set(override.id);
+    this.slotForm = {
+      scheduleType: override.type,
+      day: DaysInWeek.Monday,
+      from: override.timeFrames[0]?.from ?? '09:00',
+      to: override.timeFrames[override.timeFrames.length - 1]?.to ?? '10:00',
+      startDate: override.startDate,
+      endDate: override.endDate,
+      timezone: override.timezone,
+    };
+    this.showSlotModal.set(true);
+  }
+
   onEditDay(slot: UserAvailabilityInterface): void {
     const sortedFrames = [...slot.timeFrames].sort(
-      (a, b) => timeToMinutes(a.from) - timeToMinutes(b.from)
+      (a, b) => timeToMinutes(a.from) - timeToMinutes(b.from),
     );
     const firstFrame = sortedFrames[0];
     const lastFrame = sortedFrames[sortedFrames.length - 1];
 
     this.editingDay.set(slot.day);
     this.editingTimeFrameIndex.set(null);
+    this.editingOverrideId.set(null);
 
     this.slotForm = {
+      scheduleType: 'recurring',
       day: slot.day,
       from: firstFrame?.from ?? '09:00',
       to: lastFrame?.to ?? '10:00',
+      startDate: '',
+      endDate: '',
+      timezone: this.selectors.availabilityTimezone(),
     };
 
     this.showSlotModal.set(true);
@@ -206,15 +261,20 @@ export class MentorManageAvailabilityPage implements OnInit {
   onEditTimeFrame(
     slot: UserAvailabilityInterface,
     timeFrame: TimeFrameInterface,
-    timeFrameIndex: number
+    timeFrameIndex: number,
   ): void {
     this.editingDay.set(slot.day);
     this.editingTimeFrameIndex.set(timeFrameIndex);
+    this.editingOverrideId.set(null);
 
     this.slotForm = {
+      scheduleType: 'recurring',
       day: slot.day,
       from: timeFrame.from,
       to: timeFrame.to,
+      startDate: '',
+      endDate: '',
+      timezone: this.selectors.availabilityTimezone(),
     };
 
     this.showSlotModal.set(true);
@@ -224,6 +284,7 @@ export class MentorManageAvailabilityPage implements OnInit {
     this.showSlotModal.set(false);
     this.editingDay.set(null);
     this.editingTimeFrameIndex.set(null);
+    this.editingOverrideId.set(null);
   }
 
   saveSlot(): void {
@@ -236,6 +297,52 @@ export class MentorManageAvailabilityPage implements OnInit {
       to: this.slotForm.to,
     };
 
+    if (this.slotForm.scheduleType !== 'recurring') {
+      const endDate =
+        this.slotForm.scheduleType === AvailabilityOverrideType.CustomHours
+          ? this.slotForm.startDate
+          : this.slotForm.endDate;
+      if (!this.slotForm.startDate || !endDate) {
+        this.toastService.warning('Select a valid date or date range.');
+        return;
+      }
+
+      const payload = {
+        type: this.slotForm.scheduleType,
+        startDate: this.slotForm.startDate,
+        endDate,
+        timezone: this.slotForm.timezone,
+        ...(this.slotForm.scheduleType !==
+          AvailabilityOverrideType.Unavailable && {
+          timeFrames: [frame],
+        }),
+      };
+      const editingOverrideId = this.editingOverrideId();
+      const request = editingOverrideId
+        ? this.availabilityService.updateAvailabilityOverride(
+            userId,
+            editingOverrideId,
+            payload,
+          )
+        : this.availabilityService.addAvailabilityOverride(userId, payload);
+
+      request.subscribe({
+        next: () => {
+          this.store.dispatch(new FetchAvailability(userId));
+          this.closeSlotModal();
+          this.toastService.success(
+            `Availability override ${editingOverrideId ? 'updated' : 'added'} successfully.`,
+          );
+        },
+        error: (error) =>
+          this.toastService.error(
+            error?.error?.message ??
+              `Failed to ${editingOverrideId ? 'update' : 'add'} availability override.`,
+          ),
+      });
+      return;
+    }
+
     const editingDay = this.editingDay();
     const editingTimeFrameIndex = this.editingTimeFrameIndex();
     const targetDay = editingDay ?? this.slotForm.day;
@@ -245,14 +352,14 @@ export class MentorManageAvailabilityPage implements OnInit {
     const framesToValidate =
       editingDay && editingTimeFrameIndex !== null
         ? (existingDay?.timeFrames ?? []).map((currentFrame, index) =>
-            index === editingTimeFrameIndex ? frame : currentFrame
+            index === editingTimeFrameIndex ? frame : currentFrame,
           )
         : editingDay
           ? [frame]
           : [...(existingDay?.timeFrames ?? []), frame];
     const validationError = validateAvailabilityFrames(
       framesToValidate,
-      sessionDurationMinutes
+      sessionDurationMinutes,
     );
 
     if (validationError) {
@@ -266,6 +373,7 @@ export class MentorManageAvailabilityPage implements OnInit {
           day: editingDay,
           timeFrameIndex: editingTimeFrameIndex,
           timeFrame: frame,
+          availabilityTimezone: this.slotForm.timezone,
         })
         .subscribe({
           next: () => {
@@ -274,7 +382,9 @@ export class MentorManageAvailabilityPage implements OnInit {
             this.toastService.success('Availability updated successfully.');
           },
           error: (error) => {
-            this.toastService.error(error?.error?.message ?? 'Failed to update availability.');
+            this.toastService.error(
+              error?.error?.message ?? 'Failed to update availability.',
+            );
           },
         });
 
@@ -282,16 +392,17 @@ export class MentorManageAvailabilityPage implements OnInit {
     }
 
     if (editingDay) {
-      const updatedAvailability = this.selectors.availabilities().map((slot) =>
-        slot.day === editingDay
-          ? { ...slot, timeFrames: [frame] }
-          : slot
-      );
+      const updatedAvailability = this.selectors
+        .availabilities()
+        .map((slot) =>
+          slot.day === editingDay ? { ...slot, timeFrames: [frame] } : slot,
+        );
 
       this.availabilityService
         .updateAvailability(userId, {
           availability: updatedAvailability,
           sessionDurationMinutes,
+          availabilityTimezone: this.slotForm.timezone,
         })
         .subscribe({
           next: () => {
@@ -300,7 +411,9 @@ export class MentorManageAvailabilityPage implements OnInit {
             this.toastService.success('Availability updated successfully.');
           },
           error: (error) => {
-            this.toastService.error(error?.error?.message ?? 'Failed to update availability.');
+            this.toastService.error(
+              error?.error?.message ?? 'Failed to update availability.',
+            );
           },
         });
 
@@ -311,6 +424,7 @@ export class MentorManageAvailabilityPage implements OnInit {
       .addAvailabilitySlot(userId, {
         day: this.slotForm.day,
         timeFrames: [frame],
+        availabilityTimezone: this.slotForm.timezone,
       })
       .subscribe({
         next: () => {
@@ -319,9 +433,35 @@ export class MentorManageAvailabilityPage implements OnInit {
           this.toastService.success('Availability added successfully.');
         },
         error: (error) => {
-          this.toastService.error(error?.error?.message ?? 'Failed to add availability.');
+          this.toastService.error(
+            error?.error?.message ?? 'Failed to add availability.',
+          );
         },
       });
+  }
+
+  deleteOverride(overrideId: string): void {
+    const userId = this.currentUserId;
+    if (!userId) return;
+    this.availabilityService
+      .deleteAvailabilityOverride(userId, overrideId)
+      .subscribe({
+        next: () => {
+          this.store.dispatch(new FetchAvailability(userId));
+          this.toastService.success(
+            'Availability override deleted successfully.',
+          );
+        },
+        error: (error) =>
+          this.toastService.error(
+            error?.error?.message ?? 'Failed to delete availability override.',
+          ),
+      });
+  }
+
+  private get todayDateKey(): string {
+    const now = new Date();
+    return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   }
 
   onDeleteDay(slot: UserAvailabilityInterface): void {
@@ -331,7 +471,7 @@ export class MentorManageAvailabilityPage implements OnInit {
   onDeleteTimeFrame(
     slot: UserAvailabilityInterface,
     timeFrame: TimeFrameInterface,
-    timeFrameIndex: number
+    timeFrameIndex: number,
   ): void {
     this.deleteAvailabilityTarget.set({ slot, timeFrame, timeFrameIndex });
   }
@@ -364,9 +504,10 @@ export class MentorManageAvailabilityPage implements OnInit {
         },
         error: (error) => {
           this.deleteAvailabilitySubmitting.set(false);
-          this.toastService.error(error?.error?.message ?? 'Failed to delete availability.');
+          this.toastService.error(
+            error?.error?.message ?? 'Failed to delete availability.',
+          );
         },
       });
   }
-
 }

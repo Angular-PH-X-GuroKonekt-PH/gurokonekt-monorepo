@@ -1,45 +1,66 @@
-import { UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/user.model';
+import { AvailabilitySlotInstanceInterface } from '@gurokonekt/models/interfaces/user/user.model';
+import { getLocalDateTimeParts, isValidTimezone } from '@gurokonekt/utils';
 
 import { BookSessionDateOption } from '../interfaces/book-session.interface';
 
 export const BOOKING_DATE_RANGE_DAYS = 90;
 
-export function buildAvailableBookingDates(
-  availability: UserAvailabilityInterface[],
-  daysToShow = BOOKING_DATE_RANGE_DAYS
+export function buildAvailableBookingDatesFromSlots(
+  slots: AvailabilitySlotInstanceInterface[],
+  timezone: string,
 ): BookSessionDateOption[] {
-  // Convert weekly mentor availability into concrete bookable dates.
-  return getNextDays(daysToShow).flatMap((date) => {
-    const dayName = getDayName(date);
-    const dayAvailability = availability.find(
-      (availableDay) => availableDay.day === dayName
+  const grouped = new Map<string, BookSessionDateOption>();
+  const displayTimezone = isValidTimezone(timezone)
+    ? timezone
+    : Intl.DateTimeFormat().resolvedOptions().timeZone;
+
+  for (const slot of slots) {
+    const start = new Date(slot.start);
+    if (start <= new Date()) continue;
+    const end = new Date(slot.end);
+    const startParts = getLocalDateTimeParts(start, displayTimezone);
+    const endParts = getLocalDateTimeParts(end, displayTimezone);
+    const date = new Date(
+      startParts.year,
+      startParts.month - 1,
+      startParts.day,
     );
+    const dateKey = getDateKey(date);
+    const entry = grouped.get(dateKey) ?? {
+      date,
+      day: start
+        .toLocaleDateString('en-US', {
+          weekday: 'long',
+          timeZone: displayTimezone,
+        })
+        .toLowerCase(),
+      dayLabel: start.toLocaleDateString('en-US', {
+        weekday: 'short',
+        timeZone: displayTimezone,
+      }),
+      dateLabel: start.toLocaleDateString('en-US', {
+        month: 'short',
+        day: 'numeric',
+        timeZone: displayTimezone,
+      }),
+      timeFrames: [],
+    };
+    entry.timeFrames.push({
+      from: `${String(startParts.hour).padStart(2, '0')}:${String(
+        startParts.minute,
+      ).padStart(2, '0')}`,
+      to: `${String(endParts.hour).padStart(2, '0')}:${String(
+        endParts.minute,
+      ).padStart(2, '0')}`,
+      start: slot.start,
+      end: slot.end,
+    });
+    grouped.set(dateKey, entry);
+  }
 
-    if (!dayAvailability?.timeFrames?.length) {
-      return [];
-    }
-
-    const availableTimeFrames = dayAvailability.timeFrames.filter(
-      (timeFrame) => buildDisplayDateTime(date, timeFrame.from) > new Date()
-    );
-
-    if (availableTimeFrames.length === 0) {
-      return [];
-    }
-
-    return [
-      {
-        date,
-        day: dayAvailability.day,
-        dayLabel: date.toLocaleDateString('en-US', { weekday: 'short' }),
-        dateLabel: date.toLocaleDateString('en-US', {
-          month: 'short',
-          day: 'numeric',
-        }),
-        timeFrames: availableTimeFrames,
-      },
-    ];
-  });
+  return [...grouped.values()].sort(
+    (a, b) => a.date.getTime() - b.date.getTime(),
+  );
 }
 
 export function buildDisplayDateTime(date: Date, time: string): Date {
@@ -49,23 +70,6 @@ export function buildDisplayDateTime(date: Date, time: string): Date {
   result.setHours(hours, minutes, 0, 0);
 
   return result;
-}
-
-export function buildBookingDateTimeForApi(date: Date, time: string): Date {
-  const [hours, minutes] = time.split(':').map(Number);
-
-  // Booking API validates availability using UTC hours.
-  return new Date(
-    Date.UTC(
-      date.getFullYear(),
-      date.getMonth(),
-      date.getDate(),
-      hours,
-      minutes,
-      0,
-      0
-    )
-  );
 }
 
 export function getDateKey(date: Date): string {
@@ -84,17 +88,4 @@ export function addDays(date: Date, days: number): Date {
   const result = new Date(date);
   result.setDate(result.getDate() + days);
   return result;
-}
-
-function getNextDays(count: number): Date[] {
-  return Array.from({ length: count }, (_, index) => {
-    const date = new Date();
-    date.setDate(date.getDate() + index);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  });
-}
-
-function getDayName(date: Date): string {
-  return date.toLocaleDateString('en-US', { weekday: 'long' }).toLowerCase();
 }

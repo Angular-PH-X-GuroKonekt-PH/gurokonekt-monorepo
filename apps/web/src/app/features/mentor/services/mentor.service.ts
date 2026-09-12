@@ -52,6 +52,10 @@ export class MentorService {
       skills: mentor.skills ?? [],
       sessionRate: mentor.sessionRate ?? 0,
       availability: this.normalizeAvailability(mentor.availability),
+      availabilityTimezone: mentor.availabilityTimezone ?? mentor.user.timezone ?? 'UTC',
+      availabilityOverrides: Array.isArray(mentor.availabilityOverrides)
+        ? mentor.availabilityOverrides
+        : [],
       updatedAt: String(mentor.updatedAt),
       updatedBy: this.buildFallbackUpdatedBy(),
       user: {

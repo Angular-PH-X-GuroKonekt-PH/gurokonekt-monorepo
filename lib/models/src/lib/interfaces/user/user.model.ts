@@ -95,6 +95,8 @@ export interface MentorProfileInterface {
   skills: string[];
   sessionRate: number;
   availability: UserAvailabilityInterface[];
+  availabilityTimezone: string;
+  availabilityOverrides: AvailabilityOverrideInterface[];
   user: UserInterface;
   updatedAt: string;
   updatedBy: UserFlatInterface;
@@ -118,6 +120,29 @@ export interface UpdateMentorProfileInterface {
 export interface UserAvailabilityInterface {
   day: DaysInWeek;
   timeFrames: TimeFrameInterface[]; 
+}
+
+export enum AvailabilityOverrideType {
+  CustomHours = 'custom_hours',
+  Temporary = 'temporary',
+  Unavailable = 'unavailable',
+}
+
+/** A dated exception to the mentor's recurring weekly availability. */
+export interface AvailabilityOverrideInterface {
+  id: string;
+  type: AvailabilityOverrideType;
+  startDate: string;
+  endDate: string;
+  timezone: string;
+  timeFrames: TimeFrameInterface[];
+}
+
+/** A concrete bookable interval after applying recurrence, overrides and DST. */
+export interface AvailabilitySlotInstanceInterface {
+  start: string;
+  end: string;
+  timezone: string;
 }
 
 export interface TimeFrameInterface {
