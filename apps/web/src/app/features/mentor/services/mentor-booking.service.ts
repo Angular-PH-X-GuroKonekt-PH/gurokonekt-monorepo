@@ -11,10 +11,10 @@ import {
   BookingSortBy,
   BookingSortOrder,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
+import { MentorDashboardLoadState } from '@gurokonekt/models';
 
 import { AuthSelectors } from '../../../core/auth/store/auth.selectors';
 import { BookingService } from '../../../shared/services/booking.service';
-import { MentorDashboardLoadState } from '../interfaces/mentor-dashboard.interface';
 import { MentorDashboardService } from './mentor-dashboard.service';
 
 @Injectable({

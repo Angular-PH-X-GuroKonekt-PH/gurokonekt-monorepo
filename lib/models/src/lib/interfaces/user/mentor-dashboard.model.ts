@@ -30,3 +30,7 @@ export interface MentorDashboardInterface {
   shortcuts: MentorDashboardShortcutInterface[];
   navItems: MentorDashboardNavItemInterface[];
 }
+
+export type MentorDashboardLoadState =
+  | { status: 'idle' | 'loading' | 'error'; data: null }
+  | { status: 'loaded'; data: MentorDashboardInterface };
