@@ -14,7 +14,10 @@
   <div class="flex flex-col gap-10 pt-14 md:pt-20">
 
     @if (!hasActiveFilters()) {
-      <app-mentor-recommendations [state]="recommendedState()" />
+      <app-mentor-recommendations
+        [state]="recommendedState()"
+        [displayTimezone]="displayTimezone()"
+      />
 
       <hr class="border-slate-200" />
     }
@@ -64,7 +67,10 @@
         @if (!searchState.isLoading && searchState.mentors.length > 0) {
         <div class="grid grid-cols-1 gap-8 sm:grid-cols-2 md:grid-cols-3">
           @for (mentor of searchState.mentors; track mentor.id) {
-          <app-mentor-info-card [mentor]="mentor" />
+          <app-mentor-info-card
+            [mentor]="mentor"
+            [displayTimezone]="displayTimezone()"
+          />
           }
         </div>
 

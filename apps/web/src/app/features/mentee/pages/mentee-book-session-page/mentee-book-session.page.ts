@@ -7,13 +7,13 @@ import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import { FullCalendarModule } from '@fullcalendar/angular';
-import { Store } from '@ngxs/store';
-import { catchError, firstValueFrom, map, of, switchMap } from 'rxjs';
-import { UserInterface } from '@gurokonekt/models/interfaces/user/user.model';
-import { getDateKeyInTimezone } from '@gurokonekt/utils';
+import { combineLatest, firstValueFrom, map, of, switchMap } from 'rxjs';
+import {
+  formatDateInTimezone,
+  formatTimeInTimezone,
+  getDateKeyInTimezone,
+} from '@gurokonekt/utils';
 
-import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
-import { ProfileService } from '../../../../core/profile/profile.service';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { BookingService } from '../../../../shared/services/booking.service';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
@@ -21,6 +21,7 @@ import { NotificationService } from '../../../../shared/services/notification.se
 import { ToastService } from '../../../../shared/services/toast.service';
 import { MentorService } from '../../../mentor/services/mentor.service';
 import { AvailabilityService } from '../../../mentor/services/availability.service';
+import { UserTimezoneService } from '../../../../shared/services/user-timezone.service';
 import { MenteePageLoader } from '../../components/mentee-page-loader/mentee-page-loader';
 import { MentorProfileHero } from '../../components/mentor-profile-hero/mentor-profile-hero';
 import {
@@ -30,10 +31,10 @@ import {
 import {
   addDays,
   buildAvailableBookingDatesFromSlots,
-  buildDisplayDateTime,
   BOOKING_DATE_RANGE_DAYS,
   getBookingSlotKey,
   getDateKey,
+  shiftDateKey,
 } from '../../utils/book-session-date.util';
 import { formatTimeTo12Hour } from '../../utils/mentor-availability.util';
 
@@ -54,36 +55,16 @@ import { formatTimeTo12Hour } from '../../utils/mentor-availability.util';
 export class MenteeBookSessionPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
-  private readonly store = inject(Store);
-  private readonly profileService = inject(ProfileService);
   private readonly mentorService = inject(MentorService);
   private readonly availabilityService = inject(AvailabilityService);
+  private readonly menteeTimezoneService = inject(UserTimezoneService);
   private readonly bookingService = inject(BookingService);
   private readonly notificationService = inject(NotificationService);
   private readonly toastService = inject(ToastService);
 
   protected readonly mentorProfileRoute = APP_ROUTES.MENTOR_PROFILE;
   protected readonly bookingOverviewRoute = APP_ROUTES.BOOKING_OVERVIEW;
-  private readonly browserTimezone =
-    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-
-  protected readonly currentUser = this.store.selectSignal(AuthSelectors.user);
-  protected readonly currentUserProfile = toSignal(
-    toObservable(this.currentUser).pipe(
-      switchMap((user) =>
-        user
-          ? this.profileService.getUserProfile(user.id).pipe(
-              map((response) => response.data as UserInterface | null),
-              catchError(() => of(null)),
-            )
-          : of(null),
-      ),
-    ),
-    { initialValue: null },
-  );
-  protected readonly displayTimezone = computed(
-    () => this.currentUserProfile()?.timezone || this.browserTimezone,
-  );
+  protected readonly displayTimezone = this.menteeTimezoneService.displayTimezone;
 
   // Form state
   protected readonly selectedDate = signal<BookSessionDateOption | null>(null);
@@ -119,16 +100,17 @@ export class MenteeBookSessionPage {
   );
 
   protected readonly concreteSlots = toSignal(
-    this.route.paramMap.pipe(
-      map((params) => params.get('mentorId') ?? ''),
-      switchMap((mentorId) => {
+    combineLatest([
+      this.route.paramMap.pipe(map((params) => params.get('mentorId') ?? '')),
+      toObservable(this.displayTimezone),
+    ]).pipe(
+      switchMap(([mentorId, timezone]) => {
         if (!mentorId) return of([]);
-        const start = addDays(new Date(), -1);
-        const end = addDays(new Date(), BOOKING_DATE_RANGE_DAYS + 1);
+        const todayKey = getDateKeyInTimezone(new Date(), timezone);
         return this.availabilityService.getConcreteSlots(
           mentorId,
-          getDateKey(start),
-          getDateKey(end),
+          shiftDateKey(todayKey, -1),
+          shiftDateKey(todayKey, BOOKING_DATE_RANGE_DAYS + 1),
         );
       }),
     ),
@@ -229,10 +211,6 @@ export class MenteeBookSessionPage {
         label: `${formatTimeTo12Hour(timeFrame.from)} - ${formatTimeTo12Hour(
           timeFrame.to,
         )}`,
-        displayDateTime: buildDisplayDateTime(
-          selectedDate.date,
-          timeFrame.from,
-        ),
         bookingDateTime,
         isBooked: this.bookedSlotTimeMap().has(
           getBookingSlotKey(bookingDateTime),
@@ -240,6 +218,14 @@ export class MenteeBookSessionPage {
       };
     });
   });
+
+  protected formatDisplayDate(date: Date | string): string {
+    return formatDateInTimezone(date, this.displayTimezone());
+  }
+
+  protected formatDisplayTime(date: Date | string): string {
+    return formatTimeInTimezone(date, this.displayTimezone());
+  }
 
   // User actions
   protected selectCalendarDate(event: DateClickArg): void {

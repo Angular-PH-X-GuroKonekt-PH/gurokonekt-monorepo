@@ -3,11 +3,15 @@
 
   <gk-sidebar [topNavItems]="topNavItems()" [bottomNavItems]="bottomNavItems" />
 
-    <main class="min-h-screen bg-linear-to-br from-blue-50 via-orange-50 to-blue-50 px-4 pb-8 pt-18 sm:ml-64 sm:px-6 lg:px-8">
+  <main class="min-h-screen bg-linear-to-br from-blue-50 via-orange-50 to-blue-50 px-4 pb-8 pt-18 sm:ml-64 sm:px-6 lg:px-8">
     <div class="w-full">
       <router-outlet></router-outlet>
     </div>
   </main>
+
+  @if (selectorSignal.user()?.role === 'mentee' || selectorSignal.user()?.role === 'mentor') {
+    <app-timezone-mismatch />
+  }
 
   <app-toast-container></app-toast-container>
 </div>

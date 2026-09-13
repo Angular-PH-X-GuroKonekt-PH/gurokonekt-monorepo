@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { catchError, firstValueFrom, map, of, switchMap } from 'rxjs';
+import { firstValueFrom, of, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
@@ -15,9 +15,7 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { BookingService } from '../../../../shared/services/booking.service';
-import { ProfileService } from '../../../../core/profile/profile.service';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
-import { SectionCard } from '../../../../shared/components/section-card/section-card.component';
 import { SectionTitle } from '../../../../shared/components/section-title/section-title.component';
 import { MenteeBookingsTable } from '../../components/mentee-bookings-table/mentee-bookings-table';
 import { ReviewService } from '../../services/review.service';
@@ -25,13 +23,13 @@ import { ToastService } from '../../../../shared/services/toast.service';
 import { CreateReviewRequest } from '@gurokonekt/models';
 import { MenteeReviewModal } from '../../components/mentee-bookings-table/mentee-review-modal/mentee-review-modal';
 import { BookingSortChange } from '../../../../shared/components/bookings-table/bookings-table.types';
+import { UserTimezoneService } from '../../../../shared/services/user-timezone.service';
 
 @Component({
   selector: 'app-mentee-booking-overview-page',
   imports: [
     CommonModule,
     MenteeBookingsTable,
-    SectionCard,
     SectionTitle,
     MenteeReviewModal,
   ],
@@ -39,7 +37,7 @@ import { BookingSortChange } from '../../../../shared/components/bookings-table/
 })
 export class MenteeBookingOverviewPage {
   private readonly bookingService = inject(BookingService);
-  private readonly profileService = inject(ProfileService);
+  private readonly menteeTimezoneService = inject(UserTimezoneService);
   private readonly reviewService = inject(ReviewService);
   private readonly toastService = inject(ToastService);
   private readonly store = inject(Store);
@@ -47,25 +45,7 @@ export class MenteeBookingOverviewPage {
 
   protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
-  private readonly browserTimezone =
-    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  protected readonly displayTimezone = toSignal(
-    toObservable(this.authUser).pipe(
-      switchMap((user) =>
-        user
-          ? this.profileService.getUserProfile(user.id).pipe(
-              map(
-                (response) =>
-                  (response.data as { timezone?: string } | null)?.timezone ||
-                  this.browserTimezone,
-              ),
-              catchError(() => of(this.browserTimezone)),
-            )
-          : of(this.browserTimezone),
-      ),
-    ),
-    { initialValue: this.browserTimezone },
-  );
+  protected readonly displayTimezone = this.menteeTimezoneService.displayTimezone;
 
   protected readonly selectedReviewBooking =
     signal<BookingCardInterface | null>(null);

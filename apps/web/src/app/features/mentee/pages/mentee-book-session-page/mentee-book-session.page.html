@@ -44,7 +44,7 @@
           </div>
 
           <p class="text-xs font-medium text-slate-500">
-            @if (selectedDate(); as date) { {{ date.date | date: 'MMM d, y' }} }
+            @if (selectedDate(); as date) { {{ date.dateLabel }} }
             @else { Select a date }
           </p>
         </div>
@@ -140,8 +140,8 @@
                 Selected Schedule
               </p>
               <p class="mt-1 text-sm font-bold text-blue-950">
-                @if (selectedSlot(); as slot) { {{ slot.displayDateTime | date:
-                'MMM d, y' }} &bull; {{ slot.displayDateTime | date: 'h:mm a' }}
+                @if (selectedSlot(); as slot) { {{ formatDisplayDate(slot.bookingDateTime) }}
+                &bull; {{ formatDisplayTime(slot.bookingDateTime) }}
                 } @else { No time slot selected yet }
               </p>
             </div>

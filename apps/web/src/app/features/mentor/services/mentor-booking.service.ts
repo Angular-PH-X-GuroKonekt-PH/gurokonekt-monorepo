@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
-import { catchError, map, of, startWith, switchMap } from 'rxjs';
+import { of, startWith, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
@@ -15,7 +15,8 @@ import {
 
 import { AuthSelectors } from '../../../core/auth/store/auth.selectors';
 import { BookingService } from '../../../shared/services/booking.service';
-import { ProfileService } from '../../../core/profile/profile.service';
+import { UserTimezoneService } from '../../../shared/services/user-timezone.service';
+import { formatDateInTimezone, formatTimeInTimezone } from '@gurokonekt/utils';
 
 @Injectable({
   providedIn: 'root',
@@ -23,29 +24,11 @@ import { ProfileService } from '../../../core/profile/profile.service';
 export class MentorBookingService {
   store = inject(Store);
   bookingService = inject(BookingService);
-  private readonly profileService = inject(ProfileService);
+  private readonly timezoneService = inject(UserTimezoneService);
 
   authUser = this.store.selectSignal(AuthSelectors.user);
   userId = computed(() => this.authUser()?.id);
-  private readonly browserTimezone =
-    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
-  readonly displayTimezone = toSignal(
-    toObservable(this.authUser).pipe(
-      switchMap((user) =>
-        user
-          ? this.profileService.getUserProfile(user.id).pipe(
-              map(
-                (response) =>
-                  (response.data as { timezone?: string } | null)?.timezone ||
-                  this.browserTimezone,
-              ),
-              catchError(() => of(this.browserTimezone)),
-            )
-          : of(this.browserTimezone),
-      ),
-    ),
-    { initialValue: this.browserTimezone },
-  );
+  readonly displayTimezone = this.timezoneService.displayTimezone;
 
   private readonly requestedPage = signal(1);
   private readonly requestedPageSize = signal(10);
@@ -139,7 +122,13 @@ export class MentorBookingService {
       mentor: nextBooking.mentee
         ? `${nextBooking.mentee.firstName} ${nextBooking.mentee.lastName}`
         : 'Mentee',
-      dateTime: new Date(nextBooking.sessionDateTime).toLocaleString(),
+      dateTime: `${formatDateInTimezone(
+        nextBooking.sessionDateTime,
+        this.displayTimezone(),
+      )} at ${formatTimeInTimezone(
+        nextBooking.sessionDateTime,
+        this.displayTimezone(),
+      )}`,
       sessionLink: nextBooking.sessionLink,
     };
   });
