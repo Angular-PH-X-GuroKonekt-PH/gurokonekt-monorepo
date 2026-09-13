@@ -1,4 +1,4 @@
-import { DatePipe, NgTemplateOutlet } from '@angular/common';
+import { NgTemplateOutlet } from '@angular/common';
 import {
   Component,
   computed,
@@ -15,6 +15,7 @@ import {
   BookingUserSummaryInterface,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { Pagination } from '@gurokonekt/ui';
+import { formatDateInTimezone, formatTimeInTimezone } from '@gurokonekt/utils';
 
 import { IconComponent, IconName } from '../icon/icon.component';
 import { BookingTableSkeleton } from '../skeleton-loaders/booking-table-skeleton/booking-table-skeleton.component';
@@ -33,7 +34,6 @@ export interface BookingActionContext {
 @Component({
   selector: 'app-bookings-table',
   imports: [
-    DatePipe,
     NgTemplateOutlet,
     RouterLink,
     IconComponent,
@@ -52,6 +52,9 @@ export class BookingsTable {
   showMenteeNotes = input(true);
   showMentorNotes = input(false);
   actionsTemplate = input<TemplateRef<BookingActionContext> | null>(null);
+  displayTimezone = input(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  );
 
   footerMode = input<BookingTableFooterMode>('none');
   maxRows = input<number | null>(null);
@@ -85,9 +88,11 @@ export class BookingsTable {
         const firstName = this.getCounterpartyName(first);
         const secondName = this.getCounterpartyName(second);
 
-        return firstName.localeCompare(secondName, undefined, {
-          sensitivity: 'base',
-        }) * direction;
+        return (
+          firstName.localeCompare(secondName, undefined, {
+            sensitivity: 'base',
+          }) * direction
+        );
       }
 
       if (sortKey === 'sessionDateTime') {
@@ -182,9 +187,7 @@ export class BookingsTable {
 
   tableColumnCount = computed(
     () =>
-      4 +
-      (this.showMenteeNotes() ? 1 : 0) +
-      (this.showMentorNotes() ? 1 : 0)
+      4 + (this.showMenteeNotes() ? 1 : 0) + (this.showMentorNotes() ? 1 : 0),
   );
 
   selectTab(tab: string): void {
@@ -202,11 +205,11 @@ export class BookingsTable {
   }
 
   getCounterparty(
-    booking: BookingCardInterface
+    booking: BookingCardInterface,
   ): BookingUserSummaryInterface | null {
     return this.counterparty() === 'mentor'
-      ? booking.mentor ?? null
-      : booking.mentee ?? null;
+      ? (booking.mentor ?? null)
+      : (booking.mentee ?? null);
   }
 
   getCounterpartyLabel(): string {
@@ -221,4 +224,11 @@ export class BookingsTable {
       : '';
   }
 
+  protected formatBookingDate(date: Date | string): string {
+    return formatDateInTimezone(date, this.displayTimezone());
+  }
+
+  protected formatBookingTime(date: Date | string): string {
+    return formatTimeInTimezone(date, this.displayTimezone());
+  }
 }

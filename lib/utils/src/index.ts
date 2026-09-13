@@ -5,3 +5,4 @@ export * from './lib/stepper.utils';
 export * from './lib/display.utils';
 export * from './lib/mentor-dashboard.utils';
 export * from './lib/mentee-dashboard.utils';
+export * from './lib/timezone.utils';

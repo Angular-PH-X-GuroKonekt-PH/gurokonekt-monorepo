@@ -3,7 +3,7 @@ import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { ActivatedRoute } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { firstValueFrom, of, switchMap } from 'rxjs';
+import { catchError, firstValueFrom, map, of, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
@@ -15,6 +15,7 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 
 import { BookingService } from '../../../../shared/services/booking.service';
+import { ProfileService } from '../../../../core/profile/profile.service';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 import { SectionCard } from '../../../../shared/components/section-card/section-card.component';
 import { SectionTitle } from '../../../../shared/components/section-title/section-title.component';
@@ -22,16 +23,23 @@ import { MenteeBookingsTable } from '../../components/mentee-bookings-table/ment
 import { ReviewService } from '../../services/review.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { CreateReviewRequest } from '@gurokonekt/models';
-import { MenteeReviewModal } from "../../components/mentee-bookings-table/mentee-review-modal/mentee-review-modal";
+import { MenteeReviewModal } from '../../components/mentee-bookings-table/mentee-review-modal/mentee-review-modal';
 import { BookingSortChange } from '../../../../shared/components/bookings-table/bookings-table.types';
 
 @Component({
   selector: 'app-mentee-booking-overview-page',
-  imports: [CommonModule, MenteeBookingsTable, SectionCard, SectionTitle, MenteeReviewModal],
+  imports: [
+    CommonModule,
+    MenteeBookingsTable,
+    SectionCard,
+    SectionTitle,
+    MenteeReviewModal,
+  ],
   templateUrl: './mentee-booking-overview.page.html',
 })
 export class MenteeBookingOverviewPage {
   private readonly bookingService = inject(BookingService);
+  private readonly profileService = inject(ProfileService);
   private readonly reviewService = inject(ReviewService);
   private readonly toastService = inject(ToastService);
   private readonly store = inject(Store);
@@ -39,8 +47,28 @@ export class MenteeBookingOverviewPage {
 
   protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
+  private readonly browserTimezone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  protected readonly displayTimezone = toSignal(
+    toObservable(this.authUser).pipe(
+      switchMap((user) =>
+        user
+          ? this.profileService.getUserProfile(user.id).pipe(
+              map(
+                (response) =>
+                  (response.data as { timezone?: string } | null)?.timezone ||
+                  this.browserTimezone,
+              ),
+              catchError(() => of(this.browserTimezone)),
+            )
+          : of(this.browserTimezone),
+      ),
+    ),
+    { initialValue: this.browserTimezone },
+  );
 
-  protected readonly selectedReviewBooking = signal<BookingCardInterface | null>(null);
+  protected readonly selectedReviewBooking =
+    signal<BookingCardInterface | null>(null);
   protected readonly isSubmittingReview = signal(false);
 
   protected readonly initialBookingId =
@@ -131,46 +159,42 @@ export class MenteeBookingOverviewPage {
   }
 
   protected setSort(sort: BookingSortChange): void {
-    this.requestedSortBy.set(
-      sort.key === 'counterparty' ? 'mentor' : sort.key,
-    );
+    this.requestedSortBy.set(sort.key === 'counterparty' ? 'mentor' : sort.key);
     this.requestedSortOrder.set(sort.direction);
     this.requestedPage.set(1);
   }
 
+  //REVIEW
 
-
-  //REVIEW 
-
-protected onAddReview(booking: BookingCardInterface): void {
-  this.selectedReviewBooking.set(booking);
-}
-
-protected closeReviewModal(): void {
-  this.selectedReviewBooking.set(null);
-}
-
-protected async submitReview(request: CreateReviewRequest): Promise<void> {
-  this.isSubmittingReview.set(true);
-
-  try {
-    await firstValueFrom(this.reviewService.createReview(request));
-
-    this.toastService.success(
-      'Your review has been submitted successfully.',
-      'Review Submitted'
-    );
-
-    this.closeReviewModal();
-  } catch (error) {
-    const message =
-      typeof error === 'object' && error !== null && 'message' in error
-        ? String(error.message)
-        : 'Unable to submit review.';
-
-    this.toastService.error(message, 'Review Failed');
-  } finally {
-    this.isSubmittingReview.set(false);
+  protected onAddReview(booking: BookingCardInterface): void {
+    this.selectedReviewBooking.set(booking);
   }
-}
+
+  protected closeReviewModal(): void {
+    this.selectedReviewBooking.set(null);
+  }
+
+  protected async submitReview(request: CreateReviewRequest): Promise<void> {
+    this.isSubmittingReview.set(true);
+
+    try {
+      await firstValueFrom(this.reviewService.createReview(request));
+
+      this.toastService.success(
+        'Your review has been submitted successfully.',
+        'Review Submitted',
+      );
+
+      this.closeReviewModal();
+    } catch (error) {
+      const message =
+        typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : 'Unable to submit review.';
+
+      this.toastService.error(message, 'Review Failed');
+    } finally {
+      this.isSubmittingReview.set(false);
+    }
+  }
 }

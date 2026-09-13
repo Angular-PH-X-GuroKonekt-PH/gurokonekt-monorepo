@@ -11,6 +11,7 @@ import {
   Patch,
   Post,
   Put,
+  Query,
   Req,
   UploadedFiles,
   UseGuards,
@@ -29,6 +30,8 @@ import {
 } from '@nestjs/swagger';
 import {
   AddAvailabilitySlotDto,
+  AddAvailabilityOverrideDto,
+  AvailabilitySlotsQueryDto,
   ActivateAccountDto,
   DeactivationFeedbackDto,
   DeleteAvailabilitySlotDto,
@@ -66,12 +69,16 @@ export class UserController {
   @ApiBody({
     type: VerifyDeactivationTokenDto,
     examples: {
-      default: { summary: 'Validate deactivation token from email link', value: SWAGGER_DOCUMENTATION.VERIFY_DEACTIVATION_TOKEN.bodyExample },
+      default: {
+        summary: 'Validate deactivation token from email link',
+        value: SWAGGER_DOCUMENTATION.VERIFY_DEACTIVATION_TOKEN.bodyExample,
+      },
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Token is valid. Proceed to POST /user/:userId/deactivate/feedback.',
+    description:
+      'Token is valid. Proceed to POST /user/:userId/deactivate/feedback.',
     type: ResponseDto,
     schema: {
       example: {
@@ -87,7 +94,12 @@ export class UserController {
     const response = await this.userService.verifyDeactivationToken(dto);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -142,10 +154,19 @@ export class UserController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    const response = await this.userService.getUserProfileById(userId, ipAddress, userAgent);
+    const response = await this.userService.getUserProfileById(
+      userId,
+      ipAddress,
+      userAgent,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -187,8 +208,15 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — mentor account not approved/complete, or user is not a mentee.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Access denied — mentor account not approved/complete, or user is not a mentee.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async getUserDashboard(
@@ -196,10 +224,19 @@ export class UserController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    const response = await this.userService.getUserDashboard(userId, ipAddress, userAgent);
+    const response = await this.userService.getUserDashboard(
+      userId,
+      ipAddress,
+      userAgent,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -241,16 +278,25 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — user is not a mentee.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied — user is not a mentee.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  async getMenteeBookingOverview(
-    @Param('userId') userId: string,
-  ) {
+  async getMenteeBookingOverview(@Param('userId') userId: string) {
     const response = await this.userService.getMenteeBookingOverview(userId);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -276,12 +322,14 @@ export class UserController {
     example: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
   })
   @ApiBody({
-    description: 'Profile data + optional avatar file. Fields depend on user role (see endpoint description).',
+    description:
+      'Profile data + optional avatar file. Fields depend on user role (see endpoint description).',
     type: UpdateMenteeProfileDto,
   })
   @ApiResponse({
     status: 200,
-    description: 'Profile updated successfully. isProfileComplete is set to true.',
+    description:
+      'Profile updated successfully. isProfileComplete is set to true.',
     type: ResponseDto,
     schema: {
       example: {
@@ -292,29 +340,50 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Validation error or unsupported file type.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized. JWT token missing or invalid.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error or unsupported file type.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized. JWT token missing or invalid.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
-  @ApiResponse({ status: 500, description: 'Internal server error (file upload or database failure).' })
-  @UseInterceptors(FileFieldsInterceptor([
-    { name: 'avatar', maxCount: 1 },
-    { name: 'files', maxCount: 5 },
-  ], {
-    limits: { fileSize: 5 * 1024 * 1024 },
-    fileFilter: (req, file, cb) => {
-      const avatarTypes = ['image/png', 'image/jpeg', 'image/jpg'];
-      const docTypes = ['application/pdf', 'image/png', 'image/jpeg'];
-      const allowed = file.fieldname === 'avatar' ? avatarTypes : docTypes;
-      if (!allowed.includes(file.mimetype)) {
-        return cb(new Error(`Invalid file type for field ${file.fieldname}`), false);
-      }
-      cb(null, true);
-    },
-  }))
+  @ApiResponse({
+    status: 500,
+    description: 'Internal server error (file upload or database failure).',
+  })
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'avatar', maxCount: 1 },
+        { name: 'files', maxCount: 5 },
+      ],
+      {
+        limits: { fileSize: 5 * 1024 * 1024 },
+        fileFilter: (req, file, cb) => {
+          const avatarTypes = ['image/png', 'image/jpeg', 'image/jpg'];
+          const docTypes = ['application/pdf', 'image/png', 'image/jpeg'];
+          const allowed = file.fieldname === 'avatar' ? avatarTypes : docTypes;
+          if (!allowed.includes(file.mimetype)) {
+            return cb(
+              new Error(`Invalid file type for field ${file.fieldname}`),
+              false,
+            );
+          }
+          cb(null, true);
+        },
+      },
+    ),
+  )
   async updateUserProfile(
     @Param('userId') userId: string,
     @Body() dto: UpdateMenteeProfileDto | UpdateMentorProfileDto,
-    @UploadedFiles() uploadedFiles: { avatar?: Express.Multer.File[], files?: Express.Multer.File[] },
+    @UploadedFiles()
+    uploadedFiles: {
+      avatar?: Express.Multer.File[];
+      files?: Express.Multer.File[];
+    },
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
@@ -329,7 +398,12 @@ export class UserController {
 
     if (result.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: result.status, statusCode: result.statusCode, message: result.message, data: result.data },
+        {
+          status: result.status,
+          statusCode: result.statusCode,
+          message: result.message,
+          data: result.data,
+        },
         result.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -355,8 +429,17 @@ export class UserController {
   @ApiBody({
     type: UpdateUserStatusDto,
     examples: {
-      approve: { summary: 'Approve a mentor', value: SWAGGER_DOCUMENTATION.UPDATE_USER_STATUS.bodyExample },
-      suspend: { summary: 'Suspend a user', value: { status: 'suspended', updatedById: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890' } },
+      approve: {
+        summary: 'Approve a mentor',
+        value: SWAGGER_DOCUMENTATION.UPDATE_USER_STATUS.bodyExample,
+      },
+      suspend: {
+        summary: 'Suspend a user',
+        value: {
+          status: 'suspended',
+          updatedById: 'a1b2c3d4-e5f6-7890-abcd-ef1234567890',
+        },
+      },
     },
   })
   @ApiResponse({
@@ -372,7 +455,10 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Validation error or invalid status value.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error or invalid status value.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async updateUserStatus(
     @Param('userId') userId: string,
@@ -381,7 +467,12 @@ export class UserController {
     const response = await this.userService.updateUserStatus(dto, userId);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -406,7 +497,10 @@ export class UserController {
   @ApiBody({
     type: UpdateUserRoleDto,
     examples: {
-      default: { summary: 'Promote to mentor', value: SWAGGER_DOCUMENTATION.UPDATE_USER_ROLE.bodyExample },
+      default: {
+        summary: 'Promote to mentor',
+        value: SWAGGER_DOCUMENTATION.UPDATE_USER_ROLE.bodyExample,
+      },
     },
   })
   @ApiResponse({
@@ -422,7 +516,10 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Validation error or invalid role value.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Validation error or invalid role value.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async updateUserRole(
     @Param('userId') userId: string,
@@ -430,10 +527,20 @@ export class UserController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    const response = await this.userService.updateUserRole(dto, userId, ipAddress, userAgent);
+    const response = await this.userService.updateUserRole(
+      dto,
+      userId,
+      ipAddress,
+      userAgent,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -460,12 +567,16 @@ export class UserController {
   @ApiBody({
     type: InitiateDeactivationDto,
     examples: {
-      default: { summary: 'Initiate deactivation with password', value: SWAGGER_DOCUMENTATION.INITIATE_DEACTIVATION.bodyExample },
+      default: {
+        summary: 'Initiate deactivation with password',
+        value: SWAGGER_DOCUMENTATION.INITIATE_DEACTIVATION.bodyExample,
+      },
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Deactivation confirmation email sent. User must click the link in the email to continue.',
+    description:
+      'Deactivation confirmation email sent. User must click the link in the email to continue.',
     type: ResponseDto,
     schema: {
       example: {
@@ -477,7 +588,10 @@ export class UserController {
     },
   })
   @ApiResponse({ status: 401, description: 'Password is incorrect.' })
-  @ApiResponse({ status: 403, description: 'Access denied for the account owner.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied for the account owner.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async initiateDeactivation(
     @Param('userId') userId: string,
@@ -486,10 +600,21 @@ export class UserController {
     @Headers('user-agent') userAgent: string,
     @Headers('origin') origin: string,
   ) {
-    const response = await this.userService.initiateDeactivation(userId, dto, ipAddress, userAgent, origin ?? '');
+    const response = await this.userService.initiateDeactivation(
+      userId,
+      dto,
+      ipAddress,
+      userAgent,
+      origin ?? '',
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -516,12 +641,16 @@ export class UserController {
   @ApiBody({
     type: DowngradeMentorDto,
     examples: {
-      default: { summary: 'Confirm downgrade with password', value: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.bodyExample },
+      default: {
+        summary: 'Confirm downgrade with password',
+        value: SWAGGER_DOCUMENTATION.DOWNGRADE_MENTOR.bodyExample,
+      },
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Account downgraded to Mentee. Status set to inactive. Confirmation email sent.',
+    description:
+      'Account downgraded to Mentee. Status set to inactive. Confirmation email sent.',
     type: ResponseDto,
     schema: {
       example: {
@@ -533,7 +662,10 @@ export class UserController {
     },
   })
   @ApiResponse({ status: 401, description: 'Password is incorrect.' })
-  @ApiResponse({ status: 403, description: 'Access denied — account is not a Mentor.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Access denied — account is not a Mentor.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async downgradeMentorToMentee(
     @Param('userId') userId: string,
@@ -542,10 +674,21 @@ export class UserController {
     @Headers('user-agent') userAgent: string,
     @Headers('origin') origin: string,
   ) {
-    const response = await this.userService.downgradeMentorToMentee(userId, dto, ipAddress, userAgent, origin ?? '');
+    const response = await this.userService.downgradeMentorToMentee(
+      userId,
+      dto,
+      ipAddress,
+      userAgent,
+      origin ?? '',
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -588,15 +731,42 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
   @ApiResponse({ status: 404, description: 'Mentor profile not found.' })
-  async getMentorAvailability(
-    @Param('userId') userId: string,
-  ) {
+  async getMentorAvailability(@Param('userId') userId: string) {
     const response = await this.userService.getMentorAvailability(userId);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
+
+  @Get(':userId/availability/slots')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Get concrete UTC booking slots for a date range' })
+  async getMentorAvailabilitySlots(
+    @Param('userId') userId: string,
+    @Query() query: AvailabilitySlotsQueryDto,
+  ) {
+    const response = await this.userService.getMentorAvailabilitySlots(
+      userId,
+      query,
+    );
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        response,
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -623,7 +793,10 @@ export class UserController {
   @ApiBody({
     type: ManageAvailabilityDto,
     examples: {
-      default: { summary: 'Set weekly schedule', value: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.bodyExample },
+      default: {
+        summary: 'Set weekly schedule',
+        value: SWAGGER_DOCUMENTATION.UPDATE_AVAILABILITY.bodyExample,
+      },
     },
   })
   @ApiResponse({
@@ -639,19 +812,38 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — not the mentor owner, or target is not a mentor.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Overlapping or invalid time ranges.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Access denied — not the mentor owner, or target is not a mentor.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async updateMentorAvailability(
     @Param('userId') userId: string,
     @Body() dto: ManageAvailabilityDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.userService.updateMentorAvailability(userId, dto, req.user.id);
+    const response = await this.userService.updateMentorAvailability(
+      userId,
+      dto,
+      req.user.id,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -678,7 +870,10 @@ export class UserController {
   @ApiBody({
     type: SetSessionDurationDto,
     examples: {
-      default: { summary: 'Set 60-minute sessions', value: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.bodyExample },
+      default: {
+        summary: 'Set 60-minute sessions',
+        value: SWAGGER_DOCUMENTATION.SET_SESSION_DURATION.bodyExample,
+      },
     },
   })
   @ApiResponse({
@@ -694,18 +889,34 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — not the mentor owner, or target is not a mentor.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Access denied — not the mentor owner, or target is not a mentor.',
+  })
   @ApiResponse({ status: 404, description: 'Mentor profile not found.' })
   async setSessionDuration(
     @Param('userId') userId: string,
     @Body() dto: SetSessionDurationDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.userService.setSessionDuration(userId, dto, req.user.id);
+    const response = await this.userService.setSessionDuration(
+      userId,
+      dto,
+      req.user.id,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -732,12 +943,16 @@ export class UserController {
   @ApiBody({
     type: AddAvailabilitySlotDto,
     examples: {
-      default: { summary: 'Add Tuesday slots', value: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.bodyExample },
+      default: {
+        summary: 'Add Tuesday slots',
+        value: SWAGGER_DOCUMENTATION.ADD_AVAILABILITY_SLOT.bodyExample,
+      },
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Slot appended successfully. Returns the full updated schedule including sessionDurationMinutes.',
+    description:
+      'Slot appended successfully. Returns the full updated schedule including sessionDurationMinutes.',
     type: ResponseDto,
     schema: {
       example: {
@@ -746,24 +961,118 @@ export class UserController {
         message: 'Availability slot added successfully',
         data: {
           sessionDurationMinutes: 60,
-          availability: [{ day: 'tuesday', timeFrames: [{ from: '08:00', to: '10:00' }] }],
+          availability: [
+            { day: 'tuesday', timeFrames: [{ from: '08:00', to: '10:00' }] },
+          ],
         },
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — not the mentor owner, or target is not a mentor.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Overlapping or invalid time ranges.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Access denied — not the mentor owner, or target is not a mentor.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async addAvailabilitySlot(
     @Param('userId') userId: string,
     @Body() dto: AddAvailabilitySlotDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.userService.addAvailabilitySlot(userId, dto, req.user.id);
+    const response = await this.userService.addAvailabilitySlot(
+      userId,
+      dto,
+      req.user.id,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
+
+  @Post(':userId/availability/override')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({
+    summary: 'Add date-specific, temporary, or unavailable hours',
+  })
+  async addAvailabilityOverride(
+    @Param('userId') userId: string,
+    @Body() dto: AddAvailabilityOverrideDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    const response = await this.userService.addAvailabilityOverride(
+      userId,
+      dto,
+      req.user.id,
+    );
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        response,
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
+
+  @Delete(':userId/availability/override/:overrideId')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Delete an availability override' })
+  async deleteAvailabilityOverride(
+    @Param('userId') userId: string,
+    @Param('overrideId') overrideId: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    const response = await this.userService.deleteAvailabilityOverride(
+      userId,
+      overrideId,
+      req.user.id,
+    );
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        response,
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
+
+  @Patch(':userId/availability/override/:overrideId')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Update an availability override' })
+  async updateAvailabilityOverride(
+    @Param('userId') userId: string,
+    @Param('overrideId') overrideId: string,
+    @Body() dto: AddAvailabilityOverrideDto,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    const response = await this.userService.updateAvailabilityOverride(
+      userId,
+      overrideId,
+      dto,
+      req.user.id,
+    );
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        response,
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -779,7 +1088,8 @@ export class UserController {
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Update one availability time frame',
-    description: 'Updates a specific time frame by day and zero-based index. The replacement range is normalized into 60-minute slots.',
+    description:
+      'Updates a specific time frame by day and zero-based index. The replacement range is normalized into 60-minute slots.',
   })
   @ApiParam({
     name: 'userId',
@@ -802,22 +1112,45 @@ export class UserController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Slot updated successfully. Returns the full updated schedule including sessionDurationMinutes.',
+    description:
+      'Slot updated successfully. Returns the full updated schedule including sessionDurationMinutes.',
     type: ResponseDto,
   })
-  @ApiResponse({ status: 400, description: 'Overlapping or invalid time ranges.' })
-  @ApiResponse({ status: 401, description: 'Unauthorized - missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied - not the mentor owner, or target is not a mentor.' })
-  @ApiResponse({ status: 404, description: 'Slot not found for specified day / time frame index.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Overlapping or invalid time ranges.',
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized - missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Access denied - not the mentor owner, or target is not a mentor.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Slot not found for specified day / time frame index.',
+  })
   async updateAvailabilitySlot(
     @Param('userId') userId: string,
     @Body() dto: UpdateAvailabilitySlotDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.userService.updateAvailabilitySlot(userId, dto, req.user.id);
+    const response = await this.userService.updateAvailabilitySlot(
+      userId,
+      dto,
+      req.user.id,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -844,13 +1177,20 @@ export class UserController {
   @ApiBody({
     type: DeleteAvailabilitySlotDto,
     examples: {
-      deleteDay: { summary: 'Delete all slots for a day', value: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.bodyExample },
-      deleteSlot: { summary: 'Delete a specific time frame', value: { day: 'monday', timeFrameIndex: 0 } },
+      deleteDay: {
+        summary: 'Delete all slots for a day',
+        value: SWAGGER_DOCUMENTATION.DELETE_AVAILABILITY_SLOT.bodyExample,
+      },
+      deleteSlot: {
+        summary: 'Delete a specific time frame',
+        value: { day: 'monday', timeFrameIndex: 0 },
+      },
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Slot deleted successfully. Returns the updated schedule including sessionDurationMinutes.',
+    description:
+      'Slot deleted successfully. Returns the updated schedule including sessionDurationMinutes.',
     type: ResponseDto,
     schema: {
       example: {
@@ -861,18 +1201,37 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Access denied — not the mentor owner, or target is not a mentor.' })
-  @ApiResponse({ status: 404, description: 'Slot not found for specified day / time frame index.' })
+  @ApiResponse({
+    status: 401,
+    description: 'Unauthorized — missing or invalid JWT.',
+  })
+  @ApiResponse({
+    status: 403,
+    description:
+      'Access denied — not the mentor owner, or target is not a mentor.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Slot not found for specified day / time frame index.',
+  })
   async deleteAvailabilitySlot(
     @Param('userId') userId: string,
     @Body() dto: DeleteAvailabilitySlotDto,
     @Req() req: Request & { user: { id: string } },
   ) {
-    const response = await this.userService.deleteAvailabilitySlot(userId, dto, req.user.id);
+    const response = await this.userService.deleteAvailabilitySlot(
+      userId,
+      dto,
+      req.user.id,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -899,7 +1258,10 @@ export class UserController {
   @ApiBody({
     type: DeactivationFeedbackDto,
     examples: {
-      default: { summary: 'Submit feedback and finalise deactivation', value: SWAGGER_DOCUMENTATION.DEACTIVATION_FEEDBACK.bodyExample },
+      default: {
+        summary: 'Submit feedback and finalise deactivation',
+        value: SWAGGER_DOCUMENTATION.DEACTIVATION_FEEDBACK.bodyExample,
+      },
     },
   })
   @ApiResponse({
@@ -915,7 +1277,10 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Deactivation token is invalid or has expired.' })
+  @ApiResponse({
+    status: 400,
+    description: 'Deactivation token is invalid or has expired.',
+  })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async submitDeactivationFeedback(
     @Param('userId') userId: string,
@@ -923,10 +1288,20 @@ export class UserController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    const response = await this.userService.submitDeactivationFeedback(userId, dto, ipAddress, userAgent);
+    const response = await this.userService.submitDeactivationFeedback(
+      userId,
+      dto,
+      ipAddress,
+      userAgent,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }
@@ -936,10 +1311,21 @@ export class UserController {
   @Patch(':userId/activate')
   @UseGuards(JwtGuardGuard)
   @ApiBearerAuth()
-  @ApiOperation({ summary: 'Activate an inactive account or submit a mentor activation request' })
-  @ApiParam({ name: 'userId', type: String, description: 'UUID of the authenticated user' })
+  @ApiOperation({
+    summary:
+      'Activate an inactive account or submit a mentor activation request',
+  })
+  @ApiParam({
+    name: 'userId',
+    type: String,
+    description: 'UUID of the authenticated user',
+  })
   @ApiBody({ type: ActivateAccountDto })
-  @ApiResponse({ status: 200, description: 'Account activation processed successfully.', type: ResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Account activation processed successfully.',
+    type: ResponseDto,
+  })
   async activateAccount(
     @Param('userId') userId: string,
     @Body() dto: ActivateAccountDto,
@@ -947,10 +1333,21 @@ export class UserController {
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
   ) {
-    const response = await this.userService.activateAccount(userId, dto, req.user.id, ipAddress, userAgent);
+    const response = await this.userService.activateAccount(
+      userId,
+      dto,
+      req.user.id,
+      ipAddress,
+      userAgent,
+    );
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
-        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
         response.statusCode || HttpStatus.BAD_REQUEST,
       );
     }

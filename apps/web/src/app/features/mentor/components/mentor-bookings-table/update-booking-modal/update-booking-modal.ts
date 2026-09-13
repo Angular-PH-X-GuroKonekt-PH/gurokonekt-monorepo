@@ -10,6 +10,7 @@ import { BookingCardInterface } from '@gurokonekt/models/interfaces/booking/book
 export class UpdateBookingModal {
   booking = input.required<BookingCardInterface>();
   submitting = input(false);
+  displayTimezone = input('UTC');
 
   sessionDate = model('');
   sessionTime = model('');
@@ -17,5 +18,5 @@ export class UpdateBookingModal {
   mentorNotes = model('');
 
   closed = output<void>();
-  confirmed = output<void>();  
+  confirmed = output<void>();
 }

@@ -1,11 +1,13 @@
 <div class="mt-6">
   <div class="grid grid-cols-1 lg:grid-cols-10 gap-5 mb-6">
-
-    <div class="lg:col-span-6 bg-linear-to-r from-[#1e2d5a] to-[#2d4080] rounded-2xl shadow-sm overflow-hidden flex flex-col">
-
+    <div
+      class="lg:col-span-6 bg-linear-to-r from-[#1e2d5a] to-[#2d4080] rounded-2xl shadow-sm overflow-hidden flex flex-col"
+    >
       <div class="px-7 py-5 flex-1 flex items-center justify-between gap-4">
         <div class="flex flex-col justify-center">
-          <p class="text-sm font-semibold text-orange-400 uppercase tracking-widest mb-2">
+          <p
+            class="text-sm font-semibold text-orange-400 uppercase tracking-widest mb-2"
+          >
             Good to see you back
           </p>
 
@@ -13,19 +15,24 @@
             Welcome back, {{ fullName() }}!
           </h2>
 
-          <p class="text-sm" style="color: #E6ECFF;">
+          <p class="text-sm" style="color: #e6ecff">
             Here's what's happening with your mentoring sessions today.
           </p>
         </div>
 
-        <img src="assets/logos/logo.svg" alt="GuroKonekt logo" class="h-30 w-30" />
+        <img
+          src="assets/logos/logo.svg"
+          alt="GuroKonekt logo"
+          class="h-30 w-30"
+        />
       </div>
 
       <div class="relative px-7 py-6 flex items-center justify-between gap-4">
         @if (mentorBookings.upcomingSession(); as session) {
         <div>
           <span
-            class="inline-block bg-orange-500 text-white text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2">
+            class="inline-block bg-orange-500 text-white text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2"
+          >
             Coming Up Next
           </span>
 
@@ -34,27 +41,34 @@
           </h3>
 
           <p class="text-blue-200 text-sm mt-1">
-            with {{ session.mentor }} &bull;
-            {{ session.dateTime | date:'MMM d, y' }} &bull;
-            {{ session.dateTime | date:'h:mm a' }}
+            with {{ session.mentor }} &bull; {{ session.dateTime | date:'MMM d,
+            y' }} &bull; {{ session.dateTime | date:'h:mm a' }}
           </p>
         </div>
 
         @if (session.sessionLink) {
-        <a [href]="session.sessionLink" target="_blank" rel="noopener noreferrer"
-          class="shrink-0 flex items-center gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold text-sm px-5 py-3 rounded-xl transition-colors shadow-lg whitespace-nowrap">
+        <a
+          [href]="session.sessionLink"
+          target="_blank"
+          rel="noopener noreferrer"
+          class="shrink-0 flex items-center gap-2 bg-orange-500 hover:bg-orange-600 active:bg-orange-700 text-white font-semibold text-sm px-5 py-3 rounded-xl transition-colors shadow-lg whitespace-nowrap"
+        >
           Join Call
         </a>
         } @else {
-        <button type="button" disabled title="No link provided"
-          class="shrink-0 flex items-center gap-2 bg-gray-300 text-white font-semibold text-sm px-5 py-3 rounded-xl shadow-lg whitespace-nowrap cursor-not-allowed">
+        <button
+          type="button"
+          disabled
+          title="No link provided"
+          class="shrink-0 flex items-center gap-2 bg-gray-300 text-white font-semibold text-sm px-5 py-3 rounded-xl shadow-lg whitespace-nowrap cursor-not-allowed"
+        >
           Join Call
         </button>
-        }
-        } @else {
+        } } @else {
         <div>
           <span
-            class="inline-block bg-white/10 text-blue-100 text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2">
+            class="inline-block bg-white/10 text-blue-100 text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2"
+          >
             Schedule Clear
           </span>
 
@@ -68,13 +82,16 @@
         </div>
         }
       </div>
-
     </div>
 
     <div class="lg:col-span-4 flex flex-col gap-4">
-      <div class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between">
+      <div
+        class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between"
+      >
         <div>
-          <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
+          <p
+            class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1"
+          >
             Pending Requests
           </p>
 
@@ -83,14 +100,20 @@
           </p>
         </div>
 
-        <div class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-lg bg-orange-100 text-orange-500">
+        <div
+          class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-lg bg-orange-100 text-orange-500"
+        >
           <app-icon name="clock" class="h-6 w-6" />
-        </div>        
+        </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between">
+      <div
+        class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between"
+      >
         <div>
-          <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
+          <p
+            class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1"
+          >
             Upcoming Sessions
           </p>
 
@@ -99,14 +122,20 @@
           </p>
         </div>
 
-        <div class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-lg bg-indigo-100 text-indigo-500">
+        <div
+          class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-lg bg-indigo-100 text-indigo-500"
+        >
           <app-icon name="calendar-days" class="h-6 w-6" />
-        </div>        
+        </div>
       </div>
 
-      <div class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between">
+      <div
+        class="bg-white rounded-2xl shadow-sm px-6 py-5 flex items-center justify-between"
+      >
         <div>
-          <p class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1">
+          <p
+            class="text-xs font-semibold tracking-widest text-gray-400 uppercase mb-1"
+          >
             Total Completed
           </p>
 
@@ -115,15 +144,22 @@
           </p>
         </div>
 
-        <div class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-lg bg-gray-100  text-gray-500">
+        <div
+          class="flex-shrink-0 flex items-center justify-center w-12 h-12 rounded-lg bg-gray-100 text-gray-500"
+        >
           <app-icon name="chart-bar" class="h-6 w-6" />
-        </div>  
-
+        </div>
       </div>
     </div>
-
   </div>
 
-  <app-mentor-bookings-table title="Recent Bookings" [tabs]="bookingTabs" footerMode="viewAll" [maxRows]="4"
-    [bookings]="mentorBookings.bookings()" [isLoading]="mentorBookings.isBookingsLoading()" />
+  <app-mentor-bookings-table
+    title="Recent Bookings"
+    [tabs]="bookingTabs"
+    footerMode="viewAll"
+    [maxRows]="4"
+    [bookings]="mentorBookings.bookings()"
+    [isLoading]="mentorBookings.isBookingsLoading()"
+    [displayTimezone]="mentorBookings.displayTimezone()"
+  />
 </div>

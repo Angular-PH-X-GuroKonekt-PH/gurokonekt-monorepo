@@ -1,7 +1,7 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
-import { of, startWith, switchMap } from 'rxjs';
+import { catchError, map, of, startWith, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
@@ -15,6 +15,7 @@ import {
 
 import { AuthSelectors } from '../../../core/auth/store/auth.selectors';
 import { BookingService } from '../../../shared/services/booking.service';
+import { ProfileService } from '../../../core/profile/profile.service';
 
 @Injectable({
   providedIn: 'root',
@@ -22,14 +23,34 @@ import { BookingService } from '../../../shared/services/booking.service';
 export class MentorBookingService {
   store = inject(Store);
   bookingService = inject(BookingService);
+  private readonly profileService = inject(ProfileService);
 
   authUser = this.store.selectSignal(AuthSelectors.user);
   userId = computed(() => this.authUser()?.id);
+  private readonly browserTimezone =
+    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC';
+  readonly displayTimezone = toSignal(
+    toObservable(this.authUser).pipe(
+      switchMap((user) =>
+        user
+          ? this.profileService.getUserProfile(user.id).pipe(
+              map(
+                (response) =>
+                  (response.data as { timezone?: string } | null)?.timezone ||
+                  this.browserTimezone,
+              ),
+              catchError(() => of(this.browserTimezone)),
+            )
+          : of(this.browserTimezone),
+      ),
+    ),
+    { initialValue: this.browserTimezone },
+  );
 
   private readonly requestedPage = signal(1);
   private readonly requestedPageSize = signal(10);
   private readonly requestedStatus = signal<BookingStatus | undefined>(
-    undefined
+    undefined,
   );
   private readonly requestedSortBy = signal<BookingSortBy>('sessionDateTime');
   private readonly requestedSortOrder = signal<BookingSortOrder>('asc');
@@ -61,32 +82,39 @@ export class MentorBookingService {
         return this.bookingService
           .getMentorBookings({ page, limit, status, sortBy, sortOrder })
           .pipe(startWith(null));
-      })
+      }),
     ),
-    { initialValue: null }
+    { initialValue: null },
   );
 
   bookings = computed<BookingCardInterface[] | null>(
-    () => this.bookingPage()?.data ?? null
+    () => this.bookingPage()?.data ?? null,
   );
 
   isBookingsLoading = computed(() => this.bookingPage() === null);
   currentPage = computed(
-    () => this.bookingPage()?.page ?? this.requestedPage()
+    () => this.bookingPage()?.page ?? this.requestedPage(),
   );
   totalBookings = computed(() => this.bookingPage()?.total ?? 0);
   totalPages = computed(() => this.bookingPage()?.totalPages ?? 0);
 
   pendingRequests = computed(
-    () => (this.bookings() ?? []).filter((b) => b.status === BookingStatus.PENDING).length
+    () =>
+      (this.bookings() ?? []).filter((b) => b.status === BookingStatus.PENDING)
+        .length,
   );
 
   upcomingSessions = computed(
-    () => (this.bookings() ?? []).filter((b) => b.status === BookingStatus.APPROVED).length
+    () =>
+      (this.bookings() ?? []).filter((b) => b.status === BookingStatus.APPROVED)
+        .length,
   );
 
   totalCompleted = computed(
-    () => (this.bookings() ?? []).filter((b) => b.status === BookingStatus.COMPLETED).length
+    () =>
+      (this.bookings() ?? []).filter(
+        (b) => b.status === BookingStatus.COMPLETED,
+      ).length,
   );
 
   upcomingSession = computed<UpcomingSession | null>(() => {
@@ -96,12 +124,12 @@ export class MentorBookingService {
       .filter(
         (booking) =>
           booking.status === BookingStatus.APPROVED &&
-          new Date(booking.sessionDateTime) > now
+          new Date(booking.sessionDateTime) > now,
       )
       .sort(
         (a, b) =>
           new Date(a.sessionDateTime).getTime() -
-          new Date(b.sessionDateTime).getTime()
+          new Date(b.sessionDateTime).getTime(),
       )[0];
 
     if (!nextBooking) return null;
@@ -127,7 +155,7 @@ export class MentorBookingService {
 
   setActiveTab(tab: BookingTab): void {
     this.requestedStatus.set(
-      tab === 'All' ? undefined : (tab.toUpperCase() as BookingStatus)
+      tab === 'All' ? undefined : (tab.toUpperCase() as BookingStatus),
     );
     this.requestedPage.set(1);
   }

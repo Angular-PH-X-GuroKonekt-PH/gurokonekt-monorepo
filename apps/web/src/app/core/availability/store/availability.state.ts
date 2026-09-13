@@ -23,9 +23,9 @@ export class AvailabilityState {
     ctx.patchState({ isLoading: true, errorMessage: null });
 
     return this.availabilityService.getAvailability(action.userId).pipe(
-      tap(({ availabilities, sessionDurationMinutes }) => {
+      tap(({ availabilities, sessionDurationMinutes, availabilityTimezone, availabilityOverrides }) => {
         ctx.dispatch(
-          new AvailabilityActions.FetchAvailabilitySuccess({ availabilities, sessionDurationMinutes })
+          new AvailabilityActions.FetchAvailabilitySuccess({ availabilities, sessionDurationMinutes, availabilityTimezone, availabilityOverrides })
         );
       }),
       catchError((error) => {
@@ -47,6 +47,8 @@ export class AvailabilityState {
     ctx.patchState({
       availabilities: action.payload.availabilities,
       sessionDurationMinutes: action.payload.sessionDurationMinutes,
+      availabilityTimezone: action.payload.availabilityTimezone,
+      availabilityOverrides: action.payload.availabilityOverrides,
       isLoading: false,
       errorMessage: null,
     });

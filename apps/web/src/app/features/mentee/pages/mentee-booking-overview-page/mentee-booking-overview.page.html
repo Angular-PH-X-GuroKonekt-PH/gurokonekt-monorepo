@@ -1,11 +1,17 @@
 <div class="mt-6 space-y-4">
-  
   <div class="mb-4">
-    <app-section-title title="Manage Your Bookings" subtitle="Stay organized with all your mentorship sessions." />
+    <app-section-title
+      title="Manage Your Bookings"
+      subtitle="Stay organized with all your mentorship sessions."
+    />
   </div>
 
   <div>
-    <app-mentee-bookings-table [bookings]="bookings()" [isLoading]="isBookingsLoading()" [initialTab]="initialTab"
+    <app-mentee-bookings-table
+      [bookings]="bookings()"
+      [isLoading]="isBookingsLoading()"
+      [initialTab]="initialTab"
+      [displayTimezone]="displayTimezone()"
       [initialBookingId]="initialBookingId"
       footerMode="pagination"
       [currentPage]="currentPage()"
@@ -16,11 +22,16 @@
       (pageChange)="setPage($event)"
       (pageSizeChange)="setPageSize($event)"
       (tabChange)="setActiveTab($event)"
-      (sortChange)="setSort($event)" />
+      (sortChange)="setSort($event)"
+    />
   </div>
-  
+
   @if (selectedReviewBooking(); as booking) {
-  <app-mentee-review-modal [booking]="booking" [isSubmitting]="isSubmittingReview()" (closeModal)="closeReviewModal()"
-    (submitReview)="submitReview($event)" />
+  <app-mentee-review-modal
+    [booking]="booking"
+    [isSubmitting]="isSubmittingReview()"
+    (closeModal)="closeReviewModal()"
+    (submitReview)="submitReview($event)"
+  />
   }
 </div>

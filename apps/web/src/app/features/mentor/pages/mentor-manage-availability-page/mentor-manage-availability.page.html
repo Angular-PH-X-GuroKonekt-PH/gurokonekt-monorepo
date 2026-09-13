@@ -1,80 +1,109 @@
 <div class="mt-6 space-y-4">
   <div class="space-y-3">
-    <div class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+    <div
+      class="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between"
+    >
       <app-section-title
         title="Manage Availability"
-        subtitle="Set your weekly availability so mentees can book sessions with you."
+        subtitle="Set recurring hours and date-specific availability for mentees."
       />
 
-      <gk-button class="rounded-lg bg-orange-500" variant="primary" (buttonClick)="onAddSlot()">
-        + Add Availability
-      </gk-button>
+      <div class="flex flex-wrap items-center justify-end gap-2">
+        <gk-button
+          class="rounded-lg bg-orange-500"
+          variant="primary"
+          (buttonClick)="onAddSlot()"
+        >
+          + Add Availability
+        </gk-button>
+      </div>
     </div>
 
     <div class="flex items-center gap-2">
-      <button type="button" class="rounded-full px-5 py-2 text-sm font-medium transition-colors" [class]="viewMode() === 'table' ? 'bg-orange-500 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'" (click)="setView('table')">
+      <button
+        type="button"
+        class="rounded-full px-5 py-2 text-sm font-medium transition-colors"
+        [class]="viewMode() === 'table' ? 'bg-orange-500 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+        (click)="setView('table')"
+      >
         Table View
       </button>
-      <button type="button" class="rounded-full px-5 py-2 text-sm font-medium transition-colors" [class]="viewMode() === 'calendar' ? 'bg-orange-500 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'" (click)="setView('calendar')">
+      <button
+        type="button"
+        class="rounded-full px-5 py-2 text-sm font-medium transition-colors"
+        [class]="viewMode() === 'calendar' ? 'bg-orange-500 text-white shadow-sm' : 'border border-gray-200 bg-white text-gray-600 hover:bg-gray-50'"
+        (click)="setView('calendar')"
+      >
         Calendar View
       </button>
     </div>
 
     @if (selectors.isLoading()) {
-      <div class="flex items-center justify-center py-20">
-        <div class="h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"></div>
-      </div>
-    }
+    <div class="flex items-center justify-center py-20">
+      <div
+        class="h-10 w-10 animate-spin rounded-full border-4 border-orange-200 border-t-orange-500"
+      ></div>
+    </div>
+    } @if (selectors.errorMessage()) {
+    <div
+      class="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700"
+    >
+      <app-icon name="alert-circle" class="h-5 w-5 shrink-0 text-red-500" />
+      <span>{{ selectors.errorMessage() }}</span>
+    </div>
+    } @if (viewMode() === 'calendar' && !selectors.isLoading()) {
+    <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
+      <full-calendar [options]="calendarOptions" [events]="calendarEvents()" />
+    </div>
+    } @if (viewMode() === 'table' && !selectors.isLoading()) {
+    <app-availability-table
+      title="Availability for Selected Week"
+      [availabilities]="selectors.availabilities()"
+      [blockedBookings]="blockedBookings()"
+      [sessionDurationMinutes]="selectors.sessionDurationMinutes()"
+      [availabilityTimezone]="selectors.availabilityTimezone()"
+      [availabilityOverrides]="selectors.availabilityOverrides()"
+      [selectedWeekValue]="selectedWeekValue"
+      (selectedWeekChange)="onSelectedWeekChange($event)"
+      (editDay)="onEditDay($event)"
+      (deleteDay)="onDeleteDay($event)"
+      (editTimeFrame)="onEditTimeFrame($event.slot, $event.timeFrame, $event.timeFrameIndex)"
+      (deleteTimeFrame)="onDeleteTimeFrame($event.slot, $event.timeFrame, $event.timeFrameIndex)"
+      (editOverride)="onEditOverride($event)"
+      (deleteOverride)="deleteOverride($event)"
+      (editOverrideTimeFrame)="onEditOverride($event.override, $event.timeFrameIndex)"
+      (deleteOverrideTimeFrame)="deleteOverrideTimeFrame($event.override, $event.timeFrame, $event.timeFrameIndex, $event.date)"
+      (deleteOverrideDate)="deleteTemporaryDate($event.override, $event.date)"
+    />
 
-    @if (selectors.errorMessage()) {
-      <div class="mb-6 flex items-center gap-3 rounded-xl border border-red-200 bg-red-50 px-5 py-4 text-sm text-red-700">
-        <app-icon name="alert-circle" class="h-5 w-5 shrink-0 text-red-500" />
-        <span>{{ selectors.errorMessage() }}</span>
-      </div>
-    }
-
-    @if (viewMode() === 'calendar' && !selectors.isLoading()) {
-      <div class="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm">
-        <full-calendar [options]="calendarOptions" [events]="calendarEvents()" />
-      </div>
-    }
-
-    @if (viewMode() === 'table' && !selectors.isLoading()) {
-      <app-availability-table
-        title="Weekly Availability"
-        [availabilities]="selectors.availabilities()"
-        [blockedBookings]="blockedBookings()"
-        [sessionDurationMinutes]="selectors.sessionDurationMinutes()"
-        [selectedWeekValue]="selectedWeekValue"
-        (selectedWeekChange)="onSelectedWeekChange($event)"
-        (editDay)="onEditDay($event)"
-        (deleteDay)="onDeleteDay($event)"
-        (editTimeFrame)="onEditTimeFrame($event.slot, $event.timeFrame, $event.timeFrameIndex)"
-        (deleteTimeFrame)="onDeleteTimeFrame($event.slot, $event.timeFrame, $event.timeFrameIndex)"
-      />
     }
   </div>
 
   @if (showSlotModal()) {
-    <app-availability-slot-modal
-      [days]="days"
-      [editingDay]="editingDay()"
-      [sessionDurationMinutes]="selectors.sessionDurationMinutes()"
-      [(day)]="slotForm.day"
-      [(from)]="slotForm.from"
-      [(to)]="slotForm.to"
-      (closed)="closeSlotModal()"
-      (saved)="saveSlot()"
-    />
-  }
-
-  @if (deleteAvailabilityTarget(); as target) {
-    <app-delete-availability-modal
-      [slot]="target.slot"
-      [timeFrame]="target.timeFrame ?? null"
-      [submitting]="deleteAvailabilitySubmitting()"
-      (closed)="closeDeleteAvailabilityModal()"
-      (confirmed)="confirmDeleteAvailability()"
-    />
+  <app-availability-slot-modal
+    [days]="days"
+    [editingDay]="editingDay()"
+    [editingOverride]="editingOverrideId() !== null"
+    [sessionDurationMinutes]="selectors.sessionDurationMinutes()"
+    [timezoneOptions]="timezoneOptions"
+    [showScheduleOptions]="true"
+    [(day)]="slotForm.day"
+    [(from)]="slotForm.from"
+    [(to)]="slotForm.to"
+    [(scheduleType)]="slotForm.scheduleType"
+    [(startDate)]="slotForm.startDate"
+    [(endDate)]="slotForm.endDate"
+    [(timezone)]="slotForm.timezone"
+    (closed)="closeSlotModal()"
+    (saved)="saveSlot()"
+  />
+  } @if (deleteAvailabilityTarget(); as target) {
+  <app-delete-availability-modal
+    [slot]="target.slot"
+    [timeFrame]="target.timeFrame ?? null"
+    [submitting]="deleteAvailabilitySubmitting()"
+    (closed)="closeDeleteAvailabilityModal()"
+    (confirmed)="confirmDeleteAvailability()"
+  />
   }
 </div>
