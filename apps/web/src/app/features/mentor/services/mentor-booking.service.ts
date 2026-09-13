@@ -1,20 +1,25 @@
 import { computed, inject, Injectable, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
-import { of, startWith, switchMap } from 'rxjs';
+import { catchError, map, Observable, of, startWith, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
   BookingStatus,
   BookingTab,
-  UpcomingSession,
   BookingListResponse,
   BookingSortBy,
   BookingSortOrder,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
+import { MentorDashboardInterface } from '@gurokonekt/models';
 
 import { AuthSelectors } from '../../../core/auth/store/auth.selectors';
 import { BookingService } from '../../../shared/services/booking.service';
+import { MentorDashboardService } from './mentor-dashboard.service';
+
+type MentorDashboardLoadState =
+  | { status: 'idle' | 'loading' | 'error'; data: null }
+  | { status: 'loaded'; data: MentorDashboardInterface };
 
 @Injectable({
   providedIn: 'root',
@@ -22,6 +27,7 @@ import { BookingService } from '../../../shared/services/booking.service';
 export class MentorBookingService {
   store = inject(Store);
   bookingService = inject(BookingService);
+  private readonly mentorDashboardService = inject(MentorDashboardService);
 
   authUser = this.store.selectSignal(AuthSelectors.user);
   userId = computed(() => this.authUser()?.id);
@@ -66,6 +72,41 @@ export class MentorBookingService {
     { initialValue: null }
   );
 
+  private readonly dashboardState = toSignal<
+    MentorDashboardLoadState,
+    MentorDashboardLoadState
+  >(
+    toObservable(this.userId).pipe(
+      switchMap((userId): Observable<MentorDashboardLoadState> => {
+        if (!userId) {
+          return of({ status: 'idle', data: null });
+        }
+
+        return this.mentorDashboardService.getDashboard(userId).pipe(
+          map(
+            (data): MentorDashboardLoadState => ({ status: 'loaded', data }),
+          ),
+          startWith<MentorDashboardLoadState>({
+            status: 'loading',
+            data: null,
+          }),
+          catchError(() =>
+            of<MentorDashboardLoadState>({ status: 'error', data: null }),
+          ),
+        );
+      }),
+    ),
+    { initialValue: { status: 'idle', data: null } },
+  );
+
+  dashboard = computed(() => this.dashboardState().data);
+  isDashboardLoading = computed(
+    () => this.dashboardState().status === 'loading',
+  );
+  hasDashboardError = computed(
+    () => this.dashboardState().status === 'error',
+  );
+
   bookings = computed<BookingCardInterface[] | null>(
     () => this.bookingPage()?.data ?? null
   );
@@ -78,43 +119,18 @@ export class MentorBookingService {
   totalPages = computed(() => this.bookingPage()?.totalPages ?? 0);
 
   pendingRequests = computed(
-    () => (this.bookings() ?? []).filter((b) => b.status === BookingStatus.PENDING).length
+    () => this.dashboard()?.quickStats.pendingBookingRequestsCount ?? 0,
   );
 
   upcomingSessions = computed(
-    () => (this.bookings() ?? []).filter((b) => b.status === BookingStatus.APPROVED).length
+    () => this.dashboard()?.quickStats.upcomingSessions ?? 0,
   );
 
   totalCompleted = computed(
-    () => (this.bookings() ?? []).filter((b) => b.status === BookingStatus.COMPLETED).length
+    () => this.dashboard()?.quickStats.totalCompletedSessions ?? 0,
   );
 
-  upcomingSession = computed<UpcomingSession | null>(() => {
-    const now = new Date();
-
-    const nextBooking = (this.bookings() ?? [])
-      .filter(
-        (booking) =>
-          booking.status === BookingStatus.APPROVED &&
-          new Date(booking.sessionDateTime) > now
-      )
-      .sort(
-        (a, b) =>
-          new Date(a.sessionDateTime).getTime() -
-          new Date(b.sessionDateTime).getTime()
-      )[0];
-
-    if (!nextBooking) return null;
-
-    return {
-      title: nextBooking.menteeNotes || 'Mentoring Session',
-      mentor: nextBooking.mentee
-        ? `${nextBooking.mentee.firstName} ${nextBooking.mentee.lastName}`
-        : 'Mentee',
-      dateTime: new Date(nextBooking.sessionDateTime).toLocaleString(),
-      sessionLink: nextBooking.sessionLink,
-    };
-  });
+  upcomingSession = computed(() => this.dashboard()?.nextUpcomingSession ?? null);
 
   setPage(page: number): void {
     this.requestedPage.set(Math.max(1, page));
