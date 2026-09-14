@@ -1643,8 +1643,8 @@ export class UserService {
         });
         return {
           status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.PASSWORD_INCORRECT.code,
-          message: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
+          statusCode: API_RESPONSE.ERROR.DEACTIVATION_PASSWORD_INCORRECT.code,
+          message: API_RESPONSE.ERROR.DEACTIVATION_PASSWORD_INCORRECT.message,
           data: null,
         };
       }

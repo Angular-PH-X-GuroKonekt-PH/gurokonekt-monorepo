@@ -476,7 +476,7 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Password is incorrect.' })
+  @ApiResponse({ status: 400, description: 'Password is incorrect.' })
   @ApiResponse({ status: 403, description: 'Access denied for the account owner.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   async initiateDeactivation(
