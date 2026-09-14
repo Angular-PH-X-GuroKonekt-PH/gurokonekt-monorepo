@@ -1,5 +1,5 @@
 import { Injectable, inject } from '@angular/core';
-import { State, Action, StateContext, Selector, Store } from '@ngxs/store';
+import { State, Action, StateContext, Selector } from '@ngxs/store';
 import { tap, catchError, throwError } from 'rxjs';
 
 import { VerifyEmailStateModel, initialVerifyEmailState } from '../models/verify-email.state.model';
