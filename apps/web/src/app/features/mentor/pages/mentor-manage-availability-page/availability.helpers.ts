@@ -1,4 +1,6 @@
 import {
+  AvailabilityOverrideInterface,
+  AvailabilityOverrideType,
   DaysInWeek,
   TimeFrameAvailabilityStatus,
   UserAvailabilityInterface,
@@ -11,6 +13,7 @@ import {
 } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { EventInput } from '@fullcalendar/core';
 import { timeToMinutes } from '../../utils/availability-validation.util';
+import { localDateTimeToUtc } from '@gurokonekt/utils';
 
 const DAY_OF_WEEK_MAP: Record<DaysInWeek, number> = {
   [DaysInWeek.Monday]: 1,
@@ -22,10 +25,42 @@ const DAY_OF_WEEK_MAP: Record<DaysInWeek, number> = {
   [DaysInWeek.Sunday]: 0,
 };
 
+export function getAvailabilityOverrideForDate(
+  overrides: AvailabilityOverrideInterface[],
+  dateKey: string,
+): AvailabilityOverrideInterface | null {
+  const latest = [...overrides].reverse();
+  return (
+    latest.find(
+      (override) =>
+        override.type === AvailabilityOverrideType.CustomHours &&
+        override.startDate === dateKey,
+    ) ??
+    latest.find(
+      (override) =>
+        override.type !== AvailabilityOverrideType.CustomHours &&
+        override.startDate <= dateKey &&
+        override.endDate >= dateKey &&
+        !override.excludedDates?.includes(dateKey),
+    ) ??
+    null
+  );
+}
+
+export function isDateRangeFullyExcluded(
+  startDate: string,
+  endDate: string,
+  excludedDates: string[],
+): boolean {
+  const dayCount =
+    Math.round((Date.parse(endDate) - Date.parse(startDate)) / 86_400_000) + 1;
+  return new Set(excludedDates).size >= dayCount;
+}
+
 export function mapAvailabilityToCalendarEvents(
   availabilities: UserAvailabilityInterface[],
   blockedBookings: BookingCardInterface[],
-  sessionDurationMinutes = 60
+  sessionDurationMinutes = 60,
 ): EventInput[] {
   const availabilityEvents: EventInput[] = availabilities.flatMap((slot) =>
     slot.timeFrames.map((frame: TimeFrameInterface) => ({
@@ -39,7 +74,7 @@ export function mapAvailabilityToCalendarEvents(
         to: frame.to,
         type: 'availability',
       },
-    }))
+    })),
   );
 
   const blockedEvents: EventInput[] = blockedBookings.map((booking) => {
@@ -134,7 +169,7 @@ export function toWeekInputValue(date: Date): string {
       ((target.getTime() - weekOne.getTime()) / 86400000 -
         3 +
         ((weekOne.getDay() + 6) % 7)) /
-        7
+        7,
     );
 
   return `${target.getFullYear()}-W${String(weekNumber).padStart(2, '0')}`;
@@ -143,7 +178,7 @@ export function toWeekInputValue(date: Date): string {
 export function getDateForDay(
   day: DaysInWeek,
   days: DaysInWeek[],
-  selectedWeekValue: string
+  selectedWeekValue: string,
 ): Date {
   const weekStart = getWeekStartFromWeekValue(selectedWeekValue);
   const dayIndex = days.indexOf(day);
@@ -156,7 +191,8 @@ export function getDateForDay(
 
 export function formatBookingTime(
   booking: BookingCardInterface,
-  sessionDurationMinutes: number
+  sessionDurationMinutes: number,
+  timezone?: string,
 ): string {
   const start = new Date(booking.sessionDateTime);
   const end = new Date(start.getTime() + sessionDurationMinutes * 60 * 1000);
@@ -164,16 +200,18 @@ export function formatBookingTime(
   return `${start.toLocaleTimeString([], {
     hour: 'numeric',
     minute: '2-digit',
+    ...(timezone && { timeZone: timezone }),
   })} - ${end.toLocaleTimeString([], {
     hour: 'numeric',
     minute: '2-digit',
+    ...(timezone && { timeZone: timezone }),
   })}`;
 }
 
 export function isBookingInsideSlot(
   booking: BookingCardInterface,
   slot: UserAvailabilityInterface,
-  sessionDurationMinutes = 60
+  sessionDurationMinutes = 60,
 ): boolean {
   const date = new Date(booking.sessionDateTime);
 
@@ -194,31 +232,67 @@ export function getActiveBookingForFrame(
   frame: TimeFrameInterface,
   targetDate: Date,
   blockedBookings: BookingCardInterface[],
-  sessionDurationMinutes: number
+  sessionDurationMinutes: number,
+  timezone?: string,
 ): BookingCardInterface | null {
+  if (timezone) {
+    const dateKey = `${targetDate.getFullYear()}-${String(targetDate.getMonth() + 1).padStart(2, '0')}-${String(targetDate.getDate()).padStart(2, '0')}`;
+    const utcStart = localDateTimeToUtc(dateKey, frame.from, timezone);
+    if (!utcStart) return null;
+
+    return (
+      blockedBookings.find(
+        (item) =>
+          new Date(item.sessionDateTime).getTime() === utcStart.getTime(),
+      ) ?? null
+    );
+  }
+
   const frameStart = timeToMinutes(frame.from);
   const frameEnd = timeToMinutes(frame.to);
 
-  return blockedBookings.find((item) => {
-    const bookingDate = new Date(item.sessionDateTime);
-    const bookingStart = bookingDate.getHours() * 60 + bookingDate.getMinutes();
-    const bookingEnd = bookingStart + sessionDurationMinutes;
+  return (
+    blockedBookings.find((item) => {
+      const bookingDate = new Date(item.sessionDateTime);
+      const bookingStart =
+        bookingDate.getHours() * 60 + bookingDate.getMinutes();
+      const bookingEnd = bookingStart + sessionDurationMinutes;
 
-    return (
-      isSameDate(bookingDate, targetDate) &&
-      bookingStart >= frameStart &&
-      bookingEnd <= frameEnd
-    );
-  }) ?? null;
+      return (
+        isSameDate(bookingDate, targetDate) &&
+        bookingStart >= frameStart &&
+        bookingEnd <= frameEnd
+      );
+    }) ?? null
+  );
 }
 
 export function getActiveBookingSummariesForDay(
   slot: UserAvailabilityInterface | null,
   targetDate: Date,
   blockedBookings: BookingCardInterface[],
-  sessionDurationMinutes: number
+  sessionDurationMinutes: number,
+  timezone?: string,
 ): ActiveBookingSummaryInterface[] {
   if (!slot) return [];
+
+  if (timezone) {
+    return slot.timeFrames
+      .map((frame) =>
+        getActiveBookingForFrame(
+          frame,
+          targetDate,
+          blockedBookings,
+          sessionDurationMinutes,
+          timezone,
+        ),
+      )
+      .filter((booking): booking is BookingCardInterface => booking !== null)
+      .map((booking) => ({
+        time: formatBookingTime(booking, sessionDurationMinutes, timezone),
+        status: booking.status,
+      }));
+  }
 
   return blockedBookings
     .filter((booking) => {
@@ -239,7 +313,8 @@ export function getAvailableSlotCount(
   slot: UserAvailabilityInterface | null,
   targetDate: Date,
   blockedBookings: BookingCardInterface[],
-  sessionDurationMinutes: number
+  sessionDurationMinutes: number,
+  timezone?: string,
 ): number {
   if (!slot) return 0;
 
@@ -249,21 +324,22 @@ export function getAvailableSlotCount(
         frame,
         targetDate,
         blockedBookings,
-        sessionDurationMinutes
-      )
+        sessionDurationMinutes,
+        timezone,
+      ),
   ).length;
 }
 
 export function getBookingSummaryLabel(
-  bookings: ActiveBookingSummaryInterface[]
+  bookings: ActiveBookingSummaryInterface[],
 ): string {
   if (bookings.length === 0) return 'None';
 
   const pendingCount = bookings.filter(
-    (booking) => booking.status === BookingStatus.PENDING
+    (booking) => booking.status === BookingStatus.PENDING,
   ).length;
   const approvedCount = bookings.filter(
-    (booking) => booking.status === BookingStatus.APPROVED
+    (booking) => booking.status === BookingStatus.APPROVED,
   ).length;
   const parts: string[] = [];
 
@@ -272,14 +348,16 @@ export function getBookingSummaryLabel(
   }
 
   if (approvedCount > 0) {
-    parts.push(`${approvedCount} ${approvedCount === 1 ? 'approved' : 'approved'}`);
+    parts.push(
+      `${approvedCount} ${approvedCount === 1 ? 'approved' : 'approved'}`,
+    );
   }
 
   return parts.join(', ');
 }
 
 export function getTimeFrameStatus(
-  booking: BookingCardInterface | null
+  booking: BookingCardInterface | null,
 ): TimeFrameAvailabilityStatus {
   if (!booking) return 'Available';
 

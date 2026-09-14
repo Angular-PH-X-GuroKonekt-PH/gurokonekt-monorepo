@@ -39,6 +39,30 @@ export function getTimezones(): Timezone[] {
   return [...LOCATION_TIMEZONES];
 }
 
+export function getBrowserTimezone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || '';
+  } catch {
+    return '';
+  }
+}
+
+export function getIanaTimezoneOptions(): { value: string; label: string }[] {
+  const supportedValuesOf = (
+    Intl as unknown as { supportedValuesOf?: (key: 'timeZone') => string[] }
+  ).supportedValuesOf;
+  const values = supportedValuesOf
+    ? supportedValuesOf('timeZone')
+    : LOCATION_TIMEZONES.map((timezone) => timezone.value);
+
+  return [...new Set([
+    ...values,
+    ...LOCATION_TIMEZONES.map((timezone) => timezone.value),
+    getBrowserTimezone(),
+    'UTC',
+  ])].filter(Boolean).sort().map((value) => ({ value, label: value }));
+}
+
   /**
    * Get all languages
    */

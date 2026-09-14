@@ -1,4 +1,9 @@
-import { ChangeDetectionStrategy, Component, input, signal } from '@angular/core';
+import {
+  ChangeDetectionStrategy,
+  Component,
+  input,
+  signal,
+} from '@angular/core';
 import {
   ControlContainer,
   FormGroup,
@@ -8,7 +13,7 @@ import {
 import {
   getCountries,
   getLanguages,
-  getTimezones,
+  getIanaTimezoneOptions,
 } from '../../../../../shared/utils';
 import { hasError } from '../../../../../shared/utils/form-validation.util';
 import { FormFieldErrorComponent } from '../../../../../shared/components/form-field-error/form-field-error.component';
@@ -30,11 +35,25 @@ export class RegistrationLocationFieldsComponent {
   readonly subtitle = input('Help us personalize your experience');
   /** Help text under country — mentee vs mentor copy. */
   readonly countryHint = input(
-    'This will help us auto-select your timezone and match you with local mentors'
+    'This will help us match you with local mentors',
   );
 
   protected readonly countries = getCountries();
-  protected readonly timezones = signal(getTimezones());
+  protected readonly timezones = signal(
+    getIanaTimezoneOptions().map((timezone) => {
+      const offset = new Intl.DateTimeFormat('en-US', {
+        timeZone: timezone.value,
+        timeZoneName: 'longOffset',
+      })
+        .formatToParts(new Date())
+        .find((part) => part.type === 'timeZoneName')?.value;
+
+      return {
+        ...timezone,
+        label: `${timezone.value.replace(/_/g, ' ')} (${offset?.replace('GMT', 'UTC')})`,
+      };
+    }),
+  );
   protected readonly languages = getLanguages();
 
   protected hasFieldError(fieldName: string): boolean {

@@ -1,13 +1,18 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
-import { toSignal } from '@angular/core/rxjs-interop';
+import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
 import { CalendarOptions } from '@fullcalendar/core';
 import dayGridPlugin from '@fullcalendar/daygrid';
 import interactionPlugin, { DateClickArg } from '@fullcalendar/interaction';
 import { FullCalendarModule } from '@fullcalendar/angular';
-import { firstValueFrom, map, of, switchMap } from 'rxjs';
+import { combineLatest, firstValueFrom, map, of, switchMap } from 'rxjs';
+import {
+  formatDateInTimezone,
+  formatTimeInTimezone,
+  getDateKeyInTimezone,
+} from '@gurokonekt/utils';
 
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { BookingService } from '../../../../shared/services/booking.service';
@@ -15,6 +20,8 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { MentorService } from '../../../mentor/services/mentor.service';
+import { AvailabilityService } from '../../../mentor/services/availability.service';
+import { UserTimezoneService } from '../../../../shared/services/user-timezone.service';
 import { MenteePageLoader } from '../../components/mentee-page-loader/mentee-page-loader';
 import { MentorProfileHero } from '../../components/mentor-profile-hero/mentor-profile-hero';
 import {
@@ -23,12 +30,11 @@ import {
 } from '../../interfaces/book-session.interface';
 import {
   addDays,
-  buildAvailableBookingDates,
-  buildBookingDateTimeForApi,
-  buildDisplayDateTime,
+  buildAvailableBookingDatesFromSlots,
   BOOKING_DATE_RANGE_DAYS,
   getBookingSlotKey,
   getDateKey,
+  shiftDateKey,
 } from '../../utils/book-session-date.util';
 import { formatTimeTo12Hour } from '../../utils/mentor-availability.util';
 
@@ -50,12 +56,15 @@ export class MenteeBookSessionPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly mentorService = inject(MentorService);
+  private readonly availabilityService = inject(AvailabilityService);
+  private readonly menteeTimezoneService = inject(UserTimezoneService);
   private readonly bookingService = inject(BookingService);
   private readonly notificationService = inject(NotificationService);
   private readonly toastService = inject(ToastService);
 
   protected readonly mentorProfileRoute = APP_ROUTES.MENTOR_PROFILE;
   protected readonly bookingOverviewRoute = APP_ROUTES.BOOKING_OVERVIEW;
+  protected readonly displayTimezone = this.menteeTimezoneService.displayTimezone;
 
   // Form state
   protected readonly selectedDate = signal<BookSessionDateOption | null>(null);
@@ -67,25 +76,45 @@ export class MenteeBookSessionPage {
   // Route-driven mentor data
   protected readonly mentorId = toSignal(
     this.route.paramMap.pipe(map((params) => params.get('mentorId') ?? '')),
-    { initialValue: '' }
+    { initialValue: '' },
   );
 
   protected readonly mentor = toSignal(
     this.route.paramMap.pipe(
       map((params) => params.get('mentorId') ?? ''),
-      switchMap((mentorId) => this.mentorService.getMentorProfileById(mentorId))
+      switchMap((mentorId) =>
+        this.mentorService.getMentorProfileById(mentorId),
+      ),
     ),
-    { initialValue: null }
+    { initialValue: null },
   );
 
   protected readonly bookedSlots = toSignal(
     this.route.paramMap.pipe(
       map((params) => params.get('mentorId') ?? ''),
       switchMap((mentorId) =>
-        mentorId ? this.bookingService.getMentorBookedSlots(mentorId) : of([])
-      )
+        mentorId ? this.bookingService.getMentorBookedSlots(mentorId) : of([]),
+      ),
     ),
-    { initialValue: [] }
+    { initialValue: [] },
+  );
+
+  protected readonly concreteSlots = toSignal(
+    combineLatest([
+      this.route.paramMap.pipe(map((params) => params.get('mentorId') ?? '')),
+      toObservable(this.displayTimezone),
+    ]).pipe(
+      switchMap(([mentorId, timezone]) => {
+        if (!mentorId) return of([]);
+        const todayKey = getDateKeyInTimezone(new Date(), timezone);
+        return this.availabilityService.getConcreteSlots(
+          mentorId,
+          shiftDateKey(todayKey, -1),
+          shiftDateKey(todayKey, BOOKING_DATE_RANGE_DAYS + 1),
+        );
+      }),
+    ),
+    { initialValue: [] },
   );
 
   protected readonly mentorFullName = computed(() => {
@@ -102,32 +131,35 @@ export class MenteeBookSessionPage {
 
   // Calendar state
   protected readonly availableDates = computed(() =>
-    buildAvailableBookingDates(
-      this.mentor()?.availability ?? [],
-      BOOKING_DATE_RANGE_DAYS
-    )
+    buildAvailableBookingDatesFromSlots(
+      this.concreteSlots(),
+      this.displayTimezone(),
+    ),
   );
 
   protected readonly availableDateMap = computed(
     () =>
       new Map(
-        this.availableDates().map((date) => [getDateKey(date.date), date])
-      )
+        this.availableDates().map((date) => [getDateKey(date.date), date]),
+      ),
   );
 
   protected readonly bookedSlotTimeMap = computed(
     () =>
       new Set(
         this.bookedSlots().map((slot) =>
-          getBookingSlotKey(slot.sessionDateTime)
-        )
-      )
+          getBookingSlotKey(slot.sessionDateTime),
+        ),
+      ),
   );
 
   protected readonly calendarOptions = computed<CalendarOptions>(() => {
     const availableDateMap = this.availableDateMap();
     const selectedDate = this.selectedDate();
     const selectedDateKey = selectedDate ? getDateKey(selectedDate.date) : null;
+    const today = new Date(
+      `${getDateKeyInTimezone(new Date(), this.displayTimezone())}T00:00:00`,
+    );
 
     return {
       plugins: [dayGridPlugin, interactionPlugin],
@@ -141,8 +173,8 @@ export class MenteeBookSessionPage {
         right: 'next',
       },
       validRange: {
-        start: getDateKey(new Date()),
-        end: getDateKey(addDays(new Date(), BOOKING_DATE_RANGE_DAYS + 1)),
+        start: getDateKey(today),
+        end: getDateKey(addDays(today, BOOKING_DATE_RANGE_DAYS + 1)),
       },
       dateClick: (event) => this.selectCalendarDate(event),
       dayCellClassNames: (event) => {
@@ -173,26 +205,27 @@ export class MenteeBookSessionPage {
     }
 
     return selectedDate.timeFrames.map((timeFrame) => {
-      const bookingDateTime = buildBookingDateTimeForApi(
-        selectedDate.date,
-        timeFrame.from
-      );
+      const bookingDateTime = new Date(timeFrame.start);
 
       return {
         label: `${formatTimeTo12Hour(timeFrame.from)} - ${formatTimeTo12Hour(
-          timeFrame.to
+          timeFrame.to,
         )}`,
-        displayDateTime: buildDisplayDateTime(
-          selectedDate.date,
-          timeFrame.from
-        ),
         bookingDateTime,
         isBooked: this.bookedSlotTimeMap().has(
-          getBookingSlotKey(bookingDateTime)
+          getBookingSlotKey(bookingDateTime),
         ),
       };
     });
   });
+
+  protected formatDisplayDate(date: Date | string): string {
+    return formatDateInTimezone(date, this.displayTimezone());
+  }
+
+  protected formatDisplayTime(date: Date | string): string {
+    return formatTimeInTimezone(date, this.displayTimezone());
+  }
 
   // User actions
   protected selectCalendarDate(event: DateClickArg): void {
@@ -263,7 +296,7 @@ export class MenteeBookSessionPage {
 
     this.toastService.success(
       'Your booking request has been submitted and is pending mentor approval.',
-      'Booking Request Sent'
+      'Booking Request Sent',
     );
 
     this.refreshNotifications();
@@ -276,13 +309,13 @@ export class MenteeBookSessionPage {
 
     this.toastService.error(
       error.message || 'Unable to create booking request. Please try again.',
-      'Booking Failed'
+      'Booking Failed',
     );
   }
 
   private refreshNotifications(): void {
     void firstValueFrom(this.notificationService.getMyNotifications()).catch(
-      () => undefined
+      () => undefined,
     );
   }
 }

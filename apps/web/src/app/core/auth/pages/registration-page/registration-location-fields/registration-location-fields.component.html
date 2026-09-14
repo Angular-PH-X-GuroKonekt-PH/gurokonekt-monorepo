@@ -44,13 +44,7 @@
   <app-form-field-error [form]="form()" controlName="timezone" />
   } @else {
   <p class="mt-1 text-xs text-gray-600">
-    @if (form().get('country')?.value) {
-    Timezone auto-selected based on your country, but you can choose any
-    timezone you prefer
-    } @else {
-    Select your country to auto-fill your timezone, or choose any timezone
-    manually
-    }
+    We use your device timezone by default. You can choose a different timezone.
   </p>
   }
 </div>

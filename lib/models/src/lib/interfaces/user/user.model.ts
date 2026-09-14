@@ -1,36 +1,36 @@
-import { AvatarAttachmentsInterface } from "../attachments/attachments.model";
+import { AvatarAttachmentsInterface } from '../attachments/attachments.model';
 
 export enum UserRole {
-  Mentee = "mentee",
-  Mentor = "mentor",
-  Admin = "admin",
+  Mentee = 'mentee',
+  Mentor = 'mentor',
+  Admin = 'admin',
 }
 
 export enum UserStatus {
-  Active = "active",
-  Inactive = "inactive",
-  PendingApproval = "pending_approval",
-  PendingReview = "pending_review",
-  Approved = "approved",
-  Rejected = "rejected",
-  Banned = "banned",
-  Suspended = "suspended",
-  Deleted = "deleted"
+  Active = 'active',
+  Inactive = 'inactive',
+  PendingApproval = 'pending_approval',
+  PendingReview = 'pending_review',
+  Approved = 'approved',
+  Rejected = 'rejected',
+  Banned = 'banned',
+  Suspended = 'suspended',
+  Deleted = 'deleted',
 }
 
 export enum MenteePreferredSessionType {
-  InPerson = "in_person",
-  Online = "online",
+  InPerson = 'in_person',
+  Online = 'online',
 }
 
 export enum DaysInWeek {
-  Monday = "monday",
-  Tuesday = "tuesday",
-  Wednesday = "wednesday",
-  Thursday = "thursday",
-  Friday = "friday",
-  Saturday = "saturday",
-  Sunday = "sunday",
+  Monday = 'monday',
+  Tuesday = 'tuesday',
+  Wednesday = 'wednesday',
+  Thursday = 'thursday',
+  Friday = 'friday',
+  Saturday = 'saturday',
+  Sunday = 'sunday',
 }
 
 export interface UserInterface {
@@ -95,6 +95,8 @@ export interface MentorProfileInterface {
   skills: string[];
   sessionRate: number;
   availability: UserAvailabilityInterface[];
+  availabilityTimezone: string;
+  availabilityOverrides: AvailabilityOverrideInterface[];
   user: UserInterface;
   updatedAt: string;
   updatedBy: UserFlatInterface;
@@ -117,12 +119,36 @@ export interface UpdateMentorProfileInterface {
 
 export interface UserAvailabilityInterface {
   day: DaysInWeek;
-  timeFrames: TimeFrameInterface[]; 
+  timeFrames: TimeFrameInterface[];
+}
+
+export enum AvailabilityOverrideType {
+  CustomHours = 'custom_hours',
+  Temporary = 'temporary',
+  Unavailable = 'unavailable',
+}
+
+/** A dated exception to the mentor's recurring weekly availability. */
+export interface AvailabilityOverrideInterface {
+  id: string;
+  type: AvailabilityOverrideType;
+  startDate: string;
+  endDate: string;
+  timezone: string;
+  timeFrames: TimeFrameInterface[];
+  excludedDates?: string[];
+}
+
+/** A concrete bookable interval after applying recurrence, overrides and DST. */
+export interface AvailabilitySlotInstanceInterface {
+  start: string;
+  end: string;
+  timezone: string;
 }
 
 export interface TimeFrameInterface {
-  from: string; 
-  to: string;  
+  from: string;
+  to: string;
 }
 
 export type TimeFrameAvailabilityStatus = 'Available' | 'Pending' | 'Approved';
@@ -136,9 +162,9 @@ export interface DeleteAvailabilityTargetInterface {
 export interface MentorCardInterface {
   id: string;
   firstName: string;
-  lastName: string;    
+  lastName: string;
   areasOfExpertise: string[];
   rating: number;
-  bio: string;             
+  bio: string;
   avatarUrl: string;
 }

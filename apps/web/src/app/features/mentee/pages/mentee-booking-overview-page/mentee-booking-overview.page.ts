@@ -16,22 +16,28 @@ import {
 
 import { BookingService } from '../../../../shared/services/booking.service';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
-import { SectionCard } from '../../../../shared/components/section-card/section-card.component';
 import { SectionTitle } from '../../../../shared/components/section-title/section-title.component';
 import { MenteeBookingsTable } from '../../components/mentee-bookings-table/mentee-bookings-table';
 import { ReviewService } from '../../services/review.service';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { CreateReviewRequest } from '@gurokonekt/models';
-import { MenteeReviewModal } from "../../components/mentee-bookings-table/mentee-review-modal/mentee-review-modal";
+import { MenteeReviewModal } from '../../components/mentee-bookings-table/mentee-review-modal/mentee-review-modal';
 import { BookingSortChange } from '../../../../shared/components/bookings-table/bookings-table.types';
+import { UserTimezoneService } from '../../../../shared/services/user-timezone.service';
 
 @Component({
   selector: 'app-mentee-booking-overview-page',
-  imports: [CommonModule, MenteeBookingsTable, SectionCard, SectionTitle, MenteeReviewModal],
+  imports: [
+    CommonModule,
+    MenteeBookingsTable,
+    SectionTitle,
+    MenteeReviewModal,
+  ],
   templateUrl: './mentee-booking-overview.page.html',
 })
 export class MenteeBookingOverviewPage {
   private readonly bookingService = inject(BookingService);
+  private readonly menteeTimezoneService = inject(UserTimezoneService);
   private readonly reviewService = inject(ReviewService);
   private readonly toastService = inject(ToastService);
   private readonly store = inject(Store);
@@ -39,8 +45,10 @@ export class MenteeBookingOverviewPage {
 
   protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
+  protected readonly displayTimezone = this.menteeTimezoneService.displayTimezone;
 
-  protected readonly selectedReviewBooking = signal<BookingCardInterface | null>(null);
+  protected readonly selectedReviewBooking =
+    signal<BookingCardInterface | null>(null);
   protected readonly isSubmittingReview = signal(false);
 
   protected readonly initialBookingId =
@@ -131,46 +139,42 @@ export class MenteeBookingOverviewPage {
   }
 
   protected setSort(sort: BookingSortChange): void {
-    this.requestedSortBy.set(
-      sort.key === 'counterparty' ? 'mentor' : sort.key,
-    );
+    this.requestedSortBy.set(sort.key === 'counterparty' ? 'mentor' : sort.key);
     this.requestedSortOrder.set(sort.direction);
     this.requestedPage.set(1);
   }
 
+  //REVIEW
 
-
-  //REVIEW 
-
-protected onAddReview(booking: BookingCardInterface): void {
-  this.selectedReviewBooking.set(booking);
-}
-
-protected closeReviewModal(): void {
-  this.selectedReviewBooking.set(null);
-}
-
-protected async submitReview(request: CreateReviewRequest): Promise<void> {
-  this.isSubmittingReview.set(true);
-
-  try {
-    await firstValueFrom(this.reviewService.createReview(request));
-
-    this.toastService.success(
-      'Your review has been submitted successfully.',
-      'Review Submitted'
-    );
-
-    this.closeReviewModal();
-  } catch (error) {
-    const message =
-      typeof error === 'object' && error !== null && 'message' in error
-        ? String(error.message)
-        : 'Unable to submit review.';
-
-    this.toastService.error(message, 'Review Failed');
-  } finally {
-    this.isSubmittingReview.set(false);
+  protected onAddReview(booking: BookingCardInterface): void {
+    this.selectedReviewBooking.set(booking);
   }
-}
+
+  protected closeReviewModal(): void {
+    this.selectedReviewBooking.set(null);
+  }
+
+  protected async submitReview(request: CreateReviewRequest): Promise<void> {
+    this.isSubmittingReview.set(true);
+
+    try {
+      await firstValueFrom(this.reviewService.createReview(request));
+
+      this.toastService.success(
+        'Your review has been submitted successfully.',
+        'Review Submitted',
+      );
+
+      this.closeReviewModal();
+    } catch (error) {
+      const message =
+        typeof error === 'object' && error !== null && 'message' in error
+          ? String(error.message)
+          : 'Unable to submit review.';
+
+      this.toastService.error(message, 'Review Failed');
+    } finally {
+      this.isSubmittingReview.set(false);
+    }
+  }
 }

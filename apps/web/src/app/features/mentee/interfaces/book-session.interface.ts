@@ -5,12 +5,11 @@ export interface BookSessionDateOption {
   day: string;
   dayLabel: string;
   dateLabel: string;
-  timeFrames: TimeFrameInterface[];
+  timeFrames: (TimeFrameInterface & { start: string; end: string })[];
 }
 
 export interface BookSessionSlotOption {
   label: string;
-  displayDateTime: Date;
   bookingDateTime: Date;
   isBooked: boolean;
 }

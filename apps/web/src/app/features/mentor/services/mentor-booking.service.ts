@@ -7,6 +7,7 @@ import {
   BookingCardInterface,
   BookingStatus,
   BookingTab,
+  UpcomingSession,
   BookingListResponse,
   BookingSortBy,
   BookingSortOrder,
@@ -15,6 +16,8 @@ import { MentorDashboardLoadState } from '@gurokonekt/models';
 
 import { AuthSelectors } from '../../../core/auth/store/auth.selectors';
 import { BookingService } from '../../../shared/services/booking.service';
+import { UserTimezoneService } from '../../../shared/services/user-timezone.service';
+import { formatDateInTimezone, formatTimeInTimezone } from '@gurokonekt/utils';
 import { MentorDashboardService } from './mentor-dashboard.service';
 
 @Injectable({
@@ -23,15 +26,17 @@ import { MentorDashboardService } from './mentor-dashboard.service';
 export class MentorBookingService {
   store = inject(Store);
   bookingService = inject(BookingService);
+  private readonly timezoneService = inject(UserTimezoneService);
   private readonly mentorDashboardService = inject(MentorDashboardService);
 
   authUser = this.store.selectSignal(AuthSelectors.user);
   userId = computed(() => this.authUser()?.id);
+  readonly displayTimezone = this.timezoneService.displayTimezone;
 
   private readonly requestedPage = signal(1);
   private readonly requestedPageSize = signal(10);
   private readonly requestedStatus = signal<BookingStatus | undefined>(
-    undefined
+    undefined,
   );
   private readonly requestedSortBy = signal<BookingSortBy>('sessionDateTime');
   private readonly requestedSortOrder = signal<BookingSortOrder>('asc');
@@ -63,9 +68,9 @@ export class MentorBookingService {
         return this.bookingService
           .getMentorBookings({ page, limit, status, sortBy, sortOrder })
           .pipe(startWith(null));
-      })
+      }),
     ),
-    { initialValue: null }
+    { initialValue: null },
   );
 
   private readonly dashboardState = toSignal<
@@ -79,9 +84,7 @@ export class MentorBookingService {
         }
 
         return this.mentorDashboardService.getDashboard(userId).pipe(
-          map(
-            (data): MentorDashboardLoadState => ({ status: 'loaded', data }),
-          ),
+          map((data): MentorDashboardLoadState => ({ status: 'loaded', data })),
           startWith<MentorDashboardLoadState>({
             status: 'loading',
             data: null,
@@ -99,17 +102,15 @@ export class MentorBookingService {
   isDashboardLoading = computed(
     () => this.dashboardState().status === 'loading',
   );
-  hasDashboardError = computed(
-    () => this.dashboardState().status === 'error',
-  );
+  hasDashboardError = computed(() => this.dashboardState().status === 'error');
 
   bookings = computed<BookingCardInterface[] | null>(
-    () => this.bookingPage()?.data ?? null
+    () => this.bookingPage()?.data ?? null,
   );
 
   isBookingsLoading = computed(() => this.bookingPage() === null);
   currentPage = computed(
-    () => this.bookingPage()?.page ?? this.requestedPage()
+    () => this.bookingPage()?.page ?? this.requestedPage(),
   );
   totalBookings = computed(() => this.bookingPage()?.total ?? 0);
   totalPages = computed(() => this.bookingPage()?.totalPages ?? 0);
@@ -126,7 +127,17 @@ export class MentorBookingService {
     () => this.dashboard()?.quickStats.totalCompletedSessions ?? 0,
   );
 
-  upcomingSession = computed(() => this.dashboard()?.nextUpcomingSession ?? null);
+  upcomingSession = computed<UpcomingSession | null>(() => {
+    const session = this.dashboard()?.nextUpcomingSession;
+    if (!session) return null;
+
+    return {
+      title: session.title,
+      mentor: session.menteeName,
+      dateTime: `${formatDateInTimezone(session.sessionDateTime, this.displayTimezone())} at ${formatTimeInTimezone(session.sessionDateTime, this.displayTimezone())}`,
+      sessionLink: session.sessionLink,
+    };
+  });
 
   setPage(page: number): void {
     this.requestedPage.set(Math.max(1, page));
@@ -139,7 +150,7 @@ export class MentorBookingService {
 
   setActiveTab(tab: BookingTab): void {
     this.requestedStatus.set(
-      tab === 'All' ? undefined : (tab.toUpperCase() as BookingStatus)
+      tab === 'All' ? undefined : (tab.toUpperCase() as BookingStatus),
     );
     this.requestedPage.set(1);
   }

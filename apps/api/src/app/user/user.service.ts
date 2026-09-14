@@ -1,11 +1,57 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { API_RESPONSE, ActivateAccountDto, AddAvailabilitySlotDto, BookingStatus, DaysInWeek, DeactivationFeedbackDto, DeleteAvailabilitySlotDto, DowngradeMentorDto, InitiateDeactivationDto, LogsActionType, ManageAvailabilityDto, MentorDashboardInterface, MenteeDashboardInterface, MenteeBookingOverviewInterface, MentorAccess, MenteePreferredSessionType, MentorSearchItemInterface, NotificationType, NotificationStatus, REDIRECT_LINKS, ResponseDto, ResponseStatus, SelectFields, SetSessionDurationDto, UpdateAvailabilitySlotDto, UpdateMenteeProfileDto, UpdateMentorProfileDto, UpdateUserRoleDto, UpdateUserStatusDto, UserProfileValidator, UserRole, UserStatus, VerifyDeactivationTokenDto } from '@gurokonekt/models';
+import {
+  API_RESPONSE,
+  ActivateAccountDto,
+  AddAvailabilityOverrideDto,
+  AddAvailabilitySlotDto,
+  AvailabilityOverrideInterface,
+  AvailabilityOverrideType,
+  AvailabilitySlotsQueryDto,
+  BookingStatus,
+  DaysInWeek,
+  DeactivationFeedbackDto,
+  DeleteAvailabilitySlotDto,
+  DowngradeMentorDto,
+  InitiateDeactivationDto,
+  LogsActionType,
+  ManageAvailabilityDto,
+  MentorDashboardInterface,
+  MenteeDashboardInterface,
+  MenteeBookingOverviewInterface,
+  MentorAccess,
+  MenteePreferredSessionType,
+  MentorSearchItemInterface,
+  NotificationType,
+  NotificationStatus,
+  REDIRECT_LINKS,
+  ResponseDto,
+  ResponseStatus,
+  SelectFields,
+  SetSessionDurationDto,
+  UpdateAvailabilitySlotDto,
+  UpdateMenteeProfileDto,
+  UpdateMentorProfileDto,
+  UpdateUserRoleDto,
+  UpdateUserStatusDto,
+  UserProfileValidator,
+  UserRole,
+  UserStatus,
+  VerifyDeactivationTokenDto,
+} from '@gurokonekt/models';
 import { StorageService } from '../storage/storage.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { MailService } from '../mail/mail.service';
 import { instanceToPlain } from 'class-transformer';
-import { MENTOR_DASHBOARD_SHORTCUTS, MENTOR_DASHBOARD_NAV_ITEMS, MENTEE_DASHBOARD_SHORTCUTS, MENTEE_DASHBOARD_NAV_ITEMS } from '@gurokonekt/utils';
+import {
+  getDateKeysInRange,
+  isValidTimezone,
+  materializeAvailabilitySlots,
+  MENTOR_DASHBOARD_SHORTCUTS,
+  MENTOR_DASHBOARD_NAV_ITEMS,
+  MENTEE_DASHBOARD_SHORTCUTS,
+  MENTEE_DASHBOARD_NAV_ITEMS,
+} from '@gurokonekt/utils';
 import * as crypto from 'crypto';
 import bcrypt from 'bcrypt';
 
@@ -13,8 +59,14 @@ import bcrypt from 'bcrypt';
 // Availability helpers
 // ────────────────────────────────────────────────────────────────────────────
 
-interface TimeFrame { from: string; to: string; }
-interface AvailabilitySlot { day: DaysInWeek; timeFrames: TimeFrame[]; }
+interface TimeFrame {
+  from: string;
+  to: string;
+}
+interface AvailabilitySlot {
+  day: DaysInWeek;
+  timeFrames: TimeFrame[];
+}
 const DEFAULT_SESSION_DURATION_MINUTES = 60;
 
 /** Convert "HH:MM" string to total minutes since midnight. */
@@ -25,8 +77,10 @@ function timeToMinutes(time: string): number {
 
 /** Returns true if two time-frames overlap (inclusive boundary). */
 function framesOverlap(a: TimeFrame, b: TimeFrame): boolean {
-  return timeToMinutes(a.from) < timeToMinutes(b.to) &&
-         timeToMinutes(b.from) < timeToMinutes(a.to);
+  return (
+    timeToMinutes(a.from) < timeToMinutes(b.to) &&
+    timeToMinutes(b.from) < timeToMinutes(a.to)
+  );
 }
 
 /** Validates a single list of time frames for a day. */
@@ -53,29 +107,43 @@ function minutesToTime(totalMinutes: number): string {
 }
 
 function splitIntoSessionFrames(frames: TimeFrame[]): TimeFrame[] {
-  return frames.flatMap((frame) => {
-    const start = timeToMinutes(frame.from);
-    const end = timeToMinutes(frame.to);
-    const duration = end - start;
+  return frames
+    .flatMap((frame) => {
+      const start = timeToMinutes(frame.from);
+      const end = timeToMinutes(frame.to);
+      const duration = end - start;
 
-    if (duration < DEFAULT_SESSION_DURATION_MINUTES) {
-      throw new Error(`${frame.from}–${frame.to} is shorter than ${DEFAULT_SESSION_DURATION_MINUTES} min`);
-    }
+      if (duration < DEFAULT_SESSION_DURATION_MINUTES) {
+        throw new Error(
+          `${frame.from}–${frame.to} is shorter than ${DEFAULT_SESSION_DURATION_MINUTES} min`,
+        );
+      }
 
-    if (duration % DEFAULT_SESSION_DURATION_MINUTES !== 0) {
-      throw new Error(`${frame.from}–${frame.to} must be divisible by ${DEFAULT_SESSION_DURATION_MINUTES} min`);
-    }
+      if (duration % DEFAULT_SESSION_DURATION_MINUTES !== 0) {
+        throw new Error(
+          `${frame.from}–${frame.to} must be divisible by ${DEFAULT_SESSION_DURATION_MINUTES} min`,
+        );
+      }
 
-    const slots: TimeFrame[] = [];
-    for (let slotStart = start; slotStart < end; slotStart += DEFAULT_SESSION_DURATION_MINUTES) {
-      slots.push({
-        from: minutesToTime(slotStart),
-        to: minutesToTime(slotStart + DEFAULT_SESSION_DURATION_MINUTES),
-      });
-    }
+      const slots: TimeFrame[] = [];
+      for (
+        let slotStart = start;
+        slotStart < end;
+        slotStart += DEFAULT_SESSION_DURATION_MINUTES
+      ) {
+        slots.push({
+          from: minutesToTime(slotStart),
+          to: minutesToTime(slotStart + DEFAULT_SESSION_DURATION_MINUTES),
+        });
+      }
 
-    return slots;
-  });
+      return slots;
+    })
+    .sort((a, b) => timeToMinutes(a.from) - timeToMinutes(b.from));
+}
+
+function normalizeOverrides(value: unknown): AvailabilityOverrideInterface[] {
+  return Array.isArray(value) ? (value as AvailabilityOverrideInterface[]) : [];
 }
 
 @Injectable()
@@ -95,7 +163,7 @@ export class UserService {
   async getUserProfileById(
     userId: string,
     ipAddress: string,
-    userAgent: string
+    userAgent: string,
   ): Promise<ResponseDto> {
     try {
       const user = await this.prisma.db.user.findUnique({
@@ -268,7 +336,10 @@ export class UserService {
         UserStatus.Deleted,
         UserStatus.Rejected,
       ];
-      if (!user.isMentorApproved || blockedStatuses.includes(user.status as UserStatus)) {
+      if (
+        !user.isMentorApproved ||
+        blockedStatuses.includes(user.status as UserStatus)
+      ) {
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.MENTOR_NOT_APPROVED.code,
@@ -302,33 +373,40 @@ export class UserService {
         upcomingSessions,
         totalCompletedSessions,
         nextUpcomingBooking,
-      ] =
-        await Promise.all([
-          this.prisma.db.booking.count({
-            where: { mentorId: userId, status: BookingStatus.PENDING, isDeleted: false },
-          }),
-          this.prisma.db.booking.count({
-            where: upcomingSessionWhere,
-          }),
-          this.prisma.db.booking.count({
-            where: { mentorId: userId, status: BookingStatus.COMPLETED, isDeleted: false },
-          }),
-          this.prisma.db.booking.findFirst({
-            where: upcomingSessionWhere,
-            orderBy: { sessionDateTime: 'asc' },
-            select: {
-              sessionDateTime: true,
-              sessionLink: true,
-              menteeNotes: true,
-              mentee: {
-                select: {
-                  firstName: true,
-                  lastName: true,
-                },
+      ] = await Promise.all([
+        this.prisma.db.booking.count({
+          where: {
+            mentorId: userId,
+            status: BookingStatus.PENDING,
+            isDeleted: false,
+          },
+        }),
+        this.prisma.db.booking.count({
+          where: upcomingSessionWhere,
+        }),
+        this.prisma.db.booking.count({
+          where: {
+            mentorId: userId,
+            status: BookingStatus.COMPLETED,
+            isDeleted: false,
+          },
+        }),
+        this.prisma.db.booking.findFirst({
+          where: upcomingSessionWhere,
+          orderBy: { sessionDateTime: 'asc' },
+          select: {
+            sessionDateTime: true,
+            sessionLink: true,
+            menteeNotes: true,
+            mentee: {
+              select: {
+                firstName: true,
+                lastName: true,
               },
             },
-          }),
-        ]);
+          },
+        }),
+      ]);
 
       const dashboard: MentorDashboardInterface = {
         greeting: `Welcome back, ${user.firstName}!`,
@@ -342,7 +420,8 @@ export class UserService {
               title: nextUpcomingBooking.menteeNotes || 'Mentoring Session',
               menteeName:
                 `${nextUpcomingBooking.mentee.firstName} ${nextUpcomingBooking.mentee.lastName}`.trim(),
-              sessionDateTime: nextUpcomingBooking.sessionDateTime.toISOString(),
+              sessionDateTime:
+                nextUpcomingBooking.sessionDateTime.toISOString(),
               sessionLink: nextUpcomingBooking.sessionLink,
             }
           : null,
@@ -444,58 +523,65 @@ export class UserService {
       const areasOfInterest = menteeProfile?.areasOfInterest ?? [];
 
       // Three parallel queries: upcoming count, session history, recommended mentors
-      const [upcomingSessions, sessionHistory, recommendedMentors] = await Promise.all([
-        this.prisma.db.booking.count({
-          where: {
-            menteeId: userId,
-            status: BookingStatus.APPROVED,
-            sessionDateTime: { gte: now },
-            isDeleted: false,
-          },
-        }),
-        this.prisma.db.booking.findMany({
-          where: { menteeId: userId, status: BookingStatus.COMPLETED, isDeleted: false },
-          orderBy: { sessionDateTime: 'desc' },
-          take: 5,
-          select: {
-            id: true,
-            mentorId: true,
-            sessionDateTime: true,
-            status: true,
-            sessionLink: true,
-            menteeNotes: true,
-            mentorNotes: true,
-            mentor: {
-              select: {
-                id: true,
-                firstName: true,
-                lastName: true,
-                avatarAttachments: { select: { publicUrl: true } },
+      const [upcomingSessions, sessionHistory, recommendedMentors] =
+        await Promise.all([
+          this.prisma.db.booking.count({
+            where: {
+              menteeId: userId,
+              status: BookingStatus.APPROVED,
+              sessionDateTime: { gte: now },
+              isDeleted: false,
+            },
+          }),
+          this.prisma.db.booking.findMany({
+            where: {
+              menteeId: userId,
+              status: BookingStatus.COMPLETED,
+              isDeleted: false,
+            },
+            orderBy: { sessionDateTime: 'desc' },
+            take: 5,
+            select: {
+              id: true,
+              mentorId: true,
+              sessionDateTime: true,
+              status: true,
+              sessionLink: true,
+              menteeNotes: true,
+              mentorNotes: true,
+              mentor: {
+                select: {
+                  id: true,
+                  firstName: true,
+                  lastName: true,
+                  avatarAttachments: { select: { publicUrl: true } },
+                },
               },
             },
-          },
-        }),
-        this.prisma.db.user.findMany({
-          where: {
-            ...MentorAccess.approvedMentorWhere(),
-            ...(areasOfInterest.length > 0 && {
-              mentorProfiles: {
-                some: { areasOfExpertise: { hasSome: areasOfInterest } },
-              },
-            }),
-          },
-          select: SelectFields.getMentorSearchSelect(),
-          take: 5,
-          orderBy: { createdAt: 'desc' },
-        }),
-      ]);
+          }),
+          this.prisma.db.user.findMany({
+            where: {
+              ...MentorAccess.approvedMentorWhere(),
+              ...(areasOfInterest.length > 0 && {
+                mentorProfiles: {
+                  some: { areasOfExpertise: { hasSome: areasOfInterest } },
+                },
+              }),
+            },
+            select: SelectFields.getMentorSearchSelect(),
+            take: 5,
+            orderBy: { createdAt: 'desc' },
+          }),
+        ]);
 
       const dashboard: MenteeDashboardInterface = {
         greeting: `Welcome back, ${user.firstName}!`,
         summaryWidgets: {
           upcomingSessions,
-          sessionHistory: sessionHistory as unknown as MenteeDashboardInterface['summaryWidgets']['sessionHistory'],
-          recommendedMentors: recommendedMentors as unknown as MentorSearchItemInterface[],
+          sessionHistory:
+            sessionHistory as unknown as MenteeDashboardInterface['summaryWidgets']['sessionHistory'],
+          recommendedMentors:
+            recommendedMentors as unknown as MentorSearchItemInterface[],
         },
         shortcuts: MENTEE_DASHBOARD_SHORTCUTS,
         navItems: MENTEE_DASHBOARD_NAV_ITEMS,
@@ -551,14 +637,27 @@ export class UserService {
           },
         }),
         this.prisma.db.booking.count({
-          where: { menteeId: userId, status: BookingStatus.COMPLETED, isDeleted: false },
+          where: {
+            menteeId: userId,
+            status: BookingStatus.COMPLETED,
+            isDeleted: false,
+          },
         }),
         this.prisma.db.booking.count({
-          where: { menteeId: userId, status: BookingStatus.PENDING, isDeleted: false },
+          where: {
+            menteeId: userId,
+            status: BookingStatus.PENDING,
+            isDeleted: false,
+          },
         }),
       ]);
 
-      const overview: MenteeBookingOverviewInterface = { total, upcoming, completed, pending };
+      const overview: MenteeBookingOverviewInterface = {
+        total,
+        upcoming,
+        completed,
+        pending,
+      };
 
       return {
         status: ResponseStatus.Success,
@@ -600,14 +699,14 @@ export class UserService {
    * 9. upload avatar to supabase storage using storage service
    * 10. wait for the upload to complete
    * 11. if error on upload save log, return success but with message there is an error uploading avatar please try again later
-   * */ 
+   * */
   async updateUserProfile(
     userId: string,
-    dto: UpdateMenteeProfileDto | UpdateMentorProfileDto, 
+    dto: UpdateMenteeProfileDto | UpdateMentorProfileDto,
     avatar: Express.Multer.File[],
     files: Express.Multer.File[],
-    ipAddress: string, 
-    userAgent: string
+    ipAddress: string,
+    userAgent: string,
   ): Promise<ResponseDto> {
     try {
       const user = await this.prisma.db.user.findUnique({
@@ -637,64 +736,81 @@ export class UserService {
       }
 
       const role = user.role as UserRole;
-      const isProfileComplete = role === UserRole.Mentor
-        ? user.isMentorProfileComplete
-        : user.isProfileComplete;
+      const isProfileComplete =
+        role === UserRole.Mentor
+          ? user.isMentorProfileComplete
+          : user.isProfileComplete;
 
-      const effectiveDto: UpdateMenteeProfileDto | UpdateMentorProfileDto = role === UserRole.Mentee
-        ? (() => {
-            const currentDto = dto as UpdateMenteeProfileDto;
-            const normalizeToArray = <T extends string>(value: unknown): T[] | undefined => {
-              if (Array.isArray(value)) return value as T[];
-              if (typeof value === 'string' && value.trim().length > 0) return [value as T];
-              return undefined;
-            };
-            return {
-              ...currentDto,
-              learningGoals: normalizeToArray(currentDto.learningGoals),
-              areasOfInterest: normalizeToArray(currentDto.areasOfInterest),
-              preferredSessionType: normalizeToArray<MenteePreferredSessionType>(currentDto.preferredSessionType),
-            };
-          })()
-        : (() => {
-            const currentDto = dto as UpdateMentorProfileDto;
-            const normalizeToArray = <T extends string>(value: unknown): T[] | undefined => {
-              if (Array.isArray(value)) return value as T[];
-              if (typeof value === 'string' && value.trim().length > 0) return [value as T];
-              return undefined;
-            };
-            const normalizeAvailability = (value: unknown): UpdateMentorProfileDto['availability'] => {
-              if (Array.isArray(value)) return value;
-              if (typeof value === 'string') {
-                try {
-                  const parsed = JSON.parse(value);
-                  return Array.isArray(parsed) ? parsed : undefined;
-                } catch {
-                  return undefined;
+      const effectiveDto: UpdateMenteeProfileDto | UpdateMentorProfileDto =
+        role === UserRole.Mentee
+          ? (() => {
+              const currentDto = dto as UpdateMenteeProfileDto;
+              const normalizeToArray = <T extends string>(
+                value: unknown,
+              ): T[] | undefined => {
+                if (Array.isArray(value)) return value as T[];
+                if (typeof value === 'string' && value.trim().length > 0)
+                  return [value as T];
+                return undefined;
+              };
+              return {
+                ...currentDto,
+                learningGoals: normalizeToArray(currentDto.learningGoals),
+                areasOfInterest: normalizeToArray(currentDto.areasOfInterest),
+                preferredSessionType:
+                  normalizeToArray<MenteePreferredSessionType>(
+                    currentDto.preferredSessionType,
+                  ),
+              };
+            })()
+          : (() => {
+              const currentDto = dto as UpdateMentorProfileDto;
+              const normalizeToArray = <T extends string>(
+                value: unknown,
+              ): T[] | undefined => {
+                if (Array.isArray(value)) return value as T[];
+                if (typeof value === 'string' && value.trim().length > 0)
+                  return [value as T];
+                return undefined;
+              };
+              const normalizeAvailability = (
+                value: unknown,
+              ): UpdateMentorProfileDto['availability'] => {
+                if (Array.isArray(value)) return value;
+                if (typeof value === 'string') {
+                  try {
+                    const parsed = JSON.parse(value);
+                    return Array.isArray(parsed) ? parsed : undefined;
+                  } catch {
+                    return undefined;
+                  }
                 }
-              }
-              return undefined;
-            };
+                return undefined;
+              };
 
-            return {
-              ...currentDto,
-              yearsOfExperience:
-                currentDto.yearsOfExperience === undefined ||
-                currentDto.yearsOfExperience === null ||
-                (currentDto.yearsOfExperience as unknown) === ''
-                  ? undefined
-                  : Number(currentDto.yearsOfExperience),
-              skills: normalizeToArray(currentDto.skills),
-              areasOfExpertise: normalizeToArray(currentDto.areasOfExpertise),
-              availability: normalizeAvailability(currentDto.availability),
-            };
-          })();
+              return {
+                ...currentDto,
+                yearsOfExperience:
+                  currentDto.yearsOfExperience === undefined ||
+                  currentDto.yearsOfExperience === null ||
+                  (currentDto.yearsOfExperience as unknown) === ''
+                    ? undefined
+                    : Number(currentDto.yearsOfExperience),
+                skills: normalizeToArray(currentDto.skills),
+                areasOfExpertise: normalizeToArray(currentDto.areasOfExpertise),
+                availability: normalizeAvailability(currentDto.availability),
+              };
+            })();
 
       if (!isProfileComplete) {
         try {
-          UserProfileValidator.throwIfMissingFields(effectiveDto, user.role as UserRole);
+          UserProfileValidator.throwIfMissingFields(
+            effectiveDto,
+            user.role as UserRole,
+          );
         } catch (err) {
-          const validationError = err instanceof Error ? err : new Error(String(err));
+          const validationError =
+            err instanceof Error ? err : new Error(String(err));
           await this.prisma.db.logs.create({
             data: {
               actionType: LogsActionType.Update,
@@ -757,7 +873,8 @@ export class UserService {
             } catch (error) {
               return {
                 status: ResponseStatus.Error,
-                statusCode: API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
+                statusCode:
+                  API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.code,
                 message: `${API_RESPONSE.ERROR.AVAILABILITY_FRAME_TOO_SHORT.message} (${entry.day}): ${(error as Error).message}`,
                 data: null,
               };
@@ -768,29 +885,40 @@ export class UserService {
         }
       }
 
-      
       const userUpdateData = UserProfileValidator.buildUserUpdateData(
         effectiveDto,
         isProfileComplete,
-        role
+        role,
       );
 
       let profileResponse: Record<string, unknown> | null = null;
 
       if (role === UserRole.Mentor) {
-        const payload = UserProfileValidator.buildProfilePayload(effectiveDto, role) as Record<
-          string,
-          unknown
-        >;
+        const payload = UserProfileValidator.buildProfilePayload(
+          effectiveDto,
+          role,
+        ) as Record<string, unknown>;
 
         // FormData fields arrive as strings; coerce before Prisma write.
-        if (payload['yearsOfExperience'] !== undefined && payload['yearsOfExperience'] !== null) {
+        if (
+          payload['yearsOfExperience'] !== undefined &&
+          payload['yearsOfExperience'] !== null
+        ) {
           payload['yearsOfExperience'] = Number(payload['yearsOfExperience']);
         }
 
         const cleanPayload = Object.fromEntries(
-          Object.entries(payload).filter(([, value]) => value !== undefined)
+          Object.entries(payload).filter(([, value]) => value !== undefined),
         );
+
+        if (
+          !isProfileComplete &&
+          (effectiveDto as UpdateMentorProfileDto).timezone
+        ) {
+          cleanPayload['availabilityTimezone'] = (
+            effectiveDto as UpdateMentorProfileDto
+          ).timezone;
+        }
 
         await this.prisma.db.$transaction(async (tx) => {
           profileResponse = await tx.mentorProfile.upsert({
@@ -813,13 +941,17 @@ export class UserService {
         const userUpdateData = UserProfileValidator.buildUserUpdateData(
           effectiveDto,
           isProfileComplete,
-          role
+          role,
         );
         const currentDto = effectiveDto as UpdateMenteeProfileDto;
-        const rawPreferredSessionType = currentDto.preferredSessionType as unknown;
-        const normalizedPreferredSessionType = Array.isArray(rawPreferredSessionType)
-          ? rawPreferredSessionType as MenteePreferredSessionType[]
-          : typeof rawPreferredSessionType === 'string' && rawPreferredSessionType.trim().length > 0
+        const rawPreferredSessionType =
+          currentDto.preferredSessionType as unknown;
+        const normalizedPreferredSessionType = Array.isArray(
+          rawPreferredSessionType,
+        )
+          ? (rawPreferredSessionType as MenteePreferredSessionType[])
+          : typeof rawPreferredSessionType === 'string' &&
+              rawPreferredSessionType.trim().length > 0
             ? [rawPreferredSessionType as MenteePreferredSessionType]
             : undefined;
         const payload = {
@@ -835,7 +967,7 @@ export class UserService {
             update: payload,
             create: {
               userId,
-              ...payload
+              ...payload,
             },
             select: SelectFields.getMenteeProfileSelect(),
           });
@@ -858,36 +990,40 @@ export class UserService {
         },
       });
 
-      const { 
-        avatarResponse, 
+      const {
+        avatarResponse,
         documentResponse,
-        profileResponse: updatedProfile 
+        profileResponse: updatedProfile,
       } = await this.uploadFilesAndFetchProfile(userId, avatar, files, role);
-    
+
       let message = API_RESPONSE.SUCCESS.UPDATE_USER_PROFILE.message;
-      if (avatarResponse?.status === ResponseStatus.Error) message += `\n${API_RESPONSE.ERROR.UPLOAD_AVATAR.message}.`;
-      if (documentResponse?.status === ResponseStatus.Error) message += `\n${API_RESPONSE.ERROR.UPLOAD_FILES.message}.`;
+      if (avatarResponse?.status === ResponseStatus.Error)
+        message += `\n${API_RESPONSE.ERROR.UPLOAD_AVATAR.message}.`;
+      if (documentResponse?.status === ResponseStatus.Error)
+        message += `\n${API_RESPONSE.ERROR.UPLOAD_FILES.message}.`;
 
       return {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.UPDATE_USER_PROFILE.code,
         message: message,
-        data: updatedProfile || profileResponse
+        data: updatedProfile || profileResponse,
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
       this.logger.error(`Profile update failed: ${err.message}`, err.stack);
-      await this.prisma.db.logs.create({
-        data: {
-          actionType: LogsActionType.Update,
-          targetId: userId,
-          details: `Profile update error: ${err.message}`,
-          metadata: { error: err.message, stack: err.stack },
-          ipAddress,
-          userAgent,
-          createdById: userId,
-        },
-      }).catch(() => undefined); // Silently ignore log errors
+      await this.prisma.db.logs
+        .create({
+          data: {
+            actionType: LogsActionType.Update,
+            targetId: userId,
+            details: `Profile update error: ${err.message}`,
+            metadata: { error: err.message, stack: err.stack },
+            ipAddress,
+            userAgent,
+            createdById: userId,
+          },
+        })
+        .catch(() => undefined); // Silently ignore log errors
       return {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.UPDATE_USER_PROFILE.code,
@@ -897,27 +1033,48 @@ export class UserService {
     }
   }
 
-  async uploadFilesAndFetchProfile(userId: string, avatar: Express.Multer.File[], files: Express.Multer.File[], role: UserRole) {
+  async uploadFilesAndFetchProfile(
+    userId: string,
+    avatar: Express.Multer.File[],
+    files: Express.Multer.File[],
+    role: UserRole,
+  ) {
     let avatarResponse: ResponseDto | null = null;
     let documentResponse: ResponseDto | null = null;
     let profileResponse: Record<string, unknown> | null = null;
 
     if (avatar?.length) {
-      avatarResponse = await this.storageService.uploadAvatar(avatar, userId, role);
-      profileResponse = await (role === UserRole.Mentor
-        ? this.prisma.db.mentorProfile.findUnique({ where: { userId }, select: SelectFields.getMentorProfileSelect() })
-        : this.prisma.db.menteeProfile.findUnique({ where: { userId }, select: SelectFields.getMenteeProfileSelect() })
+      avatarResponse = await this.storageService.uploadAvatar(
+        avatar,
+        userId,
+        role,
       );
+      profileResponse = await (role === UserRole.Mentor
+        ? this.prisma.db.mentorProfile.findUnique({
+            where: { userId },
+            select: SelectFields.getMentorProfileSelect(),
+          })
+        : this.prisma.db.menteeProfile.findUnique({
+            where: { userId },
+            select: SelectFields.getMenteeProfileSelect(),
+          }));
     }
 
     if (files?.length) {
-      documentResponse = await this.storageService.uploadDocument(files, userId, role);
+      documentResponse = await this.storageService.uploadDocument(
+        files,
+        userId,
+        role,
+      );
     }
 
     return { avatarResponse, documentResponse, profileResponse };
   }
 
-  async updateUserStatus(dto: UpdateUserStatusDto, userId: string): Promise<ResponseDto> {
+  async updateUserStatus(
+    dto: UpdateUserStatusDto,
+    userId: string,
+  ): Promise<ResponseDto> {
     try {
       const user = await this.prisma.db.user.update({
         where: { id: userId },
@@ -954,87 +1111,87 @@ export class UserService {
     ipAddress: string,
     userAgent: string,
   ): Promise<ResponseDto> {
-      try {
-        const existing = await this.prisma.db.user.findUnique({
-          where: { id: userId },
-          select: { id: true, role: true },
-        });
+    try {
+      const existing = await this.prisma.db.user.findUnique({
+        where: { id: userId },
+        select: { id: true, role: true },
+      });
 
-        if (!existing) {
-          return {
-            status: ResponseStatus.Error,
-            statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
-            message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
-            data: null,
-          };
-        }
-
-        // A role change must also transition the account state, otherwise the
-        // user keeps the previous role's lifecycle status/flags/profile (e.g. a
-        // mentor moved to mentee would keep `pending_approval` + mentor profile).
-        const roleTransitionData: Record<string, unknown> = { role: dto.role };
-        if (dto.role === UserRole.Mentee) {
-          // Clean mentee state — no mentor onboarding leftovers.
-          roleTransitionData.status = UserStatus.Active;
-          roleTransitionData.isMentorApproved = false;
-          roleTransitionData.isMentorProfileComplete = false;
-        } else if (dto.role === UserRole.Mentor) {
-          // Promotion to mentor must go through the approval flow again.
-          roleTransitionData.status = UserStatus.PendingApproval;
-          roleTransitionData.isMentorApproved = false;
-          roleTransitionData.isMentorProfileComplete = false;
-        } else if (dto.role === UserRole.Admin) {
-          roleTransitionData.status = UserStatus.Active;
-        }
-
-        const user = await this.prisma.db.$transaction(async (tx) => {
-          const updated = await tx.user.update({
-            where: { id: userId },
-            data: {
-              ...roleTransitionData,
-              updatedBy: { connect: { id: dto.updatedById } },
-            },
-            select: SelectFields.getUserCredentialsSelect(),
-          });
-
-          // Drop the now-irrelevant mentor profile when leaving the mentor role,
-          // mirroring the mentor-downgrade flow.
-          if (existing.role === UserRole.Mentor && dto.role !== UserRole.Mentor) {
-            await tx.mentorProfile.deleteMany({ where: { userId } });
-          }
-
-          return updated;
-        });
-
-        await this.prisma.db.logs.create({
-          data: {
-            actionType: LogsActionType.Update,
-            targetId: userId,
-            details: `${API_RESPONSE.SUCCESS.UPDATE_USER_ROLE.message} (${existing.role} → ${dto.role})`,
-            metadata: { previousRole: existing.role, newRole: dto.role },
-            ipAddress,
-            userAgent,
-            createdById: dto.updatedById,
-          },
-        });
-
-        return {
-          status: ResponseStatus.Success,
-          statusCode: API_RESPONSE.SUCCESS.UPDATE_USER_ROLE.code,
-          message: API_RESPONSE.SUCCESS.UPDATE_USER_ROLE.message,
-          data: user,
-        };
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        this.logger.error(err.message, err.stack);
+      if (!existing) {
         return {
           status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.UPDATE_USER_ROLE.code,
-          message: API_RESPONSE.ERROR.UPDATE_USER_ROLE.message,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
           data: null,
         };
       }
+
+      // A role change must also transition the account state, otherwise the
+      // user keeps the previous role's lifecycle status/flags/profile (e.g. a
+      // mentor moved to mentee would keep `pending_approval` + mentor profile).
+      const roleTransitionData: Record<string, unknown> = { role: dto.role };
+      if (dto.role === UserRole.Mentee) {
+        // Clean mentee state — no mentor onboarding leftovers.
+        roleTransitionData.status = UserStatus.Active;
+        roleTransitionData.isMentorApproved = false;
+        roleTransitionData.isMentorProfileComplete = false;
+      } else if (dto.role === UserRole.Mentor) {
+        // Promotion to mentor must go through the approval flow again.
+        roleTransitionData.status = UserStatus.PendingApproval;
+        roleTransitionData.isMentorApproved = false;
+        roleTransitionData.isMentorProfileComplete = false;
+      } else if (dto.role === UserRole.Admin) {
+        roleTransitionData.status = UserStatus.Active;
+      }
+
+      const user = await this.prisma.db.$transaction(async (tx) => {
+        const updated = await tx.user.update({
+          where: { id: userId },
+          data: {
+            ...roleTransitionData,
+            updatedBy: { connect: { id: dto.updatedById } },
+          },
+          select: SelectFields.getUserCredentialsSelect(),
+        });
+
+        // Drop the now-irrelevant mentor profile when leaving the mentor role,
+        // mirroring the mentor-downgrade flow.
+        if (existing.role === UserRole.Mentor && dto.role !== UserRole.Mentor) {
+          await tx.mentorProfile.deleteMany({ where: { userId } });
+        }
+
+        return updated;
+      });
+
+      await this.prisma.db.logs.create({
+        data: {
+          actionType: LogsActionType.Update,
+          targetId: userId,
+          details: `${API_RESPONSE.SUCCESS.UPDATE_USER_ROLE.message} (${existing.role} → ${dto.role})`,
+          metadata: { previousRole: existing.role, newRole: dto.role },
+          ipAddress,
+          userAgent,
+          createdById: dto.updatedById,
+        },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.UPDATE_USER_ROLE.code,
+        message: API_RESPONSE.SUCCESS.UPDATE_USER_ROLE.message,
+        data: user,
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.UPDATE_USER_ROLE.code,
+        message: API_RESPONSE.ERROR.UPDATE_USER_ROLE.message,
+        data: null,
+      };
     }
+  }
 
   // ====================================================
   // MENTOR DOWNGRADE
@@ -1061,7 +1218,13 @@ export class UserService {
     try {
       const user = await this.prisma.db.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, firstName: true, role: true, hashPassword: true },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          role: true,
+          hashPassword: true,
+        },
       });
 
       if (!user) {
@@ -1082,7 +1245,10 @@ export class UserService {
         };
       }
 
-      const isPasswordValid = await bcrypt.compare(dto.password, user.hashPassword);
+      const isPasswordValid = await bcrypt.compare(
+        dto.password,
+        user.hashPassword,
+      );
       if (!isPasswordValid) {
         return {
           status: ResponseStatus.Error,
@@ -1108,7 +1274,8 @@ export class UserService {
           data: {
             userId,
             title: 'Account Downgraded to Mentee',
-            message: 'Your mentor account has been downgraded to a mentee account. Your mentor profile has been permanently removed. Contact support if you wish to re-apply as a mentor.',
+            message:
+              'Your mentor account has been downgraded to a mentee account. Your mentor profile has been permanently removed. Contact support if you wish to re-apply as a mentor.',
             type: NotificationType.ANNOUNCEMENT,
             status: NotificationStatus.UNREAD,
           },
@@ -1119,7 +1286,10 @@ export class UserService {
       const redirectTo = `${origin || ''}`;
       await this.supabase.client.auth.signInWithOtp({
         email: user.email,
-        options: { shouldCreateUser: false, emailRedirectTo: redirectTo || undefined },
+        options: {
+          shouldCreateUser: false,
+          emailRedirectTo: redirectTo || undefined,
+        },
       });
 
       await this.prisma.db.logs.create({
@@ -1163,7 +1333,12 @@ export class UserService {
     try {
       const profile = await this.prisma.db.mentorProfile.findUnique({
         where: { userId },
-        select: { availability: true, sessionDurationMinutes: true },
+        select: {
+          availability: true,
+          availabilityTimezone: true,
+          availabilityOverrides: true,
+          sessionDurationMinutes: true,
+        },
       });
 
       if (!profile) {
@@ -1179,7 +1354,14 @@ export class UserService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.GET_AVAILABILITY.code,
         message: API_RESPONSE.SUCCESS.GET_AVAILABILITY.message,
-        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES, availability: profile.availability },
+        data: {
+          sessionDurationMinutes: profile.sessionDurationMinutes,
+          availability: profile.availability,
+          availabilityTimezone: profile.availabilityTimezone,
+          availabilityOverrides: normalizeOverrides(
+            profile.availabilityOverrides,
+          ),
+        },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1188,6 +1370,69 @@ export class UserService {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.GET_AVAILABILITY_FAILED.code,
         message: API_RESPONSE.ERROR.GET_AVAILABILITY_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  async getMentorAvailabilitySlots(
+    userId: string,
+    query: AvailabilitySlotsQueryDto,
+  ): Promise<ResponseDto> {
+    try {
+      const profile = await this.prisma.db.mentorProfile.findUnique({
+        where: { userId },
+        select: {
+          availability: true,
+          availabilityTimezone: true,
+          availabilityOverrides: true,
+          sessionDurationMinutes: true,
+        },
+      });
+
+      if (!profile) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_NOT_FOUND.code,
+          message: API_RESPONSE.ERROR.USER_NOT_FOUND.message,
+          data: null,
+        };
+      }
+
+      const start = new Date(`${query.startDate}T00:00:00.000Z`);
+      const end = new Date(`${query.endDate}T00:00:00.000Z`);
+      const days = (end.getTime() - start.getTime()) / 86_400_000;
+      if (end < start || days > 180) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Availability date range must be between 1 and 180 days.',
+          data: null,
+        };
+      }
+
+      const slots = materializeAvailabilitySlots(
+        (profile.availability as unknown as AvailabilitySlot[]) ?? [],
+        normalizeOverrides(profile.availabilityOverrides),
+        profile.availabilityTimezone,
+        query.startDate,
+        query.endDate,
+        profile.sessionDurationMinutes,
+      );
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: 200,
+        message: 'Availability slots retrieved successfully',
+        data: { slots },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: 500,
+        message: 'Failed to retrieve availability slots',
         data: null,
       };
     }
@@ -1203,11 +1448,26 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(
+        userId,
+        authenticatedUserId,
+      );
       if (check) return check;
 
+      if (
+        dto.availabilityTimezone &&
+        !isValidTimezone(dto.availabilityTimezone)
+      ) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Invalid IANA timezone.',
+          data: null,
+        };
+      }
+
       // Check for duplicate days
-      const days = dto.availability.map(e => e.day);
+      const days = dto.availability.map((e) => e.day);
       if (new Set(days).size !== days.length) {
         return {
           status: ResponseStatus.Error,
@@ -1251,6 +1511,9 @@ export class UserService {
         data: {
           sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
           availability: JSON.parse(JSON.stringify(normalizedAvailability)),
+          ...(dto.availabilityTimezone && {
+            availabilityTimezone: dto.availabilityTimezone,
+          }),
         },
       });
 
@@ -1258,7 +1521,11 @@ export class UserService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.code,
         message: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.message,
-        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES, availability: normalizedAvailability },
+        data: {
+          sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
+          availability: normalizedAvailability,
+          availabilityTimezone: dto.availabilityTimezone,
+        },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1282,15 +1549,35 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(
+        userId,
+        authenticatedUserId,
+      );
       if (check) return check;
 
       const profile = await this.prisma.db.mentorProfile.findUnique({
         where: { userId },
-        select: { availability: true, sessionDurationMinutes: true },
+        select: {
+          availability: true,
+          availabilityTimezone: true,
+          availabilityOverrides: true,
+          sessionDurationMinutes: true,
+        },
       });
 
       const duration = DEFAULT_SESSION_DURATION_MINUTES;
+
+      if (
+        dto.availabilityTimezone &&
+        !isValidTimezone(dto.availabilityTimezone)
+      ) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Invalid IANA timezone.',
+          data: null,
+        };
+      }
 
       // Validate the new frames themselves
       const validationError = validateTimeFrames(dto.timeFrames);
@@ -1315,10 +1602,11 @@ export class UserService {
         };
       }
 
-      const current: AvailabilitySlot[] = (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
+      const current: AvailabilitySlot[] =
+        (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
 
       // Merge: append new frames to existing frames for this day and check for overlaps
-      const existingDay = current.find(s => s.day === dto.day);
+      const existingDay = current.find((s) => s.day === dto.day);
       const existingFrames = existingDay?.timeFrames ?? [];
       const mergedFrames = [...existingFrames, ...normalizedFrames];
       const overlapErr = validateTimeFrames(mergedFrames);
@@ -1332,21 +1620,37 @@ export class UserService {
       }
 
       const updated = existingDay
-        ? current.map(s => s.day === dto.day ? { ...s, timeFrames: mergedFrames } : s)
+        ? current.map((s) =>
+            s.day === dto.day ? { ...s, timeFrames: mergedFrames } : s,
+          )
         : [...current, { day: dto.day, timeFrames: normalizedFrames }];
 
       const updateData: Record<string, unknown> = {
         sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
         availability: JSON.parse(JSON.stringify(updated)),
+        ...(dto.availabilityTimezone && {
+          availabilityTimezone: dto.availabilityTimezone,
+        }),
       };
 
-      await this.prisma.db.mentorProfile.update({ where: { userId }, data: updateData });
+      await this.prisma.db.mentorProfile.update({
+        where: { userId },
+        data: updateData,
+      });
 
       return {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.ADD_AVAILABILITY_SLOT.code,
         message: API_RESPONSE.SUCCESS.ADD_AVAILABILITY_SLOT.message,
-        data: { sessionDurationMinutes: duration, availability: updated },
+        data: {
+          sessionDurationMinutes: duration,
+          availability: updated,
+          availabilityTimezone:
+            dto.availabilityTimezone ?? profile?.availabilityTimezone ?? 'UTC',
+          availabilityOverrides: normalizeOverrides(
+            profile?.availabilityOverrides,
+          ),
+        },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1355,6 +1659,238 @@ export class UserService {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.ADD_AVAILABILITY_SLOT_FAILED.code,
         message: API_RESPONSE.ERROR.ADD_AVAILABILITY_SLOT_FAILED.message,
+        data: null,
+      };
+    }
+  }
+
+  async addAvailabilityOverride(
+    userId: string,
+    dto: AddAvailabilityOverrideDto,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto> {
+    return this.saveAvailabilityOverride(userId, dto, authenticatedUserId);
+  }
+
+  async updateAvailabilityOverride(
+    userId: string,
+    overrideId: string,
+    dto: AddAvailabilityOverrideDto,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto> {
+    return this.saveAvailabilityOverride(
+      userId,
+      dto,
+      authenticatedUserId,
+      overrideId,
+    );
+  }
+
+  private async saveAvailabilityOverride(
+    userId: string,
+    dto: AddAvailabilityOverrideDto,
+    authenticatedUserId: string,
+    overrideId?: string,
+  ): Promise<ResponseDto> {
+    try {
+      const check = await this.requireMentorOwnerOrAdmin(
+        userId,
+        authenticatedUserId,
+      );
+      if (check) return check;
+
+      if (!isValidTimezone(dto.timezone)) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Invalid IANA timezone.',
+          data: null,
+        };
+      }
+      if (dto.startDate > dto.endDate) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Start date must be on or before end date.',
+          data: null,
+        };
+      }
+      if (
+        dto.type === AvailabilityOverrideType.CustomHours &&
+        dto.startDate !== dto.endDate
+      ) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Custom hours must apply to one date only.',
+          data: null,
+        };
+      }
+      const temporaryDates =
+        dto.type === AvailabilityOverrideType.Temporary && !overrideId
+          ? getDateKeysInRange(dto.startDate, dto.endDate)
+          : [];
+      if (temporaryDates.length > 180) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Temporary availability cannot exceed 180 days.',
+          data: null,
+        };
+      }
+      if (
+        dto.type !== AvailabilityOverrideType.Unavailable &&
+        !dto.timeFrames?.length
+      ) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'At least one time frame is required.',
+          data: null,
+        };
+      }
+      if (
+        dto.excludedDates?.length &&
+        (!overrideId ||
+          dto.type !== AvailabilityOverrideType.Temporary ||
+          dto.excludedDates.some(
+            (date) => date < dto.startDate || date > dto.endDate,
+          ))
+      ) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message:
+            'Excluded dates must be inside a temporary availability range.',
+          data: null,
+        };
+      }
+
+      let timeFrames: TimeFrame[] = [];
+      if (dto.type !== AvailabilityOverrideType.Unavailable) {
+        const validationError = validateTimeFrames(dto.timeFrames ?? []);
+        if (validationError) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: 400,
+            message: validationError,
+            data: null,
+          };
+        }
+        try {
+          timeFrames = splitIntoSessionFrames(dto.timeFrames ?? []);
+        } catch (error) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: 400,
+            message: (error as Error).message,
+            data: null,
+          };
+        }
+      }
+
+      const profile = await this.prisma.db.mentorProfile.findUnique({
+        where: { userId },
+        select: { availabilityOverrides: true },
+      });
+      const current = normalizeOverrides(profile?.availabilityOverrides);
+      if (overrideId && !current.some((entry) => entry.id === overrideId)) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 404,
+          message: 'Availability override not found.',
+          data: null,
+        };
+      }
+      const createOverride = (
+        startDate: string,
+        endDate: string,
+        id: string = crypto.randomUUID(),
+      ): AvailabilityOverrideInterface => ({
+        id,
+        type: dto.type,
+        startDate,
+        endDate,
+        timezone: dto.timezone,
+        timeFrames,
+        ...(dto.excludedDates?.length && {
+          excludedDates: [...new Set(dto.excludedDates)].sort(),
+        }),
+      });
+      const newOverrides = temporaryDates.length
+        ? temporaryDates.map((date) => createOverride(date, date))
+        : [createOverride(dto.startDate, dto.endDate, overrideId)];
+      const overrides = overrideId
+        ? current.map((entry) =>
+            entry.id === overrideId ? newOverrides[0] : entry,
+          )
+        : [...current, ...newOverrides];
+
+      await this.prisma.db.mentorProfile.update({
+        where: { userId },
+        data: { availabilityOverrides: JSON.parse(JSON.stringify(overrides)) },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: 200,
+        message: `Availability override ${overrideId ? 'updated' : 'added'} successfully`,
+        data: { availabilityOverrides: overrides },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: 500,
+        message: `Failed to ${overrideId ? 'update' : 'add'} availability override`,
+        data: null,
+      };
+    }
+  }
+
+  async deleteAvailabilityOverride(
+    userId: string,
+    overrideId: string,
+    authenticatedUserId: string,
+  ): Promise<ResponseDto> {
+    try {
+      const check = await this.requireMentorOwnerOrAdmin(
+        userId,
+        authenticatedUserId,
+      );
+      if (check) return check;
+      const profile = await this.prisma.db.mentorProfile.findUnique({
+        where: { userId },
+        select: { availabilityOverrides: true },
+      });
+      const current = normalizeOverrides(profile?.availabilityOverrides);
+      const overrides = current.filter((entry) => entry.id !== overrideId);
+      if (overrides.length === current.length) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 404,
+          message: 'Availability override not found.',
+          data: null,
+        };
+      }
+      await this.prisma.db.mentorProfile.update({
+        where: { userId },
+        data: { availabilityOverrides: JSON.parse(JSON.stringify(overrides)) },
+      });
+      return {
+        status: ResponseStatus.Success,
+        statusCode: 200,
+        message: 'Availability override deleted successfully',
+        data: { availabilityOverrides: overrides },
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: 500,
+        message: 'Failed to delete availability override',
         data: null,
       };
     }
@@ -1369,18 +1905,38 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(
+        userId,
+        authenticatedUserId,
+      );
       if (check) return check;
+
+      if (
+        dto.availabilityTimezone &&
+        !isValidTimezone(dto.availabilityTimezone)
+      ) {
+        return {
+          status: ResponseStatus.Error,
+          statusCode: 400,
+          message: 'Invalid IANA timezone.',
+          data: null,
+        };
+      }
 
       const profile = await this.prisma.db.mentorProfile.findUnique({
         where: { userId },
         select: { availability: true, sessionDurationMinutes: true },
       });
 
-      const current: AvailabilitySlot[] = (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
-      const dayEntry = current.find(s => s.day === dto.day);
+      const current: AvailabilitySlot[] =
+        (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
+      const dayEntry = current.find((s) => s.day === dto.day);
 
-      if (!dayEntry || dto.timeFrameIndex < 0 || dto.timeFrameIndex >= dayEntry.timeFrames.length) {
+      if (
+        !dayEntry ||
+        dto.timeFrameIndex < 0 ||
+        dto.timeFrameIndex >= dayEntry.timeFrames.length
+      ) {
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.AVAILABILITY_SLOT_NOT_FOUND.code,
@@ -1411,7 +1967,9 @@ export class UserService {
         };
       }
 
-      const replacementFrames = [...dayEntry.timeFrames];
+      const replacementFrames = [...dayEntry.timeFrames].sort(
+        (a, b) => timeToMinutes(a.from) - timeToMinutes(b.from),
+      );
       replacementFrames.splice(dto.timeFrameIndex, 1, ...normalizedFrames);
 
       const overlapErr = validateTimeFrames(replacementFrames);
@@ -1424,8 +1982,8 @@ export class UserService {
         };
       }
 
-      const updated = current.map(s =>
-        s.day === dto.day ? { ...s, timeFrames: replacementFrames } : s
+      const updated = current.map((s) =>
+        s.day === dto.day ? { ...s, timeFrames: replacementFrames } : s,
       );
 
       await this.prisma.db.mentorProfile.update({
@@ -1433,6 +1991,9 @@ export class UserService {
         data: {
           sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
           availability: JSON.parse(JSON.stringify(updated)),
+          ...(dto.availabilityTimezone && {
+            availabilityTimezone: dto.availabilityTimezone,
+          }),
         },
       });
 
@@ -1440,7 +2001,10 @@ export class UserService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.code,
         message: API_RESPONSE.SUCCESS.UPDATE_AVAILABILITY.message,
-        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES, availability: updated },
+        data: {
+          sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
+          availability: updated,
+        },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1463,7 +2027,10 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(
+        userId,
+        authenticatedUserId,
+      );
       if (check) return check;
 
       const profile = await this.prisma.db.mentorProfile.findUnique({
@@ -1471,8 +2038,9 @@ export class UserService {
         select: { availability: true, sessionDurationMinutes: true },
       });
 
-      const current: AvailabilitySlot[] = (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
-      const dayEntry = current.find(s => s.day === dto.day);
+      const current: AvailabilitySlot[] =
+        (profile?.availability as unknown as AvailabilitySlot[]) ?? [];
+      const dayEntry = current.find((s) => s.day === dto.day);
 
       if (!dayEntry) {
         return {
@@ -1487,9 +2055,12 @@ export class UserService {
 
       if (dto.timeFrameIndex === undefined) {
         // Remove the entire day
-        updated = current.filter(s => s.day !== dto.day);
+        updated = current.filter((s) => s.day !== dto.day);
       } else {
-        if (dto.timeFrameIndex < 0 || dto.timeFrameIndex >= dayEntry.timeFrames.length) {
+        if (
+          dto.timeFrameIndex < 0 ||
+          dto.timeFrameIndex >= dayEntry.timeFrames.length
+        ) {
           return {
             status: ResponseStatus.Error,
             statusCode: API_RESPONSE.ERROR.AVAILABILITY_SLOT_NOT_FOUND.code,
@@ -1497,12 +2068,16 @@ export class UserService {
             data: null,
           };
         }
-        const newFrames = dayEntry.timeFrames.filter((_, i) => i !== dto.timeFrameIndex);
+        const newFrames = [...dayEntry.timeFrames]
+          .sort((a, b) => timeToMinutes(a.from) - timeToMinutes(b.from))
+          .filter((_, i) => i !== dto.timeFrameIndex);
         if (newFrames.length === 0) {
           // Remove the day entirely if no frames remain
-          updated = current.filter(s => s.day !== dto.day);
+          updated = current.filter((s) => s.day !== dto.day);
         } else {
-          updated = current.map(s => s.day === dto.day ? { ...s, timeFrames: newFrames } : s);
+          updated = current.map((s) =>
+            s.day === dto.day ? { ...s, timeFrames: newFrames } : s,
+          );
         }
       }
 
@@ -1515,7 +2090,10 @@ export class UserService {
         status: ResponseStatus.Success,
         statusCode: API_RESPONSE.SUCCESS.DELETE_AVAILABILITY_SLOT.code,
         message: API_RESPONSE.SUCCESS.DELETE_AVAILABILITY_SLOT.message,
-        data: { sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES, availability: updated },
+        data: {
+          sessionDurationMinutes: DEFAULT_SESSION_DURATION_MINUTES,
+          availability: updated,
+        },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -1538,7 +2116,10 @@ export class UserService {
     authenticatedUserId: string,
   ): Promise<ResponseDto> {
     try {
-      const check = await this.requireMentorOwnerOrAdmin(userId, authenticatedUserId);
+      const check = await this.requireMentorOwnerOrAdmin(
+        userId,
+        authenticatedUserId,
+      );
       if (check) return check;
 
       await this.prisma.db.mentorProfile.update({
@@ -1570,7 +2151,10 @@ export class UserService {
 
   private async isAdmin(userId: string): Promise<boolean> {
     try {
-      const u = await this.prisma.db.user.findUnique({ where: { id: userId }, select: { role: true } });
+      const u = await this.prisma.db.user.findUnique({
+        where: { id: userId },
+        select: { role: true },
+      });
       return u?.role === UserRole.Admin;
     } catch {
       return false;
@@ -1629,7 +2213,10 @@ export class UserService {
   private buildDeactivationRedirectUrl(origin: string, token: string): string {
     const configuredWebAppUrl = process.env.WEB_APP_URL?.trim();
     const requestOrigin = origin?.trim();
-    const webAppUrl = (configuredWebAppUrl || requestOrigin)?.replace(/\/+$/, '');
+    const webAppUrl = (configuredWebAppUrl || requestOrigin)?.replace(
+      /\/+$/,
+      '',
+    );
 
     if (!webAppUrl) {
       throw new Error('WEB_APP_URL or request origin must be configured');
@@ -1648,7 +2235,13 @@ export class UserService {
     try {
       const user = await this.prisma.db.user.findUnique({
         where: { id: userId },
-        select: { id: true, email: true, firstName: true, role: true, hashPassword: true },
+        select: {
+          id: true,
+          email: true,
+          firstName: true,
+          role: true,
+          hashPassword: true,
+        },
       });
 
       if (!user) {
@@ -1660,7 +2253,10 @@ export class UserService {
         };
       }
 
-      const isPasswordValid = await bcrypt.compare(dto.password, user.hashPassword);
+      const isPasswordValid = await bcrypt.compare(
+        dto.password,
+        user.hashPassword,
+      );
       if (!isPasswordValid) {
         await this.prisma.db.logs.create({
           data: {
@@ -1686,7 +2282,10 @@ export class UserService {
 
       await this.prisma.db.user.update({
         where: { id: userId },
-        data: { deactivationToken: token, deactivationTokenExpiresAt: expiresAt },
+        data: {
+          deactivationToken: token,
+          deactivationTokenExpiresAt: expiresAt,
+        },
       });
 
       const redirectTo = this.buildDeactivationRedirectUrl(origin, token);
@@ -1726,7 +2325,9 @@ export class UserService {
     }
   }
 
-  async verifyDeactivationToken(dto: VerifyDeactivationTokenDto): Promise<ResponseDto> {
+  async verifyDeactivationToken(
+    dto: VerifyDeactivationTokenDto,
+  ): Promise<ResponseDto> {
     try {
       const user = await this.prisma.db.user.findFirst({
         where: { deactivationToken: dto.token },
@@ -1742,7 +2343,10 @@ export class UserService {
         };
       }
 
-      if (!user.deactivationTokenExpiresAt || user.deactivationTokenExpiresAt < new Date()) {
+      if (
+        !user.deactivationTokenExpiresAt ||
+        user.deactivationTokenExpiresAt < new Date()
+      ) {
         await this.prisma.db.user.update({
           where: { id: user.id },
           data: { deactivationToken: null, deactivationTokenExpiresAt: null },
@@ -1785,7 +2389,11 @@ export class UserService {
         select: { id: true, deactivationTokenExpiresAt: true },
       });
 
-      if (!user || !user.deactivationTokenExpiresAt || user.deactivationTokenExpiresAt < new Date()) {
+      if (
+        !user ||
+        !user.deactivationTokenExpiresAt ||
+        user.deactivationTokenExpiresAt < new Date()
+      ) {
         return {
           status: ResponseStatus.Error,
           statusCode: API_RESPONSE.ERROR.DEACTIVATION_TOKEN_INVALID.code,
@@ -1907,7 +2515,9 @@ export class UserService {
         data: {
           actionType: LogsActionType.Update,
           targetId: userId,
-          details: isMentee ? 'Mentee account activated' : 'Mentor account activation requested',
+          details: isMentee
+            ? 'Mentee account activated'
+            : 'Mentor account activation requested',
           metadata: { userId, activationStatus },
           ipAddress,
           userAgent,
@@ -1921,7 +2531,10 @@ export class UserService {
         message: isMentee
           ? 'Your account has been activated successfully'
           : 'Your activation request has been submitted for approval',
-        data: { status: isMentee ? UserStatus.Active : UserStatus.Inactive, activationStatus },
+        data: {
+          status: isMentee ? UserStatus.Active : UserStatus.Inactive,
+          activationStatus,
+        },
       };
     } catch (error) {
       const err = error instanceof Error ? error : new Error(String(error));

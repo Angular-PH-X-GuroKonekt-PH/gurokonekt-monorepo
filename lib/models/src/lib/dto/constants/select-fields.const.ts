@@ -35,6 +35,8 @@ export class SelectFields {
       skills: true,
       sessionRate: true,
       availability: true,
+      availabilityTimezone: true,
+      availabilityOverrides: true,
       updatedAt: true,
       user: { select: this.getUserCredentialsSelect() },
       updatedBy: { select: { id: true, firstName: true, lastName: true } }
@@ -104,6 +106,8 @@ export class SelectFields {
       sessionRate: true,
       sessionDurationMinutes: true,
       availability: true,
+      availabilityTimezone: true,
+      availabilityOverrides: true,
       isFeatured: true,
       featuredAt: true,
       updatedAt: true,

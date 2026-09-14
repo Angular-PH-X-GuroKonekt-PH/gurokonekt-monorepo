@@ -10,7 +10,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { getLanguageLabel } from '../../../../shared/utils';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import {
-  formatAvailabilityLabel,
+  formatAvailabilityForViewer,
   formatDayLabel,
 } from '../../utils/mentor-availability.util';
 
@@ -22,6 +22,9 @@ import {
 })
 export class MentorInfoCard {
   mentor = input<MentorSearchItemInterface | null>(null);
+  displayTimezone = input(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  );
 
   protected readonly mentorProfileRoute = APP_ROUTES.MENTOR_PROFILE;
 
@@ -76,10 +79,17 @@ export class MentorInfoCard {
           return formatDayLabel(availability.day);
         }
 
-        return formatAvailabilityLabel(
+        const sourceTimezone =
+          this.getProfile(mentor)?.availabilityTimezone ??
+          mentor.timezone ??
+          'UTC';
+
+        return formatAvailabilityForViewer(
           availability.day,
           timeFrame.from,
-          timeFrame.to
+          timeFrame.to,
+          sourceTimezone,
+          this.displayTimezone(),
         );
       });
     });
