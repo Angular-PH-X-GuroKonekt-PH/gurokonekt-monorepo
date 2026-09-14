@@ -138,4 +138,145 @@ describe('AuthService', () => {
       expect(response.statusCode).toBe(200);
     });
   });
+
+  describe('resendEmailSignUpConfirmation', () => {
+    const user = { id: 'user-id', email: 'mentor@example.com' };
+    const prisma = {
+      db: {
+        user: { findUnique: jest.fn() },
+        logs: { create: jest.fn(), findFirst: jest.fn(), count: jest.fn() },
+      },
+    };
+    const supabase = {
+      client: {
+        auth: { resend: jest.fn() },
+      },
+      clientAdmin: {
+        auth: {
+          admin: {
+            getUserById: jest.fn(),
+            updateUserById: jest.fn(),
+          },
+        },
+      },
+    };
+    const validation = {
+      normalizeEmail: jest.fn((email: string) => email.toLowerCase().trim()),
+    };
+
+    const service = new AuthService(
+      prisma as any,
+      supabase as any,
+      {} as any,
+      validation as any,
+      {} as any,
+      {} as any,
+      {} as any,
+    );
+
+    beforeEach(() => {
+      jest.clearAllMocks();
+      prisma.db.user.findUnique.mockResolvedValue(user);
+      prisma.db.logs.create.mockResolvedValue(undefined);
+      prisma.db.logs.findFirst.mockResolvedValue(null);
+      supabase.client.auth.resend.mockResolvedValue({ data: true, error: null });
+      supabase.clientAdmin.auth.admin.updateUserById.mockResolvedValue({
+        error: null,
+      });
+    });
+
+    const confirmedAuthUser = {
+      data: { user: { email_confirmed_at: '2026-08-18T04:21:14.000Z' } },
+      error: null,
+    };
+
+    it('QA: expired resend still sends when Auth is confirmed but the mentor never signed in', async () => {
+      supabase.clientAdmin.auth.admin.getUserById.mockResolvedValue(confirmedAuthUser);
+
+      const response = await service.resendEmailSignUpConfirmation(
+        { type: 'signup', email: 'Mentor@Example.com' } as any,
+        '127.0.0.1',
+        'Jest',
+      );
+
+      expect(prisma.db.logs.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            actionType: 'signin',
+            createdById: user.id,
+            metadata: { path: ['outcome'], equals: 'success' },
+          }),
+        }),
+      );
+      expect(supabase.clientAdmin.auth.admin.updateUserById).toHaveBeenCalledWith(
+        user.id,
+        { email_confirm: false },
+      );
+      expect(supabase.client.auth.resend).toHaveBeenCalledWith(
+        expect.objectContaining({
+          email: 'mentor@example.com',
+        }),
+      );
+      const unconfirmOrder =
+        supabase.clientAdmin.auth.admin.updateUserById.mock.invocationCallOrder[0];
+      const resendOrder = supabase.client.auth.resend.mock.invocationCallOrder[0];
+      expect(unconfirmOrder).toBeLessThan(resendOrder);
+      expect(response.status).toBe(ResponseStatus.Success);
+      expect(response.statusCode).toBe(
+        API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.code,
+      );
+      expect(response.message).not.toMatch(/already confirmed/i);
+    });
+
+    it('does not treat admin approval as email verification when looking up sign-in', async () => {
+      supabase.clientAdmin.auth.admin.getUserById.mockResolvedValue(confirmedAuthUser);
+
+      await service.resendEmailSignUpConfirmation(
+        { type: 'signup', email: user.email } as any,
+        '127.0.0.1',
+        'Jest',
+      );
+
+      const where = prisma.db.logs.findFirst.mock.calls[0][0].where;
+      expect(where.actionType).toBe('signin');
+      expect(where.actionType).not.toBe('admin_approve_mentor');
+    });
+
+    it('resends without unconfirming when Auth still has no confirmation timestamp', async () => {
+      supabase.clientAdmin.auth.admin.getUserById.mockResolvedValue({
+        data: { user: { email_confirmed_at: null } },
+        error: null,
+      });
+
+      const response = await service.resendEmailSignUpConfirmation(
+        { type: 'signup', email: user.email } as any,
+        '127.0.0.1',
+        'Jest',
+      );
+
+      expect(supabase.clientAdmin.auth.admin.updateUserById).not.toHaveBeenCalled();
+      expect(supabase.client.auth.resend).toHaveBeenCalled();
+      expect(response.statusCode).toBe(
+        API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.code,
+      );
+    });
+
+    it('keeps already-confirmed when the user has successfully signed in', async () => {
+      supabase.clientAdmin.auth.admin.getUserById.mockResolvedValue(confirmedAuthUser);
+      prisma.db.logs.findFirst.mockResolvedValue({ id: 'sign-in-log' });
+
+      const response = await service.resendEmailSignUpConfirmation(
+        { type: 'signup', email: 'mentor@example.com' } as any,
+        '127.0.0.1',
+        'Jest',
+      );
+
+      expect(supabase.clientAdmin.auth.admin.updateUserById).not.toHaveBeenCalled();
+      expect(supabase.client.auth.resend).not.toHaveBeenCalled();
+      expect(response.statusCode).toBe(
+        API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.code,
+      );
+    });
+  });
 });
+
