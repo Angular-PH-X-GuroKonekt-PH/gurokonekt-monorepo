@@ -13,6 +13,7 @@ export const API_ENDPOINTS = {
   user: {
     profile: '/user/profile',
     updateProfile: '/user/profile',
+    dashboard: (userId: string) => `/user/${userId}/dashboard`,
     initiateDeactivation: (userId: string) => `/user/${userId}/deactivate/initiate`,
     verifyDeactivation: '/user/deactivate/verify',
     submitDeactivationFeedback: (userId: string) => `/user/${userId}/deactivate/feedback`,

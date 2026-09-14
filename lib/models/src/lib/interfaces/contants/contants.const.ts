@@ -587,6 +587,10 @@ export const API_RESPONSE = {
       code: 400,
       message: 'Failed to get user profile',
     },
+    USER_ACCESS_DENIED: {
+      code: 403,
+      message: 'Access denied: user does not match the authenticated account',
+    },
     GET_MENTOR_DASHBOARD: {
       code: 500,
       message: 'Failed to get mentor dashboard data',

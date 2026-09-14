@@ -22,7 +22,23 @@
       </div>
 
       <div class="relative px-7 py-6 flex items-center justify-between gap-4">
-        @if (mentorBookings.upcomingSession(); as session) {
+        @if (mentorBookings.isDashboardLoading()) {
+        <div class="animate-pulse">
+          <div class="h-5 w-28 rounded-full bg-white/15 mb-3"></div>
+          <div class="h-6 w-52 rounded bg-white/15"></div>
+        </div>
+        } @else if (mentorBookings.hasDashboardError()) {
+        <div>
+          <span
+            class="inline-block bg-white/10 text-blue-100 text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2">
+            Schedule Unavailable
+          </span>
+
+          <h3 class="text-white text-xl font-bold leading-tight">
+            Unable to load upcoming sessions
+          </h3>
+        </div>
+        } @else if (mentorBookings.upcomingSession(); as session) {
         <div>
           <span
             class="inline-block bg-orange-500 text-white text-2xs font-bold tracking-widest uppercase px-3 py-1 rounded-full mb-2">
@@ -34,9 +50,9 @@
           </h3>
 
           <p class="text-blue-200 text-sm mt-1">
-            with {{ session.mentor }} &bull;
-            {{ session.dateTime | date:'MMM d, y' }} &bull;
-            {{ session.dateTime | date:'h:mm a' }}
+            with {{ session.menteeName }} &bull;
+            {{ session.sessionDateTime | date:'MMM d, y' }} &bull;
+            {{ session.sessionDateTime | date:'h:mm a' }}
           </p>
         </div>
 
@@ -79,7 +95,13 @@
           </p>
 
           <p class="text-4xl font-bold text-gray-800">
+            @if (mentorBookings.isDashboardLoading()) {
+            <span class="inline-block h-10 w-12 animate-pulse rounded bg-gray-200"></span>
+            } @else if (mentorBookings.hasDashboardError()) {
+            <span title="Unable to load dashboard statistics">&mdash;</span>
+            } @else {
             {{ mentorBookings.pendingRequests() }}
+            }
           </p>
         </div>
 
@@ -95,7 +117,13 @@
           </p>
 
           <p class="text-4xl font-bold text-gray-800">
+            @if (mentorBookings.isDashboardLoading()) {
+            <span class="inline-block h-10 w-12 animate-pulse rounded bg-gray-200"></span>
+            } @else if (mentorBookings.hasDashboardError()) {
+            <span title="Unable to load dashboard statistics">&mdash;</span>
+            } @else {
             {{ mentorBookings.upcomingSessions() }}
+            }
           </p>
         </div>
 
@@ -111,7 +139,13 @@
           </p>
 
           <p class="text-4xl font-bold text-gray-800">
+            @if (mentorBookings.isDashboardLoading()) {
+            <span class="inline-block h-10 w-12 animate-pulse rounded bg-gray-200"></span>
+            } @else if (mentorBookings.hasDashboardError()) {
+            <span title="Unable to load dashboard statistics">&mdash;</span>
+            } @else {
             {{ mentorBookings.totalCompleted() }}
+            }
           </p>
         </div>
 
