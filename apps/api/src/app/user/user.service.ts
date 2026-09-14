@@ -358,12 +358,21 @@ export class UserService {
         };
       }
 
-      // Quick Stats — three parallel count queries
+      // Dashboard data must be independent of booking-list pagination. Use the
+      // same future-approved predicate for both the count and next session so
+      // the summary card and banner cannot contradict one another.
       const now = new Date();
+      const upcomingSessionWhere = {
+        mentorId: userId,
+        status: BookingStatus.APPROVED,
+        sessionDateTime: { gte: now },
+        isDeleted: false,
+      };
       const [
         pendingBookingRequestsCount,
         upcomingSessions,
         totalCompletedSessions,
+        nextUpcomingBooking,
       ] = await Promise.all([
         this.prisma.db.booking.count({
           where: {
@@ -373,18 +382,28 @@ export class UserService {
           },
         }),
         this.prisma.db.booking.count({
-          where: {
-            mentorId: userId,
-            status: BookingStatus.APPROVED,
-            sessionDateTime: { gte: now },
-            isDeleted: false,
-          },
+          where: upcomingSessionWhere,
         }),
         this.prisma.db.booking.count({
           where: {
             mentorId: userId,
             status: BookingStatus.COMPLETED,
             isDeleted: false,
+          },
+        }),
+        this.prisma.db.booking.findFirst({
+          where: upcomingSessionWhere,
+          orderBy: { sessionDateTime: 'asc' },
+          select: {
+            sessionDateTime: true,
+            sessionLink: true,
+            menteeNotes: true,
+            mentee: {
+              select: {
+                firstName: true,
+                lastName: true,
+              },
+            },
           },
         }),
       ]);
@@ -396,6 +415,16 @@ export class UserService {
           upcomingSessions,
           totalCompletedSessions,
         },
+        nextUpcomingSession: nextUpcomingBooking
+          ? {
+              title: nextUpcomingBooking.menteeNotes || 'Mentoring Session',
+              menteeName:
+                `${nextUpcomingBooking.mentee.firstName} ${nextUpcomingBooking.mentee.lastName}`.trim(),
+              sessionDateTime:
+                nextUpcomingBooking.sessionDateTime.toISOString(),
+              sessionLink: nextUpcomingBooking.sessionLink,
+            }
+          : null,
         shortcuts: MENTOR_DASHBOARD_SHORTCUTS,
         navItems: MENTOR_DASHBOARD_NAV_ITEMS,
       };
@@ -2242,8 +2271,8 @@ export class UserService {
         });
         return {
           status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.PASSWORD_INCORRECT.code,
-          message: API_RESPONSE.ERROR.PASSWORD_INCORRECT.message,
+          statusCode: API_RESPONSE.ERROR.DEACTIVATION_PASSWORD_INCORRECT.code,
+          message: API_RESPONSE.ERROR.DEACTIVATION_PASSWORD_INCORRECT.message,
           data: null,
         };
       }

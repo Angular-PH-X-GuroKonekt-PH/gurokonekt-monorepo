@@ -18,6 +18,7 @@ import { firstValueFrom, merge } from 'rxjs';
 import { MenteePreferredSessionType } from '@gurokonekt/models/interfaces/user/user.model';
 import type { UpdateMenteeProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
 import { ToastService } from '../../../../shared/services/toast.service';
+import { assignAppPath } from '../../../../shared/utils/stale-chunk.util';
 import {
   FormArrayTextListComponent,
   createFormArrayTextControl,
@@ -234,7 +235,7 @@ export class MenteePostLoginPage {
       );
 
       this.toastService.success('Profile setup completed successfully!', 'Welcome!');
-      this.router.navigate([APP_ROUTES.DASHBOARD]);
+      assignAppPath(APP_ROUTES.DASHBOARD);
     } catch (error) {
       if (isSessionExpiredError(error)) {
         this.isSubmitting.set(false);

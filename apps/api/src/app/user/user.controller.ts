@@ -29,6 +29,7 @@ import {
   ApiTags,
 } from '@nestjs/swagger';
 import {
+  API_RESPONSE,
   AddAvailabilitySlotDto,
   AddAvailabilityOverrideDto,
   AvailabilitySlotsQueryDto,
@@ -223,7 +224,20 @@ export class UserController {
     @Param('userId') userId: string,
     @Ip() ipAddress: string,
     @Headers('user-agent') userAgent: string,
+    @Req() req: Request & { user: { id: string } },
   ) {
+    if (userId !== req.user.id) {
+      throw new HttpException(
+        {
+          status: ResponseStatus.Error,
+          statusCode: API_RESPONSE.ERROR.USER_ACCESS_DENIED.code,
+          message: API_RESPONSE.ERROR.USER_ACCESS_DENIED.message,
+          data: null,
+        },
+        HttpStatus.FORBIDDEN,
+      );
+    }
+
     const response = await this.userService.getUserDashboard(
       userId,
       ipAddress,

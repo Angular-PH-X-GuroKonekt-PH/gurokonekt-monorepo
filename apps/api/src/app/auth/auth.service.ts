@@ -62,6 +62,8 @@ export class AuthService {
           : AuthResponseFactory.errorByKey('NO_DATA_RETURNED_ON_AUTH');
       }
 
+      await this.requireEmailVerification(data.user);
+
       // Create mentee in DB
       const authId = data.user.id;
       const hashPassword = await this.validation.hashPassword(dto.password);
@@ -175,6 +177,8 @@ export class AuthService {
         };
       }
 
+      await this.requireEmailVerification(data.user);
+
       const authId = data.user.id;
       const hashPassword = await bcrypt.hash(dto.password, 10);
       const transaction = await this.prisma.db.$transaction(async (tx) => {
@@ -278,12 +282,14 @@ export class AuthService {
    * 4. if true return 429 else continue
    * 5. check if user exist in users db
    * 6. if not exist return error else continue
-   * 7. check if user is already confirmed
-   * 8. if confirmed return error else send confirmation email
-   * 9. save the activity to logs
+   * 7. check if user is already confirmed AND has successfully signed in
+   * 8. if they never signed in, clear premature Auth confirmation and resend
+   * 9. if they have signed in, return already-confirmed else send confirmation email
+   * 10. save the activity to logs
    * */ 
   async resendEmailSignUpConfirmation(input: ResendConfirmationEmailDto, ipAddress: string, userAgent: string, origin?: string): Promise<ResponseDto> {
     try {
+      const normalizedEmail = this.validation.normalizeEmail(input.email);
       if (process.env.NODE_ENV !== 'test') {
         const todayStart = new Date();
         const todayEnd = new Date();
@@ -294,7 +300,7 @@ export class AuthService {
         const attemptsTodayByEmail = await this.prisma.db.logs.count({
           where: {
             actionType: LogsActionType.ResendEmailConfirmation,
-            metadata: { path: ['email'], equals: input.email },
+            metadata: { path: ['email'], equals: normalizedEmail },
             createdAt: { gte: todayStart, lte: todayEnd },
           },
         });
@@ -314,7 +320,7 @@ export class AuthService {
               actionType: LogsActionType.ResendEmailConfirmation,
               targetId: "",
               details: API_RESPONSE.ERROR.RESEND_VERIFICATION_LIMIT_REACHED.message,
-              metadata: { email: input.email },
+              metadata: { email: normalizedEmail },
               ipAddress,
               userAgent,
               createdById: null
@@ -333,7 +339,7 @@ export class AuthService {
         const lastAttempt = await this.prisma.db.logs.findFirst({
           where: {
             actionType: LogsActionType.ResendEmailConfirmation,
-            metadata: { path: ['email'], equals: input.email },
+            metadata: { path: ['email'], equals: normalizedEmail },
           },
           orderBy: { createdAt: 'desc' },
         });
@@ -356,7 +362,7 @@ export class AuthService {
 
       // Check user in DB
       const user = await this.prisma.db.user.findUnique({
-        where: { email: input.email },
+        where: { email: normalizedEmail },
       });
 
       if (!user) {
@@ -379,24 +385,42 @@ export class AuthService {
         };
       }
 
-      // Check if email is already confirmed
+      // Auth can mark the mailbox confirmed without the user clicking a valid
+      // link (autoconfirm, scanners). That is not the same as completing
+      // verification. Only treat it as done if they have already signed in.
       if (userData.user.email_confirmed_at) {
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.code,
-          message: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.message,
-          data: null,
-        };
+        if (await this.hasSuccessfulSignIn(user.id)) {
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.code,
+            message: API_RESPONSE.ERROR.EMAIL_ALREADY_CONFIRMED.message,
+            data: null,
+          };
+        }
+
+        const { error: unconfirmError } =
+          await this.supabase.clientAdmin.auth.admin.updateUserById(user.id, {
+            email_confirm: false,
+          });
+        if (unconfirmError) {
+          this.logger.error(unconfirmError.message, unconfirmError.stack);
+          return {
+            status: ResponseStatus.Error,
+            statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
+            message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
+            data: unconfirmError,
+          };
+        }
       }
 
       // Resend email via Supabase
       const emailRedirectTo = withVerificationEmailQuery(
         input.emailRedirectTo ?? `${origin ?? ''}${REDIRECT_LINKS.VERIFY_EMAIL}`,
-        input.email
+        normalizedEmail
       );
       const { data, error } = await this.supabase.client.auth.resend({
         type: ResendOTPTypes.SignUp,
-        email: input.email,
+        email: normalizedEmail,
         options: { emailRedirectTo },
       });
 
@@ -410,7 +434,7 @@ export class AuthService {
               ? API_RESPONSE.ERROR.RESEND_VERIFICATION_RATE_LIMITED.message
               : API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message
             : API_RESPONSE.SUCCESS.CONFIRMATION_EMAIL_SENT.message,
-          metadata: { email: input.email },
+          metadata: { email: normalizedEmail },
           ipAddress,
           userAgent,
           createdById: user.id,
@@ -1379,6 +1403,40 @@ export class AuthService {
         data: error,
       };
     }
+  }
+
+  /**
+   * Registration must not leave the mailbox confirmed. Admin approval is a
+   * separate step; email verification only happens when the user clicks a
+   * valid confirmation link.
+   */
+  private async requireEmailVerification(user: {
+    id: string;
+    email_confirmed_at?: string | null;
+  }): Promise<void> {
+    if (!user.email_confirmed_at) {
+      return;
+    }
+
+    const { error } = await this.supabase.clientAdmin.auth.admin.updateUserById(
+      user.id,
+      { email_confirm: false },
+    );
+    if (error) {
+      this.logger.error(error.message, error.stack);
+    }
+  }
+
+  private async hasSuccessfulSignIn(userId: string): Promise<boolean> {
+    const log = await this.prisma.db.logs.findFirst({
+      where: {
+        actionType: LogsActionType.SignIn,
+        createdById: userId,
+        metadata: { path: ['outcome'], equals: 'success' },
+      },
+      select: { id: true },
+    });
+    return !!log;
   }
 
   private isSupabaseEmailRateLimitError(error: {
