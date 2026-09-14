@@ -7,11 +7,23 @@ import {
   formatTimeInTimezone,
   formatTimeInputInTimezone,
   getDateKeysInRange,
+  haveSameTimezoneOffset,
   localDateTimeToUtc,
   materializeAvailabilitySlots,
 } from '@gurokonekt/utils';
 
 describe('timezone availability utilities', () => {
+  it('treats different timezone names with the same offset as equivalent', () => {
+    const instant = new Date('2026-09-14T00:00:00.000Z');
+
+    expect(
+      haveSameTimezoneOffset('Asia/Manila', 'Asia/Singapore', instant),
+    ).toBe(true);
+    expect(
+      haveSameTimezoneOffset('Asia/Manila', 'Asia/Tokyo', instant),
+    ).toBe(false);
+  });
+
   it('formats a UTC booking in the selected IANA timezone', () => {
     const booking = '2026-09-14T23:00:00.000Z';
 

@@ -39,6 +39,22 @@ export function getTimezones(): Timezone[] {
   return [...LOCATION_TIMEZONES];
 }
 
+export function getIanaTimezoneOptions(): { value: string; label: string }[] {
+  const supportedValuesOf = (
+    Intl as unknown as { supportedValuesOf?: (key: 'timeZone') => string[] }
+  ).supportedValuesOf;
+  const values = supportedValuesOf
+    ? supportedValuesOf('timeZone')
+    : LOCATION_TIMEZONES.map((timezone) => timezone.value);
+
+  return [...new Set([
+    ...values,
+    ...LOCATION_TIMEZONES.map((timezone) => timezone.value),
+    Intl.DateTimeFormat().resolvedOptions().timeZone,
+    'UTC',
+  ])].filter(Boolean).sort().map((value) => ({ value, label: value }));
+}
+
   /**
    * Get all languages
    */

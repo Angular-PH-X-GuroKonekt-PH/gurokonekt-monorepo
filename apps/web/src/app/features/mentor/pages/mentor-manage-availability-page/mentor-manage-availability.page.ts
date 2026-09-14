@@ -41,19 +41,7 @@ import { AvailabilitySlotModal } from './availability-slot-modal/availability-sl
 import { DeleteAvailabilityModal } from './delete-availability-modal/delete-availability-modal';
 import { AvailabilityTable } from '../../components/availability-table/availability-table';
 
-function getIanaTimezoneOptions(): { value: string; label: string }[] {
-  const supportedValuesOf = (
-    Intl as unknown as { supportedValuesOf?: (key: 'timeZone') => string[] }
-  ).supportedValuesOf;
-  const values = supportedValuesOf
-    ? supportedValuesOf('timeZone')
-    : [Intl.DateTimeFormat().resolvedOptions().timeZone, 'UTC'];
-
-  return [...new Set([...values.filter(Boolean), 'UTC'])].map((value) => ({
-    value,
-    label: value,
-  }));
-}
+import { getIanaTimezoneOptions } from '../../../../shared/utils/location-data.util';
 
 @Component({
   selector: 'app-mentor-manage-availability-page',

@@ -113,6 +113,21 @@ export function getLocalDateTimeParts(
   };
 }
 
+export function haveSameTimezoneOffset(
+  firstTimezone: string,
+  secondTimezone: string,
+  instant = new Date(),
+): boolean {
+  const first = getLocalDateTimeParts(instant, firstTimezone);
+  const second = getLocalDateTimeParts(instant, secondTimezone);
+
+  return Object.keys(first).every(
+    (key) =>
+      first[key as keyof LocalDateTimeParts] ===
+      second[key as keyof LocalDateTimeParts],
+  );
+}
+
 /**
  * Converts a wall-clock date/time in an IANA timezone to UTC. If a fall-back
  * time occurs twice, the earlier instant is chosen. Spring-forward times that

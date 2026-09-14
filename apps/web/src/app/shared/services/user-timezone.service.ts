@@ -2,7 +2,7 @@ import { Injectable, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
 import { Store } from '@ngxs/store';
 import { catchError, firstValueFrom, map, of, switchMap, take } from 'rxjs';
-import { isValidTimezone } from '@gurokonekt/utils';
+import { haveSameTimezoneOffset, isValidTimezone } from '@gurokonekt/utils';
 
 import { AuthSelectors } from '../../core/auth/store/auth.selectors';
 import { ProfileService } from '../../core/profile/profile.service';
@@ -51,12 +51,15 @@ export class UserTimezoneService {
       this.browserTimezone;
   });
 
-  readonly timezoneMismatch = computed(
-    () =>
-      !!this.profileTimezone() &&
+  readonly timezoneMismatch = computed(() => {
+    const profileTimezone = this.profileTimezone();
+
+    return (
+      !!profileTimezone &&
       isValidTimezone(this.browserTimezone) &&
-      this.profileTimezone() !== this.browserTimezone,
-  );
+      !haveSameTimezoneOffset(profileTimezone, this.browserTimezone)
+    );
+  });
 
   readonly shouldPrompt = computed(() => {
     const userId = this.user()?.id;
