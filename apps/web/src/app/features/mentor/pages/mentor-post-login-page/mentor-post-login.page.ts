@@ -21,6 +21,7 @@ import type {
 } from '@gurokonekt/models/interfaces/user/user.model';
 
 import { ToastService } from '../../../../shared/services/toast.service';
+import { assignAppPath } from '../../../../shared/utils/stale-chunk.util';
 import {
   FormArrayTextListComponent,
   createFormArrayTextControl,
@@ -221,7 +222,10 @@ export class MentorPostLoginPage {
       );
 
       this.toastService.success('Mentor profile setup completed successfully!', 'Welcome!');
-      await this.router.navigate([APP_ROUTES.DASHBOARD]);
+      // Full load so a tab left open across a deploy does not request a deleted
+      // hashed chunk for the lazy dashboard route.
+      assignAppPath(APP_ROUTES.DASHBOARD);
+      return;
     } catch (error) {
       if (isSessionExpiredError(error)) {
         this.isSubmitting.set(false);

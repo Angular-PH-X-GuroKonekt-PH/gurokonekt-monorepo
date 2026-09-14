@@ -1,6 +1,7 @@
 import {
   APP_INITIALIZER,
   ApplicationConfig,
+  ErrorHandler,
   provideBrowserGlobalErrorListeners,
   provideZoneChangeDetection,
   isDevMode,
@@ -19,6 +20,7 @@ import { RegistrationState } from './core/auth/store/registration.state';
 import { VerifyEmailState } from './core/auth/store/verify-email.state';
 import { AvailabilityState } from './core/availability/store/availability.state';
 import { RestoreSession } from './core/auth/store/auth.actions';
+import { StaleChunkErrorHandler } from './core/errors/stale-chunk-error.handler';
 
 function restoreSession(store: Store) {
   // Returning the promise makes Angular hold routing until the session has been
@@ -38,5 +40,6 @@ export const appConfig: ApplicationConfig = {
       withNgxsReduxDevtoolsPlugin({ disabled: !isDevMode() })
     ),
     { provide: APP_INITIALIZER, useFactory: restoreSession, deps: [Store], multi: true },
+    { provide: ErrorHandler, useClass: StaleChunkErrorHandler },
   ],
 };
