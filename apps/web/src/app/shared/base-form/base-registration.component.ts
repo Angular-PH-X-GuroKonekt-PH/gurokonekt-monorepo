@@ -6,6 +6,7 @@ import {
   createPasswordVisibilityState,
   getCountries,
   getLanguages,
+  getBrowserTimezone,
   getTimezones,
   getCountryDisplayName,
   getTimezoneDisplayName,
@@ -19,7 +20,6 @@ import {
 } from '../helpers/form-submission.helper';
 import { detectCountryFromPhone } from '../utils/phone.util';
 import { createSubmissionState } from '../utils/signal-state.util';
-import { getTimezoneForCountry } from '../utils/timezone.util';
 import { BaseFormComponent } from './base-form.component';
 import { getSelectedPhoneCountry, getPhoneFormatPlaceholder, getPhoneErrorMessage } from '@gurokonekt/utils';
 import { Router } from '@angular/router';
@@ -61,14 +61,8 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
   
   protected setupFormAutoPopulation(): void {
     const phoneValue = toSignal(this.registerForm.get('phoneNumber')?.valueChanges ?? of(''), { initialValue: '' });
-    const countryValue = toSignal(this.registerForm.get('country')?.valueChanges ?? of(''), { initialValue: this.registerForm.get('country')?.value || '' });
-
-    const initialCountry = this.registerForm.get('country')?.value;
-    if (initialCountry && !this.registerForm.get('timezone')?.value) {
-      const initialTimezone = getTimezoneForCountry(initialCountry);
-      if (initialTimezone) {
-        this.registerForm.patchValue({ timezone: initialTimezone }, { emitEvent: false });
-      }
+    if (!this.registerForm.get('timezone')?.value) {
+      this.registerForm.patchValue({ timezone: getBrowserTimezone() }, { emitEvent: false });
     }
 
     effect(() => {
@@ -88,22 +82,6 @@ export abstract class BaseRegistrationComponent extends BaseFormComponent {
       }
     });
 
-    effect(() => {
-      const country = countryValue();
-      if (country) {
-        const defaultTimezone = getTimezoneForCountry(country);
-        
-        if (defaultTimezone) {
-          const currentTimezone = untracked(() => this.registerForm.get('timezone')?.value);
-          if (defaultTimezone !== currentTimezone) {
-            this.registerForm.patchValue(
-              { timezone: defaultTimezone }, 
-              { emitEvent: false }
-            );
-          }
-        }
-      }
-    });
   }
   
   protected togglePhoneCountryDropdown(): void {
