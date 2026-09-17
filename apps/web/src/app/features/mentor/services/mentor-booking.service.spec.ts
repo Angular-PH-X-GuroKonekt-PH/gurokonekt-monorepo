@@ -7,6 +7,7 @@ import { of } from 'rxjs';
 import { BookingService } from '../../../shared/services/booking.service';
 import { MentorBookingService } from './mentor-booking.service';
 import { MentorDashboardService } from './mentor-dashboard.service';
+import { UserTimezoneService } from '../../../shared/services/user-timezone.service';
 
 describe('MentorBookingService dashboard data', () => {
   it('uses unpaginated dashboard stats instead of counting the booking page', () => {
@@ -25,6 +26,10 @@ describe('MentorBookingService dashboard data', () => {
 
     TestBed.configureTestingModule({
       providers: [
+        {
+          provide: UserTimezoneService,
+          useValue: { displayTimezone: signal('UTC') },
+        },
         {
           provide: Store,
           useValue: { selectSignal: () => authUser },

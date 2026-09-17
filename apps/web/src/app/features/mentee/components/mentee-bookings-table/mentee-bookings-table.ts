@@ -1,4 +1,12 @@
-import { Component, computed, effect, inject, input, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  effect,
+  inject,
+  input,
+  output,
+  signal,
+} from '@angular/core';
 import {
   BookingCardInterface,
   BookingStatus,
@@ -18,7 +26,12 @@ import { MenteeBookingDetailsModal } from './mentee-booking-details-modal/mentee
 
 @Component({
   selector: 'app-mentee-bookings-table',
-  imports: [BookingsTable, CancelBookingModal, IconComponent, MenteeBookingDetailsModal],
+  imports: [
+    BookingsTable,
+    CancelBookingModal,
+    IconComponent,
+    MenteeBookingDetailsModal,
+  ],
   templateUrl: './mentee-bookings-table.html',
 })
 export class MenteeBookingsTable {
@@ -38,6 +51,7 @@ export class MenteeBookingsTable {
   isLoading = input(false);
   initialTab = input<BookingTab>('All');
   initialBookingId = input<string | null>(null);
+  displayTimezone = input('UTC');
   footerMode = input<BookingTableFooterMode>('none');
   currentPage = input(1);
   pageSize = input(10);
@@ -52,8 +66,12 @@ export class MenteeBookingsTable {
   sortChange = output<BookingSortChange>();
 
   protected readonly activeTab = signal<BookingTab>('All');
-  protected readonly selectedBooking = signal<BookingCardInterface | null>(null);
-  protected readonly cancelBookingTarget = signal<BookingCardInterface | null>(null);
+  protected readonly selectedBooking = signal<BookingCardInterface | null>(
+    null,
+  );
+  protected readonly cancelBookingTarget = signal<BookingCardInterface | null>(
+    null,
+  );
   protected readonly openActionBookingId = signal<string | null>(null);
   protected readonly submitting = signal(false);
   private readonly openedBookingId = signal<string | null>(null);
@@ -67,7 +85,8 @@ export class MenteeBookingsTable {
     }
 
     return bookings.filter(
-      (booking) => booking.status === (activeTab.toUpperCase() as BookingStatus)
+      (booking) =>
+        booking.status === (activeTab.toUpperCase() as BookingStatus),
     );
   });
 
@@ -82,7 +101,7 @@ export class MenteeBookingsTable {
       if (!bookingId || this.openedBookingId() === bookingId) return;
 
       const booking = (this.bookings() ?? []).find(
-        (item) => item.id === bookingId
+        (item) => item.id === bookingId,
       );
 
       if (booking) {
@@ -114,7 +133,7 @@ export class MenteeBookingsTable {
 
   protected toggleActionMenu(bookingId: string): void {
     this.openActionBookingId.update((current) =>
-      current === bookingId ? null : bookingId
+      current === bookingId ? null : bookingId,
     );
   }
 

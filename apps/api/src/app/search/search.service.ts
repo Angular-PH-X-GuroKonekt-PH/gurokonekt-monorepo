@@ -522,6 +522,8 @@ export class SearchService {
           skills: true,
           sessionRate: true,
           availability: true,
+          availabilityTimezone: true,
+          availabilityOverrides: true,
           linkedInUrl: true,
           updatedAt: true,
           user: {
@@ -565,6 +567,8 @@ export class SearchService {
         skills: profile.skills,
         sessionRate: profile.sessionRate,
         availability: profile.availability,
+        availabilityTimezone: profile.availabilityTimezone,
+        availabilityOverrides: profile.availabilityOverrides,
         linkedInUrl: profile.linkedInUrl,
         updatedAt: profile.updatedAt,
         user: {

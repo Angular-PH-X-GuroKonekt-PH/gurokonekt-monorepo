@@ -26,6 +26,8 @@ export interface MentorProfileSearch {
   skills: string[];
   sessionRate: number | null;
   availability: unknown;
+  availabilityTimezone?: string;
+  availabilityOverrides?: unknown;
   linkedInUrl: string | null;
   updatedAt: Date;
 }
@@ -39,6 +41,8 @@ export interface MentorProfileDetailInterface {
   skills: string[];
   sessionRate: number | null;
   availability: unknown;
+  availabilityTimezone: string;
+  availabilityOverrides: unknown;
   linkedInUrl: string | null;
   updatedAt: Date;
   user: {

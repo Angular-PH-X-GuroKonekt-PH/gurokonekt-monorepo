@@ -13,9 +13,10 @@ import { MenteePageLoader } from '../../components/mentee-page-loader/mentee-pag
 import { MentorProfileHero } from '../../components/mentor-profile-hero/mentor-profile-hero';
 import {
   formatDayLabel,
-  formatTimeTo12Hour,
+  formatAvailabilityForViewer,
 } from '../../utils/mentor-availability.util';
 import { ReviewService } from '../../services/review.service';
+import { UserTimezoneService } from '../../../../shared/services/user-timezone.service';
 import { REVIEW_DEFAULT_LIMIT } from '../../constants/review.constants';
 
 type MentorProfileTab = 'overview' | 'reviews';
@@ -41,9 +42,11 @@ export class MenteeMentorProfilePage {
   private readonly route = inject(ActivatedRoute);
   private readonly mentorService = inject(MentorService);
   private readonly reviewService = inject(ReviewService);
+  private readonly menteeTimezoneService = inject(UserTimezoneService);
 
   protected readonly bookSessionRoute = APP_ROUTES.BOOK_SESSION;
   protected readonly findMentorsRoute = APP_ROUTES.FIND_MENTORS;
+  protected readonly displayTimezone = this.menteeTimezoneService.displayTimezone;
   protected readonly activeTab = signal<MentorProfileTab>('overview');
 
   protected readonly mentorId = toSignal(
@@ -189,8 +192,19 @@ export class MenteeMentorProfilePage {
     return formatDayLabel(day);
   }
 
-  protected getAvailabilityTime(from: string, to: string): string {
-    return `${formatTimeTo12Hour(from)} - ${formatTimeTo12Hour(to)}`;
+  protected getAvailabilityTime(
+    day: string,
+    from: string,
+    to: string,
+    sourceTimezone: string,
+  ): string {
+    return formatAvailabilityForViewer(
+      day,
+      from,
+      to,
+      sourceTimezone,
+      this.displayTimezone(),
+    );
   }
 
   protected selectTab(tab: MentorProfileTab): void {

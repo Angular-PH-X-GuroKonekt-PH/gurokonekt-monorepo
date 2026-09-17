@@ -3,6 +3,9 @@ import { inject, Injectable } from '@angular/core';
 import { catchError, map, Observable } from 'rxjs';
 
 import {
+  AvailabilityOverrideInterface,
+  AvailabilityOverrideType,
+  AvailabilitySlotInstanceInterface,
   DaysInWeek,
   TimeFrameInterface,
   UserAvailabilityInterface,
@@ -17,28 +20,44 @@ import {
 interface AvailabilityApiData {
   availability: UserAvailabilityInterface[];
   sessionDurationMinutes: number;
+  availabilityTimezone: string;
+  availabilityOverrides: AvailabilityOverrideInterface[];
 }
 
 interface AvailabilityResult {
   availabilities: UserAvailabilityInterface[];
   sessionDurationMinutes: number;
+  availabilityTimezone: string;
+  availabilityOverrides: AvailabilityOverrideInterface[];
 }
 
 interface SaveAvailabilityPayload {
   availability: UserAvailabilityInterface[];
   sessionDurationMinutes: number;
+  availabilityTimezone?: string;
 }
 
 interface AddAvailabilitySlotPayload {
   day: DaysInWeek;
   timeFrames: TimeFrameInterface[];
   sessionDurationMinutes?: number;
+  availabilityTimezone?: string;
+}
+
+export interface AddAvailabilityOverridePayload {
+  type: AvailabilityOverrideType;
+  startDate: string;
+  endDate: string;
+  timezone: string;
+  timeFrames?: TimeFrameInterface[];
+  excludedDates?: string[];
 }
 
 interface UpdateAvailabilitySlotPayload {
   day: DaysInWeek;
   timeFrameIndex: number;
   timeFrame: TimeFrameInterface;
+  availabilityTimezone?: string;
 }
 
 interface DeleteAvailabilitySlotPayload {
@@ -56,140 +75,223 @@ export class AvailabilityService {
 
   getAvailability(userId: string): Observable<AvailabilityResult> {
     return this.http
-      .get<ApiResponse<AvailabilityApiData>>(
-        buildApiUrl(`/user/${userId}/availability`)
-      )
+      .get<
+        ApiResponse<AvailabilityApiData>
+      >(buildApiUrl(`/user/${userId}/availability`))
       .pipe(
         map((response) =>
           validateApiResponse<AvailabilityApiData>(
             response,
-            'Failed to fetch availability.'
-          )
+            'Failed to fetch availability.',
+          ),
         ),
         map((data) => ({
           availabilities: data.availability ?? [],
           sessionDurationMinutes: data.sessionDurationMinutes ?? 60,
+          availabilityTimezone: data.availabilityTimezone ?? 'UTC',
+          availabilityOverrides: data.availabilityOverrides ?? [],
         })),
         catchError(
           handleApiErrorWithFallback(
-            { availabilities: [], sessionDurationMinutes: 60 },
-            'Failed to fetch availability'
-          )
-        )
+            {
+              availabilities: [],
+              sessionDurationMinutes: 60,
+              availabilityTimezone: 'UTC',
+              availabilityOverrides: [],
+            },
+            'Failed to fetch availability',
+          ),
+        ),
       );
   }
 
   updateAvailability(
     userId: string,
-    payload: SaveAvailabilityPayload
+    payload: SaveAvailabilityPayload,
   ): Observable<AvailabilityResult> {
     return this.http
-      .put<ApiResponse<AvailabilityApiData>>(
-        buildApiUrl(`/user/${userId}/availability`),
-        payload
-      )
+      .put<
+        ApiResponse<AvailabilityApiData>
+      >(buildApiUrl(`/user/${userId}/availability`), payload)
       .pipe(
         map((response) =>
           validateApiResponse<AvailabilityApiData>(
             response,
-            'Failed to update availability.'
-          )
+            'Failed to update availability.',
+          ),
         ),
         map((data) => ({
           availabilities: data.availability ?? [],
           sessionDurationMinutes:
             data.sessionDurationMinutes ?? payload.sessionDurationMinutes,
-        }))
+          availabilityTimezone:
+            data.availabilityTimezone ?? payload.availabilityTimezone ?? 'UTC',
+          availabilityOverrides: data.availabilityOverrides ?? [],
+        })),
       );
   }
 
   addAvailabilitySlot(
     userId: string,
-    payload: AddAvailabilitySlotPayload
+    payload: AddAvailabilitySlotPayload,
   ): Observable<AvailabilityResult> {
     return this.http
-      .post<ApiResponse<AvailabilityApiData>>(
-        buildApiUrl(`/user/${userId}/availability/slot`),
-        payload
-      )
+      .post<
+        ApiResponse<AvailabilityApiData>
+      >(buildApiUrl(`/user/${userId}/availability/slot`), payload)
       .pipe(
         map((response) =>
           validateApiResponse<AvailabilityApiData>(
             response,
-            'Failed to add availability slot.'
-          )
+            'Failed to add availability slot.',
+          ),
         ),
         map((data) => ({
           availabilities: data.availability ?? [],
           sessionDurationMinutes:
             data.sessionDurationMinutes ?? payload.sessionDurationMinutes ?? 60,
-        }))
+          availabilityTimezone:
+            data.availabilityTimezone ?? payload.availabilityTimezone ?? 'UTC',
+          availabilityOverrides: data.availabilityOverrides ?? [],
+        })),
       );
   }
 
   deleteAvailabilitySlot(
     userId: string,
-    payload: DeleteAvailabilitySlotPayload
+    payload: DeleteAvailabilitySlotPayload,
   ): Observable<AvailabilityResult> {
     return this.http
-      .request<ApiResponse<AvailabilityApiData>>(
-        'delete',
-        buildApiUrl(`/user/${userId}/availability/slot`),
-        { body: payload }
-      )
+      .request<
+        ApiResponse<AvailabilityApiData>
+      >('delete', buildApiUrl(`/user/${userId}/availability/slot`), { body: payload })
       .pipe(
         map((response) =>
           validateApiResponse<AvailabilityApiData>(
             response,
-            'Failed to delete availability slot.'
-          )
+            'Failed to delete availability slot.',
+          ),
         ),
         map((data) => ({
           availabilities: data.availability ?? [],
           sessionDurationMinutes: data.sessionDurationMinutes ?? 60,
-        }))
+          availabilityTimezone: data.availabilityTimezone ?? 'UTC',
+          availabilityOverrides: data.availabilityOverrides ?? [],
+        })),
       );
   }
 
   updateAvailabilitySlot(
     userId: string,
-    payload: UpdateAvailabilitySlotPayload
+    payload: UpdateAvailabilitySlotPayload,
   ): Observable<AvailabilityResult> {
     return this.http
-      .patch<ApiResponse<AvailabilityApiData>>(
-        buildApiUrl(`/user/${userId}/availability/slot`),
-        payload
-      )
+      .patch<
+        ApiResponse<AvailabilityApiData>
+      >(buildApiUrl(`/user/${userId}/availability/slot`), payload)
       .pipe(
         map((response) =>
           validateApiResponse<AvailabilityApiData>(
             response,
-            'Failed to update availability slot.'
-          )
+            'Failed to update availability slot.',
+          ),
         ),
         map((data) => ({
           availabilities: data.availability ?? [],
           sessionDurationMinutes: data.sessionDurationMinutes ?? 60,
-        }))
+          availabilityTimezone: data.availabilityTimezone ?? 'UTC',
+          availabilityOverrides: data.availabilityOverrides ?? [],
+        })),
+      );
+  }
+
+  addAvailabilityOverride(
+    userId: string,
+    payload: AddAvailabilityOverridePayload,
+  ): Observable<AvailabilityOverrideInterface[]> {
+    return this.http
+      .post<
+        ApiResponse<{ availabilityOverrides: AvailabilityOverrideInterface[] }>
+      >(buildApiUrl(`/user/${userId}/availability/override`), payload)
+      .pipe(
+        map((response) =>
+          validateApiResponse(response, 'Failed to add availability override.'),
+        ),
+        map((data) => data.availabilityOverrides ?? []),
+      );
+  }
+
+  updateAvailabilityOverride(
+    userId: string,
+    overrideId: string,
+    payload: AddAvailabilityOverridePayload,
+  ): Observable<AvailabilityOverrideInterface[]> {
+    return this.http
+      .patch<
+        ApiResponse<{ availabilityOverrides: AvailabilityOverrideInterface[] }>
+      >(buildApiUrl(`/user/${userId}/availability/override/${overrideId}`), payload)
+      .pipe(
+        map((response) =>
+          validateApiResponse(
+            response,
+            'Failed to update availability override.',
+          ),
+        ),
+        map((data) => data.availabilityOverrides ?? []),
+      );
+  }
+
+  deleteAvailabilityOverride(
+    userId: string,
+    overrideId: string,
+  ): Observable<AvailabilityOverrideInterface[]> {
+    return this.http
+      .delete<
+        ApiResponse<{ availabilityOverrides: AvailabilityOverrideInterface[] }>
+      >(buildApiUrl(`/user/${userId}/availability/override/${overrideId}`))
+      .pipe(
+        map((response) =>
+          validateApiResponse(
+            response,
+            'Failed to delete availability override.',
+          ),
+        ),
+        map((data) => data.availabilityOverrides ?? []),
+      );
+  }
+
+  getConcreteSlots(
+    userId: string,
+    startDate: string,
+    endDate: string,
+  ): Observable<AvailabilitySlotInstanceInterface[]> {
+    return this.http
+      .get<
+        ApiResponse<{ slots: AvailabilitySlotInstanceInterface[] }>
+      >(buildApiUrl(`/user/${userId}/availability/slots`), { params: { startDate, endDate } })
+      .pipe(
+        map((response) =>
+          validateApiResponse(response, 'Failed to fetch booking slots.'),
+        ),
+        map((data) => data.slots ?? []),
       );
   }
 
   setSessionDuration(
     userId: string,
-    sessionDurationMinutes: number
+    sessionDurationMinutes: number,
   ): Observable<SessionDurationData> {
     return this.http
-      .patch<ApiResponse<SessionDurationData>>(
-        buildApiUrl(`/user/${userId}/availability/duration`),
-        { sessionDurationMinutes }
-      )
+      .patch<
+        ApiResponse<SessionDurationData>
+      >(buildApiUrl(`/user/${userId}/availability/duration`), { sessionDurationMinutes })
       .pipe(
         map((response) =>
           validateApiResponse<SessionDurationData>(
             response,
-            'Failed to update session duration.'
-          )
-        )
+            'Failed to update session duration.',
+          ),
+        ),
       );
   }
 }

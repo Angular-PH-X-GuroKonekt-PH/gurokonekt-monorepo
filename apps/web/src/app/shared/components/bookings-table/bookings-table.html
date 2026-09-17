@@ -1,5 +1,7 @@
 <div class="rounded-2xl bg-white shadow-sm">
-  <div class="flex flex-col gap-3 border-b border-gray-100 px-6 py-5 lg:flex-row lg:items-center lg:justify-between">
+  <div
+    class="flex flex-col gap-3 border-b border-gray-100 px-6 py-5 lg:flex-row lg:items-center lg:justify-between"
+  >
     <h2 class="text-lg font-bold text-gray-800">{{ title() }}</h2>
 
     @if (tabs().length) {
@@ -48,7 +50,9 @@
       }
       <thead>
         <tr class="border-b border-gray-100">
-          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
+          <th
+            class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400"
+          >
             <button
               type="button"
               class="inline-flex items-center gap-1 tracking-widest transition-colors hover:text-gray-700"
@@ -64,12 +68,21 @@
             </button>
           </th>
           @if (showMentorNotes()) {
-          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">MENTOR NOTES</th>
+          <th
+            class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400"
+          >
+            MENTOR NOTES
+          </th>
+          } @if (showMenteeNotes()) {
+          <th
+            class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400"
+          >
+            MENTEE NOTES
+          </th>
           }
-          @if (showMenteeNotes()) {
-          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">MENTEE NOTES</th>
-          }
-          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
+          <th
+            class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400"
+          >
             <button
               type="button"
               class="inline-flex items-center gap-1 tracking-widest transition-colors hover:text-gray-700"
@@ -84,7 +97,9 @@
               />
             </button>
           </th>
-          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">
+          <th
+            class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400"
+          >
             <button
               type="button"
               class="inline-flex items-center gap-1 tracking-widest transition-colors hover:text-gray-700"
@@ -99,7 +114,11 @@
               />
             </button>
           </th>
-          <th class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400">ACTIONS</th>
+          <th
+            class="px-6 py-3 text-[11px] font-semibold tracking-widest text-gray-400"
+          >
+            ACTIONS
+          </th>
         </tr>
       </thead>
 
@@ -125,8 +144,12 @@
                 class="h-8 w-8 rounded-full border-2 border-gray-100 object-cover"
               />
               <div class="min-w-0">
-                <p class="truncate font-semibold text-gray-800">{{ participant.firstName }} {{ participant.lastName }}</p>
-                <p class="text-xs text-gray-400">{{ getCounterpartyLabel() }}</p>
+                <p class="truncate font-semibold text-gray-800">
+                  {{ participant.firstName }} {{ participant.lastName }}
+                </p>
+                <p class="text-xs text-gray-400">
+                  {{ getCounterpartyLabel() }}
+                </p>
               </div>
             </div>
             } @else {
@@ -135,21 +158,30 @@
           </td>
           @if (showMentorNotes()) {
           <td class="max-w-56 px-6 py-2 font-medium text-gray-700">
-            <p class="truncate" [title]="booking.mentorNotes || 'No notes provided'">
+            <p
+              class="truncate"
+              [title]="booking.mentorNotes || 'No notes provided'"
+            >
               {{ booking.mentorNotes || '—' }}
             </p>
           </td>
-          }
-          @if (showMenteeNotes()) {
+          } @if (showMenteeNotes()) {
           <td class="px-6 py-2 font-medium text-gray-700">
-            <p class="truncate" [title]="booking.menteeNotes || 'No notes provided'">
+            <p
+              class="truncate"
+              [title]="booking.menteeNotes || 'No notes provided'"
+            >
               {{ booking.menteeNotes || '—' }}
             </p>
           </td>
           }
           <td class="px-6 py-2">
-            <p class="font-medium text-gray-800">{{ booking.sessionDateTime | date:'MMM d, y' }}</p>
-            <p class="text-xs text-gray-400">{{ booking.sessionDateTime | date:'h:mm a' }}</p>
+            <p class="font-medium text-gray-800">
+              {{ formatBookingDate(booking.sessionDateTime) }}
+            </p>
+            <p class="text-xs text-gray-400">
+              {{ formatBookingTime(booking.sessionDateTime) }}
+            </p>
           </td>
           <td class="px-6 py-2">
             <span
@@ -162,7 +194,9 @@
               [class.text-blue-700]="booking.status === 'COMPLETED'"
               [class.bg-red-50]="booking.status === 'CANCELLED' || booking.status === 'REJECTED'"
               [class.text-red-700]="booking.status === 'CANCELLED' || booking.status === 'REJECTED'"
-            >{{ booking.status.charAt(0) + booking.status.slice(1).toLowerCase() }}</span>
+              >{{ booking.status.charAt(0) +
+              booking.status.slice(1).toLowerCase() }}</span
+            >
           </td>
           <td class="px-6 py-2">
             @if (actionsTemplate(); as actions) {
@@ -174,7 +208,14 @@
           </td>
         </tr>
         } @empty {
-        <tr><td [attr.colspan]="tableColumnCount()" class="px-6 py-10 text-center text-gray-400">No bookings found.</td></tr>
+        <tr>
+          <td
+            [attr.colspan]="tableColumnCount()"
+            class="px-6 py-10 text-center text-gray-400"
+          >
+            No bookings found.
+          </td>
+        </tr>
         }
       </tbody>
       }
@@ -183,16 +224,21 @@
 
   @if (footerMode() === 'viewAll') {
   <div class="border-t border-gray-100 px-6 py-4 text-center">
-    <a [routerLink]="viewAllLink()"
-      class="inline-flex items-center justify-center gap-1 text-sm font-semibold text-gray-700 transition-colors hover:text-orange-500">
+    <a
+      [routerLink]="viewAllLink()"
+      class="inline-flex items-center justify-center gap-1 text-sm font-semibold text-gray-700 transition-colors hover:text-orange-500"
+    >
       View All Bookings
-      <app-icon name="arrow-long-right" class="h-5 w-5 flex items-center justify-center" />
+      <app-icon
+        name="arrow-long-right"
+        class="h-5 w-5 flex items-center justify-center"
+      />
     </a>
-  </div>  
-  }
-
-  @if (footerMode() === 'pagination') {
-  <div class="flex flex-col gap-4 border-t border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between">
+  </div>
+  } @if (footerMode() === 'pagination') {
+  <div
+    class="flex flex-col gap-4 border-t border-gray-100 px-6 py-4 sm:flex-row sm:items-center sm:justify-between"
+  >
     <label class="flex items-center gap-2 text-sm text-gray-600">
       Rows per page
       <select

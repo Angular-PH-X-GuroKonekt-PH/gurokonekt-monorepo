@@ -3,6 +3,7 @@ import { Type } from 'class-transformer';
 import {
   ArrayMinSize,
   IsArray,
+  IsDateString,
   IsEnum,
   IsInt,
   IsNotEmpty,
@@ -11,7 +12,10 @@ import {
   Min,
   ValidateNested,
 } from 'class-validator';
-import { DaysInWeek } from '../../interfaces/user/user.model';
+import {
+  AvailabilityOverrideType,
+  DaysInWeek,
+} from '../../interfaces/user/user.model';
 import { TimeFrameDto, UserAvailabilityDto } from './update-user-profile.dto';
 
 export class InitiateDeactivationDto {
@@ -29,7 +33,9 @@ export class VerifyDeactivationTokenDto {
 }
 
 export class DeactivationFeedbackDto {
-  @ApiProperty({ description: 'Token from deactivation email link (final validation)' })
+  @ApiProperty({
+    description: 'Token from deactivation email link (final validation)',
+  })
   @IsString()
   @IsNotEmpty()
   token!: string;
@@ -49,7 +55,8 @@ export class ActivateAccountDto {
 
 export class SetSessionDurationDto {
   @ApiProperty({
-    description: 'Standard session length in minutes. All bookable time slots will use this duration.',
+    description:
+      'Standard session length in minutes. All bookable time slots will use this duration.',
     example: 60,
     minimum: 15,
   })
@@ -69,8 +76,17 @@ export class DowngradeMentorDto {
 }
 
 export class ManageAvailabilityDto {
+  @ApiPropertyOptional({
+    description: 'IANA timezone used by the recurring weekly schedule.',
+    example: 'Europe/Amsterdam',
+  })
+  @IsOptional()
+  @IsString()
+  availabilityTimezone?: string;
+
   @ApiProperty({
-    description: 'Standard session length in minutes. Each time frame must be at least this long. Minimum 15.',
+    description:
+      'Standard session length in minutes. Each time frame must be at least this long. Minimum 15.',
     example: 60,
     minimum: 15,
   })
@@ -79,9 +95,16 @@ export class ManageAvailabilityDto {
   sessionDurationMinutes!: number;
 
   @ApiProperty({
-    description: 'Full weekly availability schedule. Replaces existing schedule entirely.',
+    description:
+      'Full weekly availability schedule. Replaces existing schedule entirely.',
     example: [
-      { day: 'monday', timeFrames: [{ from: '09:00', to: '12:00' }, { from: '14:00', to: '17:00' }] },
+      {
+        day: 'monday',
+        timeFrames: [
+          { from: '09:00', to: '12:00' },
+          { from: '14:00', to: '17:00' },
+        ],
+      },
       { day: 'wednesday', timeFrames: [{ from: '10:00', to: '13:00' }] },
     ],
     type: [UserAvailabilityDto],
@@ -93,6 +116,14 @@ export class ManageAvailabilityDto {
 }
 
 export class AddAvailabilitySlotDto {
+  @ApiPropertyOptional({
+    description: 'IANA timezone used by the recurring weekly schedule.',
+    example: 'Europe/Amsterdam',
+  })
+  @IsOptional()
+  @IsString()
+  availabilityTimezone?: string;
+
   @ApiProperty({
     enum: DaysInWeek,
     description: 'Day of the week for this availability slot',
@@ -102,7 +133,8 @@ export class AddAvailabilitySlotDto {
   day!: DaysInWeek;
 
   @ApiProperty({
-    description: 'New time frames to append to this day. Must not overlap with existing frames for this day.',
+    description:
+      'New time frames to append to this day. Must not overlap with existing frames for this day.',
     example: [{ from: '14:00', to: '17:00' }],
     type: [TimeFrameDto],
   })
@@ -113,7 +145,8 @@ export class AddAvailabilitySlotDto {
   timeFrames!: TimeFrameDto[];
 
   @ApiPropertyOptional({
-    description: 'Optionally update the standard session duration (minutes) at the same time. Minimum 15.',
+    description:
+      'Optionally update the standard session duration (minutes) at the same time. Minimum 15.',
     example: 60,
     minimum: 15,
   })
@@ -124,6 +157,14 @@ export class AddAvailabilitySlotDto {
 }
 
 export class UpdateAvailabilitySlotDto {
+  @ApiPropertyOptional({
+    description: 'IANA timezone used by the recurring weekly schedule.',
+    example: 'Europe/Amsterdam',
+  })
+  @IsOptional()
+  @IsString()
+  availabilityTimezone?: string;
+
   @ApiProperty({
     enum: DaysInWeek,
     description: 'Day of the week for the availability slot to update',
@@ -141,7 +182,8 @@ export class UpdateAvailabilitySlotDto {
   timeFrameIndex!: number;
 
   @ApiProperty({
-    description: 'Replacement time frame. It must be at least 60 minutes and divisible by 60 minutes.',
+    description:
+      'Replacement time frame. It must be at least 60 minutes and divisible by 60 minutes.',
     example: { from: '14:00', to: '16:00' },
     type: TimeFrameDto,
   })
@@ -160,11 +202,63 @@ export class DeleteAvailabilitySlotDto {
   day!: DaysInWeek;
 
   @ApiPropertyOptional({
-    description: 'Zero-based index of the specific time frame to delete. If omitted, all slots for the day are removed.',
+    description:
+      'Zero-based index of the specific time frame to delete. If omitted, all slots for the day are removed.',
     example: 0,
   })
   @IsOptional()
   @IsInt()
   @Min(0)
   timeFrameIndex?: number;
+}
+
+export class AddAvailabilityOverrideDto {
+  @ApiProperty({ enum: AvailabilityOverrideType })
+  @IsEnum(AvailabilityOverrideType)
+  type!: AvailabilityOverrideType;
+
+  @ApiProperty({ example: '2026-09-08' })
+  @IsDateString({ strict: true })
+  startDate!: string;
+
+  @ApiProperty({ example: '2026-09-08' })
+  @IsDateString({ strict: true })
+  endDate!: string;
+
+  @ApiProperty({ example: 'Europe/Amsterdam' })
+  @IsString()
+  @IsNotEmpty()
+  timezone!: string;
+
+  @ApiPropertyOptional({
+    type: [TimeFrameDto],
+    description:
+      'Required for custom hours and temporary availability; omitted when unavailable.',
+  })
+  @IsOptional()
+  @IsArray()
+  @ArrayMinSize(1)
+  @ValidateNested({ each: true })
+  @Type(() => TimeFrameDto)
+  timeFrames?: TimeFrameDto[];
+
+  @ApiPropertyOptional({
+    type: [String],
+    description: 'Dates excluded from a temporary availability range.',
+    example: ['2026-09-23'],
+  })
+  @IsOptional()
+  @IsArray()
+  @IsDateString({ strict: true }, { each: true })
+  excludedDates?: string[];
+}
+
+export class AvailabilitySlotsQueryDto {
+  @ApiProperty({ example: '2026-09-01' })
+  @IsDateString({ strict: true })
+  startDate!: string;
+
+  @ApiProperty({ example: '2026-11-30' })
+  @IsDateString({ strict: true })
+  endDate!: string;
 }

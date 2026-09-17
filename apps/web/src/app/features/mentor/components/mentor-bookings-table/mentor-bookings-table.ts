@@ -12,12 +12,15 @@ import {
   BookingStatus,
   BookingTab,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
+import {
+  formatTimeInputInTimezone,
+  getDateKeyInTimezone,
+  localDateTimeToUtc,
+} from '@gurokonekt/utils';
 
 import { BookingsTable } from '../../../../shared/components/bookings-table/bookings-table';
 import { BookingService } from '../../../../shared/services/booking.service';
-import {
-  BookingSortChange,
-} from '../../../../shared/components/bookings-table/bookings-table.types';
+import { BookingSortChange } from '../../../../shared/components/bookings-table/bookings-table.types';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BookingDetailsModal } from '../../../mentor/components/mentor-bookings-table/booking-details-modal/booking-details-modal';
 import { ApproveBookingModal } from '../../../mentor/components/mentor-bookings-table/approve-booking-modal/approve-booking-modal';
@@ -51,6 +54,9 @@ export class MentorBookingsTable {
   footerMode = input<'viewAll' | 'pagination' | 'none'>('none');
   bookings = input<BookingCardInterface[] | null>(null);
   isLoading = input(false);
+  displayTimezone = input(
+    Intl.DateTimeFormat().resolvedOptions().timeZone || 'UTC',
+  );
   maxRows = input<number | null>(null);
   currentPage = input(1);
   pageSize = input(10);
@@ -150,12 +156,14 @@ export class MentorBookingsTable {
     this.closeActionMenu();
 
     const date = new Date(booking.sessionDateTime);
-    const localDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
-    const localValue = localDate.toISOString();
 
     this.approvalBooking.set(booking);
-    this.approvalSessionDate.set(localValue.slice(0, 10));
-    this.approvalSessionTime.set(localValue.slice(11, 16));
+    this.approvalSessionDate.set(
+      getDateKeyInTimezone(date, this.displayTimezone()),
+    );
+    this.approvalSessionTime.set(
+      formatTimeInputInTimezone(date, this.displayTimezone()),
+    );
     this.approvalSessionLink.set(booking.sessionLink ?? '');
     this.approvalMentorNotes.set(booking.mentorNotes ?? '');
   }
@@ -186,9 +194,18 @@ export class MentorBookingsTable {
 
     this.submitting.set(true);
 
-    const sessionDateTime = new Date(
-      `${this.approvalSessionDate()}T${this.approvalSessionTime()}`
+    const sessionDateTime = localDateTimeToUtc(
+      this.approvalSessionDate(),
+      this.approvalSessionTime(),
+      this.displayTimezone(),
     );
+    if (!sessionDateTime) {
+      this.toastService.warning(
+        'That local time does not exist in the selected timezone.',
+      );
+      this.submitting.set(false);
+      return;
+    }
 
     this.bookingService
       .approveBooking(booking.id, {
@@ -342,14 +359,14 @@ export class MentorBookingsTable {
     this.closeActionMenu();
 
     const date = new Date(booking.sessionDateTime);
-    const localDate = new Date(
-      date.getTime() - date.getTimezoneOffset() * 60000,
-    );
-    const localValue = localDate.toISOString();
 
     this.updateBookingTarget.set(booking);
-    this.updateSessionDate.set(localValue.slice(0, 10));
-    this.updateSessionTime.set(localValue.slice(11, 16));
+    this.updateSessionDate.set(
+      getDateKeyInTimezone(date, this.displayTimezone()),
+    );
+    this.updateSessionTime.set(
+      formatTimeInputInTimezone(date, this.displayTimezone()),
+    );
     this.updateSessionLink.set(booking.sessionLink ?? '');
     this.updateMentorNotes.set(booking.mentorNotes ?? '');
   }
@@ -372,9 +389,17 @@ export class MentorBookingsTable {
       return;
     }
 
-    const sessionDateTime = new Date(
-      `${this.updateSessionDate()}T${this.updateSessionTime()}`,
+    const sessionDateTime = localDateTimeToUtc(
+      this.updateSessionDate(),
+      this.updateSessionTime(),
+      this.displayTimezone(),
     );
+    if (!sessionDateTime) {
+      this.toastService.warning(
+        'That local time does not exist in the selected timezone.',
+      );
+      return;
+    }
 
     this.submitting.set(true);
 

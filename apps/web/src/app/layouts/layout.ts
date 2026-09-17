@@ -1,17 +1,23 @@
-import { Component, computed, inject } from '@angular/core';
+import { Component, computed } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
 import { ToastContainerComponent } from '../shared/components/toast/toast.component';
 import { NavbarComponent } from './components/navbar/navbar/navbar.component';
 import { SidebarComponent } from './components/sidebars/sidebar/sidebar.component';
 import { NavItem } from './components/sidebars/sidebar/sidebar.types';
 import { APP_ROUTES } from '../shared/constants/routes';
-import { AuthState } from '../core/auth/store/auth.state';
 import { createSelectMap } from '@ngxs/store'
 import { AuthSelectors } from '../core/auth/store/auth.selectors';
+import { TimezoneMismatchComponent } from '../shared/components/timezone-mismatch/timezone-mismatch.component';
 
 @Component({
   selector: 'app-layout',
-  imports: [ToastContainerComponent, RouterOutlet, NavbarComponent, SidebarComponent],
+  imports: [
+    ToastContainerComponent,
+    RouterOutlet,
+    NavbarComponent,
+    SidebarComponent,
+    TimezoneMismatchComponent,
+  ],
   templateUrl: './layout.html',
 })
 export class Layout {

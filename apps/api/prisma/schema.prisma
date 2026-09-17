@@ -188,6 +188,8 @@ model MentorProfile {
   sessionRate            Float?    @map("session_rate")
   sessionDurationMinutes Int       @default(60) @map("session_duration_minutes")
   availability           Json
+  availabilityTimezone   String    @default("UTC") @map("availability_timezone")
+  availabilityOverrides  Json      @default("[]") @map("availability_overrides")
   isFeatured             Boolean   @default(false) @map("is_featured")
   featuredAt             DateTime? @map("featured_at")
   updatedById            String?   @map("updated_by_id")

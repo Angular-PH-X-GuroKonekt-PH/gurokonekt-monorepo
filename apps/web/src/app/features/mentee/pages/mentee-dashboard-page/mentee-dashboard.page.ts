@@ -18,6 +18,7 @@ import { IconComponent } from '../../../../shared/components/icon/icon.component
 import { MentorRecommendedCard } from '../../../mentor/components/mentor-recommended-card/mentor-recommended-card';
 import { MenteeDashboardBookingWidget } from '../../components/mentee-dashboard-booking-widget/mentee-dashboard-booking-widget';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
+import { UserTimezoneService } from '../../../../shared/services/user-timezone.service';
 
 @Component({
   selector: 'app-mentee-dashboard-page',
@@ -38,6 +39,9 @@ export class MenteeDashboardPage {
 
   private readonly bookingService = inject(BookingService);
   private readonly menteeSearchMentorService = inject(MenteeSearchMentorService);
+  private readonly menteeTimezoneService = inject(UserTimezoneService);
+
+  protected readonly displayTimezone = this.menteeTimezoneService.displayTimezone;
 
   protected readonly fullName = computed<string>(() => {
     const value = this.authUser()?.['fullName'];

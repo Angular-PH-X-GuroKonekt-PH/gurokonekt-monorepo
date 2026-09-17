@@ -28,7 +28,7 @@ import { AuthSelectors } from '../../../auth/store/auth.selectors';
 import {
   getCountries,
   getLanguages,
-  getTimezones,
+  getIanaTimezoneOptions,
 } from '../../../../shared/utils/location-data.util';
 import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
 import { FORM_FIELD_VALIDATORS } from '../../../../shared/constants/form-validation-configs.constants';
@@ -91,7 +91,7 @@ export class ProfileEditSectionPage implements OnInit {
   protected readonly maxAreasOfExpertise = ProfileEditSectionPage.MAX_AREAS_OF_EXPERTISE;
 
   protected readonly countryOptions = getCountries();
-  protected readonly timezoneOptions = getTimezones();
+  protected readonly timezoneOptions = getIanaTimezoneOptions();
   protected readonly languageOptions = getLanguages();
 
   protected profileForm: FormGroup = this.fb.group({});

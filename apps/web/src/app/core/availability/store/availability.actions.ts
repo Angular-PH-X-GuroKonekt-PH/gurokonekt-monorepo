@@ -1,4 +1,4 @@
-import { UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/user.model';
+import { AvailabilityOverrideInterface, UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/user.model';
 
 export class FetchAvailability {
   static readonly type = '[Availability] Fetch';
@@ -11,6 +11,8 @@ export class FetchAvailabilitySuccess {
     public payload: {
       availabilities: UserAvailabilityInterface[];
       sessionDurationMinutes: number;
+      availabilityTimezone: string;
+      availabilityOverrides: AvailabilityOverrideInterface[];
     }
   ) {}
 }

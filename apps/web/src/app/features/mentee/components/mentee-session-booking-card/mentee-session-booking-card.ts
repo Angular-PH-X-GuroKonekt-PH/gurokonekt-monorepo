@@ -5,9 +5,10 @@ import {
   BookingCardInterface,
   BookingStatus,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
+import { formatDateInTimezone, formatTimeInTimezone } from '@gurokonekt/utils';
 
 import { IconComponent, IconName } from '../../../../shared/components/icon/icon.component';
-import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/session-badge.component';
+import { SessionBadge } from '../../../../shared/components/session-badge/session-badge.component';
 
 @Component({
   selector: 'app-mentee-session-booking-card',
@@ -16,6 +17,7 @@ import { SessionBadge } from 'apps/web/src/app/shared/components/session-badge/s
 })
 export class MenteeSessionBookingCard {
   bookingList = input<BookingCardInterface[]>([]);
+  displayTimezone = input('UTC');
   emptyIcon = input<IconName>('calendar-days');
   emptyTitle = input('No bookings yet');
   emptyMessage = input(
@@ -26,6 +28,14 @@ export class MenteeSessionBookingCard {
   addReview = output<BookingCardInterface>();
 
   BookingStatus = BookingStatus;
+
+  protected formatBookingDate(date: Date | string): string {
+    return formatDateInTimezone(date, this.displayTimezone());
+  }
+
+  protected formatBookingTime(date: Date | string): string {
+    return formatTimeInTimezone(date, this.displayTimezone());
+  }
 
   getStatusLabel(status: BookingStatus): string {
     switch (status) {

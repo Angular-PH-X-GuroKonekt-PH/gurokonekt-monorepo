@@ -1,4 +1,11 @@
-import { Component, computed, input, model, output, signal } from '@angular/core';
+import {
+  Component,
+  computed,
+  input,
+  model,
+  output,
+  signal,
+} from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { BookingCardInterface } from '@gurokonekt/models/interfaces/booking/booking.model';
 
@@ -10,6 +17,7 @@ import { BookingCardInterface } from '@gurokonekt/models/interfaces/booking/book
 export class ApproveBookingModal {
   booking = input.required<BookingCardInterface>();
   submitting = input(false);
+  displayTimezone = input('UTC');
 
   sessionDate = model('');
   sessionTime = model('');

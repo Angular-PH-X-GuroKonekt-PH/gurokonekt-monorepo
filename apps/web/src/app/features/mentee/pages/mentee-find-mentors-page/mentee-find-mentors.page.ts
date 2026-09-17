@@ -16,6 +16,7 @@ import { MenteeSearchMentorService } from '../../services/mentee-search-mentor.s
 import { MentorInfoCard } from '../../components/mentor-info-card/mentor-info-card';
 import { MentorRecommendations } from '../../components/mentor-recommendations/mentor-recommendations';
 import { MentorSearch } from '../../components/mentor-search/mentor-search';
+import { UserTimezoneService } from '../../../../shared/services/user-timezone.service';
 import {
   FindMentorsSearchState,
   RecommendedMentorsState,
@@ -50,6 +51,9 @@ export class MenteeFindMentorsPage {
   private readonly route = inject(ActivatedRoute);
   private readonly router = inject(Router);
   private readonly menteeSearchMentorService = inject(MenteeSearchMentorService);
+  private readonly menteeTimezoneService = inject(UserTimezoneService);
+
+  protected readonly displayTimezone = this.menteeTimezoneService.displayTimezone;
 
   protected readonly searchState = toSignal(
     this.route.queryParams.pipe(

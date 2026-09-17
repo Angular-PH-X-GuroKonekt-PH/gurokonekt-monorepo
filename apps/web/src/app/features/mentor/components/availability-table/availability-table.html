@@ -2,14 +2,39 @@
   <div
     class="flex items-center justify-between border-b border-gray-100 px-6 py-5"
   >
-    <h2 class="text-lg font-bold text-gray-800">{{ title() }}</h2>
+    <div>
+      <h2 class="text-lg font-bold text-gray-800">{{ title() }}</h2>
+      @if (viewMode() === 'management') {
+      <p class="mt-1 text-xs font-medium text-gray-500">
+        Recurring schedule ·
+        <span class="font-semibold text-gray-700">
+          {{ availabilityTimezone() }}
+        </span>
+      </p>
+      }
+    </div>
 
-    @if (showWeekPicker()) {
-    <app-week-picker
-      [value]="selectedWeekValue()"
-      (valueChange)="selectedWeekChange.emit($event)"
-    />
-    }
+    <div class="flex flex-wrap items-end justify-end gap-3">
+      @if (viewMode() === 'management') {
+      <label class="text-xs font-medium text-gray-500">
+        <span class="mb-1 block">Schedule</span>
+        <select
+          class="h-10 w-40 rounded-lg border border-gray-200 bg-white px-3 text-sm text-gray-700 outline-none focus:border-orange-400 focus:ring-2 focus:ring-orange-100"
+          [value]="scheduleFilter()"
+          (change)="setScheduleFilter($event)"
+        >
+          <option value="all">All</option>
+          <option value="recurring">Recurring</option>
+          <option value="date-specific">Date-specific</option>
+        </select>
+      </label>
+      } @if (showWeekPicker()) {
+      <app-week-picker
+        [value]="selectedWeekValue()"
+        (valueChange)="selectedWeekChange.emit($event)"
+      />
+      }
+    </div>
   </div>
 
   <div class="overflow-x-auto px-6 pb-6">
@@ -43,7 +68,9 @@
           >
             DAY
           </th>
-          <th class="border-b border-gray-100 px-4 py-4 text-[11px] font-bold tracking-[0.18em] text-gray-400">
+          <th
+            class="border-b border-gray-100 px-4 py-4 text-[11px] font-bold tracking-[0.18em] text-gray-400"
+          >
             {{ 'SLOTS' }}
           </th>
           @if (viewMode() === 'management') {
@@ -67,10 +94,11 @@
       </thead>
 
       <tbody>
-        @for (day of days; track day) { @let slot = getAvailabilityForDay(day);
+        @for (day of getVisibleDays(); track day) { @let slot =
+        getAvailabilityForDay(day); @let override = getOverrideForDay(day);
         <tr class="transition-colors hover:bg-gray-50/70">
           <td class="border-b border-gray-100 px-4 py-4">
-            @if (slot) {
+            @if (slot?.timeFrames?.length) {
             <button
               type="button"
               class="inline-flex h-6 w-6 items-center justify-center rounded-md border border-gray-200 bg-white text-gray-500 hover:border-orange-200 hover:bg-orange-50 hover:text-orange-600"
@@ -91,16 +119,27 @@
             <div class="mt-1 text-xs font-normal text-gray-500">
               {{ getDateLabelForDay(day) }}
             </div>
-            }
+            } @if (getScheduleSourceLabel(day); as sourceLabel) {
+            <span
+              class="mt-2 inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold"
+              [class]="getScheduleSourceClasses(day)"
+            >
+              {{ sourceLabel }}
+            </span>
+            @if (override) {
+            <span class="ml-2 text-[10px] font-normal text-gray-400">
+              {{ override.timezone }}
+            </span>
+            } }
           </td>
           <td class="border-b border-gray-100 px-4 py-4">
-            <span [class.text-gray-400]="!slot"
+            <span [class.text-gray-400]="!slot?.timeFrames?.length"
               >{{ slot ? slot.timeFrames.length : 0 }}</span
             >
           </td>
           @if (viewMode() === 'management') {
           <td class="border-b border-gray-100 px-4 py-4">
-            <span [class.text-gray-400]="!slot"
+            <span [class.text-gray-400]="!slot?.timeFrames?.length"
               >{{ slot ? getAvailableSlotCount(day) : 0 }}</span
             >
           </td>
@@ -115,7 +154,29 @@
           </td>
           }
           <td class="border-b border-gray-100 px-4 py-4">
-            @if (slot) {
+            @if (override) {
+            <div class="flex items-center gap-2">
+              <button
+                type="button"
+                class="rounded-md p-1.5 text-blue-700 hover:bg-blue-50"
+                title="Edit this schedule exception"
+                (click)="editOverride.emit(override)"
+              >
+                <app-icon name="pencil-square" class="h-4 w-4" />
+              </button>
+              <button
+                type="button"
+                class="rounded-md p-1.5 text-red-600 hover:bg-red-50"
+                [class.cursor-not-allowed]="override.type === temporaryOverrideType && getBookingSummaryLabel(day) !== 'None'"
+                [class.opacity-40]="override.type === temporaryOverrideType && getBookingSummaryLabel(day) !== 'None'"
+                [disabled]="override.type === temporaryOverrideType && getBookingSummaryLabel(day) !== 'None'"
+                [title]="override.type === temporaryOverrideType ? (getBookingSummaryLabel(day) !== 'None' ? 'This date has an active booking' : 'Make this date unavailable') : 'Delete this schedule exception'"
+                (click)="override.type === temporaryOverrideType ? deleteOverrideDate.emit({ override, date: getDateKeyForDay(day) }) : deleteOverride.emit(override.id)"
+              >
+                <app-icon name="trash" class="h-4 w-4" />
+              </button>
+            </div>
+            } @else if (slot) {
             <div class="flex items-center gap-2">
               <button
                 type="button"
@@ -140,7 +201,8 @@
           </td>
         </tr>
 
-        @if (slot && isDayExpanded(day)) {
+        @if (slot; as effectiveSlot) { @if (effectiveSlot.timeFrames.length &&
+        isDayExpanded(day)) {
         <tr>
           <td></td>
           <td [attr.colspan]="viewMode() === 'setup' ? 3 : 5" class="px-4 py-0">
@@ -164,8 +226,11 @@
 
                 <thead>
                   <tr>
-                    <th class="border-b border-gray-100 px-5 py-3 text-left text-[11px] font-bold tracking-[0.18em] text-gray-400">
-                      {{ viewMode() === 'setup' ? 'TIME RANGES' : 'AVAILABLE TIME'}} 
+                    <th
+                      class="border-b border-gray-100 px-5 py-3 text-left text-[11px] font-bold tracking-[0.18em] text-gray-400"
+                    >
+                      {{ viewMode() === 'setup' ? 'TIME RANGES' : 'AVAILABLE
+                      TIME'}}
                     </th>
                     @if (viewMode() === 'management') {
                     <th
@@ -187,8 +252,8 @@
                   </tr>
                 </thead>
                 <tbody>
-                  @for (frame of slot.timeFrames; track $index; let frameIndex =
-                  $index) {
+                  @for (frame of effectiveSlot.timeFrames; track $index; let
+                  frameIndex = $index) {
                   <tr>
                     <td
                       class="border-b border-gray-100 px-5 py-3 text-sm font-medium text-gray-900"
@@ -219,11 +284,13 @@
                     }
                     <td class="border-b border-gray-100 px-5 py-3 text-sm">
                       <div class="flex justify-start gap-2">
+                        @if (override) { @if (override.type ===
+                        customHoursOverrideType) {
                         <button
                           type="button"
                           class="rounded-md p-1.5 text-blue-700 hover:bg-blue-50"
                           title="Edit this time frame"
-                          (click)="emitTimeFrameAction('edit', slot, frame, frameIndex)"
+                          (click)="editOverrideTimeFrame.emit({ override, timeFrame: frame, timeFrameIndex: frameIndex, date: getDateKeyForDay(day) })"
                         >
                           <app-icon name="pencil-square" class="h-4 w-4" />
                         </button>
@@ -231,10 +298,49 @@
                           type="button"
                           class="rounded-md p-1.5 text-red-600 hover:bg-red-50"
                           title="Delete this time frame"
-                          (click)="emitTimeFrameAction('delete', slot, frame, frameIndex)"
+                          (click)="deleteOverrideTimeFrame.emit({ override, timeFrame: frame, timeFrameIndex: frameIndex, date: getDateKeyForDay(day) })"
                         >
                           <app-icon name="trash" class="h-4 w-4" />
                         </button>
+                        } @else {
+                        <button
+                          type="button"
+                          class="rounded-md p-1.5 text-blue-700 hover:bg-blue-50"
+                          title="Edit this schedule exception"
+                          (click)="editOverride.emit(override)"
+                        >
+                          <app-icon name="pencil-square" class="h-4 w-4" />
+                        </button>
+                        @if (override.type === temporaryOverrideType) {
+                        <button
+                          type="button"
+                          class="rounded-md p-1.5 text-red-600 hover:bg-red-50"
+                          [class.cursor-not-allowed]="getActiveBookingForFrame(day, frame)"
+                          [class.opacity-40]="getActiveBookingForFrame(day, frame)"
+                          [disabled]="getActiveBookingForFrame(day, frame)"
+                          [title]="getActiveBookingForFrame(day, frame) ? 'This time has an active booking' : 'Remove this time from this date'"
+                          (click)="deleteOverrideTimeFrame.emit({ override, timeFrame: frame, timeFrameIndex: frameIndex, date: getDateKeyForDay(day) })"
+                        >
+                          <app-icon name="trash" class="h-4 w-4" />
+                        </button>
+                        } } } @else {
+                        <button
+                          type="button"
+                          class="rounded-md p-1.5 text-blue-700 hover:bg-blue-50"
+                          title="Edit this time frame"
+                          (click)="emitTimeFrameAction('edit', effectiveSlot, frame, frameIndex)"
+                        >
+                          <app-icon name="pencil-square" class="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          class="rounded-md p-1.5 text-red-600 hover:bg-red-50"
+                          title="Delete this time frame"
+                          (click)="emitTimeFrameAction('delete', effectiveSlot, frame, frameIndex)"
+                        >
+                          <app-icon name="trash" class="h-4 w-4" />
+                        </button>
+                        }
                       </div>
                     </td>
                   </tr>
@@ -244,7 +350,16 @@
             </div>
           </td>
         </tr>
-        } }
+        } } } @empty {
+        <tr>
+          <td
+            [attr.colspan]="viewMode() === 'setup' ? 4 : 6"
+            class="px-4 py-12 text-center text-sm text-gray-500"
+          >
+            No schedules match this filter for the selected week.
+          </td>
+        </tr>
+        }
       </tbody>
     </table>
   </div>
