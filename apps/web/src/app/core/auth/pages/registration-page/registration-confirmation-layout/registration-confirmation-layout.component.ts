@@ -14,5 +14,7 @@ export class RegistrationConfirmationLayoutComponent {
   welcomeMessage = input.required<string>();
   nextSteps = input.required<string[]>();
   lastRegisteredEmail = input<string | null>(null);
+  /** Off for Google registrations: Google already verified the email. */
+  showEmailVerification = input(true);
   loginClicked = output<void>();
 }

@@ -128,6 +128,8 @@ export class GoogleSignInButton {
   private readonly buttonHost = viewChild<ElementRef<HTMLElement>>('buttonHost');
 
   readonly disabled = input(false);
+  /** Button wording: 'Continue with Google' (login) or 'Sign up with Google' (registration). */
+  readonly text = input<'continue_with' | 'signup_with'>('continue_with');
   readonly credential = output<GoogleCredential>();
 
   protected readonly clientId = environment.googleClientId;
@@ -164,7 +166,7 @@ export class GoogleSignInButton {
         type: 'standard',
         theme: 'outline',
         size: 'large',
-        text: 'continue_with',
+        text: this.text(),
         shape: 'rectangular',
         logo_alignment: 'center',
         width: Math.min(host.clientWidth || MAX_BUTTON_WIDTH, MAX_BUTTON_WIDTH),

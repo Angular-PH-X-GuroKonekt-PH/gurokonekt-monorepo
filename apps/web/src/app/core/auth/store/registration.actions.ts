@@ -1,4 +1,4 @@
-import { RegistrationStep } from '../models/registration.state.model';
+import { GoogleRegistrationContext, RegistrationStep } from '../models/registration.state.model';
 
 export class SetStep {
   static readonly type = '[Registration] Set Step';
@@ -21,4 +21,14 @@ export class InitializeFromQueryParams {
 
 export class Reset {
   static readonly type = '[Registration] Reset';
+}
+
+/** Google sign-in found no GuroKonekt account: continue in Google registration mode. */
+export class StartGoogleRegistration {
+  static readonly type = '[Registration] Start Google Registration';
+  constructor(public context: GoogleRegistrationContext) {}
+}
+
+export class ClearGoogleRegistration {
+  static readonly type = '[Registration] Clear Google Registration';
 }
