@@ -23,9 +23,9 @@ export const API_RESPONSE = {
       code: 201,
       message: 'Mentor registered successfully',
     },
-    SIGN_WITH_OATH: {
+    SIGN_WITH_GOOGLE: {
       code: 200,
-      message: 'Signed in with OAuth successfully',
+      message: 'Signed in with Google successfully',
     },
     PASSKEY_REGISTRATION_OPTIONS: {
       code: 200,
@@ -517,6 +517,22 @@ export const API_RESPONSE = {
       message: "We couldn't sign you in with this passkey. Please try again or use another sign-in method.",
     },
     PASSKEY_SIGNIN_ACCOUNT_BLOCKED: {
+      code: 403,
+      message: 'This account cannot sign in. Please contact support if you believe this is a mistake.',
+    },
+    SIGNIN_GOOGLE_FAILED: {
+      code: 401,
+      message: 'Google sign-in failed. Please try again.',
+    },
+    SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND: {
+      code: 404,
+      message: 'No GuroKonekt account found for this Google account. Please register first.',
+    },
+    SIGNIN_GOOGLE_NOT_AVAILABLE: {
+      code: 403,
+      message: 'Google sign-in is not available for this account. Please sign in with your email and password.',
+    },
+    SIGNIN_ACCOUNT_BLOCKED: {
       code: 403,
       message: 'This account cannot sign in. Please contact support if you believe this is a mistake.',
     },
@@ -1202,20 +1218,21 @@ Authenticates a user with email and password via Supabase.
     },
   },
 
-  SIGNIN_OAUTH: {
-    summary: 'Sign in with an OAuth provider (Google / GitHub)',
+  SIGNIN_GOOGLE: {
+    summary: 'Sign in with Google',
     description: `
-Exchanges an OAuth provider access token for a Gurokonekt session.
+Exchanges a Google ID token for a Gurokonekt session.
 
 **Flow:**
-1. The frontend completes the OAuth flow and receives an access token from the provider.
-2. Send that token here along with the provider name.
-3. The API validates the token with Supabase and returns a JWT.
+1. The frontend shows the Google Identity Services button and receives an ID token (\`credential\`).
+2. Send that token here. If the button was given a nonce, send the same raw nonce too.
+3. Supabase verifies the token and links it to the existing account with the same email.
+4. The response has the same shape as \`POST /auth/signin\`: \`{ user, session }\`.
 
-**Supported providers:** \`google\`, \`github\`
+**Who can use it:** existing mentees and mentors only. Google emails without a Gurokonekt account get \`404\` (register first). Admin accounts get \`403\` and must use email and password.
 `,
     bodyExample: {
-      provider: 'google',
+      idToken: 'eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...',
     },
   },
 

@@ -31,7 +31,7 @@ import {
   ResendConfirmationEmailDto,
   ResponseDto,
   ResponseStatus,
-  SignInWithOAthDto,
+  SignInWithGoogleDto,
   SignInWithPasswordDto,
   SWAGGER_DOCUMENTATION,
   UpdatePasswordDto,
@@ -313,40 +313,45 @@ export class AuthController {
   }
 
   // ====================================================
-  // POST - OAuth Sign In
+  // POST - Google Sign In
   // ====================================================
 
-  @Post('signin/oauth')
+  @Post('signin/google')
   @ApiOperation({
-    summary: SWAGGER_DOCUMENTATION.SIGNIN_OAUTH.summary,
-    description: SWAGGER_DOCUMENTATION.SIGNIN_OAUTH.description,
+    summary: SWAGGER_DOCUMENTATION.SIGNIN_GOOGLE.summary,
+    description: SWAGGER_DOCUMENTATION.SIGNIN_GOOGLE.description,
   })
   @ApiBody({
-    type: SignInWithOAthDto,
+    type: SignInWithGoogleDto,
     examples: {
-      google: { summary: 'Sign in with Google', value: SWAGGER_DOCUMENTATION.SIGNIN_OAUTH.bodyExample },
-      github: { summary: 'Sign in with GitHub', value: { provider: 'github' } },
+      default: { summary: 'Sign in with Google', value: SWAGGER_DOCUMENTATION.SIGNIN_GOOGLE.bodyExample },
     },
   })
   @ApiResponse({
     status: 200,
-    description: 'Signed in with OAuth successfully. Returns a JWT access token.',
+    description: 'Signed in with Google successfully. Same shape as POST /auth/signin.',
     type: ResponseDto,
     schema: {
       example: {
         status: 'success',
         statusCode: 200,
-        message: 'Signed in with OAuth successfully',
-        data: { accessToken: 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...' },
+        message: 'Signed in with Google successfully',
+        data: { user: { id: 'a1b2c3d4-...', role: 'mentee' }, session: { access_token: 'eyJhbGciOiJFUzI1NiIsInR5cCI6IkpXVCJ9...', refresh_token: 'v1.MR...' }, redirectUrl: null },
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'Missing or invalid provider.' })
-  @ApiResponse({ status: 401, description: 'OAuth token validation failed.' })
+  @ApiResponse({ status: 400, description: 'Missing idToken.' })
+  @ApiResponse({ status: 401, description: 'Google token is invalid or expired.' })
+  @ApiResponse({ status: 403, description: 'Admin account, blocked account, or mentor not yet approved / rejected.' })
+  @ApiResponse({ status: 404, description: 'No Gurokonekt account for this Google email. Register first.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
-  async signInWithOAuth(@Body() input: SignInWithOAthDto) {
-    const response = await this.authService.signInWithOAuth(input);
-    
+  async signInWithGoogle(
+    @Body() input: SignInWithGoogleDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string
+  ) {
+    const response = await this.authService.signInWithGoogle(input, ipAddress, userAgent);
+
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         {

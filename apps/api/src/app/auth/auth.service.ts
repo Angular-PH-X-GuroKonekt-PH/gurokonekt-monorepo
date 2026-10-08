@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithOAthDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, CompletePasswordResetDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto, RefreshTokenDto } from '@gurokonekt/models';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithGoogleDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, CompletePasswordResetDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto, RefreshTokenDto } from '@gurokonekt/models';
 import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, UserRole, UserStatus, LogsActionType,
   ResendOTPTypes, REDIRECT_LINKS
 } from '@gurokonekt/models';
@@ -17,6 +17,11 @@ import {
   withVerificationEmailQuery,
 } from './helpers';
 import bcrypt from 'bcrypt';
+import type { User } from '@supabase/supabase-js';
+
+// Same set the JWT guard rejects. Inactive users may still sign in so they can
+// reach Profile Settings and reactivate their account.
+const BLOCKED_SIGNIN_STATUSES: UserStatus[] = [UserStatus.Banned, UserStatus.Suspended, UserStatus.Deleted];
 
 @Injectable()
 export class AuthService {
@@ -476,37 +481,153 @@ export class AuthService {
     }
   }
 
-  async signInWithOAuth(input: SignInWithOAthDto): Promise<ResponseDto> {
+  /**
+   * Sign In with Google. The web app gets an ID token from Google Identity
+   * Services; Supabase verifies it and links it to the existing auth user with
+   * the same verified email, so the returned id is the Gurokonekt user id.
+   *
+   * Only existing mentees and mentors can use it — registration stays
+   * email/password, and admins keep their stricter password-only login.
+   * Attempts are logged as `SignInGoogle`, never `SignIn`, so they cannot
+   * count toward (or clear) the password lockout.
+   */
+  async signInWithGoogle(input: SignInWithGoogleDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
     try {
-      const { data, error } = await this.supabase.client.auth.signInWithOAuth({
-        provider: input.provider
-      });   
+      const { data, error } = await this.supabase.client.auth.signInWithIdToken({
+        provider: 'google',
+        token: input.idToken,
+        nonce: input.nonce,
+      });
 
-      if (error) {
-        this.logger.error(error.message, error.stack);
-        return {
-          status: ResponseStatus.Error,
-          statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
-          message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
-          data: error
-        }
+      if (error || !data?.user || !data?.session) {
+        // Only Supabase's reason is logged — never the token itself.
+        this.logger.warn(`Google sign-in rejected: ${error?.message ?? 'no session returned'}`);
+        await this.logging.log({
+          actionType: LogsActionType.SignInGoogle,
+          targetId: '',
+          details: API_RESPONSE.ERROR.SIGNIN_GOOGLE_FAILED.message,
+          metadata: { outcome: 'failed', reason: error?.code ?? 'no_session' },
+          ipAddress,
+          userAgent,
+        });
+        return AuthResponseFactory.errorByKey('SIGNIN_GOOGLE_FAILED');
       }
 
-      return {
-        status: ResponseStatus.Success,
-        statusCode: API_RESPONSE.SUCCESS.SIGN_WITH_OATH.code,
-        message: API_RESPONSE.SUCCESS.SIGN_WITH_OATH.message,
-        data: data
+      const email = data.user.email;
+      let userData = await this.prisma.db.user.findUnique({
+        where: { id: data.user.id },
+        select: SelectFields.getUserCredentialsSelect(),
+      });
+
+      if (!userData) {
+        await this.removeGoogleOnlyAuthUser(data.user);
+        await this.logging.log({
+          actionType: LogsActionType.SignInGoogle,
+          targetId: '',
+          details: API_RESPONSE.ERROR.SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND.message,
+          metadata: { email, outcome: 'failed' },
+          ipAddress,
+          userAgent,
+        });
+        return AuthResponseFactory.errorByKey('SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND');
       }
-    } catch (error: any) {
-      this.logger.error(error.message, error.stack);
-      return {
-        status: ResponseStatus.Error,
-        statusCode: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.code,
-        message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
-        data: error
+
+      const blockKey =
+        userData.role === UserRole.Admin
+          ? 'SIGNIN_GOOGLE_NOT_AVAILABLE'
+          : BLOCKED_SIGNIN_STATUSES.includes(userData.status as UserStatus)
+            ? 'SIGNIN_ACCOUNT_BLOCKED'
+            : this.getMentorSignInBlock(userData);
+
+      if (blockKey) {
+        await this.logging.log({
+          actionType: LogsActionType.SignInGoogle,
+          targetId: userData.id,
+          details: API_RESPONSE.ERROR[blockKey].message,
+          metadata: { email, status: userData.status, outcome: 'failed' },
+          ipAddress,
+          userAgent,
+          createdById: userData.id,
+        });
+        return AuthResponseFactory.errorByKey(blockKey);
       }
+
+      userData = await this.syncMenteeProfileCompletion(userData);
+
+      await this.logging.log({
+        actionType: LogsActionType.SignInGoogle,
+        targetId: userData.id,
+        details: API_RESPONSE.SUCCESS.SIGN_WITH_GOOGLE.message,
+        metadata: { email, outcome: 'success' },
+        ipAddress,
+        userAgent,
+        createdById: userData.id,
+      });
+
+      return AuthResponseFactory.successByKey('SIGN_WITH_GOOGLE', {
+        user: userData,
+        session: data.session,
+        redirectUrl: null,
+      });
+    } catch (error) {
+      return this.errorHandler.handleUnexpectedError(error, 'INTERNAL_SERVER_ERROR');
     }
+  }
+
+  /**
+   * `signInWithIdToken` creates a Supabase auth user when the Google email is
+   * unknown. With no Gurokonekt account behind it, that user is useless and
+   * would block a later email/password registration, so it is removed — but
+   * only when Google is its sole identity, so a real account is never touched.
+   */
+  private async removeGoogleOnlyAuthUser(authUser: User): Promise<void> {
+    const identities = authUser.identities ?? [];
+    const isGoogleOnly = identities.length > 0 && identities.every((identity) => identity.provider === 'google');
+    if (!isGoogleOnly) return;
+
+    const { error } = await this.supabase.clientAdmin.auth.admin.deleteUser(authUser.id);
+    if (error) {
+      this.logger.error(`Failed to remove orphaned Google auth user ${authUser.id}: ${error.message}`);
+    }
+  }
+
+  /**
+   * Pending mentors are still under review and rejected mentors may not sign
+   * in. Returns the matching error key, or null when sign-in may continue.
+   */
+  private getMentorSignInBlock(user: {
+    role: string;
+    status: string;
+  }): 'SIGNIN_MENTOR_PENDING_REVIEW' | 'SIGNIN_MENTOR_REJECTED' | null {
+    if (user.role !== UserRole.Mentor) return null;
+    if (user.status === UserStatus.PendingApproval || user.status === UserStatus.PendingReview) {
+      return 'SIGNIN_MENTOR_PENDING_REVIEW';
+    }
+    if (user.status === UserStatus.Rejected) return 'SIGNIN_MENTOR_REJECTED';
+    return null;
+  }
+
+  /**
+   * A mentee only counts as profile-complete when a MenteeProfile row exists.
+   * Corrects the stored flag if it disagrees and returns the up-to-date user.
+   */
+  private async syncMenteeProfileCompletion<T extends { id: string; role: string; isProfileComplete: boolean }>(
+    userData: T
+  ): Promise<T> {
+    if (userData.role !== UserRole.Mentee) return userData;
+
+    const menteeProfile = await this.prisma.db.menteeProfile.findUnique({
+      where: { userId: userData.id },
+      select: { id: true },
+    });
+    const effectiveIsProfileComplete = userData.isProfileComplete === true && !!menteeProfile;
+    if (userData.isProfileComplete === effectiveIsProfileComplete) return userData;
+
+    await this.prisma.db.user.update({
+      where: { id: userData.id },
+      data: { isProfileComplete: effectiveIsProfileComplete },
+    });
+    return { ...userData, isProfileComplete: effectiveIsProfileComplete };
   }
 
   /**
@@ -613,53 +734,24 @@ export class AuthService {
         select: SelectFields.getUserCredentialsSelect(),
       });
 
-      // Gate mentor sign-in on approval status. Pending mentors are still under
-      // review; rejected mentors are not permitted to sign in. Approved mentors
-      // continue through the normal flow.
-      if (userData?.role === UserRole.Mentor) {
-        if (
-          userData.status === UserStatus.PendingApproval ||
-          userData.status === UserStatus.PendingReview
-        ) {
+      if (userData) {
+        // Gate mentor sign-in on approval status. Approved mentors continue
+        // through the normal flow.
+        const mentorBlock = this.getMentorSignInBlock(userData);
+        if (mentorBlock) {
           await this.logging.log({
             actionType: LogsActionType.SignIn,
             targetId: user.id,
-            details: API_RESPONSE.ERROR.SIGNIN_MENTOR_PENDING_REVIEW.message,
+            details: API_RESPONSE.ERROR[mentorBlock].message,
             metadata: { email: input.email, status: userData.status, outcome: 'failed' },
             ipAddress,
             userAgent,
             createdById: user.id,
           });
-          return AuthResponseFactory.errorByKey('SIGNIN_MENTOR_PENDING_REVIEW');
+          return AuthResponseFactory.errorByKey(mentorBlock);
         }
 
-        if (userData.status === UserStatus.Rejected) {
-          await this.logging.log({
-            actionType: LogsActionType.SignIn,
-            targetId: user.id,
-            details: API_RESPONSE.ERROR.SIGNIN_MENTOR_REJECTED.message,
-            metadata: { email: input.email, status: userData.status, outcome: 'failed' },
-            ipAddress,
-            userAgent,
-            createdById: user.id,
-          });
-          return AuthResponseFactory.errorByKey('SIGNIN_MENTOR_REJECTED');
-        }
-      }
-
-      if (userData?.role === UserRole.Mentee) {
-        const menteeProfile = await this.prisma.db.menteeProfile.findUnique({
-          where: { userId: userData.id },
-          select: { id: true },
-        });
-        const effectiveIsProfileComplete = userData.isProfileComplete === true && !!menteeProfile;
-        if (userData.isProfileComplete !== effectiveIsProfileComplete) {
-          await this.prisma.db.user.update({
-            where: { id: userData.id },
-            data: { isProfileComplete: effectiveIsProfileComplete },
-          });
-          userData = { ...userData, isProfileComplete: effectiveIsProfileComplete };
-        }
+        userData = await this.syncMenteeProfileCompletion(userData);
       }
 
       // Log successful login

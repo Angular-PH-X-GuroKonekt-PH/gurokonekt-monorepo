@@ -6,6 +6,10 @@ import { firstValueFrom } from 'rxjs';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { PasskeySignInButtonComponent } from '../../components/passkey-sign-in-button/passkey-sign-in-button.component';
+import {
+  GoogleCredential,
+  GoogleSignInButton,
+} from '../../components/google-sign-in-button/google-sign-in-button.component';
 import { createPasswordVisibilityState } from '../../../../shared/utils';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BaseFormComponent } from '../../../../shared/base-form/base-form.component';
@@ -15,6 +19,7 @@ import { Router } from '@angular/router';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
 import { requiresProfileSetup } from 'apps/web/src/app/shared/utils/profile-completion.util';
 import { AuthSelectors } from '../../store/auth.selectors';
+import { environment } from '../../../../../environments/environment';
 import {
   hasEmailVerificationCallbackHash,
   hasPasswordRecoveryCallbackHash,
@@ -24,7 +29,7 @@ import {
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, IconComponent, NgOptimizedImage, PasskeySignInButtonComponent],
+  imports: [ReactiveFormsModule, IconComponent, NgOptimizedImage, GoogleSignInButton, PasskeySignInButtonComponent],
   templateUrl: './login.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
@@ -36,6 +41,7 @@ export class LoginPage extends BaseFormComponent implements OnInit {
   private readonly passwordHelper = createPasswordVisibilityState();
 
   protected readonly showPassword = this.passwordHelper.showPassword;
+  protected readonly googleSignInEnabled = !!environment.googleClientId;
 
   protected readonly selectSignal = createSelectMap({
     isLoginLoading: AuthSelectors.isLoginLoading,
@@ -88,23 +94,42 @@ export class LoginPage extends BaseFormComponent implements OnInit {
         this.store.dispatch(new AuthActions.Login({ email, password }))
       );
 
-      const user = this.store.selectSnapshot(AuthSelectors.user);
-      if (user) {
-        if (user.status === 'inactive') {
-          await this.router.navigate([`/${APP_ROUTES.ACTIVATE_ACCOUNT}`]);
-          return;
-        }
-
-        if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
-          await this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
-          return;
-        }
-
-        await this.router.navigate([APP_ROUTES.DASHBOARD]);
-      }
+      await this.navigateAfterLogin();
     } catch {
       // Error is already reflected in the errorMessage signal via state
     }
+  }
+
+  protected async onGoogleCredential(credential: GoogleCredential): Promise<void> {
+    if (this.selectSignal.isLoginLoading()) {
+      return;
+    }
+
+    try {
+      await firstValueFrom(this.store.dispatch(new AuthActions.LoginWithGoogle(credential)));
+      await this.navigateAfterLogin();
+    } catch {
+      // Error is already reflected in the errorMessage signal via state
+    }
+  }
+
+  private async navigateAfterLogin(): Promise<void> {
+    const user = this.store.selectSnapshot(AuthSelectors.user);
+    if (!user) {
+      return;
+    }
+
+    if (user.status === 'inactive') {
+      await this.router.navigate([`/${APP_ROUTES.ACTIVATE_ACCOUNT}`]);
+      return;
+    }
+
+    if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
+      await this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
+      return;
+    }
+
+    await this.router.navigate([APP_ROUTES.DASHBOARD]);
   }
 
   protected navigateToRegister(): void {

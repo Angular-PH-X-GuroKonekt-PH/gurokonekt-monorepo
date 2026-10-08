@@ -11,6 +11,11 @@ export class Login {
   constructor(public payload: { email: string; password: string }) {}
 }
 
+export class LoginWithGoogle {
+  static readonly type = '[Auth] Login With Google';
+  constructor(public payload: { idToken: string; nonce?: string }) {}
+}
+
 export class LoginSuccess {
   static readonly type = '[Auth] Login Success';
   constructor(public payload: { user: AuthUser; token?: string; refreshToken?: string; message?: string }) {}

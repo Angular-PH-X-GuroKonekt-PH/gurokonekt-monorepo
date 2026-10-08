@@ -130,13 +130,21 @@
         </button>
       </form>
 
-      <!-- Passkey Sign-In -->
+      <!-- Other sign-in methods: Google and passkey -->
       <div class="my-6 flex items-center gap-3" aria-hidden="true">
         <span class="h-px flex-1 bg-gray-200"></span>
         <span class="text-sm text-gray-500">or</span>
         <span class="h-px flex-1 bg-gray-200"></span>
       </div>
-      <app-passkey-sign-in-button [disabled]="selectSignal.isLoginLoading()" />
+      <div class="flex flex-col gap-3">
+        @if (googleSignInEnabled) {
+        <app-google-sign-in-button
+          [disabled]="selectSignal.isLoginLoading()"
+          (credential)="onGoogleCredential($event)"
+        />
+        }
+        <app-passkey-sign-in-button [disabled]="selectSignal.isLoginLoading()" />
+      </div>
 
       <!-- Register Link -->
       <div class="mt-8 text-center">

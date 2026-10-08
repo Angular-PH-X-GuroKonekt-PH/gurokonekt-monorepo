@@ -3,6 +3,7 @@ export const API_ENDPOINTS = {
     registerMentee: '/auth/register-mentee',
     registerMentor: '/auth/register-mentor',
     login: '/auth/login',
+    googleLogin: '/auth/signin/google',
     refreshToken: '/auth/refresh-token',
     session: '/auth/session',
     verifyEmail: '/auth/verify-email',
