@@ -17,11 +17,29 @@ import {
   withVerificationEmailQuery,
 } from './helpers';
 import bcrypt from 'bcrypt';
-import type { User } from '@supabase/supabase-js';
+import type { User, UserIdentity } from '@supabase/supabase-js';
 
 // Same set the JWT guard rejects. Inactive users may still sign in so they can
 // reach Profile Settings and reactivate their account.
 const BLOCKED_SIGNIN_STATUSES: UserStatus[] = [UserStatus.Banned, UserStatus.Suspended, UserStatus.Deleted];
+
+/** A Google identity younger than this was created by the sign-in in progress. */
+const NEW_LINK_WINDOW_MS = 2 * 60 * 1000;
+
+/**
+ * The Google identity Supabase attached to an existing password account
+ * during this sign-in, or null. Accounts created with Google, and Google
+ * identities connected earlier, are left alone.
+ */
+export function findNewGoogleLink(user: User, now: Date = new Date()): UserIdentity | null {
+  const identities = user.identities ?? [];
+  const google = identities.find((identity) => identity.provider === 'google');
+  const hasOtherMethod = identities.some((identity) => identity.provider !== 'google');
+  if (!google || !hasOtherMethod || !google.created_at) {
+    return null;
+  }
+  return now.getTime() - new Date(google.created_at).getTime() <= NEW_LINK_WINDOW_MS ? google : null;
+}
 
 @Injectable()
 export class AuthService {
@@ -532,6 +550,25 @@ export class AuthService {
         return AuthResponseFactory.errorByKey('SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND');
       }
 
+      // Supabase links a Google login to an existing account just because the
+      // emails match. A matching email alone is not enough to take over an
+      // account with a password, so a link made by this very sign-in is undone
+      // and the person connects Google from Settings after signing in normally.
+      const newGoogleLink = findNewGoogleLink(data.user);
+      if (newGoogleLink && !(await this.isApprovedGoogleLink(userData.id, newGoogleLink))) {
+        const undone = await this.supabase.unlinkIdentityWithSession(data.session, newGoogleLink);
+        await this.logging.log({
+          actionType: LogsActionType.SignInGoogle,
+          targetId: userData.id,
+          details: API_RESPONSE.ERROR.GOOGLE_NOT_CONNECTED.message,
+          metadata: { email, outcome: 'failed', reason: 'google_not_connected', unlinked: undone ? 'true' : 'false' },
+          ipAddress,
+          userAgent,
+          createdById: userData.id,
+        });
+        return AuthResponseFactory.errorByKey('GOOGLE_NOT_CONNECTED');
+      }
+
       const blockKey =
         userData.role === UserRole.Admin
           ? 'SIGNIN_GOOGLE_NOT_AVAILABLE'
@@ -589,6 +626,15 @@ export class AuthService {
     if (error) {
       this.logger.error(`Failed to remove orphaned Google auth user ${authUser.id}: ${error.message}`);
     }
+  }
+
+  /** True when this is the Google account the user connected in Settings. */
+  private async isApprovedGoogleLink(userId: string, identity: UserIdentity): Promise<boolean> {
+    const user = await this.prisma.db.user.findUnique({
+      where: { id: userId },
+      select: { googleIdentityId: true },
+    });
+    return !!user?.googleIdentityId && user.googleIdentityId === identity.identity_id;
   }
 
   /**

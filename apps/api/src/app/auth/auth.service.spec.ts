@@ -1,7 +1,7 @@
 import { Test } from '@nestjs/testing';
 import { API_RESPONSE, LogsActionType, ResponseStatus } from '@gurokonekt/models';
 
-import { AuthService } from './auth.service';
+import { AuthService, findNewGoogleLink } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { StorageService } from '../storage/storage.service';
@@ -308,6 +308,7 @@ describe('AuthService.signInWithGoogle', () => {
   const supabase = {
     client: { auth: { signInWithIdToken: jest.fn() } },
     clientAdmin: { auth: { admin: { deleteUser: jest.fn() } } },
+    unlinkIdentityWithSession: jest.fn(),
   };
   const logging = { log: jest.fn() };
   const errorHandler = { handleUnexpectedError: jest.fn() };
@@ -394,6 +395,68 @@ describe('AuthService.signInWithGoogle', () => {
     expect(supabase.clientAdmin.auth.admin.deleteUser).not.toHaveBeenCalled();
   });
 
+  it('undoes a Google link Supabase just made to an existing password account and asks to connect from Settings', async () => {
+    const justNow = new Date().toISOString();
+    const googleIdentity = { provider: 'google', created_at: justNow };
+    supabase.client.auth.signInWithIdToken.mockResolvedValue({
+      data: { user: { ...googleAuthUser, identities: [{ provider: 'email', created_at: '2026-01-01T00:00:00Z' }, googleIdentity] }, session },
+      error: null,
+    });
+    supabase.unlinkIdentityWithSession.mockResolvedValue(session);
+
+    const response = await signIn();
+
+    expect(supabase.unlinkIdentityWithSession).toHaveBeenCalledWith(session, googleIdentity);
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.GOOGLE_NOT_CONNECTED.code);
+    expect(response.data).toBeNull();
+  });
+
+  it('signs in right after Google was connected in Settings, even though the link is brand new', async () => {
+    const justNow = new Date().toISOString();
+    supabase.client.auth.signInWithIdToken.mockResolvedValue({
+      data: {
+        user: {
+          ...googleAuthUser,
+          identities: [
+            { provider: 'email', created_at: '2026-01-01T00:00:00Z' },
+            { provider: 'google', identity_id: 'google-identity-1', created_at: justNow },
+          ],
+        },
+        session,
+      },
+      error: null,
+    });
+    prisma.db.user.findUnique
+      .mockResolvedValueOnce(mentee)
+      .mockResolvedValueOnce({ googleIdentityId: 'google-identity-1' });
+
+    const response = await signIn();
+
+    expect(response.status).toBe(ResponseStatus.Success);
+    expect(supabase.unlinkIdentityWithSession).not.toHaveBeenCalled();
+  });
+
+  it('signs in when Google was connected to the password account earlier', async () => {
+    supabase.client.auth.signInWithIdToken.mockResolvedValue({
+      data: {
+        user: {
+          ...googleAuthUser,
+          identities: [
+            { provider: 'email', created_at: '2026-01-01T00:00:00Z' },
+            { provider: 'google', created_at: '2026-09-01T00:00:00Z' },
+          ],
+        },
+        session,
+      },
+      error: null,
+    });
+
+    const response = await signIn();
+
+    expect(response.status).toBe(ResponseStatus.Success);
+    expect(supabase.unlinkIdentityWithSession).not.toHaveBeenCalled();
+  });
+
   it.each([
     ['admin', 'active', 'SIGNIN_GOOGLE_NOT_AVAILABLE'],
     ['mentee', 'banned', 'SIGNIN_ACCOUNT_BLOCKED'],
@@ -439,5 +502,19 @@ describe('AuthService.signInWithGoogle', () => {
     for (const [entry] of logging.log.mock.calls) {
       expect(entry.actionType).toBe(LogsActionType.SignInGoogle);
     }
+  });
+});
+
+describe('findNewGoogleLink', () => {
+  const now = new Date('2026-10-08T12:00:00Z');
+  const at = (secondsAgo: number) => new Date(now.getTime() - secondsAgo * 1000).toISOString();
+
+  it.each([
+    ['a Google identity created just now on a password account', [{ provider: 'email', created_at: at(9999) }, { provider: 'google', created_at: at(5) }], true],
+    ['a Google identity connected earlier', [{ provider: 'email', created_at: at(9999) }, { provider: 'google', created_at: at(600) }], false],
+    ['an account created with Google only', [{ provider: 'google', created_at: at(5) }], false],
+    ['an account without Google', [{ provider: 'email', created_at: at(5) }], false],
+  ])('%s -> %s', (_case, identities, expected) => {
+    expect(!!findNewGoogleLink({ identities } as any, now)).toBe(expected);
   });
 });
