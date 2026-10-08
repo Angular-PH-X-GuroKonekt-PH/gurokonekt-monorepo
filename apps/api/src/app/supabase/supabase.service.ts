@@ -1,6 +1,6 @@
 import { API_RESPONSE } from '@gurokonekt/models';
 import { Injectable, Logger } from '@nestjs/common';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createClient, Session, SupabaseClient } from '@supabase/supabase-js';
 
 @Injectable()
 export class SupabaseService {
@@ -33,6 +33,36 @@ export class SupabaseService {
 
   get clientAdmin(): SupabaseClient {
     return this.supabaseAdmin;
+  }
+
+  /**
+   * Starts a normal Supabase session for a user whose identity the API has
+   * already verified another way (a passkey), since Supabase has no passkey
+   * sign-in of its own. A one-time magic-link token is generated and redeemed
+   * on the spot: no email is sent, and the token can't be used again.
+   * A fresh client is used so no session is left on the shared ones.
+   */
+  async createSessionForVerifiedUser(email: string): Promise<Session | null> {
+    const { data, error } = await this.supabaseAdmin.auth.admin.generateLink({ type: 'magiclink', email });
+    const tokenHash = data?.properties?.hashed_token;
+    if (error || !tokenHash) {
+      this.logger.error(`Could not issue a sign-in token: ${error?.message ?? 'no token returned'}`);
+      return null;
+    }
+
+    const client = createClient(process.env.SUPABASE_URL ?? '', process.env.SUPABASE_ANON_KEY ?? '', {
+      auth: { autoRefreshToken: false, persistSession: false },
+    });
+    const { data: verified, error: verifyError } = await client.auth.verifyOtp({
+      token_hash: tokenHash,
+      type: 'magiclink',
+    });
+    if (verifyError || !verified?.session) {
+      this.logger.error(`Could not start a session: ${verifyError?.message ?? 'no session returned'}`);
+      return null;
+    }
+
+    return verified.session;
   }
 
   /**

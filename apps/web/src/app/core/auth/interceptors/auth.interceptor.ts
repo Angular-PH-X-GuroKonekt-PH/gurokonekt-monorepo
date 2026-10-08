@@ -20,6 +20,8 @@ const SESSION_EXPIRED_CODE = 'SESSION_EXPIRED';
 
 const PUBLIC_AUTH_PATHS = [
   API_CONFIG.endpoints.auth.login,
+  API_CONFIG.endpoints.passkeys.authenticationOptions,
+  API_CONFIG.endpoints.passkeys.authenticationVerify,
   API_CONFIG.endpoints.auth.registerMentee,
   API_CONFIG.endpoints.auth.registerMentor,
   API_CONFIG.endpoints.auth.verifyEmail,

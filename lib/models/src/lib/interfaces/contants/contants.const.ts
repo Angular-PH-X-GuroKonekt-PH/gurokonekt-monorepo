@@ -47,6 +47,14 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Passkey removed. It can no longer be used to sign in.',
     },
+    PASSKEY_AUTHENTICATION_OPTIONS: {
+      code: 200,
+      message: 'Passkey sign-in started',
+    },
+    SIGN_WITH_PASSKEY: {
+      code: 200,
+      message: 'Signed in with passkey successfully',
+    },
     SIGN_WITH_PASSWORD: {
       code: 200,
       message: 'Signed in with password successfully',
@@ -503,6 +511,14 @@ export const API_RESPONSE = {
     PASSKEY_REAUTH_REQUIRED: {
       code: 403,
       message: 'For your security, please sign in again to remove a passkey.',
+    },
+    PASSKEY_SIGNIN_FAILED: {
+      code: 401,
+      message: "We couldn't sign you in with this passkey. Please try again or use another sign-in method.",
+    },
+    PASSKEY_SIGNIN_ACCOUNT_BLOCKED: {
+      code: 403,
+      message: 'This account cannot sign in. Please contact support if you believe this is a mistake.',
     },
     SIGNIN_MENTOR_PENDING_REVIEW: {
       code: 403,
@@ -1254,6 +1270,31 @@ Deletes one of the signed-in user's passkeys; it stops working for sign-in immed
 \`amr\` claim, which token refreshes don't change). Otherwise the API returns \`403\` with
 \`data.reauthRequired: true\` and the user signs in again first. Another user's passkey ID returns \`404\`.
 `,
+  },
+
+  PASSKEY_AUTHENTICATION_OPTIONS: {
+    summary: 'Start signing in with a passkey',
+    description: `
+Public. Returns WebAuthn authentication options with a one-time challenge (valid 5 minutes). No email is needed:
+the browser lets the person pick one of their passkeys for this site. Pass the options to
+\`startAuthentication({ optionsJSON })\` from @simplewebauthn/browser, then send the result to
+\`POST /auth/passkeys/authentication/verify\`.
+`,
+  },
+
+  PASSKEY_AUTHENTICATION_VERIFY: {
+    summary: 'Finish signing in with a passkey',
+    description: `
+Public. Verifies the browser's passkey response against the challenge and the saved public key, then signs the
+person in. The response has the same shape as \`POST /auth/login\`: \`{ user, session }\`.
+
+Every failure (unknown passkey, wrong signature, expired or reused challenge) returns the same \`401\`, so nothing
+is revealed about which passkeys or accounts exist. Pending or rejected mentors and blocked accounts get \`403\`
+with the same messages as password login.
+`,
+    bodyExample: {
+      response: { id: 'base64url-credential-id', rawId: 'base64url-credential-id', type: 'public-key', response: {} },
+    },
   },
 
   RESEND_CONFIRMATION: {
