@@ -8,6 +8,7 @@ import {
 import {
   LogsActionType,
   PasskeySummaryInterface,
+  RenamePasskeyDto,
   ResponseDto,
   UserRole,
   VerifyPasskeyRegistrationDto,
@@ -17,6 +18,23 @@ import { AuthResponseFactory } from '../auth/helpers/auth-response.factory';
 
 const CHALLENGE_TTL_MS = 5 * 60 * 1000;
 const DEFAULT_PASSKEY_NAME = 'Passkey';
+/** How recent a sign-in must be to remove a passkey. */
+export const PASSKEY_REMOVAL_REAUTH_WINDOW_MS = 10 * 60 * 1000;
+
+const PASSKEY_SUMMARY_SELECT = {
+  id: true,
+  name: true,
+  deviceType: true,
+  backedUp: true,
+  createdAt: true,
+  lastUsedAt: true,
+} as const;
+
+/** Who is asking, as set by the JWT guard. */
+export interface PasskeyRequester {
+  id: string;
+  authenticatedAt?: Date | null;
+}
 
 /**
  * WebAuthn relying party settings. The RP ID is the domain passkeys are bound
@@ -198,5 +216,117 @@ export class PasskeyService {
       this.logger.error(`Passkey registration failed for ${userId}: ${(error as Error).message}`);
       return AuthResponseFactory.errorByKey('INTERNAL_SERVER_ERROR');
     }
+  }
+
+  /** The caller's own passkeys, newest first. Never includes key material. */
+  async listPasskeys(userId: string): Promise<ResponseDto> {
+    try {
+      const passkeys: PasskeySummaryInterface[] = await this.prisma.db.passkey.findMany({
+        where: { userId },
+        orderBy: { createdAt: 'desc' },
+        select: PASSKEY_SUMMARY_SELECT,
+      });
+      return AuthResponseFactory.successByKey('PASSKEYS_LISTED', passkeys);
+    } catch (error) {
+      this.logger.error(`Listing passkeys failed for ${userId}: ${(error as Error).message}`);
+      return AuthResponseFactory.errorByKey('INTERNAL_SERVER_ERROR');
+    }
+  }
+
+  /**
+   * Renames one of the caller's passkeys. The owner is part of the lookup, so
+   * another user's passkey ID behaves exactly like a missing one.
+   */
+  async renamePasskey(
+    userId: string,
+    passkeyId: string,
+    dto: RenamePasskeyDto,
+    ipAddress: string,
+    userAgent: string
+  ): Promise<ResponseDto> {
+    try {
+      const { count } = await this.prisma.db.passkey.updateMany({
+        where: { id: passkeyId, userId },
+        data: { name: dto.name },
+      });
+      if (count === 0) {
+        return AuthResponseFactory.errorByKey('PASSKEY_NOT_FOUND');
+      }
+
+      const passkey: PasskeySummaryInterface = await this.prisma.db.passkey.findUniqueOrThrow({
+        where: { id: passkeyId },
+        select: PASSKEY_SUMMARY_SELECT,
+      });
+      await this.logPasskeyAction(LogsActionType.PasskeyRename, userId, `Passkey renamed to: ${passkey.name}`, {
+        passkeyId,
+      }, ipAddress, userAgent);
+
+      return AuthResponseFactory.successByKey('PASSKEY_RENAMED', passkey);
+    } catch (error) {
+      this.logger.error(`Renaming passkey ${passkeyId} failed for ${userId}: ${(error as Error).message}`);
+      return AuthResponseFactory.errorByKey('INTERNAL_SERVER_ERROR');
+    }
+  }
+
+  /**
+   * Removes one of the caller's passkeys; it stops working for sign-in at
+   * once. Losing a passkey is a security event, so this needs a sign-in from
+   * the last few minutes: an old or stolen session can't strip the account's
+   * passkeys.
+   */
+  async removePasskey(
+    requester: PasskeyRequester,
+    passkeyId: string,
+    ipAddress: string,
+    userAgent: string,
+    now: Date = new Date()
+  ): Promise<ResponseDto> {
+    const userId = requester.id;
+    try {
+      const signedInAt = requester.authenticatedAt?.getTime();
+      if (!signedInAt || now.getTime() - signedInAt > PASSKEY_REMOVAL_REAUTH_WINDOW_MS) {
+        return AuthResponseFactory.errorByKey('PASSKEY_REAUTH_REQUIRED', { reauthRequired: true });
+      }
+
+      const passkey = await this.prisma.db.passkey.findFirst({
+        where: { id: passkeyId, userId },
+        select: { id: true, name: true },
+      });
+      if (!passkey) {
+        return AuthResponseFactory.errorByKey('PASSKEY_NOT_FOUND');
+      }
+
+      // deleteMany keeps the owner in the condition even at the final write.
+      await this.prisma.db.passkey.deleteMany({ where: { id: passkeyId, userId } });
+      await this.logPasskeyAction(LogsActionType.PasskeyRemove, userId, `Passkey removed: ${passkey.name}`, {
+        passkeyId,
+      }, ipAddress, userAgent);
+
+      return AuthResponseFactory.successByKey('PASSKEY_REMOVED', { id: passkeyId });
+    } catch (error) {
+      this.logger.error(`Removing passkey ${passkeyId} failed for ${userId}: ${(error as Error).message}`);
+      return AuthResponseFactory.errorByKey('INTERNAL_SERVER_ERROR');
+    }
+  }
+
+  private async logPasskeyAction(
+    actionType: LogsActionType,
+    userId: string,
+    details: string,
+    metadata: Record<string, string>,
+    ipAddress: string,
+    userAgent: string
+  ): Promise<void> {
+    await this.prisma.db.logs.create({
+      data: {
+        actionType,
+        targetId: userId,
+        details,
+        metadata,
+        ipAddress: ipAddress ?? '',
+        userAgent: userAgent ?? '',
+        createdById: userId,
+      },
+    });
   }
 }
