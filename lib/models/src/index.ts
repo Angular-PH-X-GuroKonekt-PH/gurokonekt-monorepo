@@ -20,6 +20,8 @@ export * from './lib/dto/storage/storage.dto';
 export * from './lib/dto/auth/signup-mentee.dto';
 export * from './lib/dto/auth/signup-mentor.dto';
 export * from './lib/dto/auth/signin.dto';
+export * from './lib/interfaces/passkey/passkey.model';
+export * from './lib/dto/passkey/passkey.dto';
 export * from './lib/dto/auth/refresh-token.dto';
 export * from './lib/dto/auth/password.dto';
 export * from './lib/dto/decorators/custom-matches.decorator';

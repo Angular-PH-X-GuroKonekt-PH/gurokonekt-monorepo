@@ -13,6 +13,7 @@ import { NotificationGatewayModule } from './gateway/notification-gateway.module
 import { MetricsModule } from './metrics/metrics.module';
 import { AdminModule } from './admin/admin.module';
 import { ReviewModule } from './review/review.module';
+import { PasskeyModule } from './passkey/passkey.module';
 import { PublicModule } from './public/public.module';
 
 @Module({
@@ -27,6 +28,7 @@ import { PublicModule } from './public/public.module';
     MetricsModule,
     AdminModule,
     ReviewModule,
+    PasskeyModule,
     PublicModule,
     NotificationGatewayModule,
   ],

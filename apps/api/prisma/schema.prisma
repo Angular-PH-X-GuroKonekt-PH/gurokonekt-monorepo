@@ -71,6 +71,7 @@ enum LogsActionType {
   admin_deactivate_mentor
   admin_feature_mentor
   admin_unfeature_mentor
+  passkey_register
 
   @@map("logs_action_type")
 }
@@ -156,6 +157,8 @@ model User {
   adminRejections       AdminRejectionLog[]   @relation("mentee_rejections")
   mentorRejections      AdminRejectionLog[]   @relation("mentor_rejections")
   adminRejectionActions AdminRejectionLog[]   @relation("admin_rejection_actions")
+  passkeys              Passkey[]
+  passkeyChallenges     PasskeyChallenge[]
 
   @@map("users")
 }
@@ -348,6 +351,55 @@ model AdminRejectionLog {
 /// Intentionally has no relation to `User` — inquiries come from anonymous
 /// visitors who may not have an account. Spam is handled by reCAPTCHA at the
 /// endpoint, so no IP address or user agent is stored.
+/// A WebAuthn passkey. Only the public key is stored; the private key never
+/// leaves the user's device or password manager.
+model Passkey {
+  id           String    @id @default(uuid())
+  userId       String    @map("user_id")
+  /// base64url credential ID, unique across all users
+  credentialId String    @unique @map("credential_id")
+  publicKey    Bytes     @map("public_key")
+  /// signature counter, used to spot cloned authenticators at login
+  counter      BigInt    @default(0)
+  transports   String[]  @default([])
+  /// "singleDevice" or "multiDevice" (synced, e.g. iCloud Keychain)
+  deviceType   String    @map("device_type")
+  backedUp     Boolean   @default(false) @map("backed_up")
+  /// authenticator model identifier, when the authenticator shares it
+  aaguid       String?
+  name         String
+  createdAt    DateTime  @default(now()) @map("created_at")
+  lastUsedAt   DateTime? @map("last_used_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@map("passkeys")
+}
+
+/// One-time challenge for a passkey ceremony, valid for a few minutes.
+model PasskeyChallenge {
+  id        String               @id @default(uuid())
+  /// null for login challenges, where the user isn't known yet
+  userId    String?              @map("user_id")
+  challenge String               @unique
+  type      PasskeyChallengeType
+  expiresAt DateTime             @map("expires_at")
+  createdAt DateTime             @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId, type])
+  @@map("passkey_challenges")
+}
+
+enum PasskeyChallengeType {
+  registration
+  authentication
+
+  @@map("passkey_challenge_type")
+}
+
 model Inquiry {
   id        String   @id @default(uuid())
   fullName  String   @map("full_name")

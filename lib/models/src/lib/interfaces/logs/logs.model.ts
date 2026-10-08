@@ -24,6 +24,7 @@ export enum LogsActionType {
   AdminDeactivateMentor = "admin_deactivate_mentor",
   AdminFeatureMentor = "admin_feature_mentor",
   AdminUnfeatureMentor = "admin_unfeature_mentor",
+  PasskeyRegister = "passkey_register",
 }
 
 export interface LogsInterface {
