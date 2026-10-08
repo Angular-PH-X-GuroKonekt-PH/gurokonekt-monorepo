@@ -74,6 +74,7 @@ enum LogsActionType {
   passkey_register
   passkey_rename
   passkey_remove
+  signin_passkey
 
   @@map("logs_action_type")
 }

@@ -27,3 +27,13 @@ export class RenamePasskeyDto implements RenamePasskeyInterface {
   @MaxLength(60)
   name!: string;
 }
+
+export class VerifyPasskeyAuthenticationDto {
+  @ApiProperty({
+    description: 'The WebAuthn authentication response from the browser (AuthenticationResponseJSON).',
+    example: { id: 'base64url-credential-id', rawId: 'base64url-credential-id', type: 'public-key', response: {} },
+  })
+  @IsObject()
+  @IsNotEmptyObject()
+  response!: Record<string, unknown>;
+}
