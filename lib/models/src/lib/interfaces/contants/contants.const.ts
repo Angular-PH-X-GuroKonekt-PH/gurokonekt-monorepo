@@ -67,6 +67,10 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Google has been disconnected from your account.',
     },
+    SIGN_WITH_GOOGLE_REGISTRATION_REQUIRED: {
+      code: 200,
+      message: 'Finish creating your GuroKonekt account to continue.',
+    },
     SIGN_WITH_PASSWORD: {
       code: 200,
       message: 'Signed in with password successfully',
@@ -532,9 +536,14 @@ export const API_RESPONSE = {
       code: 401,
       message: 'Google sign-in failed. Please try again.',
     },
-    SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND: {
-      code: 404,
-      message: 'No GuroKonekt account found for this Google account. Please register first.',
+    GOOGLE_REGISTRATION_SESSION_INVALID: {
+      code: 401,
+      message: 'Your Google sign-up has expired. Please continue with Google again.',
+    },
+    EMAIL_REGISTERED_WITH_GOOGLE: {
+      code: 409,
+      message:
+        'This email is already registered. If you signed up with Google, use Continue with Google instead.',
     },
     SIGNIN_GOOGLE_NOT_AVAILABLE: {
       code: 403,
@@ -1264,9 +1273,11 @@ Exchanges a Google ID token for a Gurokonekt session.
 1. The frontend shows the Google Identity Services button and receives an ID token (\`credential\`).
 2. Send that token here. If the button was given a nonce, send the same raw nonce too.
 3. Supabase verifies the token and links it to the existing account with the same email.
-4. The response has the same shape as \`POST /auth/signin\`: \`{ user, session }\`.
+4. Existing account: the response has the same shape as \`POST /auth/login\`: \`{ user, session }\`.
+5. New Google account: the response is \`{ registrationRequired: true, registration, prefill }\`. Finish with
+   \`POST /auth/register-mentee/google\` or \`POST /auth/register-mentor/google\`, passing the \`registration\` tokens.
 
-**Who can use it:** existing mentees and mentors only. Google emails without a Gurokonekt account get \`404\` (register first). Admin accounts get \`403\` and must use email and password.
+**Who can use it:** mentees and mentors. Admin accounts get \`403\` and must use email and password.
 `,
     bodyExample: {
       idToken: 'eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...',
@@ -1376,6 +1387,28 @@ with the same messages as password login.
     bodyExample: {
       response: { id: 'base64url-credential-id', rawId: 'base64url-credential-id', type: 'public-key', response: {} },
     },
+  },
+
+  REGISTER_MENTEE_GOOGLE: {
+    summary: 'Register a mentee with Google',
+    description: `
+Creates a mentee account for a Google account that \`POST /auth/signin/google\` reported as new.
+
+The email comes from the verified Google account and there is no password. Every other mentee field is
+required as in \`POST /auth/register-mentee\`. No email confirmation is needed: the response includes a
+session, the same shape as \`POST /auth/login\`. The Google profile photo, if any, becomes the avatar.
+`,
+  },
+
+  REGISTER_MENTOR_GOOGLE: {
+    summary: 'Register a mentor with Google',
+    description: `
+Creates a mentor application for a Google account that \`POST /auth/signin/google\` reported as new.
+
+Same fields and documents as \`POST /auth/register-mentor\`, minus email and password. The account starts as
+\`pending_approval\` and goes through the normal admin review; no session is returned. The Google profile photo,
+if any, becomes the avatar.
+`,
   },
 
   RESEND_CONFIRMATION: {

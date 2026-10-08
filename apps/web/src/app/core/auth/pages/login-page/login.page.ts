@@ -17,7 +17,7 @@ import * as AuthActions from '../../store/auth.actions';
 import { preSubmissionValidation } from '../../../../shared/helpers/form-submission.helper';
 import { Router } from '@angular/router';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
-import { requiresProfileSetup } from 'apps/web/src/app/shared/utils/profile-completion.util';
+import { continueAfterGoogle, navigateAfterLogin } from '../../helpers/post-login-navigation.helper';
 import { AuthSelectors } from '../../store/auth.selectors';
 import { environment } from '../../../../../environments/environment';
 import {
@@ -94,7 +94,7 @@ export class LoginPage extends BaseFormComponent implements OnInit {
         this.store.dispatch(new AuthActions.Login({ email, password }))
       );
 
-      await this.navigateAfterLogin();
+      await navigateAfterLogin(this.store, this.router);
     } catch {
       // Error is already reflected in the errorMessage signal via state
     }
@@ -107,29 +107,10 @@ export class LoginPage extends BaseFormComponent implements OnInit {
 
     try {
       await firstValueFrom(this.store.dispatch(new AuthActions.LoginWithGoogle(credential)));
-      await this.navigateAfterLogin();
+      await continueAfterGoogle(this.store, this.router, this.toastService);
     } catch {
       // Error is already reflected in the errorMessage signal via state
     }
-  }
-
-  private async navigateAfterLogin(): Promise<void> {
-    const user = this.store.selectSnapshot(AuthSelectors.user);
-    if (!user) {
-      return;
-    }
-
-    if (user.status === 'inactive') {
-      await this.router.navigate([`/${APP_ROUTES.ACTIVATE_ACCOUNT}`]);
-      return;
-    }
-
-    if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
-      await this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
-      return;
-    }
-
-    await this.router.navigate([APP_ROUTES.DASHBOARD]);
   }
 
   protected navigateToRegister(): void {

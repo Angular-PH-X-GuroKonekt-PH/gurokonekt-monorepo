@@ -15,6 +15,33 @@ import type {
 import { buildApiUrl } from '../../../shared/utils/api.util';
 import { API_CONFIG } from '../../config/api.config';
 import { ApiResponse } from '../../../shared/interfaces/api-response.interface';
+import type { GoogleRegistrationRequiredInterface } from '@gurokonekt/models/interfaces/auth/signin.model';
+import type { GoogleRegistrationContext } from '../models/registration.state.model';
+
+export type GoogleSignInResult =
+  | { kind: 'signed-in'; auth: AuthResponse }
+  | { kind: 'registration-required'; context: GoogleRegistrationContext };
+
+/** Mentee registration fields minus email and password, which Google covers. */
+export interface RegisterMenteeWithGoogleRequest {
+  registrationToken: string;
+  refreshToken?: string;
+  firstName: string;
+  middleName?: string;
+  lastName: string;
+  suffix?: string;
+  phoneNumber: string;
+  country: string;
+  timezone: string;
+  language: string;
+}
+
+export interface RegisterMentorWithGoogleRequest extends RegisterMenteeWithGoogleRequest {
+  yearsOfExperience: number;
+  linkedInUrl?: string;
+  areasOfExpertise: string[];
+  files: File[];
+}
 
 @Injectable({
   providedIn: 'root',
@@ -92,29 +119,93 @@ export class AuthService {
   }
 
   /**
-   * Login with a Google ID token from the Google Sign-In button. The API
-   * returns the same payload as password login.
+   * Continue with a Google ID token from the Google Sign-In button. An
+   * existing account is signed in (same payload as password login); a new
+   * Google account comes back as `registration-required` with the tokens and
+   * profile prefill needed to finish registering.
    *
    * Errors keep the server's message: the API already words each case for the
-   * user (no account yet, pending mentor, admin...), and the generic auth
-   * mapping would turn every 401 into "Invalid email or password".
+   * user (pending mentor, admin...), and the generic auth mapping would turn
+   * every 401 into "Invalid email or password".
    */
-  loginWithGoogle(payload: { idToken: string; nonce?: string }): Observable<AuthResponse> {
-    return this.http.post<LoginApiResponse>(
+  loginWithGoogle(payload: { idToken: string; nonce?: string }): Observable<GoogleSignInResult> {
+    return this.http.post<LoginApiResponse | ApiResponse<GoogleRegistrationRequiredInterface>>(
       buildApiUrl(API_CONFIG.endpoints.auth.googleLogin),
       payload
     ).pipe(
-      map((response) => this.toAuthResponse(response)),
-      catchError((error: HttpErrorResponse) => {
-        // Logged without the request body, so the Google token never reaches the console.
-        logError('Google Sign-In Error', { status: error.status, message: error.error?.message });
-        const message =
-          error.status === 0
-            ? 'Unable to reach the server. Please check your connection and try again.'
-            : error.error?.message || 'Google sign-in failed. Please try again.';
-        return throwError(() => ({ message, originalError: error }));
-      })
+      map((response): GoogleSignInResult => {
+        const data = response.data as Partial<GoogleRegistrationRequiredInterface> | undefined;
+        if (data?.registrationRequired && data.registration && data.prefill) {
+          return {
+            kind: 'registration-required',
+            context: { ...data.registration, prefill: data.prefill },
+          };
+        }
+        return { kind: 'signed-in', auth: this.toAuthResponse(response as LoginApiResponse) };
+      }),
+      catchError(this.handleGoogleError('Google Sign-In Error', 'Google sign-in failed. Please try again.'))
     );
+  }
+
+  /**
+   * Finish a mentee registration started with Google. The API signs the new
+   * mentee in, so the result has the same shape as a login.
+   */
+  registerMenteeWithGoogle(payload: RegisterMenteeWithGoogleRequest): Observable<AuthResponse> {
+    return this.http.post<LoginApiResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.googleRegisterMentee),
+      payload
+    ).pipe(
+      map((response) => this.toAuthResponse(response)),
+      catchError(this.handleGoogleError('Google Registration Error', 'Registration failed. Please try again.'))
+    );
+  }
+
+  /** Finish a mentor application started with Google. It then awaits admin approval. */
+  registerMentorWithGoogle(payload: RegisterMentorWithGoogleRequest): Observable<ApiResponse<unknown>> {
+    const formData = new FormData();
+    formData.append('registrationToken', payload.registrationToken);
+    if (payload.refreshToken) formData.append('refreshToken', payload.refreshToken);
+    formData.append('firstName', payload.firstName);
+    formData.append('lastName', payload.lastName);
+    if (payload.middleName) formData.append('middleName', payload.middleName);
+    if (payload.suffix) formData.append('suffix', payload.suffix);
+    formData.append('country', payload.country);
+    formData.append('timezone', payload.timezone);
+    formData.append('language', payload.language);
+    formData.append('phoneNumber', payload.phoneNumber);
+    formData.append('yearsOfExperience', payload.yearsOfExperience.toString());
+    if (payload.linkedInUrl) formData.append('linkedInUrl', payload.linkedInUrl);
+    // Same encoding as registerMentor: the API parses the JSON string.
+    formData.append('areasOfExpertise', JSON.stringify(payload.areasOfExpertise));
+    payload.files.forEach((file) => formData.append('files', file));
+
+    return this.http.post<ApiResponse<unknown>>(
+      buildApiUrl(API_CONFIG.endpoints.auth.googleRegisterMentor),
+      formData
+    ).pipe(
+      catchError(this.handleGoogleError('Google Registration Error', 'Registration failed. Please try again.'))
+    );
+  }
+
+  /**
+   * Error handler for the Google endpoints. Logs only the status and server
+   * message, never the request body, so Google and registration tokens stay out
+   * of the console.
+   */
+  private handleGoogleError(context: string, fallbackMessage: string) {
+    return (error: HttpErrorResponse): Observable<never> => {
+      logError(context, { status: error.status, message: error.error?.message });
+      let message: string;
+      if (error.status === 0) {
+        message = 'Unable to reach the server. Please check your connection and try again.';
+      } else if (error.status === 409 && error.error?.message === 'User already exists') {
+        message = 'You already have a GuroKonekt account. Please log in with Google instead.';
+      } else {
+        message = error.error?.message || fallbackMessage;
+      }
+      return throwError(() => ({ message, statusCode: error.status, originalError: error }));
+    };
   }
 
   private toAuthResponse(response: LoginApiResponse): AuthResponse {
