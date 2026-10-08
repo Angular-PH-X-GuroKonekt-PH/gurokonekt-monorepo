@@ -5,6 +5,7 @@ import { createSelectMap, Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { PasskeySignInButtonComponent } from '../../components/passkey-sign-in-button/passkey-sign-in-button.component';
 import { createPasswordVisibilityState } from '../../../../shared/utils';
 import { ToastService } from '../../../../shared/services/toast.service';
 import { BaseFormComponent } from '../../../../shared/base-form/base-form.component';
@@ -23,7 +24,7 @@ import {
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, IconComponent, NgOptimizedImage],
+  imports: [ReactiveFormsModule, IconComponent, NgOptimizedImage, PasskeySignInButtonComponent],
   templateUrl: './login.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
