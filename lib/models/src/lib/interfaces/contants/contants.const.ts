@@ -27,6 +27,14 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Signed in with OAuth successfully',
     },
+    PASSKEY_REGISTRATION_OPTIONS: {
+      code: 200,
+      message: 'Passkey registration started',
+    },
+    PASSKEY_REGISTERED: {
+      code: 201,
+      message: 'Your passkey has been added.',
+    },
     SIGN_WITH_PASSWORD: {
       code: 200,
       message: 'Signed in with password successfully',
@@ -459,6 +467,22 @@ export const API_RESPONSE = {
       code: 429,
       message:
         'Too many failed login attempts. Try again later, or reset your password to regain access now.',
+    },
+    PASSKEY_NOT_AVAILABLE: {
+      code: 403,
+      message: 'Passkeys are not available for this account.',
+    },
+    PASSKEY_CHALLENGE_EXPIRED: {
+      code: 400,
+      message: 'Passkey setup timed out. Please try again.',
+    },
+    PASSKEY_VERIFICATION_FAILED: {
+      code: 400,
+      message: "We couldn't verify this passkey. Please try again.",
+    },
+    PASSKEY_ALREADY_REGISTERED: {
+      code: 409,
+      message: 'This passkey is already added.',
     },
     SIGNIN_MENTOR_PENDING_REVIEW: {
       code: 403,
@@ -1156,6 +1180,32 @@ Exchanges an OAuth provider access token for a Gurokonekt session.
 `,
     bodyExample: {
       provider: 'google',
+    },
+  },
+
+  PASSKEY_REGISTRATION_OPTIONS: {
+    summary: 'Start adding a passkey',
+    description: `
+Returns WebAuthn registration options for the signed-in user. Pass them to the browser's passkey prompt
+(e.g. \`startRegistration({ optionsJSON })\` from @simplewebauthn/browser), then send the result to
+\`POST /auth/passkeys/registration/verify\` within 5 minutes.
+
+Passkeys are discoverable (resident keys) and require user verification (biometrics, PIN or device lock), so
+they can later be used to sign in without typing an email. Passkeys the user already has are excluded, so the
+same authenticator can't be added twice. Admin accounts get \`403\`.
+`,
+  },
+
+  PASSKEY_REGISTRATION_VERIFY: {
+    summary: 'Finish adding a passkey',
+    description: `
+Verifies the browser's WebAuthn registration response against the challenge issued by
+\`POST /auth/passkeys/registration/options\` and saves the passkey. Only the public key is stored; the private
+key never leaves the user's device or password manager. Each challenge works once.
+`,
+    bodyExample: {
+      response: { id: 'base64url-credential-id', rawId: 'base64url-credential-id', type: 'public-key', response: {} },
+      name: 'Chrome on Windows',
     },
   },
 
