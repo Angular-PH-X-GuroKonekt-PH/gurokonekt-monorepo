@@ -73,7 +73,52 @@ export class PasskeyService {
       return { status: 'failed', message: apiErrorMessage(error) };
     }
   }
+
+  /** The signed-in user's passkeys, newest first. */
+  async list(): Promise<PasskeySummaryInterface[]> {
+    const result = await firstValueFrom(
+      this.http.get<ApiResponse<PasskeySummaryInterface[]>>(buildApiUrl(API_CONFIG.endpoints.passkeys.list))
+    );
+    return result.data ?? [];
+  }
+
+  async rename(passkeyId: string, name: string): Promise<PasskeyChangeResult<PasskeySummaryInterface>> {
+    try {
+      const result = await firstValueFrom(
+        this.http.patch<ApiResponse<PasskeySummaryInterface>>(
+          buildApiUrl(API_CONFIG.endpoints.passkeys.byId(passkeyId)),
+          { name }
+        )
+      );
+      return { status: 'done', data: result.data as PasskeySummaryInterface, message: result.message || 'Passkey renamed.' };
+    } catch (error) {
+      return { status: 'failed', message: apiErrorMessage(error) };
+    }
+  }
+
+  /**
+   * Removes a passkey. The API only allows this shortly after a sign-in;
+   * otherwise the result is `reauth-required` and the person signs in again.
+   */
+  async remove(passkeyId: string): Promise<PasskeyChangeResult<null>> {
+    try {
+      const result = await firstValueFrom(
+        this.http.delete<ApiResponse<unknown>>(buildApiUrl(API_CONFIG.endpoints.passkeys.byId(passkeyId)))
+      );
+      return { status: 'done', data: null, message: result.message || 'Passkey removed.' };
+    } catch (error) {
+      if (error instanceof HttpErrorResponse && error.status === 403 && error.error?.data?.reauthRequired) {
+        return { status: 'reauth-required', message: error.error.message };
+      }
+      return { status: 'failed', message: apiErrorMessage(error) };
+    }
+  }
 }
+
+export type PasskeyChangeResult<T> =
+  | { status: 'done'; data: T; message: string }
+  | { status: 'reauth-required'; message: string }
+  | { status: 'failed'; message: string };
 
 function apiErrorMessage(error: unknown): string {
   if (error instanceof HttpErrorResponse) {
