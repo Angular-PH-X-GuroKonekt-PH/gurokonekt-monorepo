@@ -10,6 +10,10 @@ export const API_ENDPOINTS = {
     forgotPassword: '/auth/forgot-password',
     completePasswordReset: '/auth/complete-password-reset',
   },
+  passkeys: {
+    registrationOptions: '/auth/passkeys/registration/options',
+    registrationVerify: '/auth/passkeys/registration/verify',
+  },
   user: {
     profile: '/user/profile',
     updateProfile: '/user/profile',
