@@ -21,6 +21,7 @@ export const APP_ROUTES = {
   SETTINGS: 'settings',
   SETTINGS_OVERVIEW: 'settings/overview',
   SETTINGS_EDIT: 'settings/edit',
+  SETTINGS_PASSKEYS: 'settings/passkeys',
   NOTIFICATIONS: 'notifications',
   MANAGE_AVAILABILITY: 'manage-availability',
 } as const;

@@ -265,6 +265,14 @@ export const appRoutes: Route[] = [
           ),
         title: 'Edit Profile',
       },
+      {
+        path: 'passkeys',
+        loadComponent: () =>
+          import('./core/profile/pages/passkeys-section-page/passkeys-section.page').then(
+            (m) => m.PasskeysSectionPage
+          ),
+        title: 'Passkeys',
+      },
     ],
   },
   {

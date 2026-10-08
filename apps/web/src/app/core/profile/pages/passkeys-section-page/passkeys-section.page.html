@@ -1,0 +1,189 @@
+<section>
+  <div class="mb-8 flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+    <div>
+      <h2 class="text-2xl font-bold tracking-tight text-slate-900">Passkeys</h2>
+      <p class="mt-1 max-w-xl text-sm text-slate-500">
+        Sign in with your fingerprint, face, screen lock or password manager instead of a password.
+        Your passkeys stay on your devices; GuroKonekt never sees them.
+      </p>
+    </div>
+
+    @if (isSupported) {
+      <button
+        type="button"
+        (click)="addPasskey()"
+        [disabled]="isAdding()"
+        class="inline-flex shrink-0 items-center justify-center gap-2 self-start rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition-colors hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:cursor-not-allowed disabled:bg-orange-300"
+      >
+        @if (isAdding()) {
+          <span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"></span>
+          Waiting for your device...
+        } @else {
+          <app-icon name="plus" class="h-4 w-4"></app-icon>
+          {{ count() ? 'Add another passkey' : 'Add a passkey' }}
+        }
+      </button>
+    }
+  </div>
+
+  @if (!isSupported) {
+    <p class="mb-6 rounded-xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-600" role="status">
+      This browser or device doesn't support passkeys. Try an up-to-date version of Chrome, Safari, Edge or Firefox,
+      or use your phone.
+    </p>
+  }
+
+  @if (reauthMessage(); as message) {
+    <div
+      class="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <p>{{ message }}</p>
+      <button
+        type="button"
+        (click)="signInAgain()"
+        class="shrink-0 rounded-full bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-300"
+      >
+        Sign in again
+      </button>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="flex items-center gap-3 rounded-xl border border-orange-100 bg-orange-50/80 px-4 py-4 text-sm text-orange-700">
+      <div class="h-5 w-5 animate-spin rounded-full border-2 border-orange-400 border-t-transparent"></div>
+      Loading your passkeys...
+    </div>
+  } @else if (loadFailed()) {
+    <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between">
+      <p>We couldn't load your passkeys.</p>
+      <button type="button" (click)="load()" class="font-semibold underline hover:no-underline">Try again</button>
+    </div>
+  } @else {
+    <!-- Status indicator -->
+    <div
+      class="mb-6 flex items-center gap-3 rounded-xl px-4 py-3 text-sm"
+      [class]="count() ? 'border border-emerald-200 bg-emerald-50 text-emerald-800' : 'border border-amber-200 bg-amber-50 text-amber-900'"
+      role="status"
+    >
+      <app-icon [name]="count() ? 'check-mark-circle' : 'alert-info'" class="h-5 w-5 shrink-0"></app-icon>
+      @if (count()) {
+        <span>
+          <span class="font-semibold">Passkey sign-in is set up.</span>
+          You have {{ count() }} {{ count() === 1 ? 'passkey' : 'passkeys' }}.
+        </span>
+      } @else {
+        <span><span class="font-semibold">No passkeys yet.</span> Add one to sign in faster and more securely.</span>
+      }
+    </div>
+
+    @if (count()) {
+      <ul class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm divide-y divide-slate-100">
+        @for (passkey of passkeys(); track passkey.id) {
+          <li class="p-5 sm:p-6">
+            <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div class="flex min-w-0 gap-4">
+                <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+                  <app-icon name="locked-closed" class="h-6 w-6"></app-icon>
+                </span>
+
+                <div class="min-w-0 flex-1">
+                  @if (editingId() === passkey.id) {
+                    <form class="flex flex-col gap-2 sm:flex-row sm:items-center" (ngSubmit)="saveRename(passkey)">
+                      <label class="sr-only" [for]="'passkey-name-' + passkey.id">Passkey name</label>
+                      <input
+                        [id]="'passkey-name-' + passkey.id"
+                        name="name"
+                        type="text"
+                        class="form-control-input py-2"
+                        [maxlength]="nameMaxLength"
+                        [ngModel]="draftName()"
+                        (ngModelChange)="draftName.set($event)"
+                        (keydown.escape)="cancelRename()"
+                      />
+                      <div class="flex gap-2">
+                        <button
+                          type="submit"
+                          [disabled]="busyId() === passkey.id || !draftName().trim()"
+                          class="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:cursor-not-allowed disabled:bg-orange-300"
+                        >
+                          Save
+                        </button>
+                        <button
+                          type="button"
+                          (click)="cancelRename()"
+                          class="rounded-full px-4 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    </form>
+                  } @else {
+                    <p class="truncate font-semibold text-slate-900">{{ passkey.name }}</p>
+                  }
+
+                  <div class="mt-1 flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-slate-500">
+                    <span
+                      class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium"
+                      [class]="isSynced(passkey) ? 'bg-blue-50 text-blue-700' : 'bg-slate-100 text-slate-600'"
+                    >
+                      {{ isSynced(passkey) ? 'Synced across devices' : 'This device only' }}
+                    </span>
+                    <span>Added {{ passkey.createdAt | date: 'mediumDate' }}</span>
+                    <span>{{ passkey.lastUsedAt ? 'Last used ' + (passkey.lastUsedAt | date: 'mediumDate') : 'Not used to sign in yet' }}</span>
+                  </div>
+                </div>
+              </div>
+
+              @if (editingId() !== passkey.id && confirmingRemoveId() !== passkey.id) {
+                <div class="flex shrink-0 gap-2 self-start">
+                  <button
+                    type="button"
+                    (click)="startRename(passkey)"
+                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-slate-600 hover:bg-slate-100"
+                    [attr.aria-label]="'Rename ' + passkey.name"
+                  >
+                    <app-icon name="pencil" class="h-4 w-4"></app-icon>
+                    Rename
+                  </button>
+                  <button
+                    type="button"
+                    (click)="askToRemove(passkey)"
+                    class="inline-flex items-center gap-1.5 rounded-full px-3 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                    [attr.aria-label]="'Remove ' + passkey.name"
+                  >
+                    <app-icon name="trash" class="h-4 w-4"></app-icon>
+                    Remove
+                  </button>
+                </div>
+              }
+            </div>
+
+            @if (confirmingRemoveId() === passkey.id) {
+              <div class="mt-4 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between" role="alert">
+                <p>Remove <span class="font-semibold">{{ passkey.name }}</span>? You won't be able to sign in with it anymore.</p>
+                <div class="flex shrink-0 gap-2">
+                  <button
+                    type="button"
+                    (click)="confirmRemove(passkey)"
+                    [disabled]="busyId() === passkey.id"
+                    class="rounded-full bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+                  >
+                    {{ busyId() === passkey.id ? 'Removing...' : 'Remove' }}
+                  </button>
+                  <button
+                    type="button"
+                    (click)="cancelRemove()"
+                    class="rounded-full px-4 py-2 font-semibold text-red-700 hover:bg-red-100"
+                  >
+                    Keep it
+                  </button>
+                </div>
+              </div>
+            }
+          </li>
+        }
+      </ul>
+    }
+  }
+</section>

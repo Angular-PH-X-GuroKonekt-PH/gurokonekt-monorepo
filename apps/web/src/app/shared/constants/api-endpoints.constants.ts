@@ -13,6 +13,8 @@ export const API_ENDPOINTS = {
   passkeys: {
     registrationOptions: '/auth/passkeys/registration/options',
     registrationVerify: '/auth/passkeys/registration/verify',
+    list: '/auth/passkeys',
+    byId: (passkeyId: string) => `/auth/passkeys/${passkeyId}`,
   },
   user: {
     profile: '/user/profile',
