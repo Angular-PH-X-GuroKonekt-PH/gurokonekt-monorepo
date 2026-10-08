@@ -11,6 +11,10 @@ export const API_ENDPOINTS = {
     forgotPassword: '/auth/forgot-password',
     completePasswordReset: '/auth/complete-password-reset',
   },
+  signInMethods: {
+    list: '/auth/sign-in-methods',
+    google: '/auth/sign-in-methods/google',
+  },
   passkeys: {
     registrationOptions: '/auth/passkeys/registration/options',
     registrationVerify: '/auth/passkeys/registration/verify',
