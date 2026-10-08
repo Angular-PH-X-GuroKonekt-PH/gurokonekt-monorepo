@@ -10,6 +10,17 @@ import { AuthSelectors } from '../../../store/auth.selectors';
 
 type ConfirmationRole = 'mentee' | 'mentor';
 
+// Google registrations skip email verification and sign in with Google.
+const GOOGLE_MENTOR_CONTENT = {
+  welcomeMessage:
+    'We are glad you are joining us as a mentor. Your application has been received and our team will review your profile soon.',
+  nextSteps: [
+    'Our team reviews your profile and documents.',
+    'You will receive an email when your account is approved.',
+    'Then sign in with the same Google account using "Continue with Google".',
+  ],
+};
+
 const CONFIRMATION_CONTENT: Record<
   ConfirmationRole,
   { welcomeMessage: string; nextSteps: string[] }
@@ -44,6 +55,7 @@ const CONFIRMATION_CONTENT: Record<
       [welcomeMessage]="content().welcomeMessage"
       [nextSteps]="content().nextSteps"
       [lastRegisteredEmail]="lastRegisteredEmail()"
+      [showEmailVerification]="!viaGoogle()"
       (loginClicked)="navigateToLogin()"
     />
   `,
@@ -64,8 +76,13 @@ export class RegistrationConfirmationPage {
     { initialValue: 'mentee' as ConfirmationRole }
   );
 
-  protected readonly content = computed(
-    () => CONFIRMATION_CONTENT[this.role()]
+  protected readonly viaGoogle = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('via') === 'google')),
+    { initialValue: false }
+  );
+
+  protected readonly content = computed(() =>
+    this.viaGoogle() && this.role() === 'mentor' ? GOOGLE_MENTOR_CONTENT : CONFIRMATION_CONTENT[this.role()]
   );
 
   protected navigateToLogin(): void {

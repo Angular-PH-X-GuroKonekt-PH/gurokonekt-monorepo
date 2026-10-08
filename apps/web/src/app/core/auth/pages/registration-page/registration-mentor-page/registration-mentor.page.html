@@ -4,7 +4,7 @@
 >
   <app-registration-stepper
     [stepTitles]="stepTitles"
-    [stepDescriptions]="stepDescriptions"
+    [stepDescriptions]="stepDescriptions()"
     [currentStep]="currentStep()"
     [canNavigate]="isStepNavigable"
     (stepSelected)="goToStep($event)"
@@ -12,7 +12,7 @@
 
   <!-- Registration Form Card -->
   <div
-    class="bg-white rounded-3xl shadow-xl border-2 border-gray-100 p-10 sm:p-12 lg:p-16"
+    class="rounded-2xl border-2 border-gray-100 bg-white p-5 shadow-xl sm:rounded-3xl sm:p-10 lg:p-16"
   >
     <form
       [formGroup]="registerForm"
@@ -40,10 +40,14 @@
 
         <!-- Step 2: Security -->
         @if (currentStep() === 2) {
+        @if (googleRegistration(); as google) {
+        <app-registration-google-secured-step [email]="google.prefill.email" />
+        } @else {
         <app-registration-password-fields
           [form]="registerForm"
           subtitle="Create a strong password to secure your account"
         />
+        }
         }
 
         <!-- Step 3: Location -->

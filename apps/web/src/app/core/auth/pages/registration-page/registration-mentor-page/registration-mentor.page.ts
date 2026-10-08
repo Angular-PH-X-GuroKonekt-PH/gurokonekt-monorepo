@@ -1,6 +1,7 @@
 import {
   ChangeDetectionStrategy,
   Component,
+  computed,
   inject,
   OnInit,
   output,
@@ -11,7 +12,10 @@ import { FormArray, FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { merge } from 'rxjs';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
-import { RegisterMentor } from '../../../store/auth.actions';
+import { RegisterMentor, RegisterMentorWithGoogle } from '../../../store/auth.actions';
+import { isValidOrLocked, useGoogleRegistration } from '../../../helpers/google-registration.helper';
+import { GoogleRegistrationContext } from '../../../models/registration.state.model';
+import { GoogleSecuredStepComponent } from '../registration-google-secured-step/registration-google-secured-step.component';
 
 import { IconComponent } from '../../../../../shared/components/icon/icon.component';
 import { BaseStepperRegistrationComponent } from '../../../../../shared/base-form/base-stepper-registration.component';
@@ -64,6 +68,7 @@ import { RegistrationReviewStepComponent } from '../registration-review-step/reg
     RegistrationPhoneFieldComponent,
     RegistrationLocationFieldsComponent,
     RegistrationReviewStepComponent,
+    GoogleSecuredStepComponent,
   ],
   templateUrl: './registration-mentor.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -89,15 +94,19 @@ export class RegistrationMentorPage
     'Professional Details',
     'Review & Confirm',
   ];
-  protected readonly stepDescriptions = [
+  protected readonly stepDescriptions = computed(() => [
     'Basic details & contact',
-    'Set your password',
+    this.googleRegistration() ? 'Secured with Google' : 'Set your password',
     'Country & timezone',
     'Share your expertise',
     'Review & accept terms',
-  ];
+  ]);
 
   protected readonly registerForm = this.buildRegisterForm();
+  /** Set while a Google sign-up is in progress; the email and password come from Google. */
+  protected readonly googleRegistration = useGoogleRegistration(this.registerForm);
+  // Captured at submit time: the Google sign-up is cleared as soon as it succeeds.
+  private submittedWithGoogle = false;
   protected readonly maxAreasOfExpertise = VALIDATION_CONSTRAINTS.MAX_EXPERTISE_AREAS;
   protected readonly expertiseSuggestions = EXPERTISE_OPTIONS;
   protected readonly allowedDocumentAccept = ALLOWED_DOCUMENT_ACCEPT;
@@ -119,7 +128,11 @@ export class RegistrationMentorPage
     watchRegistrationOutcome({
       successMessage: this.store.selectSignal(AuthSelectors.successMessage),
       errorMessage: this.store.selectSignal(AuthSelectors.errorMessage),
-      confirmationRoute: APP_ROUTES.REGISTER_MENTOR_CONFIRMATION,
+      // Google mentors see the same confirmation, worded for Google sign-in.
+      confirmationRoute: () =>
+        this.submittedWithGoogle
+          ? `${APP_ROUTES.REGISTER_MENTOR_CONFIRMATION}?via=google`
+          : APP_ROUTES.REGISTER_MENTOR_CONFIRMATION,
       store: this.store,
       toastService: this.toastService,
       router: this.router,
@@ -164,10 +177,13 @@ export class RegistrationMentorPage
         return (
           !!form.get('firstName')?.valid &&
           !!form.get('lastName')?.valid &&
-          !!form.get('email')?.valid &&
+          isValidOrLocked(form.get('email')) &&
           !!form.get('phoneNumber')?.valid
         );
       case 2:
+        if (this.googleRegistration()) {
+          return true;
+        }
         return (
           !!form.get('password')?.valid &&
           !!form.get('confirmPassword')?.valid &&
@@ -233,6 +249,12 @@ export class RegistrationMentorPage
 
     this.startSubmission();
 
+    const google = this.googleRegistration();
+    if (google) {
+      this.submitWithGoogle(google);
+      return;
+    }
+
     try {
       const formData = this.registerForm.value;
       const email = formData.email.toLowerCase().trim();
@@ -269,6 +291,34 @@ export class RegistrationMentorPage
         'An unexpected error occurred. Please try again.'
       );
     }
+  }
+
+  private submitWithGoogle(google: GoogleRegistrationContext): void {
+    const formData = this.registerForm.getRawValue();
+    this.submittedWithGoogle = true;
+    this.store.dispatch(
+      new RegisterMentorWithGoogle(
+        {
+          registrationToken: google.registrationToken,
+          refreshToken: google.refreshToken,
+          firstName: formData.firstName,
+          middleName: formData.middleName || undefined,
+          lastName: formData.lastName,
+          suffix: formData.suffix || undefined,
+          phoneNumber: formatPhoneToE164(formData.phoneNumber, formData.country || 'PH'),
+          country: formData.country,
+          timezone: formData.timezone,
+          language: formData.language || 'en',
+          yearsOfExperience: formData.yearsOfExperience,
+          linkedInUrl: formData.linkedInUrl || undefined,
+          areasOfExpertise: (this.areasOfExpertise.value as string[])
+            .map((area) => area.trim())
+            .filter((area) => area.length > 0),
+          files: this.selectedFiles,
+        },
+        google.prefill.email
+      )
+    );
   }
 
   protected getCountryLabel(value: string | null): string {

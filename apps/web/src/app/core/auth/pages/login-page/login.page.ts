@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, effect, inject, OnInit } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, effect, inject, OnInit, signal } from '@angular/core';
 import { FormBuilder, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 import { NgOptimizedImage } from '@angular/common';
 import { createSelectMap, Store } from '@ngxs/store';
@@ -17,7 +17,7 @@ import * as AuthActions from '../../store/auth.actions';
 import { preSubmissionValidation } from '../../../../shared/helpers/form-submission.helper';
 import { Router } from '@angular/router';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
-import { requiresProfileSetup } from 'apps/web/src/app/shared/utils/profile-completion.util';
+import { continueAfterGoogle, navigateAfterLogin } from '../../helpers/post-login-navigation.helper';
 import { AuthSelectors } from '../../store/auth.selectors';
 import { environment } from '../../../../../environments/environment';
 import {
@@ -43,6 +43,11 @@ export class LoginPage extends BaseFormComponent implements OnInit {
   protected readonly showPassword = this.passwordHelper.showPassword;
   protected readonly googleSignInEnabled = !!environment.googleClientId;
 
+  /** The sign-in currently running. Only one may run at a time. */
+  protected readonly activeMethod = signal<'password' | 'google' | 'passkey' | null>(null);
+  /** The latest sign-in error, kept on the page as well as in a toast. */
+  protected readonly inlineError = signal<string | null>(null);
+
   protected readonly selectSignal = createSelectMap({
     isLoginLoading: AuthSelectors.isLoginLoading,
     errorMessage: AuthSelectors.errorMessage,
@@ -55,6 +60,9 @@ export class LoginPage extends BaseFormComponent implements OnInit {
   });
   protected readonly form: FormGroup = this.loginForm;
 
+  /** Disables every sign-in option while any of them is in progress. */
+  protected readonly isBusy = computed(() => this.activeMethod() !== null || this.selectSignal.isLoginLoading());
+
   constructor() {
     super();
 
@@ -65,6 +73,7 @@ export class LoginPage extends BaseFormComponent implements OnInit {
 
       if (errorMsg && errorMsg !== lastErrorNotified) {
         lastErrorNotified = errorMsg;
+        this.inlineError.set(errorMsg);
         this.toastService.errorExclusive(errorMsg, 'Login Failed');
       }
 
@@ -83,10 +92,11 @@ export class LoginPage extends BaseFormComponent implements OnInit {
   }
 
   protected async onSubmit(): Promise<void> {
-    if (!preSubmissionValidation(this.loginForm, this.selectSignal.isLoginLoading())) {
+    if (!preSubmissionValidation(this.loginForm, this.isBusy())) {
       return;
     }
 
+    this.startAttempt('password');
     try {
       const { email, password } = this.loginForm.getRawValue();
 
@@ -94,42 +104,45 @@ export class LoginPage extends BaseFormComponent implements OnInit {
         this.store.dispatch(new AuthActions.Login({ email, password }))
       );
 
-      await this.navigateAfterLogin();
+      await navigateAfterLogin(this.store, this.router);
     } catch {
       // Error is already reflected in the errorMessage signal via state
+    } finally {
+      this.activeMethod.set(null);
     }
   }
 
   protected async onGoogleCredential(credential: GoogleCredential): Promise<void> {
-    if (this.selectSignal.isLoginLoading()) {
+    if (this.isBusy()) {
       return;
     }
 
+    this.startAttempt('google');
     try {
       await firstValueFrom(this.store.dispatch(new AuthActions.LoginWithGoogle(credential)));
-      await this.navigateAfterLogin();
+      await continueAfterGoogle(this.store, this.router, this.toastService);
     } catch {
       // Error is already reflected in the errorMessage signal via state
+    } finally {
+      this.activeMethod.set(null);
     }
   }
 
-  private async navigateAfterLogin(): Promise<void> {
-    const user = this.store.selectSnapshot(AuthSelectors.user);
-    if (!user) {
-      return;
+  protected onPasskeyBusy(busy: boolean): void {
+    if (busy) {
+      this.startAttempt('passkey');
+    } else if (this.activeMethod() === 'passkey') {
+      this.activeMethod.set(null);
     }
+  }
 
-    if (user.status === 'inactive') {
-      await this.router.navigate([`/${APP_ROUTES.ACTIVATE_ACCOUNT}`]);
-      return;
-    }
+  protected onPasskeyFailed(message: string): void {
+    this.inlineError.set(message);
+  }
 
-    if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
-      await this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
-      return;
-    }
-
-    await this.router.navigate([APP_ROUTES.DASHBOARD]);
+  private startAttempt(method: 'password' | 'google' | 'passkey'): void {
+    this.inlineError.set(null);
+    this.activeMethod.set(method);
   }
 
   protected navigateToRegister(): void {
