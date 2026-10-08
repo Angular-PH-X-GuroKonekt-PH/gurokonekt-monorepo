@@ -86,46 +86,74 @@ export class AuthService {
       buildApiUrl(API_CONFIG.endpoints.auth.login),
       credentials
     ).pipe(
-      map((response) => {
-        if (response.statusCode >= 400) {
-          throw {
-            message: response.message || 'Login failed',
-            statusCode: response.statusCode,
-          };
-        }
-
-        const data = response.data;
-        const user = data?.user ?? data?.auth?.user;
-        const session = data?.session ?? data?.auth?.session;
-        const accessToken = session?.access_token ?? data?.accessToken;
-        const refreshToken = session?.refresh_token ?? data?.refreshToken;
-
-        // Accept both the current session payload and older token-based payloads.
-        if (!data || !user || !accessToken) {
-          throw {
-            message: response.message || 'Login failed',
-            statusCode: response.statusCode || 500,
-          };
-        }
-
-        return {
-          user: {
-            id: user.id,
-            email: user.email,
-              fullName: `${user.firstName} ${user.lastName}`,
-              role: user.role,
-              status: user.status as AuthResponse['user']['status'],
-              isProfileComplete: user.isProfileComplete,
-            isMentorProfileComplete: user.isMentorProfileComplete,
-          },
-          accessToken,
-          refreshToken,
-          token: accessToken,
-          message: response.message
-        } as AuthResponse;
-      }),
+      map((response) => this.toAuthResponse(response)),
       catchError(this.handleError)
     );
+  }
+
+  /**
+   * Login with a Google ID token from the Google Sign-In button. The API
+   * returns the same payload as password login.
+   *
+   * Errors keep the server's message: the API already words each case for the
+   * user (no account yet, pending mentor, admin...), and the generic auth
+   * mapping would turn every 401 into "Invalid email or password".
+   */
+  loginWithGoogle(payload: { idToken: string; nonce?: string }): Observable<AuthResponse> {
+    return this.http.post<LoginApiResponse>(
+      buildApiUrl(API_CONFIG.endpoints.auth.googleLogin),
+      payload
+    ).pipe(
+      map((response) => this.toAuthResponse(response)),
+      catchError((error: HttpErrorResponse) => {
+        // Logged without the request body, so the Google token never reaches the console.
+        logError('Google Sign-In Error', { status: error.status, message: error.error?.message });
+        const message =
+          error.status === 0
+            ? 'Unable to reach the server. Please check your connection and try again.'
+            : error.error?.message || 'Google sign-in failed. Please try again.';
+        return throwError(() => ({ message, originalError: error }));
+      })
+    );
+  }
+
+  private toAuthResponse(response: LoginApiResponse): AuthResponse {
+    if (response.statusCode >= 400) {
+      throw {
+        message: response.message || 'Login failed',
+        statusCode: response.statusCode,
+      };
+    }
+
+    const data = response.data;
+    const user = data?.user ?? data?.auth?.user;
+    const session = data?.session ?? data?.auth?.session;
+    const accessToken = session?.access_token ?? data?.accessToken;
+    const refreshToken = session?.refresh_token ?? data?.refreshToken;
+
+    // Accept both the current session payload and older token-based payloads.
+    if (!data || !user || !accessToken) {
+      throw {
+        message: response.message || 'Login failed',
+        statusCode: response.statusCode || 500,
+      };
+    }
+
+    return {
+      user: {
+        id: user.id,
+        email: user.email,
+        fullName: `${user.firstName} ${user.lastName}`,
+        role: user.role,
+        status: user.status as AuthResponse['user']['status'],
+        isProfileComplete: user.isProfileComplete,
+        isMentorProfileComplete: user.isMentorProfileComplete,
+      },
+      accessToken,
+      refreshToken,
+      token: accessToken,
+      message: response.message
+    } as AuthResponse;
   }
 
   /**
