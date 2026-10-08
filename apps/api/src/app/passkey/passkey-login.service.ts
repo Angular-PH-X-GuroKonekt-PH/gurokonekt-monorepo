@@ -25,7 +25,7 @@ const BLOCKED_STATUSES: string[] = [UserStatus.Banned, UserStatus.Suspended, Use
 
 type SignInBlock =
   | 'PASSKEY_SIGNIN_FAILED'
-  | 'PASSKEY_SIGNIN_ACCOUNT_BLOCKED'
+  | 'SIGNIN_ACCOUNT_BLOCKED'
   | 'SIGNIN_MENTOR_PENDING_REVIEW'
   | 'SIGNIN_MENTOR_REJECTED';
 
@@ -223,7 +223,7 @@ export class PasskeyLoginService {
  */
 export function signInBlockFor(user: { role: string; status: string }): SignInBlock | null {
   if (user.role === UserRole.Admin) return 'PASSKEY_SIGNIN_FAILED';
-  if (BLOCKED_STATUSES.includes(user.status)) return 'PASSKEY_SIGNIN_ACCOUNT_BLOCKED';
+  if (BLOCKED_STATUSES.includes(user.status)) return 'SIGNIN_ACCOUNT_BLOCKED';
   if (user.role === UserRole.Mentor) {
     if (user.status === UserStatus.PendingApproval || user.status === UserStatus.PendingReview) {
       return 'SIGNIN_MENTOR_PENDING_REVIEW';

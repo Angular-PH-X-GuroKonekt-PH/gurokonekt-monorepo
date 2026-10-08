@@ -75,6 +75,9 @@ enum LogsActionType {
   passkey_rename
   passkey_remove
   signin_passkey
+  signin_google
+  google_connect
+  google_disconnect
 
   @@map("logs_action_type")
 }
@@ -134,6 +137,8 @@ model User {
   deactivationTokenExpiresAt DateTime?  @map("deactivation_token_expires_at")
   pendingHashPassword        String?    @map("pending_hash_password")
   pendingPasswordChangeAt    DateTime?  @map("pending_password_change_at")
+  /// Supabase identity_id of the Google account the user connected in Settings
+  googleIdentityId           String?    @map("google_identity_id")
   createdAt                  DateTime   @default(now()) @map("created_at")
   updatedAt                  DateTime   @updatedAt @map("updated_at")
 
