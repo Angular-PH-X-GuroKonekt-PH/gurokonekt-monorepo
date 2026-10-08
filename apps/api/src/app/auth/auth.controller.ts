@@ -28,6 +28,8 @@ import {
   MentorDocumentsInterceptor,
   RegisterMenteeDto,
   RegisterMentorDto,
+  RegisterMenteeWithGoogleDto,
+  RegisterMentorWithGoogleDto,
   ResendConfirmationEmailDto,
   ResponseDto,
   ResponseStatus,
@@ -141,7 +143,7 @@ export class AuthController {
     @Headers('origin') origin: string,
   ) {
     const response = await this.authService.registerMentor(input, files, ipAddress, userAgent, origin);
-    
+
     // If service returns an error status, throw the appropriate HTTP exception
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
@@ -154,7 +156,85 @@ export class AuthController {
         response.statusCode || HttpStatus.BAD_REQUEST
       );
     }
-    
+
+    return response;
+  }
+
+  // ====================================================
+  // POST - Register Mentee with Google
+  // ====================================================
+
+  @Post('register-mentee/google')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.REGISTER_MENTEE_GOOGLE.summary,
+    description: SWAGGER_DOCUMENTATION.REGISTER_MENTEE_GOOGLE.description,
+  })
+  @ApiBody({ type: RegisterMenteeWithGoogleDto })
+  @ApiResponse({ status: 201, description: 'Mentee registered and signed in. Same data shape as POST /auth/login.' })
+  @ApiResponse({ status: 400, description: 'Validation error — missing fields or invalid phone format.' })
+  @ApiResponse({ status: 401, description: 'Google sign-up expired or invalid. Continue with Google again.' })
+  @ApiResponse({ status: 409, description: 'An account with this Google email already exists.' })
+  async registerMenteeWithGoogle(
+    @Body() input: RegisterMenteeWithGoogleDto,
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const response = await this.authService.registerMenteeWithGoogle(input, ipAddress, userAgent);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+
+    return response;
+  }
+
+  // ====================================================
+  // POST - Register Mentor with Google
+  // ====================================================
+
+  @Post('register-mentor/google')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: SWAGGER_DOCUMENTATION.REGISTER_MENTOR_GOOGLE.summary,
+    description: SWAGGER_DOCUMENTATION.REGISTER_MENTOR_GOOGLE.description,
+  })
+  @ApiBody({
+    type: RegisterMentorWithGoogleDto,
+    description: 'Mentor registration data + supporting documents (PDF/PNG/JPEG, max 10 MB each, up to 5 files). Send as multipart/form-data.',
+  })
+  @ApiResponse({ status: 201, description: 'Mentor application submitted. Account is pending admin approval.' })
+  @ApiResponse({ status: 400, description: 'Validation error — missing fields, invalid file type, or invalid phone format.' })
+  @ApiResponse({ status: 401, description: 'Google sign-up expired or invalid. Continue with Google again.' })
+  @ApiResponse({ status: 409, description: 'An account with this Google email already exists.' })
+  @UseInterceptors(MentorDocumentsInterceptor)
+  async registerMentorWithGoogle(
+    @Body() input: RegisterMentorWithGoogleDto,
+    @UploadedFiles() files: Express.Multer.File[],
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const response = await this.authService.registerMentorWithGoogle(input, files, ipAddress, userAgent);
+
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST
+      );
+    }
+
     return response;
   }
 
@@ -329,7 +409,7 @@ export class AuthController {
   })
   @ApiResponse({
     status: 200,
-    description: 'Signed in with Google successfully. Same shape as POST /auth/signin.',
+    description: 'Existing account: signed in, same shape as POST /auth/login. New Google account: { registrationRequired: true, registration, prefill } — finish with POST /auth/register-mentee/google or /auth/register-mentor/google.',
     type: ResponseDto,
     schema: {
       example: {
@@ -343,7 +423,6 @@ export class AuthController {
   @ApiResponse({ status: 400, description: 'Missing idToken.' })
   @ApiResponse({ status: 401, description: 'Google token is invalid or expired.' })
   @ApiResponse({ status: 403, description: 'Admin account, blocked account, or mentor not yet approved / rejected.' })
-  @ApiResponse({ status: 404, description: 'No Gurokonekt account for this Google email. Register first.' })
   @ApiResponse({ status: 500, description: 'Internal server error.' })
   async signInWithGoogle(
     @Body() input: SignInWithGoogleDto,
