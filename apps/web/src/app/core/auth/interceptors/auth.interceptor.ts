@@ -21,6 +21,8 @@ const SESSION_EXPIRED_CODE = 'SESSION_EXPIRED';
 const PUBLIC_AUTH_PATHS = [
   API_CONFIG.endpoints.auth.login,
   API_CONFIG.endpoints.auth.googleLogin,
+  API_CONFIG.endpoints.auth.googleRegisterMentee,
+  API_CONFIG.endpoints.auth.googleRegisterMentor,
   API_CONFIG.endpoints.auth.registerMentee,
   API_CONFIG.endpoints.auth.registerMentor,
   API_CONFIG.endpoints.auth.verifyEmail,
