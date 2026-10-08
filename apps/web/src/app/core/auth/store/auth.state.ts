@@ -61,6 +61,32 @@ export class AuthState {
     );
   }
 
+  @Action(AuthActions.LoginWithGoogle)
+  loginWithGoogle(ctx: StateContext<AuthStateModel>, action: AuthActions.LoginWithGoogle) {
+    ctx.patchState({
+      isLoginLoading: true,
+      isLoading: true,
+      errorMessage: null,
+      successMessage: null
+    });
+
+    return this.authService.loginWithGoogle(action.payload).pipe(
+      tap((response: AuthResponse) => {
+        ctx.dispatch(new AuthActions.LoginSuccess({
+          user: response.user,
+          token: response.accessToken,
+          refreshToken: response.refreshToken,
+          message: response.message
+        }));
+      }),
+      catchError((error: { message?: string }) => {
+        // The service already turned the API error into a user-facing message.
+        ctx.dispatch(new AuthActions.LoginFailure(error?.message || 'Google sign-in failed. Please try again.'));
+        return throwError(() => error);
+      })
+    );
+  }
+
   @Action(AuthActions.RestoreSession)
   restoreSession(ctx: StateContext<AuthStateModel>) {
     const token = this.storage.getToken();
