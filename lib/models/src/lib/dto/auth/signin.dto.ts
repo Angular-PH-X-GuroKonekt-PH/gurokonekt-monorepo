@@ -9,9 +9,8 @@ import {
 import { 
   ResendConfirmationEmailInterface, 
   ResendOTPTypes, 
-  SignInWithOAthInterface, 
-  SignInWithOAthProviders, 
-  SignInWithPasswordInterface 
+  SignInWithGoogleInterface,
+  SignInWithPasswordInterface
 } from "@gurokonekt/models";
 
 export class SignInWithPasswordDto implements SignInWithPasswordInterface {
@@ -23,9 +22,14 @@ export class SignInWithPasswordDto implements SignInWithPasswordInterface {
   password!: string;
 }
 
-export class SignInWithOAthDto implements SignInWithOAthInterface {
-  @IsEnum(SignInWithOAthProviders, { message: 'Provider must be a valid OAuth provider' })
-  provider!: SignInWithOAthProviders;
+export class SignInWithGoogleDto implements SignInWithGoogleInterface {
+  @IsString({ message: 'idToken must be a string' })
+  @IsNotEmpty({ message: 'idToken cannot be empty' })
+  idToken!: string;
+
+  @IsOptional()
+  @IsString({ message: 'nonce must be a string' })
+  nonce?: string;
 }
 
 export class ResendConfirmationEmailDto implements ResendConfirmationEmailInterface{
