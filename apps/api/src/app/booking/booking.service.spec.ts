@@ -8,6 +8,7 @@ import {
 } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationGateway } from '../gateway/notification-gateway.gateway';
+import { EmailDeliveryService } from '../email-delivery/email-delivery.service';
 import { BookingService } from './booking.service';
 
 const MENTEE_ID = 'mentee-1';
@@ -21,6 +22,7 @@ const FUTURE = new Date('2026-08-28T09:00:00.000Z'); // 7 days after NOW
 
 type PrismaMock = {
   db: {
+    $transaction: jest.Mock;
     user: { findUnique: jest.Mock; findMany: jest.Mock };
     booking: {
       findUnique: jest.Mock;
@@ -31,11 +33,13 @@ type PrismaMock = {
     };
     mentorProfile: { findUnique: jest.Mock };
     notification: { create: jest.Mock };
+    emailDelivery: { create: jest.Mock };
   };
 };
 
 const createPrismaMock = (): PrismaMock => ({
   db: {
+    $transaction: jest.fn(),
     user: { findUnique: jest.fn(), findMany: jest.fn().mockResolvedValue([]) },
     booking: {
       findUnique: jest.fn(),
@@ -46,6 +50,7 @@ const createPrismaMock = (): PrismaMock => ({
     },
     mentorProfile: { findUnique: jest.fn().mockResolvedValue(null) },
     notification: { create: jest.fn().mockResolvedValue({ id: 'notif-1' }) },
+    emailDelivery: { create: jest.fn() },
   },
 });
 
@@ -66,17 +71,25 @@ describe('BookingService — backdated bookings (issue #374)', () => {
   let service: BookingService;
   let prisma: PrismaMock;
   let gateway: { sendNotificationToUser: jest.Mock };
+  let emailDelivery: { sendBookingCreated: jest.Mock };
 
   beforeEach(async () => {
     jest.useFakeTimers().setSystemTime(NOW);
     prisma = createPrismaMock();
     gateway = { sendNotificationToUser: jest.fn() };
+    emailDelivery = {
+      sendBookingCreated: jest.fn().mockResolvedValue(undefined),
+    };
+    prisma.db.$transaction.mockImplementation((callback) =>
+      callback(prisma.db),
+    );
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BookingService,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationGateway, useValue: gateway },
+        { provide: EmailDeliveryService, useValue: emailDelivery },
       ],
     }).compile();
 
@@ -145,9 +158,7 @@ describe('BookingService — backdated bookings (issue #374)', () => {
         sessionLink: 'https://meet.test/abc',
       });
 
-      expect(result.statusCode).toBe(
-        API_RESPONSE.ERROR.BOOKING_NOT_FOUND.code,
-      );
+      expect(result.statusCode).toBe(API_RESPONSE.ERROR.BOOKING_NOT_FOUND.code);
     });
 
     it('denies a mentor approving a booking that is not theirs', async () => {
@@ -207,6 +218,60 @@ describe('BookingService — backdated bookings (issue #374)', () => {
         API_RESPONSE.ERROR.BOOKING_SESSION_IN_PAST.code,
       );
       expect(prisma.db.booking.create).not.toHaveBeenCalled();
+    });
+
+    it('creates a delivery log atomically and immediately emails only the booked mentor', async () => {
+      prisma.db.user.findUnique.mockResolvedValue({
+        role: UserRole.Mentor,
+        status: UserStatus.Approved,
+        isMentorApproved: true,
+        isMentorProfileComplete: true,
+        email: 'mentor@example.com',
+        firstName: 'Alex',
+        timezone: 'Asia/Manila',
+        mentorProfiles: [{ sessionDurationMinutes: 60 }],
+      });
+      prisma.db.booking.create.mockResolvedValue(
+        buildBooking({
+          sessionDateTime: FUTURE,
+          menteeNotes: 'Career planning',
+          mentor: { id: MENTOR_ID, firstName: 'Alex', lastName: 'Mentor' },
+          mentee: { id: MENTEE_ID, firstName: 'Jamie', lastName: 'Mentee' },
+        }),
+      );
+      prisma.db.emailDelivery.create.mockResolvedValue({ id: 'delivery-1' });
+
+      const result = await service.create(
+        {
+          mentorId: MENTOR_ID,
+          sessionDateTime: FUTURE.toISOString(),
+          menteeNotes: 'Career planning',
+        } as never,
+        MENTEE_ID,
+      );
+
+      expect(result.status).toBe(ResponseStatus.Success);
+      expect(prisma.db.$transaction).toHaveBeenCalledTimes(1);
+      expect(prisma.db.emailDelivery.create).toHaveBeenCalledWith({
+        data: {
+          eventKey: `booking-created:${BOOKING_ID}`,
+          eventType: 'BOOKING_CREATED_MENTOR',
+          bookingId: BOOKING_ID,
+          recipientEmail: 'mentor@example.com',
+        },
+      });
+      expect(emailDelivery.sendBookingCreated).toHaveBeenCalledWith(
+        'delivery-1',
+        expect.objectContaining({
+          to: 'mentor@example.com',
+          mentorFirstName: 'Alex',
+          menteeName: 'Jamie Mentee',
+          sessionDateTime: FUTURE,
+          timeZone: 'Asia/Manila',
+          durationMinutes: 60,
+          bookingDetails: 'Career planning',
+        }),
+      );
     });
   });
 });

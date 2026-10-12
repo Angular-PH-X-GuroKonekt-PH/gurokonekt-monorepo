@@ -22,11 +22,15 @@ import {
   AvailabilityOverrideInterface,
   UserAvailabilityInterface,
 } from '@gurokonekt/models';
-import { getDateKeyInTimezone, materializeAvailabilitySlots } from '@gurokonekt/utils';
+import {
+  getDateKeyInTimezone,
+  materializeAvailabilitySlots,
+} from '@gurokonekt/utils';
 import {
   NOTIFICATION_EVENTS,
   NotificationGateway,
 } from '../gateway/notification-gateway.gateway';
+import { EmailDeliveryService } from '../email-delivery/email-delivery.service';
 
 /** Fields selected for mentor/mentee when returning a booking list entry. */
 const BOOKING_USER_SELECT = {
@@ -45,6 +49,7 @@ export class BookingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationGateway: NotificationGateway,
+    private readonly emailDelivery: EmailDeliveryService,
   ) {}
 
   // ====================================================
@@ -65,6 +70,16 @@ export class BookingService {
           status: true,
           isMentorApproved: true,
           isMentorProfileComplete: true,
+          email: true,
+          firstName: true,
+          timezone: true,
+          mentorProfiles: {
+            select: {
+              sessionDurationMinutes: true,
+              availabilityTimezone: true,
+            },
+            take: 1,
+          },
         },
       });
 
@@ -92,18 +107,49 @@ export class BookingService {
       );
       if (conflict) return conflict as ResponseDto<BookingInterface>;
 
-      const booking = await this.prisma.db.booking.create({
-        data: {
-          menteeId,
-          mentorId: dto.mentorId,
-          sessionDateTime: dto.sessionDateTime,
-          menteeNotes: dto.menteeNotes ?? null,
-          status: BookingStatus.PENDING,
+      const { booking, deliveryId } = await this.prisma.db.$transaction(
+        async (transaction) => {
+          const booking = await transaction.booking.create({
+            data: {
+              menteeId,
+              mentorId: dto.mentorId,
+              sessionDateTime: dto.sessionDateTime,
+              menteeNotes: dto.menteeNotes ?? null,
+              status: BookingStatus.PENDING,
+            },
+            include: {
+              mentor: { select: BOOKING_USER_SELECT },
+              mentee: { select: BOOKING_USER_SELECT },
+            },
+          });
+          const delivery = await transaction.emailDelivery.create({
+            data: {
+              eventKey: `booking-created:${booking.id}`,
+              eventType: 'BOOKING_CREATED_MENTOR',
+              bookingId: booking.id,
+              recipientEmail: mentor.email,
+            },
+          });
+
+          return { booking, deliveryId: delivery.id };
         },
-        include: {
-          mentor: { select: BOOKING_USER_SELECT },
-          mentee: { select: BOOKING_USER_SELECT },
-        },
+      );
+
+      const mentorProfile = mentor.mentorProfiles[0];
+      const webAppUrl = (
+        process.env['WEB_APP_URL'] ?? 'http://localhost:4200'
+      ).replace(/\/+$/, '');
+      await this.emailDelivery.sendBookingCreated(deliveryId, {
+        to: mentor.email,
+        mentorFirstName: mentor.firstName,
+        menteeName:
+          `${booking.mentee.firstName} ${booking.mentee.lastName}`.trim(),
+        sessionDateTime: booking.sessionDateTime,
+        timeZone:
+          mentor.timezone ?? mentorProfile?.availabilityTimezone ?? 'UTC',
+        durationMinutes: mentorProfile?.sessionDurationMinutes ?? null,
+        bookingDetails: booking.menteeNotes,
+        reviewUrl: `${webAppUrl}/booking-overview`,
       });
 
       // Notify mentor — new booking request
@@ -1023,7 +1069,8 @@ export class BookingService {
       .slice(0, 10);
     const slots = materializeAvailabilitySlots(
       (profile.availability as unknown as UserAvailabilityInterface[]) ?? [],
-      (profile.availabilityOverrides as unknown as AvailabilityOverrideInterface[]) ?? [],
+      (profile.availabilityOverrides as unknown as AvailabilityOverrideInterface[]) ??
+        [],
       profile.availabilityTimezone,
       previousDate,
       nextDate,
