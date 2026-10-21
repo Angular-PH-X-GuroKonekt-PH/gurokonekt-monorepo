@@ -22,11 +22,15 @@ import {
   AvailabilityOverrideInterface,
   UserAvailabilityInterface,
 } from '@gurokonekt/models';
-import { getDateKeyInTimezone, materializeAvailabilitySlots } from '@gurokonekt/utils';
+import {
+  getDateKeyInTimezone,
+  materializeAvailabilitySlots,
+} from '@gurokonekt/utils';
 import {
   NOTIFICATION_EVENTS,
   NotificationGateway,
 } from '../gateway/notification-gateway.gateway';
+import { EmailDeliveryService } from '../email-delivery/email-delivery.service';
 
 /** Fields selected for mentor/mentee when returning a booking list entry. */
 const BOOKING_USER_SELECT = {
@@ -45,6 +49,7 @@ export class BookingService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationGateway: NotificationGateway,
+    private readonly emailDelivery: EmailDeliveryService,
   ) {}
 
   // ====================================================
@@ -65,6 +70,16 @@ export class BookingService {
           status: true,
           isMentorApproved: true,
           isMentorProfileComplete: true,
+          email: true,
+          firstName: true,
+          timezone: true,
+          mentorProfiles: {
+            select: {
+              sessionDurationMinutes: true,
+              availabilityTimezone: true,
+            },
+            take: 1,
+          },
         },
       });
 
@@ -92,18 +107,49 @@ export class BookingService {
       );
       if (conflict) return conflict as ResponseDto<BookingInterface>;
 
-      const booking = await this.prisma.db.booking.create({
-        data: {
-          menteeId,
-          mentorId: dto.mentorId,
-          sessionDateTime: dto.sessionDateTime,
-          menteeNotes: dto.menteeNotes ?? null,
-          status: BookingStatus.PENDING,
+      const { booking, deliveryId } = await this.prisma.db.$transaction(
+        async (transaction) => {
+          const booking = await transaction.booking.create({
+            data: {
+              menteeId,
+              mentorId: dto.mentorId,
+              sessionDateTime: dto.sessionDateTime,
+              menteeNotes: dto.menteeNotes ?? null,
+              status: BookingStatus.PENDING,
+            },
+            include: {
+              mentor: { select: BOOKING_USER_SELECT },
+              mentee: { select: BOOKING_USER_SELECT },
+            },
+          });
+          const delivery = await transaction.emailDelivery.create({
+            data: {
+              eventKey: `booking-created:${booking.id}`,
+              eventType: 'BOOKING_CREATED_MENTOR',
+              bookingId: booking.id,
+              recipientEmail: mentor.email,
+            },
+          });
+
+          return { booking, deliveryId: delivery.id };
         },
-        include: {
-          mentor: { select: BOOKING_USER_SELECT },
-          mentee: { select: BOOKING_USER_SELECT },
-        },
+      );
+
+      const mentorProfile = mentor.mentorProfiles[0];
+      const webAppUrl = (
+        process.env['WEB_APP_URL'] ?? 'http://localhost:4200'
+      ).replace(/\/+$/, '');
+      await this.emailDelivery.sendBookingCreated(deliveryId, {
+        to: mentor.email,
+        mentorFirstName: mentor.firstName,
+        menteeName:
+          `${booking.mentee.firstName} ${booking.mentee.lastName}`.trim(),
+        sessionDateTime: booking.sessionDateTime,
+        timeZone:
+          mentor.timezone ?? mentorProfile?.availabilityTimezone ?? 'UTC',
+        durationMinutes: mentorProfile?.sessionDurationMinutes ?? null,
+        bookingDetails: booking.menteeNotes,
+        reviewUrl: `${webAppUrl}/booking-overview`,
       });
 
       // Notify mentor — new booking request
@@ -296,6 +342,11 @@ export class BookingService {
     try {
       const existing = await this.prisma.db.booking.findUnique({
         where: { id },
+        include: {
+          mentee: {
+            select: { email: true, firstName: true, timezone: true },
+          },
+        },
       });
 
       if (!existing || existing.isDeleted) {
@@ -322,6 +373,15 @@ export class BookingService {
       }
 
       const isMentorOwner = existing.mentorId === authenticatedUserId;
+      const requestedSessionDateTime =
+        dto.sessionDateTime === undefined
+          ? null
+          : new Date(dto.sessionDateTime);
+      const isMentorReschedule =
+        isMentorOwner &&
+        requestedSessionDateTime !== null &&
+        requestedSessionDateTime.getTime() !==
+          existing.sessionDateTime.getTime();
 
       if (dto.mentorNotes !== undefined && !isAdmin && !isMentorOwner) {
         return {
@@ -350,25 +410,62 @@ export class BookingService {
         if (conflict) return conflict as ResponseDto<BookingInterface>;
       }
 
-      const updated = await this.prisma.db.booking.update({
-        where: { id },
-        data: {
-          ...(dto.sessionDateTime !== undefined && {
-            sessionDateTime: dto.sessionDateTime,
-          }),
-          ...(dto.status !== undefined && { status: dto.status }),
-          ...(dto.sessionLink !== undefined && {
-            sessionLink: dto.sessionLink,
-          }),
-          ...(dto.mentorNotes !== undefined && {
-            mentorNotes: dto.mentorNotes,
-          }),
+      const { updated, deliveryId } = await this.prisma.db.$transaction(
+        async (transaction) => {
+          const updated = await transaction.booking.update({
+            where: { id },
+            data: {
+              ...(dto.sessionDateTime !== undefined && {
+                sessionDateTime: dto.sessionDateTime,
+              }),
+              ...(dto.status !== undefined && { status: dto.status }),
+              ...(dto.sessionLink !== undefined && {
+                sessionLink: dto.sessionLink,
+              }),
+              ...(dto.mentorNotes !== undefined && {
+                mentorNotes: dto.mentorNotes,
+              }),
+            },
+            include: {
+              mentor: { select: BOOKING_USER_SELECT },
+              mentee: { select: BOOKING_USER_SELECT },
+            },
+          });
+
+          if (!isMentorReschedule) {
+            return { updated, deliveryId: null };
+          }
+
+          const delivery = await transaction.emailDelivery.create({
+            data: {
+              eventKey: `booking-rescheduled:${id}:${existing.updatedAt.toISOString()}`,
+              eventType: 'BOOKING_RESCHEDULED_MENTEE',
+              bookingId: id,
+              recipientEmail: existing.mentee.email,
+            },
+          });
+
+          return { updated, deliveryId: delivery.id };
         },
-        include: {
-          mentor: { select: BOOKING_USER_SELECT },
-          mentee: { select: BOOKING_USER_SELECT },
-        },
-      });
+      );
+
+      if (deliveryId !== null) {
+        const webAppUrl = (
+          process.env['WEB_APP_URL'] ?? 'http://localhost:4200'
+        ).replace(/\/+$/, '');
+        await this.emailDelivery.sendBookingRescheduled(deliveryId, {
+          to: existing.mentee.email,
+          menteeFirstName: existing.mentee.firstName,
+          mentorName:
+            `${updated.mentor.firstName} ${updated.mentor.lastName}`.trim(),
+          previousSessionDateTime: existing.sessionDateTime,
+          newSessionDateTime: updated.sessionDateTime,
+          timeZone: existing.mentee.timezone ?? 'UTC',
+          bookingDetails: updated.menteeNotes,
+          bookingStatus: updated.status,
+          reviewUrl: `${webAppUrl}/booking-overview`,
+        });
+      }
 
       return {
         status: ResponseStatus.Success,
@@ -569,6 +666,11 @@ export class BookingService {
     try {
       const existing = await this.prisma.db.booking.findUnique({
         where: { id },
+        include: {
+          mentee: {
+            select: { email: true, firstName: true, timezone: true },
+          },
+        },
       });
 
       if (!existing || existing.isDeleted) {
@@ -627,22 +729,51 @@ export class BookingService {
         if (conflict) return conflict as ResponseDto<BookingInterface>;
       }
 
-      const updated = await this.prisma.db.booking.update({
-        where: { id },
-        data: {
-          status: BookingStatus.APPROVED,
-          sessionLink: dto.sessionLink,
-          ...(dto.sessionDateTime !== undefined && {
-            sessionDateTime: dto.sessionDateTime,
-          }),
-          ...(dto.mentorNotes !== undefined && {
-            mentorNotes: dto.mentorNotes,
-          }),
+      const { updated, deliveryId } = await this.prisma.db.$transaction(
+        async (transaction) => {
+          const updated = await transaction.booking.update({
+            where: { id },
+            data: {
+              status: BookingStatus.APPROVED,
+              sessionLink: dto.sessionLink,
+              ...(dto.sessionDateTime !== undefined && {
+                sessionDateTime: dto.sessionDateTime,
+              }),
+              ...(dto.mentorNotes !== undefined && {
+                mentorNotes: dto.mentorNotes,
+              }),
+            },
+            include: {
+              mentor: { select: BOOKING_USER_SELECT },
+              mentee: { select: BOOKING_USER_SELECT },
+            },
+          });
+          const delivery = await transaction.emailDelivery.create({
+            data: {
+              eventKey: `booking-approved:${id}`,
+              eventType: 'BOOKING_APPROVED_MENTEE',
+              bookingId: id,
+              recipientEmail: existing.mentee.email,
+            },
+          });
+
+          return { updated, deliveryId: delivery.id };
         },
-        include: {
-          mentor: { select: BOOKING_USER_SELECT },
-          mentee: { select: BOOKING_USER_SELECT },
-        },
+      );
+
+      const webAppUrl = (
+        process.env['WEB_APP_URL'] ?? 'http://localhost:4200'
+      ).replace(/\/+$/, '');
+      await this.emailDelivery.sendBookingAccepted(deliveryId, {
+        to: existing.mentee.email,
+        menteeFirstName: existing.mentee.firstName,
+        mentorName:
+          `${updated.mentor.firstName} ${updated.mentor.lastName}`.trim(),
+        sessionDateTime: updated.sessionDateTime,
+        timeZone: existing.mentee.timezone ?? 'UTC',
+        bookingDetails: updated.menteeNotes,
+        sessionLink: dto.sessionLink,
+        reviewUrl: `${webAppUrl}/booking-overview`,
       });
 
       await this.createNotification(
@@ -682,6 +813,11 @@ export class BookingService {
     try {
       const existing = await this.prisma.db.booking.findUnique({
         where: { id },
+        include: {
+          mentee: {
+            select: { email: true, firstName: true, timezone: true },
+          },
+        },
       });
 
       if (!existing || existing.isDeleted) {
@@ -711,18 +847,47 @@ export class BookingService {
         };
       }
 
-      const updated = await this.prisma.db.booking.update({
-        where: { id },
-        data: {
-          status: BookingStatus.REJECTED,
-          ...(dto.mentorNotes !== undefined && {
-            mentorNotes: dto.mentorNotes,
-          }),
+      const { updated, deliveryId } = await this.prisma.db.$transaction(
+        async (transaction) => {
+          const updated = await transaction.booking.update({
+            where: { id },
+            data: {
+              status: BookingStatus.REJECTED,
+              ...(dto.mentorNotes !== undefined && {
+                mentorNotes: dto.mentorNotes,
+              }),
+            },
+            include: {
+              mentor: { select: BOOKING_USER_SELECT },
+              mentee: { select: BOOKING_USER_SELECT },
+            },
+          });
+          const delivery = await transaction.emailDelivery.create({
+            data: {
+              eventKey: `booking-rejected:${id}`,
+              eventType: 'BOOKING_REJECTED_MENTEE',
+              bookingId: id,
+              recipientEmail: existing.mentee.email,
+            },
+          });
+
+          return { updated, deliveryId: delivery.id };
         },
-        include: {
-          mentor: { select: BOOKING_USER_SELECT },
-          mentee: { select: BOOKING_USER_SELECT },
-        },
+      );
+
+      const webAppUrl = (
+        process.env['WEB_APP_URL'] ?? 'http://localhost:4200'
+      ).replace(/\/+$/, '');
+      await this.emailDelivery.sendBookingRejected(deliveryId, {
+        to: existing.mentee.email,
+        menteeFirstName: existing.mentee.firstName,
+        mentorName:
+          `${updated.mentor.firstName} ${updated.mentor.lastName}`.trim(),
+        sessionDateTime: updated.sessionDateTime,
+        timeZone: existing.mentee.timezone ?? 'UTC',
+        bookingDetails: updated.menteeNotes,
+        declineReason: updated.mentorNotes,
+        reviewUrl: `${webAppUrl}/booking-overview`,
       });
 
       await this.createNotification(
@@ -1023,7 +1188,8 @@ export class BookingService {
       .slice(0, 10);
     const slots = materializeAvailabilitySlots(
       (profile.availability as unknown as UserAvailabilityInterface[]) ?? [],
-      (profile.availabilityOverrides as unknown as AvailabilityOverrideInterface[]) ?? [],
+      (profile.availabilityOverrides as unknown as AvailabilityOverrideInterface[]) ??
+        [],
       profile.availabilityTimezone,
       previousDate,
       nextDate,
@@ -1039,7 +1205,7 @@ export class BookingService {
       return {
         status: ResponseStatus.Error,
         statusCode: API_RESPONSE.ERROR.BOOKING_OUTSIDE_AVAILABILITY.code,
-        message: `${API_RESPONSE.ERROR.BOOKING_OUTSIDE_AVAILABILITY.message}: the requested UTC time is not a generated mentor slot`,
+        message: API_RESPONSE.ERROR.BOOKING_OUTSIDE_AVAILABILITY.message,
         data: null,
       };
     }

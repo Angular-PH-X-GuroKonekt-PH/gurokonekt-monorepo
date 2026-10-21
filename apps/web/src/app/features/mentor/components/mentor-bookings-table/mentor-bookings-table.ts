@@ -422,9 +422,9 @@ export class MentorBookingsTable {
           this.closeUpdateModal();
           setTimeout(() => window.location.reload(), 800);
         },
-        error: () => {
+        error: (error: { message?: string }) => {
           this.submitting.set(false);
-          this.toastService.error('Failed to update booking.');
+          this.toastService.error(error.message ?? 'Failed to update booking.');
         },
       });
   }
