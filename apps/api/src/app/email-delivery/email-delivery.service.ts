@@ -1,12 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { EmailDeliveryStatus } from '@prisma/client';
-import {
+import type {
   BookingAcceptedEmailInput,
   BookingCreatedEmailInput,
   BookingRejectedEmailInput,
   BookingRescheduledEmailInput,
-  MailService,
-} from '../mail/mail.service';
+} from '../mail/booking-email.interface';
+import { MailService } from '../mail/mail.service';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
