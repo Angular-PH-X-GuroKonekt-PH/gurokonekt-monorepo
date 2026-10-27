@@ -75,18 +75,64 @@
 
         <div
           id="dropdownNotification"
-          class="absolute right-2 top-14 z-20 w-[min(26rem,calc(100vw-1rem))] rounded-base border border-default-medium bg-neutral-primary-soft shadow sm:right-16"
+          class="absolute right-2 top-14 z-20 w-[min(26rem,calc(100vw-1rem))] overflow-hidden rounded-base border border-default-medium bg-neutral-primary-soft shadow sm:right-16"
           [class.hidden]="!isNotificationOpen()"
           aria-labelledby="dropdownNotificationButton"
         >
           <div
-            class="rounded-t-base bg-neutral-secondary-medium px-4 py-2 text-center text-sm font-medium text-body"
+            class="rounded-t-base bg-white px-4 py-2 text-center text-sm font-medium text-body"
           >
             Notifications
           </div>
 
           <div
-            class="max-h-96 divide-y divide-slate-200 overflow-y-auto overscroll-contain"
+            class="flex items-center gap-5 border-b border-slate-200 bg-white px-4"
+            role="group"
+            aria-label="Filter notifications"
+          >
+            <button
+              type="button"
+              data-notification-filter="all"
+              class="border-b-2 border-transparent px-1 py-2 text-xs font-medium transition hover:text-heading"
+              [class.border-orange-500]="notificationFilter() === 'all'"
+              [class.text-orange-600]="notificationFilter() === 'all'"
+              [class.text-body]="notificationFilter() !== 'all'"
+              [attr.aria-pressed]="notificationFilter() === 'all'"
+              (click)="setNotificationFilter('all')"
+            >
+              All
+            </button>
+            <button
+              type="button"
+              data-notification-filter="unread"
+              class="border-b-2 border-transparent px-1 py-2 text-xs font-medium transition hover:text-heading"
+              [class.border-orange-500]="notificationFilter() === 'unread'"
+              [class.text-orange-600]="notificationFilter() === 'unread'"
+              [class.text-body]="notificationFilter() !== 'unread'"
+              [attr.aria-pressed]="notificationFilter() === 'unread'"
+              (click)="setNotificationFilter('unread')"
+            >
+              Unread
+            </button>
+            <button
+              type="button"
+              data-notification-filter="read"
+              class="border-b-2 border-transparent px-1 py-2 text-xs font-medium transition hover:text-heading"
+              [class.border-orange-500]="notificationFilter() === 'read'"
+              [class.text-orange-600]="notificationFilter() === 'read'"
+              [class.text-body]="notificationFilter() !== 'read'"
+              [attr.aria-pressed]="notificationFilter() === 'read'"
+              (click)="setNotificationFilter('read')"
+            >
+              Read
+            </button>
+          </div>
+
+          <div
+            data-notification-list
+            class="overscroll-contain"
+            [class.overflow-y-auto]="notificationPreviewLimit() > 5"
+            [style.height.px]="notificationListHeight()"
           >
             @if (isNotificationsLoading()) {
               <div class="space-y-3 px-4 py-4">
@@ -109,45 +155,44 @@
                   Updates about your bookings and sessions will appear here.
                 </p>
               </div>
+            } @else if (filteredNotifications().length === 0) {
+              <div class="px-5 py-6 text-center">
+                <p class="text-sm font-semibold text-heading">
+                  @if (notificationFilter() === 'unread') {
+                    No unread notifications
+                  } @else {
+                    No read notifications
+                  }
+                </p>
+              </div>
             } @else {
-              @for (notif of recentNotifications(); track notif.id) {
-                <app-navbar-notification-item
-                  [notification]="notif"
-                  (markAsRead)="markAsRead($event)"
-                />
-              }
+              <div class="divide-y divide-slate-200">
+                @for (notif of filteredNotifications(); track notif.id) {
+                  <app-navbar-notification-item
+                    [notification]="notif"
+                    [menuOpen]="openNotificationMenuId() === notif.id"
+                    [deleting]="isDeletingNotification(notif.id)"
+                    [attr.data-notification-id]="notif.id"
+                    (openNotification)="openNotification($event)"
+                    (markAsRead)="markAsRead($event)"
+                    (toggleMenu)="toggleNotificationMenu($event)"
+                    (deleteNotification)="deleteNotification($event)"
+                  />
+                }
+              </div>
+            }
+
+            @if (hasOlderNotifications()) {
+              <button
+                type="button"
+                data-notification-show-older
+                (click)="showOlderNotifications()"
+                class="w-full border-t border-slate-200 px-4 py-2.5 text-center text-xs font-medium text-body hover:bg-slate-50 hover:text-heading"
+              >
+                Show older
+              </button>
             }
           </div>
-
-          <a
-            [routerLink]="'/notifications'"
-            (click)="toggleNotification($event)"
-            class="block rounded-b-base bg-neutral-secondary-medium py-2 text-center text-sm font-medium text-body hover:bg-neutral-tertiary-medium"
-          >
-            <div class="inline-flex items-center">
-              <svg
-                class="me-1.5 h-5 w-5 text-body"
-                aria-hidden="true"
-                xmlns="http://www.w3.org/2000/svg"
-                width="24"
-                height="24"
-                fill="none"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  stroke="currentColor"
-                  stroke-width="2"
-                  d="M21 12c0 1.2-4.03 6-9 6s-9-4.8-9-6c0-1.2 4.03-6 9-6s9 4.8 9 6Z"
-                />
-                <path
-                  stroke="currentColor"
-                  stroke-width="2"
-                  d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"
-                />
-              </svg>
-              View all
-            </div>
-          </a>
         </div>
 
         <div class="relative">
