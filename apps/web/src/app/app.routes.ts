@@ -273,6 +273,14 @@ export const appRoutes: Route[] = [
           ),
         title: 'Passkeys',
       },
+      {
+        path: 'sign-in-methods',
+        loadComponent: () =>
+          import('./core/profile/pages/sign-in-methods-section-page/sign-in-methods-section.page').then(
+            (m) => m.SignInMethodsSectionPage
+          ),
+        title: 'Sign-in methods',
+      },
     ],
   },
   {

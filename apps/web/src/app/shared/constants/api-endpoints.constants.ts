@@ -3,12 +3,17 @@ export const API_ENDPOINTS = {
     registerMentee: '/auth/register-mentee',
     registerMentor: '/auth/register-mentor',
     login: '/auth/login',
+    googleLogin: '/auth/signin/google',
     refreshToken: '/auth/refresh-token',
     session: '/auth/session',
     verifyEmail: '/auth/verify-email',
     resendConfirmation: '/auth/resend-confirmation-link',
     forgotPassword: '/auth/forgot-password',
     completePasswordReset: '/auth/complete-password-reset',
+  },
+  signInMethods: {
+    list: '/auth/sign-in-methods',
+    google: '/auth/sign-in-methods/google',
   },
   passkeys: {
     registrationOptions: '/auth/passkeys/registration/options',

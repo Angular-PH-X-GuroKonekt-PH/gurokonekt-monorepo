@@ -23,9 +23,9 @@ export const API_RESPONSE = {
       code: 201,
       message: 'Mentor registered successfully',
     },
-    SIGN_WITH_OATH: {
+    SIGN_WITH_GOOGLE: {
       code: 200,
-      message: 'Signed in with OAuth successfully',
+      message: 'Signed in with Google successfully',
     },
     PASSKEY_REGISTRATION_OPTIONS: {
       code: 200,
@@ -54,6 +54,18 @@ export const API_RESPONSE = {
     SIGN_WITH_PASSKEY: {
       code: 200,
       message: 'Signed in with passkey successfully',
+    },
+    SIGN_IN_METHODS_LISTED: {
+      code: 200,
+      message: 'Sign-in methods retrieved successfully',
+    },
+    GOOGLE_CONNECTED: {
+      code: 200,
+      message: 'Google is now connected. You can use it to sign in.',
+    },
+    GOOGLE_DISCONNECTED: {
+      code: 200,
+      message: 'Google has been disconnected from your account.',
     },
     SIGN_WITH_PASSWORD: {
       code: 200,
@@ -516,9 +528,50 @@ export const API_RESPONSE = {
       code: 401,
       message: "We couldn't sign you in with this passkey. Please try again or use another sign-in method.",
     },
-    PASSKEY_SIGNIN_ACCOUNT_BLOCKED: {
+    SIGNIN_GOOGLE_FAILED: {
+      code: 401,
+      message: 'Google sign-in failed. Please try again.',
+    },
+    SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND: {
+      code: 404,
+      message: 'No GuroKonekt account found for this Google account. Please register first.',
+    },
+    SIGNIN_GOOGLE_NOT_AVAILABLE: {
+      code: 403,
+      message: 'Google sign-in is not available for this account. Please sign in with your email and password.',
+    },
+    SIGNIN_ACCOUNT_BLOCKED: {
       code: 403,
       message: 'This account cannot sign in. Please contact support if you believe this is a mistake.',
+    },
+    GOOGLE_NOT_CONNECTED: {
+      code: 403,
+      message:
+        'This email already has a GuroKonekt account. Sign in with your password, then connect Google in Settings > Sign-in methods.',
+    },
+    GOOGLE_ALREADY_LINKED: {
+      code: 409,
+      message: 'This Google account is already connected to another GuroKonekt account.',
+    },
+    GOOGLE_LINK_FAILED: {
+      code: 400,
+      message: "We couldn't connect your Google account. Please try again.",
+    },
+    GOOGLE_LINKING_UNAVAILABLE: {
+      code: 503,
+      message: "Connecting Google isn't available right now. Please try again later.",
+    },
+    GOOGLE_NOT_LINKED: {
+      code: 404,
+      message: "Google isn't connected to this account.",
+    },
+    GOOGLE_DISCONNECT_NOT_ALLOWED: {
+      code: 400,
+      message: "Google is the only way to sign in to this account, so it can't be disconnected.",
+    },
+    SIGN_IN_METHOD_REAUTH_REQUIRED: {
+      code: 403,
+      message: 'For your security, please sign in again to change how you sign in.',
     },
     SIGNIN_MENTOR_PENDING_REVIEW: {
       code: 403,
@@ -1202,20 +1255,21 @@ Authenticates a user with email and password via Supabase.
     },
   },
 
-  SIGNIN_OAUTH: {
-    summary: 'Sign in with an OAuth provider (Google / GitHub)',
+  SIGNIN_GOOGLE: {
+    summary: 'Sign in with Google',
     description: `
-Exchanges an OAuth provider access token for a Gurokonekt session.
+Exchanges a Google ID token for a Gurokonekt session.
 
 **Flow:**
-1. The frontend completes the OAuth flow and receives an access token from the provider.
-2. Send that token here along with the provider name.
-3. The API validates the token with Supabase and returns a JWT.
+1. The frontend shows the Google Identity Services button and receives an ID token (\`credential\`).
+2. Send that token here. If the button was given a nonce, send the same raw nonce too.
+3. Supabase verifies the token and links it to the existing account with the same email.
+4. The response has the same shape as \`POST /auth/signin\`: \`{ user, session }\`.
 
-**Supported providers:** \`google\`, \`github\`
+**Who can use it:** existing mentees and mentors only. Google emails without a Gurokonekt account get \`404\` (register first). Admin accounts get \`403\` and must use email and password.
 `,
     bodyExample: {
-      provider: 'google',
+      idToken: 'eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...',
     },
   },
 
@@ -1269,6 +1323,33 @@ Deletes one of the signed-in user's passkeys; it stops working for sign-in immed
 **Requires a recent sign-in:** the session must come from a sign-in within the last 10 minutes (Supabase's
 \`amr\` claim, which token refreshes don't change). Otherwise the API returns \`403\` with
 \`data.reauthRequired: true\` and the user signs in again first. Another user's passkey ID returns \`404\`.
+`,
+  },
+
+  SIGN_IN_METHODS_LIST: {
+    summary: "The signed-in user's sign-in methods",
+    description: `
+Which ways the signed-in user can sign in: password, Google (with the connected Google email) and how many passkeys.
+`,
+  },
+
+  GOOGLE_CONNECT: {
+    summary: 'Connect Google to my account',
+    description: `
+Links a Google account to the signed-in user, so "Continue with Google" signs them in. Send a Google ID token from the
+Google Sign-In button, plus the user's refresh token (Supabase only lets users link identities to their own session).
+The response includes the user's current tokens, which replace the stored ones.
+
+**Requires a sign-in from the last 10 minutes** (\`403\` with \`data.reauthRequired: true\` otherwise). A Google account
+already connected to someone else returns \`409\`. Needs "Allow manual linking" enabled in Supabase.
+`,
+  },
+
+  GOOGLE_DISCONNECT: {
+    summary: 'Disconnect Google from my account',
+    description: `
+Unlinks Google from the signed-in user. Only allowed when the account also has a password, so the user can still sign
+in. Same recent sign-in rule and refresh token as connecting; the response includes the user's current tokens.
 `,
   },
 

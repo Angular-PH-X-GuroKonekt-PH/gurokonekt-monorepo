@@ -159,7 +159,7 @@ describe('PasskeyLoginService', () => {
     it.each([
       ['mentor', 'pending_approval', 'SIGNIN_MENTOR_PENDING_REVIEW'],
       ['mentor', 'rejected', 'SIGNIN_MENTOR_REJECTED'],
-      ['mentee', 'banned', 'PASSKEY_SIGNIN_ACCOUNT_BLOCKED'],
+      ['mentee', 'banned', 'SIGNIN_ACCOUNT_BLOCKED'],
     ] as const)('keeps the login rules: a %s with status %s is refused', async (role, status, errorKey) => {
       prisma.db.user.findUnique.mockResolvedValue({ ...user, role, status });
 
@@ -186,7 +186,7 @@ describe('signInBlockFor', () => {
     [{ role: 'mentee', status: 'inactive' }, null],
     [{ role: 'mentor', status: 'approved' }, null],
     [{ role: 'mentor', status: 'pending_review' }, 'SIGNIN_MENTOR_PENDING_REVIEW'],
-    [{ role: 'mentee', status: 'suspended' }, 'PASSKEY_SIGNIN_ACCOUNT_BLOCKED'],
+    [{ role: 'mentee', status: 'suspended' }, 'SIGNIN_ACCOUNT_BLOCKED'],
     [{ role: 'admin', status: 'active' }, 'PASSKEY_SIGNIN_FAILED'],
   ])('%j -> %s', (user, expected) => {
     expect(signInBlockFor(user)).toBe(expected);
