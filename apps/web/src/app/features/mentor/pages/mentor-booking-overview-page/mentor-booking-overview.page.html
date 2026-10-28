@@ -16,10 +16,12 @@
       [currentPage]="mentorBookings.currentPage()"
       [pageSize]="mentorBookings.pageSize()"
       [totalItems]="mentorBookings.totalBookings()"
+      [initialBookingId]="initialBookingId()"
       (pageChange)="mentorBookings.setPage($event)"
       (pageSizeChange)="mentorBookings.setPageSize($event)"
       (tabChange)="mentorBookings.setActiveTab($event)"
       (sortChange)="mentorBookings.setSort($event.key === 'counterparty' ? 'mentee' : $event.key, $event.direction)"
+      (detailsClosed)="closeLinkedBooking()"
     />
   </div>
 </div>
