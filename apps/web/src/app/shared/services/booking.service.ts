@@ -25,6 +25,26 @@ import { buildApiUrl } from '../utils/api.util';
 export class BookingService {
   private readonly http = inject(HttpClient);
 
+  getBookingById(id: string): Observable<BookingCardInterface | null> {
+    return this.http
+      .get<ApiResponse<BookingCardInterface>>(buildApiUrl(`/booking/${id}`))
+      .pipe(
+        map((response) =>
+          validateApiResponse<BookingCardInterface>(
+            response,
+            'Failed to fetch booking.',
+          ),
+        ),
+        map((booking) => ({
+          ...booking,
+          sessionDateTime: new Date(booking.sessionDateTime),
+          createdAt: new Date(booking.createdAt),
+          updatedAt: new Date(booking.updatedAt),
+        })),
+        catchError(handleApiErrorWithFallback(null, 'Failed to fetch booking')),
+      );
+  }
+
   createBooking(
     request: CreateBookingRequestInterface,
   ): Observable<BookingCardInterface> {
@@ -95,10 +115,9 @@ export class BookingService {
     if (query.sortOrder) params = params.set('sortOrder', query.sortOrder);
 
     return this.http
-      .get<ApiResponse<BookingListResponse>>(
-        buildApiUrl(`/booking/user/${userId}`),
-        { params },
-      )
+      .get<
+        ApiResponse<BookingListResponse>
+      >(buildApiUrl(`/booking/user/${userId}`), { params })
       .pipe(
         map((response) =>
           validateApiResponse<BookingListResponse>(
@@ -219,29 +238,28 @@ export class BookingService {
       sessionDateTime?: string;
       sessionLink: string;
       mentorNotes?: string;
-    }
+    },
   ): Observable<BookingCardInterface | null> {
     return this.http
-      .patch<ApiResponse<BookingCardInterface>>(
-        buildApiUrl(`/booking/${id}/approve`),
-        dto
-      )
+      .patch<
+        ApiResponse<BookingCardInterface>
+      >(buildApiUrl(`/booking/${id}/approve`), dto)
       .pipe(
         map((response) =>
           validateApiResponse<BookingCardInterface>(
             response,
-            'Failed to approve booking.'
-          )
+            'Failed to approve booking.',
+          ),
         ),
         catchError(
-          handleApiErrorWithFallback(null, 'Failed to approve booking')
-        )
+          handleApiErrorWithFallback(null, 'Failed to approve booking'),
+        ),
       );
   }
 
   rejectBooking(
     id: string,
-    dto: { mentorNotes?: string }
+    dto: { mentorNotes?: string },
   ): Observable<BookingCardInterface | null> {
     return this.http
       .patch<
@@ -262,7 +280,7 @@ export class BookingService {
 
   cancelBooking(
     id: string,
-    dto: { mentorNotes?: string }
+    dto: { mentorNotes?: string },
   ): Observable<BookingCardInterface | null> {
     return this.http
       .patch<

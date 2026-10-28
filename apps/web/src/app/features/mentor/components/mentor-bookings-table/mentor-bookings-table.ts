@@ -1,12 +1,14 @@
 import {
   Component,
   computed,
+  effect,
   inject,
   input,
   output,
   signal,
 } from '@angular/core';
 import { FormsModule } from '@angular/forms';
+import { forkJoin, timer } from 'rxjs';
 import {
   BookingCardInterface,
   BookingStatus,
@@ -62,11 +64,13 @@ export class MentorBookingsTable {
   pageSize = input(10);
   totalItems = input(0);
   pageSizeOptions = input<number[]>([10, 20, 50]);
+  initialBookingId = input<string | null>(null);
 
   pageChange = output<number>();
   pageSizeChange = output<number>();
   tabChange = output<BookingTab>();
   sortChange = output<BookingSortChange>();
+  detailsClosed = output<void>();
 
   bookingService = inject(BookingService);
   toastService = inject(ToastService);
@@ -90,6 +94,8 @@ export class MentorBookingsTable {
   });
 
   selectedBooking = signal<BookingCardInterface | null>(null);
+  linkedBookingLoading = signal(false);
+  private openedBookingId: string | null = null;
   openActionBookingId = signal<string | null>(null);
 
   approvalBooking = signal<BookingCardInterface | null>(null);
@@ -111,6 +117,42 @@ export class MentorBookingsTable {
   updateMentorNotes = signal('');
 
   submitting = signal(false);
+
+  constructor() {
+    effect((onCleanup) => {
+      const bookingId = this.initialBookingId();
+      if (!bookingId) {
+        this.openedBookingId = null;
+        this.linkedBookingLoading.set(false);
+        this.selectedBooking.set(null);
+        return;
+      }
+      if (this.openedBookingId === bookingId) return;
+
+      this.selectedBooking.set(null);
+      this.linkedBookingLoading.set(true);
+      this.openedBookingId = bookingId;
+      const subscription = forkJoin({
+        booking: this.bookingService.getBookingById(bookingId),
+        minimumDelay: timer(600),
+      }).subscribe(({ booking }) => {
+        if (this.openedBookingId !== bookingId) return;
+
+        this.linkedBookingLoading.set(false);
+        if (!booking) {
+          this.openedBookingId = null;
+          this.selectedBooking.set(null);
+          this.toastService.error('Unable to load the related booking.');
+          this.detailsClosed.emit();
+          return;
+        }
+
+        this.selectedBooking.set(booking);
+      });
+
+      onCleanup(() => subscription.unsubscribe());
+    });
+  }
 
   setActiveTab(tab: string): void {
     const bookingTab = tab as BookingTab;
@@ -145,11 +187,22 @@ export class MentorBookingsTable {
 
   viewDetails(booking: BookingCardInterface): void {
     this.closeActionMenu();
-    this.selectedBooking.set(booking);
+    this.selectedBooking.set(null);
+    this.linkedBookingLoading.set(true);
+    this.openedBookingId = booking.id;
+
+    timer(600).subscribe(() => {
+      if (this.openedBookingId !== booking.id) return;
+      this.linkedBookingLoading.set(false);
+      this.selectedBooking.set(booking);
+    });
   }
 
   closeDetails(): void {
+    this.linkedBookingLoading.set(false);
     this.selectedBooking.set(null);
+    this.openedBookingId = null;
+    this.detailsClosed.emit();
   }
 
   approveBooking(booking: BookingCardInterface): void {

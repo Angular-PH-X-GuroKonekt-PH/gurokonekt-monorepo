@@ -1,4 +1,4 @@
-import { Component, input, output } from '@angular/core';
+import { Component, HostListener, input, output } from '@angular/core';
 import { BookingCardInterface } from '@gurokonekt/models/interfaces/booking/booking.model';
 import { formatDateInTimezone, formatTimeInTimezone } from '@gurokonekt/utils';
 
@@ -10,6 +10,11 @@ export class MenteeBookingDetailsModal {
   booking = input.required<BookingCardInterface>();
   displayTimezone = input('UTC');
   closed = output<void>();
+
+  @HostListener('document:keydown.escape')
+  protected closeOnEscape(): void {
+    this.closed.emit();
+  }
 
   protected formatBookingDate(date: Date | string): string {
     return formatDateInTimezone(date, this.displayTimezone());

@@ -12,7 +12,7 @@
       [isLoading]="isBookingsLoading()"
       [initialTab]="initialTab"
       [displayTimezone]="displayTimezone()"
-      [initialBookingId]="initialBookingId"
+      [initialBookingId]="initialBookingId()"
       footerMode="pagination"
       [currentPage]="currentPage()"
       [pageSize]="pageSize()"
@@ -23,6 +23,7 @@
       (pageSizeChange)="setPageSize($event)"
       (tabChange)="setActiveTab($event)"
       (sortChange)="setSort($event)"
+      (detailsClosed)="closeLinkedBooking()"
     />
   </div>
 

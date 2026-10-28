@@ -184,14 +184,6 @@ export const appRoutes: Route[] = [
           ),
         title: 'Booking Overview',
       },
-      {
-        path: APP_ROUTES.NOTIFICATIONS,
-        loadComponent: () =>
-          import('./shared/components/notifications/notifications.component').then(
-            (m) => m.Notifications
-          ),
-        title: 'Notifications',
-      },
     ],
   },
   // MENTOR ROUTES
@@ -225,14 +217,6 @@ export const appRoutes: Route[] = [
           ),
         title: 'Manage Availability',
       },      
-      {
-        path: APP_ROUTES.NOTIFICATIONS,
-        loadComponent: () =>
-          import('./shared/components/notifications/notifications.component').then(
-            (m) => m.Notifications
-          ),
-        title: 'Notifications',
-      },
     ],
   },
   {

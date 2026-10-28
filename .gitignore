@@ -57,3 +57,5 @@ docs
 postman
 apps/api/.env.prod
 apps/api/.env.test
+# Local-only Docker stack (see deploy/local/compose.yaml)
+/deploy/local/

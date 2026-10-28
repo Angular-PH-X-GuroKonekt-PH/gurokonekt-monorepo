@@ -1,9 +1,9 @@
 import { CommonModule } from '@angular/common';
 import { Component, computed, inject, signal } from '@angular/core';
 import { toObservable, toSignal } from '@angular/core/rxjs-interop';
-import { ActivatedRoute } from '@angular/router';
+import { ActivatedRoute, Router } from '@angular/router';
 import { Store } from '@ngxs/store';
-import { firstValueFrom, of, switchMap } from 'rxjs';
+import { firstValueFrom, map, of, switchMap } from 'rxjs';
 
 import {
   BookingCardInterface,
@@ -27,12 +27,7 @@ import { UserTimezoneService } from '../../../../shared/services/user-timezone.s
 
 @Component({
   selector: 'app-mentee-booking-overview-page',
-  imports: [
-    CommonModule,
-    MenteeBookingsTable,
-    SectionTitle,
-    MenteeReviewModal,
-  ],
+  imports: [CommonModule, MenteeBookingsTable, SectionTitle, MenteeReviewModal],
   templateUrl: './mentee-booking-overview.page.html',
 })
 export class MenteeBookingOverviewPage {
@@ -42,17 +37,21 @@ export class MenteeBookingOverviewPage {
   private readonly toastService = inject(ToastService);
   private readonly store = inject(Store);
   private readonly route = inject(ActivatedRoute);
+  private readonly router = inject(Router);
 
   protected readonly authUser = this.store.selectSignal(AuthSelectors.user);
   protected readonly userId = computed(() => this.authUser()?.id);
-  protected readonly displayTimezone = this.menteeTimezoneService.displayTimezone;
+  protected readonly displayTimezone =
+    this.menteeTimezoneService.displayTimezone;
 
   protected readonly selectedReviewBooking =
     signal<BookingCardInterface | null>(null);
   protected readonly isSubmittingReview = signal(false);
 
-  protected readonly initialBookingId =
-    this.route.snapshot.queryParamMap.get('bookingId');
+  protected readonly initialBookingId = toSignal(
+    this.route.queryParamMap.pipe(map((params) => params.get('bookingId'))),
+    { initialValue: this.route.snapshot.queryParamMap.get('bookingId') },
+  );
   protected readonly initialTab: BookingTab =
     this.route.snapshot.queryParamMap.get('tab') === 'Completed'
       ? 'Completed'
@@ -142,6 +141,15 @@ export class MenteeBookingOverviewPage {
     this.requestedSortBy.set(sort.key === 'counterparty' ? 'mentor' : sort.key);
     this.requestedSortOrder.set(sort.direction);
     this.requestedPage.set(1);
+  }
+
+  protected closeLinkedBooking(): void {
+    void this.router.navigate([], {
+      relativeTo: this.route,
+      queryParams: { bookingId: null },
+      queryParamsHandling: 'merge',
+      replaceUrl: true,
+    });
   }
 
   //REVIEW

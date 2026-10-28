@@ -71,6 +71,7 @@ enum LogsActionType {
   admin_deactivate_mentor
   admin_feature_mentor
   admin_unfeature_mentor
+  signin_google
 
   @@map("logs_action_type")
 }

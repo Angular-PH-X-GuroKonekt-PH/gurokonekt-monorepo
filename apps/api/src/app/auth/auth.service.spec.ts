@@ -1,5 +1,5 @@
 import { Test } from '@nestjs/testing';
-import { API_RESPONSE, ResponseStatus } from '@gurokonekt/models';
+import { API_RESPONSE, LogsActionType, ResponseStatus } from '@gurokonekt/models';
 
 import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -280,3 +280,164 @@ describe('AuthService', () => {
   });
 });
 
+
+describe('AuthService.signInWithGoogle', () => {
+  const session = { access_token: 'access-token', refresh_token: 'refresh-token' };
+  const googleAuthUser = {
+    id: 'user-1',
+    email: 'jane@example.com',
+    identities: [{ provider: 'google' }],
+  };
+  const mentee = {
+    id: 'user-1',
+    email: 'jane@example.com',
+    firstName: 'Jane',
+    lastName: 'Dela Cruz',
+    role: 'mentee',
+    status: 'active',
+    isProfileComplete: true,
+    isMentorProfileComplete: false,
+  };
+
+  const prisma = {
+    db: {
+      user: { findUnique: jest.fn(), update: jest.fn() },
+      menteeProfile: { findUnique: jest.fn() },
+    },
+  };
+  const supabase = {
+    client: { auth: { signInWithIdToken: jest.fn() } },
+    clientAdmin: { auth: { admin: { deleteUser: jest.fn() } } },
+  };
+  const logging = { log: jest.fn() };
+  const errorHandler = { handleUnexpectedError: jest.fn() };
+
+  const service = new AuthService(
+    prisma as any,
+    supabase as any,
+    {} as any,
+    {} as any,
+    logging as any,
+    {} as any,
+    errorHandler as any,
+  );
+
+  const signIn = () =>
+    service.signInWithGoogle({ idToken: 'google-id-token', nonce: 'raw-nonce' }, '127.0.0.1', 'Jest');
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    supabase.client.auth.signInWithIdToken.mockResolvedValue({
+      data: { user: googleAuthUser, session },
+      error: null,
+    });
+    supabase.clientAdmin.auth.admin.deleteUser.mockResolvedValue({ error: null });
+    prisma.db.user.findUnique.mockResolvedValue(mentee);
+    prisma.db.menteeProfile.findUnique.mockResolvedValue({ id: 'profile-1' });
+  });
+
+  it('signs in an existing mentee and returns the same shape as password sign-in', async () => {
+    const response = await signIn();
+
+    expect(supabase.client.auth.signInWithIdToken).toHaveBeenCalledWith({
+      provider: 'google',
+      token: 'google-id-token',
+      nonce: 'raw-nonce',
+    });
+    expect(response.status).toBe(ResponseStatus.Success);
+    expect(response.statusCode).toBe(API_RESPONSE.SUCCESS.SIGN_WITH_GOOGLE.code);
+    expect(response.data).toEqual({ user: mentee, session, redirectUrl: null });
+    expect(logging.log).toHaveBeenCalledWith(
+      expect.objectContaining({
+        actionType: LogsActionType.SignInGoogle,
+        metadata: { email: 'jane@example.com', outcome: 'success' },
+      }),
+    );
+  });
+
+  it('rejects an invalid Google token without logging the token', async () => {
+    supabase.client.auth.signInWithIdToken.mockResolvedValue({
+      data: { user: null, session: null },
+      error: { message: 'Bad ID token', code: 'bad_jwt' },
+    });
+
+    const response = await signIn();
+
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.SIGNIN_GOOGLE_FAILED.code);
+    expect(prisma.db.user.findUnique).not.toHaveBeenCalled();
+    expect(JSON.stringify(logging.log.mock.calls)).not.toContain('google-id-token');
+  });
+
+  it('rejects an unknown Google account and removes the auth user Supabase just created', async () => {
+    prisma.db.user.findUnique.mockResolvedValue(null);
+
+    const response = await signIn();
+
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND.code);
+    expect(response.data).toBeNull();
+    expect(supabase.clientAdmin.auth.admin.deleteUser).toHaveBeenCalledWith('user-1');
+  });
+
+  it('never deletes an auth user that also has an email/password identity', async () => {
+    prisma.db.user.findUnique.mockResolvedValue(null);
+    supabase.client.auth.signInWithIdToken.mockResolvedValue({
+      data: {
+        user: { ...googleAuthUser, identities: [{ provider: 'email' }, { provider: 'google' }] },
+        session,
+      },
+      error: null,
+    });
+
+    const response = await signIn();
+
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND.code);
+    expect(supabase.clientAdmin.auth.admin.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it.each([
+    ['admin', 'active', 'SIGNIN_GOOGLE_NOT_AVAILABLE'],
+    ['mentee', 'banned', 'SIGNIN_ACCOUNT_BLOCKED'],
+    ['mentor', 'suspended', 'SIGNIN_ACCOUNT_BLOCKED'],
+    ['mentor', 'pending_review', 'SIGNIN_MENTOR_PENDING_REVIEW'],
+    ['mentor', 'rejected', 'SIGNIN_MENTOR_REJECTED'],
+  ] as const)('blocks a %s with status %s (%s) and returns no session', async (role, status, errorKey) => {
+    prisma.db.user.findUnique.mockResolvedValue({ ...mentee, role, status });
+
+    const response = await signIn();
+
+    expect(response.status).toBe(ResponseStatus.Error);
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR[errorKey].code);
+    expect(response.message).toBe(API_RESPONSE.ERROR[errorKey].message);
+    expect(response.data).toBeNull();
+  });
+
+  it('lets an inactive user sign in so they can reactivate their account', async () => {
+    prisma.db.user.findUnique.mockResolvedValue({ ...mentee, status: 'inactive' });
+
+    const response = await signIn();
+
+    expect(response.status).toBe(ResponseStatus.Success);
+  });
+
+  it('corrects a mentee marked complete who has no profile row', async () => {
+    prisma.db.menteeProfile.findUnique.mockResolvedValue(null);
+
+    const response = await signIn();
+
+    expect(prisma.db.user.update).toHaveBeenCalledWith({
+      where: { id: 'user-1' },
+      data: { isProfileComplete: false },
+    });
+    expect((response.data as { user: { isProfileComplete: boolean } }).user.isProfileComplete).toBe(false);
+  });
+
+  it('never logs Google attempts as password sign-ins, so the password lockout is unaffected', async () => {
+    await signIn();
+    prisma.db.user.findUnique.mockResolvedValue(null);
+    await signIn();
+
+    for (const [entry] of logging.log.mock.calls) {
+      expect(entry.actionType).toBe(LogsActionType.SignInGoogle);
+    }
+  });
+});

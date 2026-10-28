@@ -1,8 +1,3 @@
-export enum SignInWithOAthProviders {
-  Google = 'google',
-  Github = 'github',
-}
-
 export enum ResendOTPTypes {
   SignUp = 'signup',
   SMS = 'sms',
@@ -15,8 +10,9 @@ export interface SignInWithPasswordInterface {
   password: string;
 }
 
-export interface SignInWithOAthInterface {
-  provider: SignInWithOAthProviders;
+export interface SignInWithGoogleInterface {
+  idToken: string;
+  nonce?: string;
 }
 
 export interface ResendConfirmationEmailInterface {
