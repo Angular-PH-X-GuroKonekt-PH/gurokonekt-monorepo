@@ -281,6 +281,9 @@ describe('AuthService', () => {
 });
 
 
+const fakeIdToken = (claims: Record<string, unknown>) =>
+  ['header', Buffer.from(JSON.stringify(claims)).toString('base64url'), 'signature'].join('.');
+
 describe('AuthService.signInWithGoogle', () => {
   const session = { access_token: 'access-token', refresh_token: 'refresh-token' };
   const googleAuthUser = {
@@ -368,21 +371,46 @@ describe('AuthService.signInWithGoogle', () => {
     expect(JSON.stringify(logging.log.mock.calls)).not.toContain('google-id-token');
   });
 
-  it('rejects an unknown Google account and removes the auth user Supabase just created', async () => {
-    prisma.db.user.findUnique.mockResolvedValue(null);
-
-    const response = await signIn();
-
-    expect(response.statusCode).toBe(API_RESPONSE.ERROR.SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND.code);
-    expect(response.data).toBeNull();
-    expect(supabase.clientAdmin.auth.admin.deleteUser).toHaveBeenCalledWith('user-1');
-  });
-
-  it('never deletes an auth user that also has an email/password identity', async () => {
+  it('sends a new Google account to registration with the Google profile prefilled', async () => {
     prisma.db.user.findUnique.mockResolvedValue(null);
     supabase.client.auth.signInWithIdToken.mockResolvedValue({
       data: {
-        user: { ...googleAuthUser, identities: [{ provider: 'email' }, { provider: 'google' }] },
+        user: {
+          ...googleAuthUser,
+          user_metadata: { avatar_url: 'https://lh3.googleusercontent.com/a/photo=s96-c' },
+        },
+        session,
+      },
+      error: null,
+    });
+    const idToken = fakeIdToken({ given_name: 'Jane', family_name: 'Dela Cruz', name: 'Jane Dela Cruz' });
+
+    const response = await service.signInWithGoogle({ idToken }, '127.0.0.1', 'Jest');
+
+    expect(response.status).toBe(ResponseStatus.Success);
+    expect(response.message).toBe(API_RESPONSE.SUCCESS.SIGN_WITH_GOOGLE_REGISTRATION_REQUIRED.message);
+    expect(response.data).toEqual({
+      registrationRequired: true,
+      registration: { registrationToken: 'access-token', refreshToken: 'refresh-token' },
+      prefill: {
+        email: 'jane@example.com',
+        firstName: 'Jane',
+        lastName: 'Dela Cruz',
+        avatarUrl: 'https://lh3.googleusercontent.com/a/photo=s96-c',
+      },
+    });
+    // Kept so the person can finish registering; nothing is deleted any more.
+    expect(supabase.clientAdmin.auth.admin.deleteUser).not.toHaveBeenCalled();
+  });
+
+  it('falls back to the Google full name and ignores photos from other hosts', async () => {
+    prisma.db.user.findUnique.mockResolvedValue(null);
+    supabase.client.auth.signInWithIdToken.mockResolvedValue({
+      data: {
+        user: {
+          ...googleAuthUser,
+          user_metadata: { full_name: 'Juan Miguel Santos', avatar_url: 'https://evil.example.com/x.png' },
+        },
         session,
       },
       error: null,
@@ -390,8 +418,12 @@ describe('AuthService.signInWithGoogle', () => {
 
     const response = await signIn();
 
-    expect(response.statusCode).toBe(API_RESPONSE.ERROR.SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND.code);
-    expect(supabase.clientAdmin.auth.admin.deleteUser).not.toHaveBeenCalled();
+    expect((response.data as { prefill: object }).prefill).toEqual({
+      email: 'jane@example.com',
+      firstName: 'Juan',
+      lastName: 'Miguel Santos',
+      avatarUrl: null,
+    });
   });
 
   it.each([
@@ -439,5 +471,250 @@ describe('AuthService.signInWithGoogle', () => {
     for (const [entry] of logging.log.mock.calls) {
       expect(entry.actionType).toBe(LogsActionType.SignInGoogle);
     }
+  });
+});
+
+describe('AuthService registration with Google', () => {
+  const googleUser = {
+    id: 'google-user-1',
+    email: 'Jane@Example.com',
+    app_metadata: { provider: 'google', providers: ['google'] },
+    user_metadata: { avatar_url: 'https://lh3.googleusercontent.com/a/photo=s96-c' },
+  };
+  const formFields = {
+    firstName: 'Jane',
+    lastName: 'Dela Cruz',
+    country: 'PH',
+    language: 'en',
+    timezone: 'Asia/Manila',
+    phoneNumber: '+639171234567',
+  };
+  const tx = {
+    user: { create: jest.fn() },
+    mentorProfile: { create: jest.fn() },
+    logs: { create: jest.fn() },
+  };
+  const prisma = {
+    db: {
+      user: { findFirst: jest.fn(), create: jest.fn() },
+      $transaction: jest.fn((run: (client: typeof tx) => unknown) => run(tx)),
+    },
+  };
+  const supabase = {
+    client: { auth: { refreshSession: jest.fn() } },
+    clientAdmin: { auth: { getUser: jest.fn() } },
+  };
+  const storage = { uploadAvatar: jest.fn(), uploadDocument: jest.fn() };
+  const validation = { normalizeEmail: jest.fn((email: string) => email.toLowerCase().trim()) };
+  const logging = { log: jest.fn() };
+  const errorHandler = { handleDatabaseError: jest.fn((error: unknown) => ({ status: 'error', data: error })) };
+  const fetchMock = jest.fn();
+
+  const service = new AuthService(
+    prisma as any,
+    supabase as any,
+    storage as any,
+    validation as any,
+    logging as any,
+    {} as any,
+    errorHandler as any,
+  );
+
+  const photoResponse = (contentType = 'image/jpeg') => ({
+    ok: true,
+    status: 200,
+    headers: { get: () => contentType },
+    arrayBuffer: async () => new Uint8Array([1, 2, 3]).buffer,
+  });
+
+  beforeAll(() => {
+    global.fetch = fetchMock as unknown as typeof fetch;
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    supabase.clientAdmin.auth.getUser.mockResolvedValue({ data: { user: googleUser }, error: null });
+    prisma.db.user.findFirst.mockResolvedValue(null);
+    prisma.db.user.create.mockImplementation(async ({ data }) => ({ ...data }));
+    tx.user.create.mockImplementation(async ({ data }) => ({ ...data }));
+    tx.mentorProfile.create.mockImplementation(async ({ data }) => ({ id: 'profile-1', ...data }));
+    storage.uploadDocument.mockResolvedValue({ data: [{ id: 'doc-1' }] });
+    fetchMock.mockResolvedValue(photoResponse());
+  });
+
+  describe('registerMenteeWithGoogle', () => {
+    const register = (tokens: object = { registrationToken: 'registration-token', refreshToken: 'refresh-1' }) =>
+      service.registerMenteeWithGoogle({ ...formFields, ...tokens } as any, '127.0.0.1', 'Jest');
+
+    it('creates the same mentee account as the password form, using the verified Google email', async () => {
+      const response = await register();
+
+      expect(response.status).toBe(ResponseStatus.Success);
+      const created = prisma.db.user.create.mock.calls[0][0].data;
+      expect(created).toEqual(
+        expect.objectContaining({
+          id: 'google-user-1',
+          email: 'jane@example.com',
+          firstName: 'Jane',
+          phoneNumber: '+639171234567',
+          role: 'mentee',
+          status: 'active',
+        })
+      );
+      // Nobody knows this password; "Forgot password" can set a real one.
+      expect(created.hashPassword).toMatch(/^\$2[aby]\$/);
+      expect(response.data).toEqual(
+        expect.objectContaining({ session: { access_token: 'registration-token', refresh_token: 'refresh-1' } })
+      );
+      expect(logging.log).toHaveBeenCalledWith(
+        expect.objectContaining({ actionType: LogsActionType.SignUp, metadata: { role: 'mentee', provider: 'google' } })
+      );
+    });
+
+    it('saves the Google profile photo at a larger size as the avatar', async () => {
+      await register();
+
+      expect(fetchMock).toHaveBeenCalledWith('https://lh3.googleusercontent.com/a/photo=s400-c', expect.anything());
+      const [[files, userId, role]] = storage.uploadAvatar.mock.calls;
+      expect(files[0]).toEqual(
+        expect.objectContaining({ mimetype: 'image/jpeg', originalname: 'google-avatar.jpg', size: 3 })
+      );
+      expect([userId, role]).toEqual(['google-user-1', 'mentee']);
+    });
+
+    it.each([
+      ['the photo cannot be fetched', () => fetchMock.mockRejectedValue(new Error('timeout'))],
+      ['Google returns something that is not an image', () => fetchMock.mockResolvedValue(photoResponse('text/html'))],
+    ])('still registers when %s', async (_case, arrange) => {
+      arrange();
+
+      const response = await register();
+
+      expect(response.status).toBe(ResponseStatus.Success);
+      expect(storage.uploadAvatar).not.toHaveBeenCalled();
+    });
+
+    it('renews an expired registration token with the refresh token', async () => {
+      supabase.clientAdmin.auth.getUser
+        .mockResolvedValueOnce({ data: { user: null }, error: { message: 'JWT expired' } })
+        .mockResolvedValueOnce({ data: { user: googleUser }, error: null });
+      supabase.client.auth.refreshSession.mockResolvedValue({
+        data: { session: { access_token: 'renewed-token', refresh_token: 'refresh-2' } },
+        error: null,
+      });
+
+      const response = await register();
+
+      expect(supabase.clientAdmin.auth.getUser).toHaveBeenLastCalledWith('renewed-token');
+      expect(response.data).toEqual(
+        expect.objectContaining({ session: { access_token: 'renewed-token', refresh_token: 'refresh-2' } })
+      );
+    });
+
+    it('refuses an invalid token when there is no refresh token', async () => {
+      supabase.clientAdmin.auth.getUser.mockResolvedValue({ data: { user: null }, error: { message: 'bad jwt' } });
+
+      const response = await register({ registrationToken: 'bad' });
+
+      expect(response.statusCode).toBe(API_RESPONSE.ERROR.GOOGLE_REGISTRATION_SESSION_INVALID.code);
+      expect(prisma.db.user.create).not.toHaveBeenCalled();
+    });
+
+    it('refuses a token that belongs to an email/password user, not Google', async () => {
+      supabase.clientAdmin.auth.getUser.mockResolvedValue({
+        data: { user: { ...googleUser, app_metadata: { provider: 'email', providers: ['email'] } } },
+        error: null,
+      });
+
+      const response = await register();
+
+      expect(response.statusCode).toBe(API_RESPONSE.ERROR.GOOGLE_REGISTRATION_SESSION_INVALID.code);
+      expect(prisma.db.user.create).not.toHaveBeenCalled();
+    });
+
+    it('prevents a duplicate account for the same Google user or email', async () => {
+      prisma.db.user.findFirst.mockResolvedValue({ id: 'existing' });
+
+      const response = await register();
+
+      expect(prisma.db.user.findFirst).toHaveBeenCalledWith({
+        where: { OR: [{ id: 'google-user-1' }, { email: 'jane@example.com' }] },
+        select: { id: true },
+      });
+      expect(response.statusCode).toBe(API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code);
+      expect(prisma.db.user.create).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('registerMentorWithGoogle', () => {
+    const mentorFields = { ...formFields, yearsOfExperience: 5, areasOfExpertise: ['Angular'] };
+    const documents = [{ originalname: 'id.pdf' }] as Express.Multer.File[];
+    const register = () =>
+      service.registerMentorWithGoogle(
+        { ...mentorFields, registrationToken: 'registration-token', refreshToken: 'refresh-1' } as any,
+        documents,
+        '127.0.0.1',
+        'Jest'
+      );
+
+    it('submits a pending mentor application with documents and no session', async () => {
+      const response = await register();
+
+      expect(response.status).toBe(ResponseStatus.Success);
+      expect(tx.user.create.mock.calls[0][0].data).toEqual(
+        expect.objectContaining({
+          id: 'google-user-1',
+          email: 'jane@example.com',
+          role: 'mentor',
+          status: 'pending_approval',
+        })
+      );
+      expect(tx.mentorProfile.create.mock.calls[0][0].data).toEqual(
+        expect.objectContaining({ userId: 'google-user-1', areasOfExpertise: ['Angular'], yearsOfExperience: 5 })
+      );
+      expect(tx.logs.create.mock.calls[0][0].data.metadata).toEqual(
+        expect.objectContaining({ role: 'mentor', provider: 'google' })
+      );
+      expect(storage.uploadDocument).toHaveBeenCalledWith(documents, 'google-user-1', 'mentor');
+      expect(storage.uploadAvatar).toHaveBeenCalled();
+      expect(response.data).not.toHaveProperty('session');
+    });
+  });
+});
+
+describe('AuthService.registerMentee with an email that started on Google', () => {
+  it('asks the person to continue with Google instead of creating a broken account', async () => {
+    const prisma = { db: { user: { create: jest.fn() } } };
+    const supabase = {
+      client: {
+        auth: {
+          // Supabase answers a known email with a placeholder user that has no identities.
+          signUp: jest.fn().mockResolvedValue({ data: { user: { id: 'placeholder', identities: [] } }, error: null }),
+        },
+      },
+    };
+    const validation = {
+      normalizeEmail: (email: string) => email.toLowerCase().trim(),
+      userExists: jest.fn().mockResolvedValue(false),
+    };
+    const service = new AuthService(
+      prisma as any,
+      supabase as any,
+      {} as any,
+      validation as any,
+      { log: jest.fn() } as any,
+      {} as any,
+      { handleDatabaseError: jest.fn() } as any,
+    );
+
+    const response = await service.registerMentee(
+      { email: 'jane@example.com', password: 'Password1!', confirmPassword: 'Password1!' } as any,
+      '127.0.0.1',
+      'Jest',
+      'http://localhost:4200'
+    );
+
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.EMAIL_REGISTERED_WITH_GOOGLE.code);
+    expect(prisma.db.user.create).not.toHaveBeenCalled();
   });
 });
