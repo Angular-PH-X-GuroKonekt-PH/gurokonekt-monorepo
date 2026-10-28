@@ -24,6 +24,7 @@ export * from './lib/interfaces/passkey/passkey.model';
 export * from './lib/dto/passkey/passkey.dto';
 export * from './lib/interfaces/sign-in-methods/sign-in-methods.model';
 export * from './lib/dto/sign-in-methods/sign-in-methods.dto';
+export * from './lib/dto/auth/signup-google.dto';
 export * from './lib/dto/auth/refresh-token.dto';
 export * from './lib/dto/auth/password.dto';
 export * from './lib/dto/decorators/custom-matches.decorator';

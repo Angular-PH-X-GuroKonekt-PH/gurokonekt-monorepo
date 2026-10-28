@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, inject, OnInit, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, computed, inject, OnInit, output, Signal } from '@angular/core';
 import { FormGroup, ReactiveFormsModule } from '@angular/forms';
 import { Store } from '@ngxs/store';
 import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
@@ -8,7 +8,10 @@ import { createFormConfig } from 'apps/web/src/app/shared/constants';
 import { formatPhoneToE164 } from 'apps/web/src/app/shared/utils/phone.util';
 import { buildVerifyEmailRedirectUrl } from 'apps/web/src/app/shared/utils/email-verification.util';
 import { APP_ROUTES } from 'apps/web/src/app/shared/constants/routes';
-import { RegisterMentee } from '../../../store/auth.actions';
+import { RegisterMentee, RegisterMenteeWithGoogle } from '../../../store/auth.actions';
+import { isValidOrLocked, useGoogleRegistration } from '../../../helpers/google-registration.helper';
+import { GoogleRegistrationContext } from '../../../models/registration.state.model';
+import { GoogleSecuredStepComponent } from '../registration-google-secured-step/registration-google-secured-step.component';
 import { AuthSelectors } from '../../../store/auth.selectors';
 import { watchRegistrationOutcome } from '../../../helpers/registration-outcome.helper';
 import { RegistrationStepNavComponent } from '../registration-step-nav/registration-step-nav.component';
@@ -37,6 +40,7 @@ import { RegistrationReviewStepComponent } from '../registration-review-step/reg
     RegistrationPhoneFieldComponent,
     RegistrationLocationFieldsComponent,
     RegistrationReviewStepComponent,
+    GoogleSecuredStepComponent,
   ],
   templateUrl: './registration-mentee.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
@@ -61,12 +65,17 @@ export class RegistrationMenteePage
     'Location & Language',
     'Confirmation',
   ];
-  protected readonly stepDescriptions = [
+  protected readonly stepDescriptions = computed(() => [
     'Tell us about yourself',
-    'Create a secure password',
+    this.googleRegistration() ? 'Secured with Google' : 'Create a secure password',
     'Location & preferences',
     'Review and accept terms',
-  ];
+  ]);
+
+  /** Set while a Google sign-up is in progress; the email and password come from Google. */
+  protected readonly googleRegistration: Signal<GoogleRegistrationContext | null>;
+  // Captured at submit time: the Google sign-up is cleared as soon as it succeeds.
+  private submittedWithGoogle = false;
 
   protected readonly registerForm: FormGroup;
 
@@ -77,11 +86,14 @@ export class RegistrationMenteePage
     this.registerForm = this.fb.group(formConfig.fields, formConfig.options);
 
     this.setupFormAutoPopulation();
+    this.googleRegistration = useGoogleRegistration(this.registerForm);
 
     watchRegistrationOutcome({
       successMessage: this.store.selectSignal(AuthSelectors.successMessage),
       errorMessage: this.store.selectSignal(AuthSelectors.errorMessage),
-      confirmationRoute: APP_ROUTES.REGISTER_MENTEE_CONFIRMATION,
+      // Google mentees are signed in already, so they continue to profile setup.
+      confirmationRoute: () =>
+        this.submittedWithGoogle ? APP_ROUTES.PROFILE_SETUP : APP_ROUTES.REGISTER_MENTEE_CONFIRMATION,
       store: this.store,
       toastService: this.toastService,
       router: this.router,
@@ -108,10 +120,13 @@ export class RegistrationMenteePage
         return (
           !!form.get('firstName')?.valid &&
           !!form.get('lastName')?.valid &&
-          !!form.get('email')?.valid &&
+          isValidOrLocked(form.get('email')) &&
           !!form.get('phoneNumber')?.valid
         );
       case 2:
+        if (this.googleRegistration()) {
+          return true;
+        }
         return (
           !!form.get('password')?.valid &&
           !!form.get('confirmPassword')?.valid &&
@@ -132,6 +147,12 @@ export class RegistrationMenteePage
     }
 
     this.startSubmission();
+
+    const google = this.googleRegistration();
+    if (google) {
+      this.submitWithGoogle(google);
+      return;
+    }
 
     try {
       const formData = this.registerForm.value;
@@ -162,5 +183,24 @@ export class RegistrationMenteePage
         'An unexpected error occurred. Please try again.'
       );
     }
+  }
+
+  private submitWithGoogle(google: GoogleRegistrationContext): void {
+    const formData = this.registerForm.getRawValue();
+    this.submittedWithGoogle = true;
+    this.store.dispatch(
+      new RegisterMenteeWithGoogle({
+        registrationToken: google.registrationToken,
+        refreshToken: google.refreshToken,
+        firstName: formData.firstName,
+        middleName: formData.middleName || undefined,
+        lastName: formData.lastName,
+        suffix: formData.suffix || undefined,
+        phoneNumber: formatPhoneToE164(formData.phoneNumber, formData.country || 'PH'),
+        country: formData.country,
+        timezone: formData.timezone,
+        language: formData.language || 'en',
+      })
+    );
   }
 }

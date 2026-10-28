@@ -24,4 +24,19 @@
   .btn-gradient-primary {
     @apply w-full rounded-full bg-gradient-to-r from-orange-500 to-orange-400 px-8 py-4 text-base font-bold text-white shadow-lg transition duration-200 hover:shadow-xl hover:-translate-y-1 disabled:cursor-not-allowed disabled:from-gray-300 disabled:to-gray-300 disabled:shadow-none;
   }
+
+  /*
+   * Alternative sign-in buttons (passkey, and any future provider). Mirrors
+   * Google's official "outline / large / pill" button, which Google draws
+   * itself, so every sign-in option has the same size, shape, border and type.
+   */
+  .auth-provider-button {
+    @apply relative mx-auto flex h-10 w-full max-w-[400px] items-center justify-center rounded-full border border-[#dadce0] bg-white px-12 text-sm font-medium text-[#3c4043] transition-colors hover:border-[#d2e3fc] hover:bg-[#f8faff] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#4285f4]/40 disabled:cursor-not-allowed disabled:opacity-60;
+    font-family: 'Google Sans', Roboto, Arial, sans-serif;
+    letter-spacing: 0.25px;
+  }
+
+  .auth-provider-button__icon {
+    @apply absolute left-3 h-[18px] w-[18px];
+  }
 }

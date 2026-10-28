@@ -1,7 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithGoogleDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, CompletePasswordResetDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto, RefreshTokenDto } from '@gurokonekt/models';
+import { RegisterMenteeDto, RegisterMentorDto, ResendConfirmationEmailDto, ResponseDto, SelectFields, SignInWithGoogleDto, SignInWithPasswordDto, UpdatePasswordDto, ForgotPasswordDto, CompletePasswordResetDto, ResetPasswordDto, VerifyResetPinDto, VerifyPasswordChangeDto, RefreshTokenDto, RegisterMenteeWithGoogleDto, RegisterMentorWithGoogleDto } from '@gurokonekt/models';
 import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, UserRole, UserStatus, LogsActionType,
-  ResendOTPTypes, REDIRECT_LINKS
+  ResendOTPTypes, REDIRECT_LINKS, IMAGES_ALLOWED_TYPES,
+  GoogleRegistrationRequiredInterface, GoogleRegistrationTokensInterface, GoogleRegistrationPrefillInterface,
 } from '@gurokonekt/models';
 import { SupabaseService } from '../supabase/supabase.service';
 import { PrismaService } from '../prisma/prisma.service';
@@ -17,6 +18,7 @@ import {
   withVerificationEmailQuery,
 } from './helpers';
 import bcrypt from 'bcrypt';
+import { randomBytes } from 'node:crypto';
 import type { User, UserIdentity } from '@supabase/supabase-js';
 
 // Same set the JWT guard rejects. Inactive users may still sign in so they can
@@ -39,6 +41,44 @@ export function findNewGoogleLink(user: User, now: Date = new Date()): UserIdent
     return null;
   }
   return now.getTime() - new Date(google.created_at).getTime() <= NEW_LINK_WINDOW_MS ? google : null;
+}
+
+const GOOGLE_AVATAR_TIMEOUT_MS = 5_000;
+const GOOGLE_AVATAR_MAX_BYTES = 5 * 1024 * 1024; // same limit as avatar uploads
+
+// The form fields both registration routes share (Google has no email/password fields).
+type MenteeAccountFields = Omit<RegisterMenteeDto, 'email' | 'password' | 'confirmPassword' | 'emailRedirectTo'>;
+type MentorAccountFields = Omit<RegisterMentorDto, 'email' | 'password' | 'confirmPassword' | 'emailRedirectTo' | 'files'>;
+
+/**
+ * With email confirmation on, Supabase `signUp` does not fail for an address
+ * it already knows; it returns a placeholder user with no identities. That
+ * happens when someone started registering with Google and now tries the
+ * password form with the same email.
+ */
+function isExistingAuthUser(user: User): boolean {
+  return Array.isArray(user.identities) && user.identities.length === 0;
+}
+
+/** Payload of a JWT that has already been verified elsewhere. */
+function decodeJwtClaims(token: string): Record<string, unknown> {
+  try {
+    return JSON.parse(Buffer.from(token.split('.')[1] ?? '', 'base64url').toString('utf8'));
+  } catch {
+    return {};
+  }
+}
+
+/** The Google profile photo URL, only when it is served from Google's image host. */
+function googleAvatarUrl(user: User): string | null {
+  const raw = user.user_metadata?.['avatar_url'] ?? user.user_metadata?.['picture'];
+  if (typeof raw !== 'string') return null;
+  try {
+    const url = new URL(raw);
+    return url.protocol === 'https:' && url.hostname.endsWith('.googleusercontent.com') ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
 @Injectable()
@@ -85,32 +125,15 @@ export class AuthService {
           : AuthResponseFactory.errorByKey('NO_DATA_RETURNED_ON_AUTH');
       }
 
+      if (isExistingAuthUser(data.user)) {
+        return AuthResponseFactory.errorByKey('EMAIL_REGISTERED_WITH_GOOGLE');
+      }
+
       await this.requireEmailVerification(data.user);
 
       // Create mentee in DB
-      const authId = data.user.id;
       const hashPassword = await this.validation.hashPassword(dto.password);
-
-      const mentee = await this.prisma.db.user.create({
-        data: {
-          id: authId,
-          firstName: dto.firstName,
-          middleName: dto.middleName ?? null,
-          lastName: dto.lastName,
-          suffix: dto.suffix ?? null,
-          email: normalizedEmail,
-          country: dto.country,
-          language: dto.language,
-          timezone: dto.timezone,
-          phoneNumber: dto.phoneNumber ?? null,
-          hashPassword,
-          role: UserRole.Mentee,
-          status: UserStatus.Active,
-          createdById: authId,
-          updatedById: authId,
-        },
-        select: SelectFields.getUserCredentialsSelect(),
-      });
+      const mentee = await this.createMenteeAccount(data.user.id, normalizedEmail, hashPassword, dto);
 
       // Log signup activity
       await this.logging.log({
@@ -200,62 +223,17 @@ export class AuthService {
         };
       }
 
+      if (isExistingAuthUser(data.user)) {
+        return AuthResponseFactory.errorByKey('EMAIL_REGISTERED_WITH_GOOGLE');
+      }
+
       await this.requireEmailVerification(data.user);
 
       const authId = data.user.id;
       const hashPassword = await bcrypt.hash(dto.password, 10);
-      const transaction = await this.prisma.db.$transaction(async (tx) => {
-        const mentor = await tx.user.create({
-          data: {
-            id: authId,
-            firstName: dto.firstName,
-            middleName: dto.middleName ?? null,
-            lastName: dto.lastName,
-            suffix: dto.suffix ?? null,
-            email: normalizedEmail,
-            country: dto.country,
-            language: dto.language ?? 'en',
-            timezone: dto.timezone,
-            phoneNumber: dto.phoneNumber,
-            hashPassword: hashPassword,
-            role: UserRole.Mentor,
-            status: UserStatus.PendingApproval,
-            isMentorProfileComplete: false,
-            createdById: authId,
-            updatedById: authId
-          },
-          select: SelectFields.getUserCredentialsSelect()
-        });
-
-        const mentorProfile = await tx.mentorProfile.create({
-          data: {
-            userId: authId,
-            areasOfExpertise: dto.areasOfExpertise,
-            yearsOfExperience: dto.yearsOfExperience ?? null,
-            linkedInUrl: dto.linkedInUrl ?? null,
-            skills: [],
-            availability: [],
-            updatedById: authId
-          },
-          select: SelectFields.getMentorProfileSelect()
-        });
-
-        await tx.logs.create({
-          data: {
-            actionType: LogsActionType.SignUp,
-            targetId: mentor.id,
-            details: `Mentor registration submitted for approval`,
-            metadata: {
-              role: UserRole.Mentor,
-              areasOfExpertise: dto.areasOfExpertise,
-            },
-            ipAddress: ipAddress ?? '',
-            userAgent: userAgent ?? '',
-            createdById: mentor.id,
-          },
-        });
-
-        return { user: mentor, profile: mentorProfile };
+      const transaction = await this.createMentorAccount(authId, normalizedEmail, hashPassword, dto, {
+        ipAddress,
+        userAgent,
       });
 
       let uploadResult = null;
@@ -538,16 +516,26 @@ export class AuthService {
       });
 
       if (!userData) {
-        await this.removeGoogleOnlyAuthUser(data.user);
+        // A new person: send them through registration so they end up with the
+        // same details as everyone else. The Supabase session proves the Google
+        // identity until the registration form is submitted.
         await this.logging.log({
           actionType: LogsActionType.SignInGoogle,
           targetId: '',
-          details: API_RESPONSE.ERROR.SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND.message,
-          metadata: { email, outcome: 'failed' },
+          details: API_RESPONSE.SUCCESS.SIGN_WITH_GOOGLE_REGISTRATION_REQUIRED.message,
+          metadata: { email, outcome: 'registration_required' },
           ipAddress,
           userAgent,
         });
-        return AuthResponseFactory.errorByKey('SIGNIN_GOOGLE_ACCOUNT_NOT_FOUND');
+        const registrationRequired: GoogleRegistrationRequiredInterface = {
+          registrationRequired: true,
+          registration: {
+            registrationToken: data.session.access_token,
+            refreshToken: data.session.refresh_token,
+          },
+          prefill: this.buildGooglePrefill(data.user, input.idToken),
+        };
+        return AuthResponseFactory.successByKey('SIGN_WITH_GOOGLE_REGISTRATION_REQUIRED', registrationRequired);
       }
 
       // Supabase links a Google login to an existing account just because the
@@ -612,19 +600,41 @@ export class AuthService {
   }
 
   /**
-   * `signInWithIdToken` creates a Supabase auth user when the Google email is
-   * unknown. With no Gurokonekt account behind it, that user is useless and
-   * would block a later email/password registration, so it is removed — but
-   * only when Google is its sole identity, so a real account is never touched.
+   * Register a Mentee with Google. Completes the registration that
+   * `signInWithGoogle` started for a new Google account: the email comes from
+   * the verified Google identity, the remaining fields from the form, and
+   * there is no password. Google already verified the email, so the mentee is
+   * signed in straight away and continues to profile setup like any new user.
    */
-  private async removeGoogleOnlyAuthUser(authUser: User): Promise<void> {
-    const identities = authUser.identities ?? [];
-    const isGoogleOnly = identities.length > 0 && identities.every((identity) => identity.provider === 'google');
-    if (!isGoogleOnly) return;
+  async registerMenteeWithGoogle(dto: RegisterMenteeWithGoogleDto, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+    try {
+      const registrant = await this.resolveGoogleRegistrant(dto);
+      if (!registrant) {
+        return AuthResponseFactory.errorByKey('GOOGLE_REGISTRATION_SESSION_INVALID');
+      }
 
-    const { error } = await this.supabase.clientAdmin.auth.admin.deleteUser(authUser.id);
-    if (error) {
-      this.logger.error(`Failed to remove orphaned Google auth user ${authUser.id}: ${error.message}`);
+      const { authUser, session } = registrant;
+      const email = this.validation.normalizeEmail(authUser.email ?? '');
+      if (await this.isAlreadyRegistered(authUser.id, email)) {
+        return AuthResponseFactory.errorByKey('USER_ALREADY_EXISTS');
+      }
+
+      const mentee = await this.createMenteeAccount(authUser.id, email, await this.unusablePasswordHash(), dto);
+      await this.importGoogleAvatar(authUser, mentee.id, UserRole.Mentee);
+
+      await this.logging.log({
+        actionType: LogsActionType.SignUp,
+        targetId: mentee.id,
+        details: `Mentee account registered with Google: ${mentee.email}`,
+        metadata: { role: mentee.role, provider: 'google' },
+        ipAddress,
+        userAgent,
+        createdById: mentee.id,
+      });
+
+      return AuthResponseFactory.successByKey('REGISTER_MENTEE', { user: mentee, session });
+    } catch (error) {
+      return this.errorHandler.handleDatabaseError(error);
     }
   }
 
@@ -635,6 +645,256 @@ export class AuthService {
       select: { googleIdentityId: true },
     });
     return !!user?.googleIdentityId && user.googleIdentityId === identity.identity_id;
+  }
+
+  /**
+   * Register a Mentor with Google. Same as the email/password mentor flow
+   * (documents, pending_approval, admin review) minus email and password.
+   * No session is returned: the mentor signs in with Google once approved.
+   */
+  async registerMentorWithGoogle(
+    dto: RegisterMentorWithGoogleDto,
+    files: Express.Multer.File[],
+    ipAddress: string,
+    userAgent: string
+  ): Promise<ResponseDto> {
+    try {
+      const registrant = await this.resolveGoogleRegistrant(dto);
+      if (!registrant) {
+        return AuthResponseFactory.errorByKey('GOOGLE_REGISTRATION_SESSION_INVALID');
+      }
+
+      const { authUser } = registrant;
+      const email = this.validation.normalizeEmail(authUser.email ?? '');
+      if (await this.isAlreadyRegistered(authUser.id, email)) {
+        return AuthResponseFactory.errorByKey('USER_ALREADY_EXISTS');
+      }
+
+      const { profile } = await this.createMentorAccount(
+        authUser.id,
+        email,
+        await this.unusablePasswordHash(),
+        dto,
+        { ipAddress, userAgent, provider: 'google' }
+      );
+      const uploadResult = files?.length
+        ? await this.storage.uploadDocument(files, authUser.id, UserRole.Mentor)
+        : null;
+      await this.importGoogleAvatar(authUser, authUser.id, UserRole.Mentor);
+
+      return AuthResponseFactory.successByKey('REGISTER_MENTOR', {
+        user: profile,
+        documents: uploadResult?.data ?? [],
+      });
+    } catch (error) {
+      return this.errorHandler.handleDatabaseError(error);
+    }
+  }
+
+  /**
+   * Turns the registration tokens from `signInWithGoogle` back into the Google
+   * auth user. Long forms (mentor documents) can outlive the 1-hour access
+   * token, so an expired one is renewed with the refresh token. Returns null
+   * unless the tokens belong to a live Supabase user that signed in with Google.
+   */
+  private async resolveGoogleRegistrant(
+    tokens: GoogleRegistrationTokensInterface
+  ): Promise<{ authUser: User; session: { access_token: string; refresh_token?: string } } | null> {
+    let accessToken = tokens.registrationToken;
+    let refreshToken = tokens.refreshToken;
+
+    let { data, error } = await this.supabase.clientAdmin.auth.getUser(accessToken);
+    if ((error || !data?.user) && refreshToken) {
+      const refreshed = await this.supabase.client.auth.refreshSession({ refresh_token: refreshToken });
+      if (refreshed.error || !refreshed.data.session) {
+        return null;
+      }
+      accessToken = refreshed.data.session.access_token;
+      refreshToken = refreshed.data.session.refresh_token;
+      ({ data, error } = await this.supabase.clientAdmin.auth.getUser(accessToken));
+    }
+
+    if (error || !data?.user?.email) {
+      return null;
+    }
+
+    const providers: string[] = data.user.app_metadata?.['providers'] ?? [data.user.app_metadata?.['provider']];
+    if (!providers.includes('google')) {
+      return null;
+    }
+
+    return { authUser: data.user, session: { access_token: accessToken, refresh_token: refreshToken } };
+  }
+
+  private async isAlreadyRegistered(authId: string, email: string): Promise<boolean> {
+    const existing = await this.prisma.db.user.findFirst({
+      where: { OR: [{ id: authId }, { email }] },
+      select: { id: true },
+    });
+    return !!existing;
+  }
+
+  /**
+   * Google users sign in through Google and have no password. The column is
+   * required, so it gets a random hash nobody knows; "Forgot password" lets
+   * them set a real one later.
+   */
+  private unusablePasswordHash(): Promise<string> {
+    return bcrypt.hash(randomBytes(32).toString('hex'), 10);
+  }
+
+  /**
+   * Registration prefill from the Google profile. The ID token was verified by
+   * Supabase moments ago, so its claims are trusted here; they carry the
+   * given/family name split that Supabase's user metadata lacks.
+   */
+  private buildGooglePrefill(authUser: User, idToken: string): GoogleRegistrationPrefillInterface {
+    const claims = decodeJwtClaims(idToken);
+    const metadata = authUser.user_metadata ?? {};
+    const fullName = String(claims['name'] ?? metadata['full_name'] ?? metadata['name'] ?? '').trim();
+    const [firstFromFull = '', ...restOfName] = fullName ? fullName.split(/\s+/) : [];
+
+    return {
+      email: authUser.email ?? '',
+      firstName: String(claims['given_name'] ?? firstFromFull),
+      lastName: String(claims['family_name'] ?? restOfName.join(' ')),
+      avatarUrl: googleAvatarUrl(authUser),
+    };
+  }
+
+  /**
+   * Saves the Google profile photo as the new user's avatar. Best effort: a
+   * missing or unreachable photo never fails the registration. Only Google's
+   * own image host is fetched, so a tampered URL cannot make the API call out
+   * elsewhere.
+   */
+  private async importGoogleAvatar(authUser: User, userId: string, role: UserRole): Promise<void> {
+    const url = googleAvatarUrl(authUser);
+    if (!url) return;
+
+    try {
+      // Google serves 96px by default; ask for a size that suits profile pages.
+      const response = await fetch(url.replace(/=s\d+-c$/, '=s400-c'), {
+        signal: AbortSignal.timeout(GOOGLE_AVATAR_TIMEOUT_MS),
+      });
+      const mimetype = response.headers.get('content-type')?.split(';')[0].trim() ?? '';
+      if (!response.ok || !IMAGES_ALLOWED_TYPES.includes(mimetype)) {
+        this.logger.warn(`Skipped Google profile photo for ${userId}: ${response.status} ${mimetype}`);
+        return;
+      }
+
+      const buffer = Buffer.from(await response.arrayBuffer());
+      if (buffer.length === 0 || buffer.length > GOOGLE_AVATAR_MAX_BYTES) {
+        this.logger.warn(`Skipped Google profile photo for ${userId}: ${buffer.length} bytes`);
+        return;
+      }
+
+      const extension = mimetype === 'image/jpeg' ? 'jpg' : mimetype.split('/')[1];
+      const file = {
+        fieldname: 'avatar',
+        originalname: `google-avatar.${extension}`,
+        mimetype,
+        buffer,
+        size: buffer.length,
+      } as Express.Multer.File;
+      await this.storage.uploadAvatar([file], userId, role);
+    } catch (error) {
+      this.logger.warn(`Could not import Google profile photo for ${userId}: ${(error as Error).message}`);
+    }
+  }
+
+  /**
+   * Creates the mentee row. Shared by email/password and Google registration
+   * so both produce exactly the same account.
+   */
+  private createMenteeAccount(authId: string, email: string, hashPassword: string, dto: MenteeAccountFields) {
+    return this.prisma.db.user.create({
+      data: {
+        id: authId,
+        firstName: dto.firstName,
+        middleName: dto.middleName ?? null,
+        lastName: dto.lastName,
+        suffix: dto.suffix ?? null,
+        email,
+        country: dto.country,
+        language: dto.language,
+        timezone: dto.timezone,
+        phoneNumber: dto.phoneNumber ?? null,
+        hashPassword,
+        role: UserRole.Mentee,
+        status: UserStatus.Active,
+        createdById: authId,
+        updatedById: authId,
+      },
+      select: SelectFields.getUserCredentialsSelect(),
+    });
+  }
+
+  /**
+   * Creates the mentor row, mentor profile and sign-up log in one transaction,
+   * pending admin approval. Shared by email/password and Google registration.
+   */
+  private createMentorAccount(
+    authId: string,
+    email: string,
+    hashPassword: string,
+    dto: MentorAccountFields,
+    context: { ipAddress: string; userAgent: string; provider?: 'google' }
+  ) {
+    return this.prisma.db.$transaction(async (tx) => {
+      const mentor = await tx.user.create({
+        data: {
+          id: authId,
+          firstName: dto.firstName,
+          middleName: dto.middleName ?? null,
+          lastName: dto.lastName,
+          suffix: dto.suffix ?? null,
+          email,
+          country: dto.country,
+          language: dto.language ?? 'en',
+          timezone: dto.timezone,
+          phoneNumber: dto.phoneNumber,
+          hashPassword,
+          role: UserRole.Mentor,
+          status: UserStatus.PendingApproval,
+          isMentorProfileComplete: false,
+          createdById: authId,
+          updatedById: authId
+        },
+        select: SelectFields.getUserCredentialsSelect()
+      });
+
+      const mentorProfile = await tx.mentorProfile.create({
+        data: {
+          userId: authId,
+          areasOfExpertise: dto.areasOfExpertise,
+          yearsOfExperience: dto.yearsOfExperience ?? null,
+          linkedInUrl: dto.linkedInUrl ?? null,
+          skills: [],
+          availability: [],
+          updatedById: authId
+        },
+        select: SelectFields.getMentorProfileSelect()
+      });
+
+      await tx.logs.create({
+        data: {
+          actionType: LogsActionType.SignUp,
+          targetId: mentor.id,
+          details: `Mentor registration submitted for approval`,
+          metadata: {
+            role: UserRole.Mentor,
+            areasOfExpertise: dto.areasOfExpertise,
+            ...(context.provider ? { provider: context.provider } : {}),
+          },
+          ipAddress: context.ipAddress ?? '',
+          userAgent: context.userAgent ?? '',
+          createdById: mentor.id,
+        },
+      });
+
+      return { user: mentor, profile: mentorProfile };
+    });
   }
 
   /**

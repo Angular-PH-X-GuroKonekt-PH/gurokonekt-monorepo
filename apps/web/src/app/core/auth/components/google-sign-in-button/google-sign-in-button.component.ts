@@ -2,6 +2,7 @@ import {
   afterNextRender,
   ChangeDetectionStrategy,
   Component,
+  DestroyRef,
   ElementRef,
   inject,
   input,
@@ -13,8 +14,12 @@ import {
 
 import { environment } from '../../../../../environments/environment';
 
-const GOOGLE_IDENTITY_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
+// hl=en: Google picks the button language when the script loads, from the browser or
+// account language; the per-button locale alone doesn't override it. The app is English.
+const GOOGLE_IDENTITY_SCRIPT_URL = 'https://accounts.google.com/gsi/client?hl=en';
 const MAX_BUTTON_WIDTH = 400; // Google's limit for rendered buttons
+const MIN_BUTTON_WIDTH = 200; // Google's smallest rendered width
+const RESIZE_DEBOUNCE_MS = 150;
 
 /** The parts of Google Identity Services this component uses. */
 interface GoogleAccountsId {
@@ -102,16 +107,21 @@ async function createNonce(): Promise<{ raw: string; hashed: string }> {
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (clientId) {
-      <div class="relative flex min-h-[44px] justify-center">
-        <div #buttonHost class="flex w-full justify-center" [class.invisible]="state() !== 'ready'"></div>
+      <!-- Same size and shape as the other sign-in buttons (see auth-provider-button styles). -->
+      <div class="relative mx-auto h-10 w-full max-w-[400px]">
+        <div #buttonHost class="flex h-10 w-full justify-center" [class.invisible]="state() !== 'ready'"></div>
 
         @if (state() === 'loading') {
-          <div class="absolute inset-0 rounded-md bg-gray-100 animate-pulse" aria-hidden="true"></div>
+          <div class="absolute inset-0 rounded-full bg-gray-100 animate-pulse" aria-hidden="true"></div>
         }
 
-        @if (disabled() && state() === 'ready') {
+        @if ((disabled() || loading()) && state() === 'ready') {
           <!-- Google's button is an iframe and cannot be disabled; this blocks clicks while a sign-in is running. -->
-          <div class="absolute inset-0 cursor-not-allowed bg-white/60" aria-hidden="true"></div>
+          <div class="absolute inset-0 flex cursor-not-allowed items-center justify-center rounded-full bg-white/70" aria-hidden="true">
+            @if (loading()) {
+              <span class="h-5 w-5 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"></span>
+            }
+          </div>
         }
       </div>
 
@@ -127,7 +137,13 @@ export class GoogleSignInButton {
   private readonly zone = inject(NgZone);
   private readonly buttonHost = viewChild<ElementRef<HTMLElement>>('buttonHost');
 
+  private readonly destroyRef = inject(DestroyRef);
+
   readonly disabled = input(false);
+  /** Shows a spinner over the button while this Google sign-in is being processed. */
+  readonly loading = input(false);
+  /** Button wording: "Sign in with Google", "Continue with Google" or "Sign up with Google". */
+  readonly text = input<'signin_with' | 'continue_with' | 'signup_with'>('signin_with');
   readonly credential = output<GoogleCredential>();
 
   protected readonly clientId = environment.googleClientId;
@@ -160,23 +176,56 @@ export class GoogleSignInButton {
           }),
       });
 
-      googleId.renderButton(host, {
-        type: 'standard',
-        theme: 'outline',
-        size: 'large',
-        text: 'continue_with',
-        shape: 'rectangular',
-        logo_alignment: 'center',
-        width: Math.min(host.clientWidth || MAX_BUTTON_WIDTH, MAX_BUTTON_WIDTH),
-        // Google otherwise follows the browser/account language; the rest of the app is English.
-        locale: 'en',
-      });
-
+      this.render(googleId, host);
       this.state.set('ready');
+      this.rerenderOnResize(googleId, host);
     } catch (error) {
       // Blocked by an extension, offline, or a CSP — fall back to password login.
       console.warn('Google Sign-In unavailable:', (error as Error).message);
       this.state.set('unavailable');
     }
+  }
+
+  private renderedWidth = 0;
+
+  /** Google draws its own button at a fixed pixel width, so it follows the container's width. */
+  private render(googleId: GoogleAccountsId, host: HTMLElement): void {
+    const width = Math.round(
+      Math.max(MIN_BUTTON_WIDTH, Math.min(host.clientWidth || MAX_BUTTON_WIDTH, MAX_BUTTON_WIDTH))
+    );
+    this.renderedWidth = width;
+    host.replaceChildren();
+    googleId.renderButton(host, {
+      type: 'standard',
+      theme: 'outline',
+      size: 'large',
+      text: this.text(),
+      shape: 'pill',
+      logo_alignment: 'left',
+      width,
+      // Google otherwise follows the browser/account language; the rest of the app is English.
+      locale: 'en',
+    });
+  }
+
+  /** Redraws the button when the layout changes width (rotating a phone, resizing a window). */
+  private rerenderOnResize(googleId: GoogleAccountsId, host: HTMLElement): void {
+    if (typeof ResizeObserver === 'undefined') return;
+
+    let timer: ReturnType<typeof setTimeout> | undefined;
+    const observer = new ResizeObserver(() => {
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        const target = Math.min(host.clientWidth, MAX_BUTTON_WIDTH);
+        if (Math.abs(target - this.renderedWidth) >= 8) {
+          this.render(googleId, host);
+        }
+      }, RESIZE_DEBOUNCE_MS);
+    });
+    observer.observe(host);
+    this.destroyRef.onDestroy(() => {
+      clearTimeout(timer);
+      observer.disconnect();
+    });
   }
 }

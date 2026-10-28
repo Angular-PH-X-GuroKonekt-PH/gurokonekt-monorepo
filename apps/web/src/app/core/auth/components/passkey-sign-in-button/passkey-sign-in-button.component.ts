@@ -1,38 +1,39 @@
-import { ChangeDetectionStrategy, Component, inject, input, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, inject, input, output, signal } from '@angular/core';
 import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
 
-import { IconComponent } from '../../../../shared/components/icon/icon.component';
 import { ToastService } from '../../../../shared/services/toast.service';
-import { APP_ROUTES } from '../../../../shared/constants/routes';
-import { requiresProfileSetup } from '../../../../shared/utils/profile-completion.util';
 import { PasskeyService } from '../../services/passkey.service';
-import { AuthSelectors } from '../../store/auth.selectors';
 import { LoginSuccess } from '../../store/auth.actions';
+import { navigateAfterLogin } from '../../helpers/post-login-navigation.helper';
 
 /**
- * "Sign in with a passkey" on the login page. No email is needed: the browser
+ * "Sign in with a passkey" on the login page, styled like Google's sign-in
+ * button so the options read as one set. No email is needed: the browser
  * shows the passkeys saved for GuroKonekt and the person picks one. A
  * successful sign-in goes through the same LoginSuccess as password login.
  */
 @Component({
   selector: 'app-passkey-sign-in-button',
-  imports: [IconComponent],
   changeDetection: ChangeDetectionStrategy.OnPush,
   template: `
     @if (isSupported) {
-      <button
-        type="button"
-        (click)="signIn()"
-        [disabled]="disabled() || isSigningIn()"
-        class="flex w-full items-center justify-center gap-2 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-800 transition-colors hover:border-orange-300 hover:bg-orange-50 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:cursor-not-allowed disabled:opacity-60"
-      >
+      <button type="button" class="auth-provider-button" (click)="signIn()" [disabled]="disabled() || isSigningIn()">
         @if (isSigningIn()) {
-          <span class="inline-block h-4 w-4 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"></span>
+          <span
+            class="auth-provider-button__icon animate-spin rounded-full border-2 border-orange-500 border-t-transparent"
+            aria-hidden="true"
+          ></span>
           Waiting for your passkey...
         } @else {
-          <app-icon name="locked-closed" class="h-5 w-5 text-orange-500"></app-icon>
+          <!-- Passkey mark: a person with a key -->
+          <svg class="auth-provider-button__icon" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+            <circle cx="9" cy="7" r="4" stroke="#3c4043" stroke-width="2" />
+            <path d="M2 21v-1.5A5.5 5.5 0 0 1 7.5 14h3" stroke="#3c4043" stroke-width="2" stroke-linecap="round" />
+            <circle cx="17" cy="14.5" r="2.5" stroke="#f97316" stroke-width="2" />
+            <path d="M17 17v4m0-1.5h1.75" stroke="#f97316" stroke-width="2" stroke-linecap="round" />
+          </svg>
           Sign in with a passkey
         }
       </button>
@@ -49,8 +50,12 @@ export class PasskeySignInButtonComponent {
   private readonly router = inject(Router);
   private readonly toastService = inject(ToastService);
 
-  /** Set while another sign-in (e.g. password) is running. */
+  /** Set while another sign-in (password or Google) is running. */
   readonly disabled = input(false);
+  /** True from the moment the passkey prompt opens until sign-in finishes. */
+  readonly busy = output<boolean>();
+  /** A sign-in failure, for the page to show alongside its other errors. */
+  readonly failed = output<string>();
 
   protected readonly isSupported = this.passkeyService.isSupported();
   protected readonly isSigningIn = signal(false);
@@ -60,7 +65,7 @@ export class PasskeySignInButtonComponent {
       return;
     }
 
-    this.isSigningIn.set(true);
+    this.setBusy(true);
     try {
       const result = await this.passkeyService.signIn();
       switch (result.status) {
@@ -75,34 +80,23 @@ export class PasskeySignInButtonComponent {
               })
             )
           );
-          await this.navigateAfterSignIn();
+          await navigateAfterLogin(this.store, this.router);
           break;
         case 'cancelled':
           this.toastService.info('You can try again or sign in another way.', 'Passkey sign-in cancelled');
           break;
         case 'failed':
+          this.failed.emit(result.message);
           this.toastService.errorExclusive(result.message, 'Login Failed');
           break;
       }
     } finally {
-      this.isSigningIn.set(false);
+      this.setBusy(false);
     }
   }
 
-  /** Same destinations as password login. */
-  private async navigateAfterSignIn(): Promise<void> {
-    const user = this.store.selectSnapshot(AuthSelectors.user);
-    if (!user) {
-      return;
-    }
-    if (user.status === 'inactive') {
-      await this.router.navigate([`/${APP_ROUTES.ACTIVATE_ACCOUNT}`]);
-      return;
-    }
-    if (requiresProfileSetup(user.role, user.isProfileComplete, user.isMentorProfileComplete)) {
-      await this.router.navigate([APP_ROUTES.PROFILE_SETUP]);
-      return;
-    }
-    await this.router.navigate([APP_ROUTES.DASHBOARD]);
+  private setBusy(busy: boolean): void {
+    this.isSigningIn.set(busy);
+    this.busy.emit(busy);
   }
 }
