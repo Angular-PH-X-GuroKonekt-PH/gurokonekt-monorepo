@@ -5,6 +5,7 @@ import { createSelectMap, Store } from '@ngxs/store';
 import { firstValueFrom } from 'rxjs';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { PasskeySignInButtonComponent } from '../../components/passkey-sign-in-button/passkey-sign-in-button.component';
 import {
   GoogleCredential,
   GoogleSignInButton,
@@ -28,7 +29,7 @@ import {
 
 @Component({
   selector: 'app-login-page',
-  imports: [ReactiveFormsModule, IconComponent, NgOptimizedImage, GoogleSignInButton],
+  imports: [ReactiveFormsModule, IconComponent, NgOptimizedImage, GoogleSignInButton, PasskeySignInButtonComponent],
   templateUrl: './login.page.html',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })

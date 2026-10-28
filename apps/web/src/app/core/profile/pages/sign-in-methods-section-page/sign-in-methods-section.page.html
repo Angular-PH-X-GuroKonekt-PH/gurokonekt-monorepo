@@ -1,0 +1,146 @@
+<section>
+  <div class="mb-8">
+    <h2 class="text-2xl font-bold tracking-tight text-slate-900">Sign-in methods</h2>
+    <p class="mt-1 max-w-xl text-sm text-slate-500">
+      Choose how you sign in to GuroKonekt. All of these open the same account.
+    </p>
+  </div>
+
+  @if (reauthMessage(); as message) {
+    <div
+      class="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between"
+      role="alert"
+    >
+      <p>{{ message }}</p>
+      <button
+        type="button"
+        (click)="signInAgain()"
+        class="shrink-0 rounded-full bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-300"
+      >
+        Sign in again
+      </button>
+    </div>
+  }
+
+  @if (isLoading()) {
+    <div class="flex items-center gap-3 rounded-xl border border-orange-100 bg-orange-50/80 px-4 py-4 text-sm text-orange-700">
+      <div class="h-5 w-5 animate-spin rounded-full border-2 border-orange-400 border-t-transparent"></div>
+      Loading your sign-in methods...
+    </div>
+  } @else if (loadFailed()) {
+    <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between">
+      <p>We couldn't load your sign-in methods.</p>
+      <button type="button" (click)="load()" class="font-semibold underline hover:no-underline">Try again</button>
+    </div>
+  } @else if (methods(); as m) {
+    <ul class="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm divide-y divide-slate-100">
+      <!-- Password -->
+      <li class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div class="flex gap-4">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-slate-600">
+            <app-icon name="envelope" class="h-6 w-6"></app-icon>
+          </span>
+          <div>
+            <p class="font-semibold text-slate-900">Email and password</p>
+            <p class="mt-1 text-sm text-slate-500">
+              {{ m.password ? 'Set up. You can sign in with your email and password.' : 'No password yet. Use "Forgot password?" on the login page to set one.' }}
+            </p>
+          </div>
+        </div>
+        <span
+          class="inline-flex shrink-0 self-start items-center rounded-full px-3 py-1 text-xs font-semibold sm:self-center"
+          [class]="m.password ? 'bg-emerald-50 text-emerald-700' : 'bg-slate-100 text-slate-600'"
+        >
+          {{ m.password ? 'On' : 'Off' }}
+        </span>
+      </li>
+
+      <!-- Google -->
+      <li class="p-5 sm:p-6">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <div class="flex gap-4">
+            <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-slate-100 text-lg font-bold text-slate-700" aria-hidden="true">
+              G
+            </span>
+            <div class="min-w-0">
+              <p class="font-semibold text-slate-900">Google</p>
+              <p class="mt-1 break-all text-sm text-slate-500">
+                @if (m.google.connected) {
+                  Connected as <span class="font-medium text-slate-700">{{ m.google.email }}</span>
+                } @else {
+                  Not connected. Connect it to sign in with "Continue with Google".
+                }
+              </p>
+            </div>
+          </div>
+
+          @if (m.google.connected && !confirmingDisconnect()) {
+            <button
+              type="button"
+              (click)="confirmingDisconnect.set(true)"
+              [disabled]="isBusy()"
+              class="shrink-0 self-start rounded-full px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-60 sm:self-center"
+            >
+              Disconnect
+            </button>
+          }
+        </div>
+
+        @if (!m.google.connected && googleAvailable) {
+          <div class="mt-4 max-w-sm sm:ml-15">
+            <app-google-sign-in-button [disabled]="isBusy()" (credential)="connectGoogle($event)" />
+          </div>
+        }
+
+        @if (confirmingDisconnect()) {
+          <div class="mt-4 flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 sm:flex-row sm:items-center sm:justify-between" role="alert">
+            <p>
+              Disconnect Google?
+              @if (m.password) {
+                You'll sign in with your email and password instead.
+              }
+            </p>
+            <div class="flex shrink-0 gap-2">
+              <button
+                type="button"
+                (click)="disconnectGoogle()"
+                [disabled]="isBusy()"
+                class="rounded-full bg-red-600 px-4 py-2 font-semibold text-white hover:bg-red-700 disabled:cursor-not-allowed disabled:bg-red-300"
+              >
+                {{ isBusy() ? 'Disconnecting...' : 'Disconnect' }}
+              </button>
+              <button
+                type="button"
+                (click)="confirmingDisconnect.set(false)"
+                class="rounded-full px-4 py-2 font-semibold text-red-700 hover:bg-red-100"
+              >
+                Keep it
+              </button>
+            </div>
+          </div>
+        }
+      </li>
+
+      <!-- Passkeys -->
+      <li class="flex flex-col gap-4 p-5 sm:flex-row sm:items-center sm:justify-between sm:p-6">
+        <div class="flex gap-4">
+          <span class="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <app-icon name="locked-closed" class="h-6 w-6"></app-icon>
+          </span>
+          <div>
+            <p class="font-semibold text-slate-900">Passkeys</p>
+            <p class="mt-1 text-sm text-slate-500">
+              {{ m.passkeys ? m.passkeys + (m.passkeys === 1 ? ' passkey' : ' passkeys') + ' set up.' : 'None yet. Sign in with your fingerprint, face or screen lock.' }}
+            </p>
+          </div>
+        </div>
+        <a
+          [routerLink]="passkeysRoute"
+          class="shrink-0 self-start rounded-full px-4 py-2 text-sm font-semibold text-orange-600 hover:bg-orange-50 sm:self-center"
+        >
+          {{ m.passkeys ? 'Manage' : 'Add a passkey' }}
+        </a>
+      </li>
+    </ul>
+  }
+</section>
