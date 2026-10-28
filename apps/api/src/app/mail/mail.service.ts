@@ -1,5 +1,11 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as nodemailer from 'nodemailer';
+import type {
+  BookingAcceptedEmailInput,
+  BookingCreatedEmailInput,
+  BookingRejectedEmailInput,
+  BookingRescheduledEmailInput,
+} from './booking-email.interface';
 
 @Injectable()
 export class MailService {
@@ -8,10 +14,13 @@ export class MailService {
   private readonly from: string;
 
   constructor() {
-    this.from = process.env['SMTP_FROM'] ?? 'Gurokonekt <no-reply@gurokonekt.com>';
+    this.from =
+      process.env['SMTP_FROM'] ?? 'Gurokonekt <no-reply@gurokonekt.com>';
 
     if (!process.env['SMTP_USER'] || !process.env['SMTP_PASS']) {
-      this.logger.warn('SMTP_USER or SMTP_PASS is not set — emails will not be delivered');
+      this.logger.warn(
+        'SMTP_USER or SMTP_PASS is not set — emails will not be delivered',
+      );
     }
 
     this.transporter = nodemailer.createTransport({
@@ -34,6 +43,138 @@ export class MailService {
       .replace(/'/g, '&#39;');
   }
 
+  async sendBookingCreatedEmail(
+    input: BookingCreatedEmailInput,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const requestedSchedule = new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      timeZone: input.timeZone,
+    }).format(input.sessionDateTime);
+    const duration = input.durationMinutes
+      ? `<p><strong>Duration:</strong> ${input.durationMinutes} minutes</p>`
+      : '';
+    const details = input.bookingDetails
+      ? `<p><strong>Booking details:</strong> ${this.escapeHtml(input.bookingDetails)}</p>`
+      : '';
+
+    return this.transporter.sendMail({
+      from: this.from,
+      to: input.to,
+      subject: `New Booking Request from ${input.menteeName}`,
+      html: `
+        <p>Hi ${this.escapeHtml(input.mentorFirstName)},</p>
+        <p>${this.escapeHtml(input.menteeName)} has requested a mentoring session with you.</p>
+        <p><strong>Requested schedule:</strong> ${this.escapeHtml(requestedSchedule)}</p>
+        ${duration}
+        ${details}
+        <p><strong>Current status:</strong> Pending</p>
+        <p>
+          <a href="${this.escapeHtml(input.reviewUrl)}">
+            Review booking
+          </a>
+        </p>
+        <p>— The Gurokonekt Team</p>
+      `,
+    });
+  }
+
+  async sendBookingAcceptedEmail(
+    input: BookingAcceptedEmailInput,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const confirmedSchedule = new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      timeZone: input.timeZone,
+    }).format(input.sessionDateTime);
+    const details = input.bookingDetails
+      ? `<p><strong>Booking details:</strong> ${this.escapeHtml(input.bookingDetails)}</p>`
+      : '';
+
+    return this.transporter.sendMail({
+      from: this.from,
+      to: input.to,
+      subject: 'Your Booking Request Was Accepted',
+      html: `
+        <p>Hi ${this.escapeHtml(input.menteeFirstName)},</p>
+        <p>${this.escapeHtml(input.mentorName)} accepted your booking request.</p>
+        <p><strong>Confirmed schedule:</strong> ${this.escapeHtml(confirmedSchedule)}</p>
+        ${details}
+        <p><strong>Current status:</strong> Accepted</p>
+        <p><strong>Session link:</strong> <a href="${this.escapeHtml(input.sessionLink)}">Join session</a></p>
+        <p><a href="${this.escapeHtml(input.reviewUrl)}">View booking</a></p>
+        <p>— The Gurokonekt Team</p>
+      `,
+    });
+  }
+
+  async sendBookingRejectedEmail(
+    input: BookingRejectedEmailInput,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const requestedSchedule = new Intl.DateTimeFormat('en-US', {
+      dateStyle: 'long',
+      timeStyle: 'short',
+      timeZone: input.timeZone,
+    }).format(input.sessionDateTime);
+    const details = input.bookingDetails
+      ? `<p><strong>Booking details:</strong> ${this.escapeHtml(input.bookingDetails)}</p>`
+      : '';
+    const reason = input.declineReason
+      ? `<p><strong>Reason:</strong> ${this.escapeHtml(input.declineReason)}</p>`
+      : '';
+
+    return this.transporter.sendMail({
+      from: this.from,
+      to: input.to,
+      subject: 'Your Booking Request Was Declined',
+      html: `
+        <p>Hi ${this.escapeHtml(input.menteeFirstName)},</p>
+        <p>${this.escapeHtml(input.mentorName)} declined your booking request.</p>
+        <p><strong>Requested schedule:</strong> ${this.escapeHtml(requestedSchedule)}</p>
+        ${details}
+        ${reason}
+        <p><strong>Current status:</strong> Declined</p>
+        <p><a href="${this.escapeHtml(input.reviewUrl)}">View booking</a></p>
+        <p>— The Gurokonekt Team</p>
+      `,
+    });
+  }
+
+  async sendBookingRescheduledEmail(
+    input: BookingRescheduledEmailInput,
+  ): Promise<nodemailer.SentMessageInfo> {
+    const formatSchedule = (value: Date) =>
+      new Intl.DateTimeFormat('en-US', {
+        dateStyle: 'long',
+        timeStyle: 'short',
+        timeZone: input.timeZone,
+      }).format(value);
+    const previousSchedule = formatSchedule(input.previousSessionDateTime);
+    const newSchedule = formatSchedule(input.newSessionDateTime);
+    const details = input.bookingDetails
+      ? `<p><strong>Booking details:</strong> ${this.escapeHtml(input.bookingDetails)}</p>`
+      : '';
+    const status =
+      input.bookingStatus.charAt(0).toUpperCase() +
+      input.bookingStatus.slice(1).toLowerCase();
+
+    return this.transporter.sendMail({
+      from: this.from,
+      to: input.to,
+      subject: 'Your Booking Schedule Changed',
+      html: `
+        <p>Hi ${this.escapeHtml(input.menteeFirstName)},</p>
+        <p>${this.escapeHtml(input.mentorName)} changed your booking schedule.</p>
+        <p><strong>Previous schedule:</strong> ${this.escapeHtml(previousSchedule)}</p>
+        <p><strong>New schedule:</strong> ${this.escapeHtml(newSchedule)}</p>
+        ${details}
+        <p><strong>Current status:</strong> ${this.escapeHtml(status)}</p>
+        <p><a href="${this.escapeHtml(input.reviewUrl)}">View booking</a></p>
+        <p>— The Gurokonekt Team</p>
+      `,
+    });
+  }
+
   async sendMentorApprovalEmail(to: string, firstName: string): Promise<void> {
     try {
       await this.transporter.sendMail({
@@ -49,11 +190,18 @@ export class MailService {
         `,
       });
     } catch (error: any) {
-      this.logger.error(`Failed to send approval email to ${to}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send approval email to ${to}: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
-  async sendMentorRejectionEmail(to: string, firstName: string, reason: string): Promise<void> {
+  async sendMentorRejectionEmail(
+    to: string,
+    firstName: string,
+    reason: string,
+  ): Promise<void> {
     try {
       await this.transporter.sendMail({
         from: this.from,
@@ -69,11 +217,17 @@ export class MailService {
         `,
       });
     } catch (error: any) {
-      this.logger.error(`Failed to send rejection email to ${to}: ${error.message}`, error.stack);
+      this.logger.error(
+        `Failed to send rejection email to ${to}: ${error.message}`,
+        error.stack,
+      );
     }
   }
 
-  async sendMentorDeactivationEmail(to: string, firstName: string): Promise<void> {
+  async sendMentorDeactivationEmail(
+    to: string,
+    firstName: string,
+  ): Promise<void> {
     try {
       await this.transporter.sendMail({
         from: this.from,
