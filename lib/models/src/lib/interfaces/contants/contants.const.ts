@@ -27,6 +27,26 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Signed in with Google successfully',
     },
+    PASSKEY_REGISTRATION_OPTIONS: {
+      code: 200,
+      message: 'Passkey registration started',
+    },
+    PASSKEY_REGISTERED: {
+      code: 201,
+      message: 'Your passkey has been added.',
+    },
+    PASSKEYS_LISTED: {
+      code: 200,
+      message: 'Passkeys retrieved successfully',
+    },
+    PASSKEY_RENAMED: {
+      code: 200,
+      message: 'Passkey renamed.',
+    },
+    PASSKEY_REMOVED: {
+      code: 200,
+      message: 'Passkey removed. It can no longer be used to sign in.',
+    },
     SIGN_WITH_PASSWORD: {
       code: 200,
       message: 'Signed in with password successfully',
@@ -459,6 +479,30 @@ export const API_RESPONSE = {
       code: 429,
       message:
         'Too many failed login attempts. Try again later, or reset your password to regain access now.',
+    },
+    PASSKEY_NOT_AVAILABLE: {
+      code: 403,
+      message: 'Passkeys are not available for this account.',
+    },
+    PASSKEY_CHALLENGE_EXPIRED: {
+      code: 400,
+      message: 'Passkey setup timed out. Please try again.',
+    },
+    PASSKEY_VERIFICATION_FAILED: {
+      code: 400,
+      message: "We couldn't verify this passkey. Please try again.",
+    },
+    PASSKEY_ALREADY_REGISTERED: {
+      code: 409,
+      message: 'This passkey is already added.',
+    },
+    PASSKEY_NOT_FOUND: {
+      code: 404,
+      message: 'Passkey not found.',
+    },
+    PASSKEY_REAUTH_REQUIRED: {
+      code: 403,
+      message: 'For your security, please sign in again to remove a passkey.',
     },
     SIGNIN_GOOGLE_FAILED: {
       code: 401,
@@ -1174,6 +1218,59 @@ Exchanges a Google ID token for a Gurokonekt session.
     bodyExample: {
       idToken: 'eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...',
     },
+  },
+
+  PASSKEY_REGISTRATION_OPTIONS: {
+    summary: 'Start adding a passkey',
+    description: `
+Returns WebAuthn registration options for the signed-in user. Pass them to the browser's passkey prompt
+(e.g. \`startRegistration({ optionsJSON })\` from @simplewebauthn/browser), then send the result to
+\`POST /auth/passkeys/registration/verify\` within 5 minutes.
+
+Passkeys are discoverable (resident keys) and require user verification (biometrics, PIN or device lock), so
+they can later be used to sign in without typing an email. Passkeys the user already has are excluded, so the
+same authenticator can't be added twice. Admin accounts get \`403\`.
+`,
+  },
+
+  PASSKEY_REGISTRATION_VERIFY: {
+    summary: 'Finish adding a passkey',
+    description: `
+Verifies the browser's WebAuthn registration response against the challenge issued by
+\`POST /auth/passkeys/registration/options\` and saves the passkey. Only the public key is stored; the private
+key never leaves the user's device or password manager. Each challenge works once.
+`,
+    bodyExample: {
+      response: { id: 'base64url-credential-id', rawId: 'base64url-credential-id', type: 'public-key', response: {} },
+      name: 'Chrome on Windows',
+    },
+  },
+
+  PASSKEYS_LIST: {
+    summary: "List the signed-in user's passkeys",
+    description: `
+Returns the signed-in user's passkeys, newest first: name, type (synced or single device), when each was added
+and last used. Key material is never returned. Only the caller's own passkeys are ever listed.
+`,
+  },
+
+  PASSKEY_RENAME: {
+    summary: 'Rename a passkey',
+    description: `
+Changes the label of one of the signed-in user's passkeys. Another user's passkey ID returns \`404\`.
+`,
+    bodyExample: { name: 'Work laptop' },
+  },
+
+  PASSKEY_REMOVE: {
+    summary: 'Remove a passkey',
+    description: `
+Deletes one of the signed-in user's passkeys; it stops working for sign-in immediately.
+
+**Requires a recent sign-in:** the session must come from a sign-in within the last 10 minutes (Supabase's
+\`amr\` claim, which token refreshes don't change). Otherwise the API returns \`403\` with
+\`data.reauthRequired: true\` and the user signs in again first. Another user's passkey ID returns \`404\`.
+`,
   },
 
   RESEND_CONFIRMATION: {
