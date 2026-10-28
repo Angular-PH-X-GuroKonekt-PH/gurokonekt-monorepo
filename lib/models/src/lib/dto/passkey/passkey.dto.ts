@@ -1,6 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmptyObject, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
-import { VerifyPasskeyRegistrationInterface } from '../../interfaces/passkey/passkey.model';
+import { Transform } from 'class-transformer';
+import { IsNotEmpty, IsNotEmptyObject, IsObject, IsOptional, IsString, MaxLength } from 'class-validator';
+import { RenamePasskeyInterface, VerifyPasskeyRegistrationInterface } from '../../interfaces/passkey/passkey.model';
 
 export class VerifyPasskeyRegistrationDto implements VerifyPasskeyRegistrationInterface {
   @ApiProperty({
@@ -16,4 +17,13 @@ export class VerifyPasskeyRegistrationDto implements VerifyPasskeyRegistrationIn
   @IsString()
   @MaxLength(60)
   name?: string;
+}
+
+export class RenamePasskeyDto implements RenamePasskeyInterface {
+  @ApiProperty({ example: 'Work laptop', description: 'New label for the passkey (1-60 characters).' })
+  @Transform(({ value }) => (typeof value === 'string' ? value.trim() : value))
+  @IsString()
+  @IsNotEmpty({ message: 'Passkey name cannot be empty' })
+  @MaxLength(60)
+  name!: string;
 }

@@ -8,7 +8,6 @@ import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface
 import { UserRole } from '@gurokonekt/models/interfaces/user/user.model';
 import { ProfileService } from '../../profile.service';
 import { AuthSelectors } from '../../../auth/store/auth.selectors';
-import { PasskeySectionComponent } from '../../components/passkey-section/passkey-section.component';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
@@ -36,7 +35,7 @@ const INITIAL_LOAD_STATE: ProfileLoadState = {
 @Component({
   selector: 'app-profile-overview-section',
   standalone: true,
-  imports: [IconComponent, PasskeySectionComponent],
+  imports: [IconComponent],
   templateUrl: './profile-overview-section.page.html',
   host: { class: 'block' },
 })

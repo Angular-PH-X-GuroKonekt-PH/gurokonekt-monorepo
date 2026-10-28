@@ -99,6 +99,46 @@ describe('PasskeyService', () => {
     expect(browser.startRegistration).not.toHaveBeenCalled();
   });
 
+  it("lists the user's passkeys", async () => {
+    const result = service.list();
+    httpMock.expectOne((req) => req.method === 'GET' && req.url.endsWith('/auth/passkeys')).flush({ data: [SAVED] });
+
+    expect(await result).toEqual([SAVED]);
+  });
+
+  it('renames a passkey', async () => {
+    const result = service.rename('passkey-1', 'Work laptop');
+    const request = httpMock.expectOne((req) => req.method === 'PATCH' && req.url.endsWith('/auth/passkeys/passkey-1'));
+    expect(request.request.body).toEqual({ name: 'Work laptop' });
+    request.flush({ message: 'Passkey renamed.', data: { ...SAVED, name: 'Work laptop' } });
+
+    expect(await result).toEqual({ status: 'done', data: { ...SAVED, name: 'Work laptop' }, message: 'Passkey renamed.' });
+  });
+
+  it('removes a passkey', async () => {
+    const result = service.remove('passkey-1');
+    httpMock
+      .expectOne((req) => req.method === 'DELETE' && req.url.endsWith('/auth/passkeys/passkey-1'))
+      .flush({ message: 'Passkey removed. It can no longer be used to sign in.', data: { id: 'passkey-1' } });
+
+    expect(await result).toEqual({ status: 'done', data: null, message: 'Passkey removed. It can no longer be used to sign in.' });
+  });
+
+  it('asks to sign in again when the sign-in is too old to remove a passkey', async () => {
+    const result = service.remove('passkey-1');
+    httpMock
+      .expectOne((req) => req.method === 'DELETE')
+      .flush(
+        { message: 'For your security, please sign in again to remove a passkey.', data: { reauthRequired: true } },
+        { status: 403, statusText: 'Forbidden' }
+      );
+
+    expect(await result).toEqual({
+      status: 'reauth-required',
+      message: 'For your security, please sign in again to remove a passkey.',
+    });
+  });
+
   it('reports whether the browser supports passkeys', () => {
     browser.browserSupportsWebAuthn.mockReturnValue(false);
 

@@ -62,6 +62,12 @@ export class ProfileSettingsPage {
       description: 'Details & picture',
       icon: 'pencil-square',
     },
+    {
+      route: `/${APP_ROUTES.SETTINGS_PASSKEYS}`,
+      label: 'Passkeys',
+      description: 'Sign in without a password',
+      icon: 'locked-closed',
+    },
   ];
 
   protected openChangePasswordModal(): void {

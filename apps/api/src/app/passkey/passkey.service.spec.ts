@@ -1,7 +1,7 @@
 import { generateRegistrationOptions, verifyRegistrationResponse } from '@simplewebauthn/server';
 import { API_RESPONSE, LogsActionType, ResponseStatus } from '@gurokonekt/models';
 
-import { PasskeyService, readPasskeyConfig } from './passkey.service';
+import { PASSKEY_REMOVAL_REAUTH_WINDOW_MS, PasskeyService, readPasskeyConfig } from './passkey.service';
 
 jest.mock('@simplewebauthn/server', () => ({
   generateRegistrationOptions: jest.fn(),
@@ -28,7 +28,15 @@ describe('PasskeyService', () => {
   const prisma = {
     db: {
       user: { findUnique: jest.fn() },
-      passkey: { findMany: jest.fn(), findUnique: jest.fn(), create: jest.fn() },
+      passkey: {
+        findMany: jest.fn(),
+        findUnique: jest.fn(),
+        findFirst: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
+        create: jest.fn(),
+        updateMany: jest.fn(),
+        deleteMany: jest.fn(),
+      },
       passkeyChallenge: { deleteMany: jest.fn(), create: jest.fn(), findFirst: jest.fn(), delete: jest.fn() },
       logs: { create: jest.fn() },
     },
@@ -178,6 +186,117 @@ describe('PasskeyService', () => {
 
       expect(response.statusCode).toBe(API_RESPONSE.ERROR.PASSKEY_ALREADY_REGISTERED.code);
     });
+  });
+});
+
+describe('PasskeyService management', () => {
+  const summary = {
+    id: '11111111-1111-4111-8111-111111111111',
+    name: 'Work laptop',
+    deviceType: 'singleDevice',
+    backedUp: false,
+    createdAt: new Date('2026-10-08T00:00:00Z'),
+    lastUsedAt: null,
+  };
+  const prisma = {
+    db: {
+      passkey: {
+        findMany: jest.fn(),
+        findFirst: jest.fn(),
+        findUniqueOrThrow: jest.fn(),
+        updateMany: jest.fn(),
+        deleteMany: jest.fn(),
+      },
+      logs: { create: jest.fn() },
+    },
+  };
+  const service = new PasskeyService(prisma as any);
+  const now = new Date('2026-10-08T12:00:00Z');
+  const signedInMinutesAgo = (minutes: number) => ({
+    id: 'user-1',
+    authenticatedAt: new Date(now.getTime() - minutes * 60 * 1000),
+  });
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    prisma.db.passkey.findMany.mockResolvedValue([summary]);
+    prisma.db.passkey.findFirst.mockResolvedValue({ id: summary.id, name: summary.name });
+    prisma.db.passkey.findUniqueOrThrow.mockResolvedValue(summary);
+    prisma.db.passkey.updateMany.mockResolvedValue({ count: 1 });
+    prisma.db.passkey.deleteMany.mockResolvedValue({ count: 1 });
+  });
+
+  it("lists only the caller's passkeys, newest first, without key material", async () => {
+    const response = await service.listPasskeys('user-1');
+
+    expect(prisma.db.passkey.findMany).toHaveBeenCalledWith({
+      where: { userId: 'user-1' },
+      orderBy: { createdAt: 'desc' },
+      select: { id: true, name: true, deviceType: true, backedUp: true, createdAt: true, lastUsedAt: true },
+    });
+    expect(response.data).toEqual([summary]);
+  });
+
+  it('renames a passkey and logs it', async () => {
+    const response = await service.renamePasskey('user-1', summary.id, { name: 'Work laptop' }, '127.0.0.1', 'Jest');
+
+    expect(prisma.db.passkey.updateMany).toHaveBeenCalledWith({
+      where: { id: summary.id, userId: 'user-1' },
+      data: { name: 'Work laptop' },
+    });
+    expect(response.message).toBe(API_RESPONSE.SUCCESS.PASSKEY_RENAMED.message);
+    expect(prisma.db.logs.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ actionType: LogsActionType.PasskeyRename, targetId: 'user-1' }),
+    });
+  });
+
+  it("can't rename another user's passkey", async () => {
+    prisma.db.passkey.updateMany.mockResolvedValue({ count: 0 });
+
+    const response = await service.renamePasskey('intruder', summary.id, { name: 'Mine now' }, '127.0.0.1', 'Jest');
+
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.PASSKEY_NOT_FOUND.code);
+    expect(prisma.db.logs.create).not.toHaveBeenCalled();
+  });
+
+  it('removes a passkey right after a fresh sign-in, so it stops working at once', async () => {
+    const response = await service.removePasskey(signedInMinutesAgo(2), summary.id, '127.0.0.1', 'Jest', now);
+
+    expect(prisma.db.passkey.deleteMany).toHaveBeenCalledWith({ where: { id: summary.id, userId: 'user-1' } });
+    expect(response.message).toBe(API_RESPONSE.SUCCESS.PASSKEY_REMOVED.message);
+    expect(prisma.db.logs.create).toHaveBeenCalledWith({
+      data: expect.objectContaining({ actionType: LogsActionType.PasskeyRemove }),
+    });
+  });
+
+  it.each([
+    ['the sign-in is older than 10 minutes', signedInMinutesAgo(PASSKEY_REMOVAL_REAUTH_WINDOW_MS / 60000 + 1)],
+    ['the session has no sign-in time', { id: 'user-1', authenticatedAt: null }],
+  ])('asks to sign in again when %s', async (_case, requester) => {
+    const response = await service.removePasskey(requester, summary.id, '127.0.0.1', 'Jest', now);
+
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.PASSKEY_REAUTH_REQUIRED.code);
+    expect(response.data).toEqual({ reauthRequired: true });
+    expect(prisma.db.passkey.deleteMany).not.toHaveBeenCalled();
+  });
+
+  it("can't remove another user's passkey", async () => {
+    prisma.db.passkey.findFirst.mockResolvedValue(null);
+
+    const response = await service.removePasskey(
+      { id: 'intruder', authenticatedAt: now },
+      summary.id,
+      '127.0.0.1',
+      'Jest',
+      now
+    );
+
+    expect(prisma.db.passkey.findFirst).toHaveBeenCalledWith({
+      where: { id: summary.id, userId: 'intruder' },
+      select: { id: true, name: true },
+    });
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.PASSKEY_NOT_FOUND.code);
+    expect(prisma.db.passkey.deleteMany).not.toHaveBeenCalled();
   });
 });
 

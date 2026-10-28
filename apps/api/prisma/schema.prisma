@@ -72,6 +72,8 @@ enum LogsActionType {
   admin_feature_mentor
   admin_unfeature_mentor
   passkey_register
+  passkey_rename
+  passkey_remove
 
   @@map("logs_action_type")
 }

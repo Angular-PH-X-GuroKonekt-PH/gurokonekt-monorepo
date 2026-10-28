@@ -6,6 +6,12 @@ export interface PasskeySummaryInterface {
   deviceType: string;
   backedUp: boolean;
   createdAt: Date;
+  /** Set once passkey login is used; null until then. */
+  lastUsedAt?: Date | null;
+}
+
+export interface RenamePasskeyInterface {
+  name: string;
 }
 
 export interface VerifyPasskeyRegistrationInterface {

@@ -35,6 +35,18 @@ export const API_RESPONSE = {
       code: 201,
       message: 'Your passkey has been added.',
     },
+    PASSKEYS_LISTED: {
+      code: 200,
+      message: 'Passkeys retrieved successfully',
+    },
+    PASSKEY_RENAMED: {
+      code: 200,
+      message: 'Passkey renamed.',
+    },
+    PASSKEY_REMOVED: {
+      code: 200,
+      message: 'Passkey removed. It can no longer be used to sign in.',
+    },
     SIGN_WITH_PASSWORD: {
       code: 200,
       message: 'Signed in with password successfully',
@@ -483,6 +495,14 @@ export const API_RESPONSE = {
     PASSKEY_ALREADY_REGISTERED: {
       code: 409,
       message: 'This passkey is already added.',
+    },
+    PASSKEY_NOT_FOUND: {
+      code: 404,
+      message: 'Passkey not found.',
+    },
+    PASSKEY_REAUTH_REQUIRED: {
+      code: 403,
+      message: 'For your security, please sign in again to remove a passkey.',
     },
     SIGNIN_MENTOR_PENDING_REVIEW: {
       code: 403,
@@ -1207,6 +1227,33 @@ key never leaves the user's device or password manager. Each challenge works onc
       response: { id: 'base64url-credential-id', rawId: 'base64url-credential-id', type: 'public-key', response: {} },
       name: 'Chrome on Windows',
     },
+  },
+
+  PASSKEYS_LIST: {
+    summary: "List the signed-in user's passkeys",
+    description: `
+Returns the signed-in user's passkeys, newest first: name, type (synced or single device), when each was added
+and last used. Key material is never returned. Only the caller's own passkeys are ever listed.
+`,
+  },
+
+  PASSKEY_RENAME: {
+    summary: 'Rename a passkey',
+    description: `
+Changes the label of one of the signed-in user's passkeys. Another user's passkey ID returns \`404\`.
+`,
+    bodyExample: { name: 'Work laptop' },
+  },
+
+  PASSKEY_REMOVE: {
+    summary: 'Remove a passkey',
+    description: `
+Deletes one of the signed-in user's passkeys; it stops working for sign-in immediately.
+
+**Requires a recent sign-in:** the session must come from a sign-in within the last 10 minutes (Supabase's
+\`amr\` claim, which token refreshes don't change). Otherwise the API returns \`403\` with
+\`data.reauthRequired: true\` and the user signs in again first. Another user's passkey ID returns \`404\`.
+`,
   },
 
   RESEND_CONFIRMATION: {
