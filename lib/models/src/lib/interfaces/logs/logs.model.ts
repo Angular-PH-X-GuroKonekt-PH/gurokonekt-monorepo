@@ -27,6 +27,7 @@ export enum LogsActionType {
   PasskeyRegister = "passkey_register",
   PasskeyRename = "passkey_rename",
   PasskeyRemove = "passkey_remove",
+  SignInGoogle = "signin_google",
 }
 
 export interface LogsInterface {
