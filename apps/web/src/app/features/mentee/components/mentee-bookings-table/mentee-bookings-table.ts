@@ -12,6 +12,7 @@ import {
   BookingStatus,
   BookingTab,
 } from '@gurokonekt/models/interfaces/booking/booking.model';
+import { forkJoin, timer } from 'rxjs';
 
 import { BookingsTable } from '../../../../shared/components/bookings-table/bookings-table';
 import {
@@ -64,17 +65,19 @@ export class MenteeBookingsTable {
   pageSizeChange = output<number>();
   tabChange = output<BookingTab>();
   sortChange = output<BookingSortChange>();
+  detailsClosed = output<void>();
 
   protected readonly activeTab = signal<BookingTab>('All');
   protected readonly selectedBooking = signal<BookingCardInterface | null>(
     null,
   );
+  protected readonly linkedBookingLoading = signal(false);
   protected readonly cancelBookingTarget = signal<BookingCardInterface | null>(
     null,
   );
   protected readonly openActionBookingId = signal<string | null>(null);
   protected readonly submitting = signal(false);
-  private readonly openedBookingId = signal<string | null>(null);
+  private openedBookingId: string | null = null;
 
   protected readonly filteredBookings = computed(() => {
     const bookings = this.bookings() ?? [];
@@ -96,18 +99,38 @@ export class MenteeBookingsTable {
       if (this.tabs().includes(initialTab)) this.activeTab.set(initialTab);
     });
 
-    effect(() => {
+    effect((onCleanup) => {
       const bookingId = this.initialBookingId();
-      if (!bookingId || this.openedBookingId() === bookingId) return;
-
-      const booking = (this.bookings() ?? []).find(
-        (item) => item.id === bookingId,
-      );
-
-      if (booking) {
-        this.selectedBooking.set(booking);
-        this.openedBookingId.set(bookingId);
+      if (!bookingId) {
+        this.openedBookingId = null;
+        this.linkedBookingLoading.set(false);
+        this.selectedBooking.set(null);
+        return;
       }
+      if (this.openedBookingId === bookingId) return;
+
+      this.selectedBooking.set(null);
+      this.linkedBookingLoading.set(true);
+      this.openedBookingId = bookingId;
+      const subscription = forkJoin({
+        booking: this.bookingService.getBookingById(bookingId),
+        minimumDelay: timer(600),
+      }).subscribe(({ booking }) => {
+        if (this.openedBookingId !== bookingId) return;
+
+        this.linkedBookingLoading.set(false);
+        if (!booking) {
+          this.openedBookingId = null;
+          this.selectedBooking.set(null);
+          this.toastService.error('Unable to load the related booking.');
+          this.detailsClosed.emit();
+          return;
+        }
+
+        this.selectedBooking.set(booking);
+      });
+
+      onCleanup(() => subscription.unsubscribe());
     });
   }
 
@@ -143,11 +166,22 @@ export class MenteeBookingsTable {
 
   protected viewDetails(booking: BookingCardInterface): void {
     this.closeActionMenu();
-    this.selectedBooking.set(booking);
+    this.selectedBooking.set(null);
+    this.linkedBookingLoading.set(true);
+    this.openedBookingId = booking.id;
+
+    timer(600).subscribe(() => {
+      if (this.openedBookingId !== booking.id) return;
+      this.linkedBookingLoading.set(false);
+      this.selectedBooking.set(booking);
+    });
   }
 
   protected closeDetails(): void {
+    this.linkedBookingLoading.set(false);
     this.selectedBooking.set(null);
+    this.openedBookingId = null;
+    this.detailsClosed.emit();
   }
 
   protected canCancelRequest(booking: BookingCardInterface): boolean {

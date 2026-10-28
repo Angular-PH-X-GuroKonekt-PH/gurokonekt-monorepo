@@ -98,7 +98,48 @@
   (sortChange)="changeSort($event)"
 />
 
-@if (selectedBooking(); as booking) {
+@if (linkedBookingLoading()) {
+<div
+  data-booking-details-loading
+  class="fixed inset-0 z-50 flex items-start justify-end bg-gray-900/50"
+  role="dialog"
+  aria-modal="true"
+  aria-label="Loading booking details"
+  tabindex="0"
+  (click)="closeDetails()"
+  (keydown.enter)="closeDetails()"
+  (keydown.space)="closeDetails()"
+>
+  <div
+    class="flex h-full w-full max-w-lg flex-col bg-white shadow-2xl"
+    tabindex="-1"
+    (click)="$event.stopPropagation()"
+    (keydown)="$event.stopPropagation()"
+  >
+    <div
+      class="flex items-center justify-between border-b border-gray-200 px-6 py-4"
+    >
+      <h2 class="text-lg font-semibold text-gray-900">Booking Details</h2>
+      <button
+        type="button"
+        (click)="closeDetails()"
+        class="inline-flex h-9 w-9 items-center justify-center rounded-lg text-xl text-gray-400 transition hover:bg-gray-100 hover:text-gray-600"
+        aria-label="Close booking details"
+      >
+        &times;
+      </button>
+    </div>
+    <div class="flex flex-1 items-center justify-center px-6">
+      <div class="text-center text-sm text-gray-500">
+        <span
+          class="mx-auto mb-3 block h-7 w-7 animate-spin rounded-full border-2 border-orange-500 border-t-transparent"
+        ></span>
+        Loading booking…
+      </div>
+    </div>
+  </div>
+</div>
+} @else if (selectedBooking(); as booking) {
 <app-booking-details-modal
   [booking]="booking"
   [displayTimezone]="displayTimezone()"

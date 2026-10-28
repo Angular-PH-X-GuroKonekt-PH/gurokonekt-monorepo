@@ -18,6 +18,7 @@ import { catchError, filter, map, switchMap } from 'rxjs/operators';
 import {
   NotificationInterface,
   NotificationStatus,
+  NotificationType,
 } from '@gurokonekt/models/interfaces/notification/notification.model';
 import { UserInterface } from '@gurokonekt/models/interfaces/user/user.model';
 
@@ -29,6 +30,10 @@ import { ProfileService } from '../../../../core/profile/profile.service';
 import { NotificationService } from '../../../../shared/services/notification.service';
 import { AuthSelectors } from '../../../../core/auth/store/auth.selectors';
 import { resolveAvatarPublicUrl } from '../../../../shared/utils/avatar-url.util';
+import { APP_ROUTES } from '../../../../shared/constants/routes';
+
+const NOTIFICATION_PREVIEW_LIMIT = 5;
+type NotificationFilter = 'all' | 'unread' | 'read';
 
 @Component({
   selector: 'app-navbar',
@@ -52,6 +57,13 @@ export class NavbarComponent implements OnInit, OnDestroy {
   // Dropdown states
   protected readonly isNotificationOpen = signal(false);
   protected readonly isUserMenuOpen = signal(false);
+  protected readonly notificationFilter = signal<NotificationFilter>('all');
+  protected readonly notificationPreviewLimit = signal(
+    NOTIFICATION_PREVIEW_LIMIT,
+  );
+  protected readonly notificationListHeight = signal<number | null>(null);
+  protected readonly openNotificationMenuId = signal<string | null>(null);
+  private readonly deletingNotificationIds = signal<Set<string>>(new Set());
 
   // User data
   protected readonly user = this.store.selectSignal(AuthSelectors.user);
@@ -64,10 +76,10 @@ export class NavbarComponent implements OnInit, OnDestroy {
       this.actions$.pipe(
         ofActionSuccessful(
           AuthActions.UpdateMentorProfileSuccess,
-          AuthActions.UpdateMenteeProfileSuccess
+          AuthActions.UpdateMenteeProfileSuccess,
         ),
-        map(() => this.userId())
-      )
+        map(() => this.userId()),
+      ),
     ).pipe(
       switchMap((userId) => {
         if (!userId) return of(null);
@@ -97,7 +109,7 @@ export class NavbarComponent implements OnInit, OnDestroy {
   });
 
   protected readonly userAvatarUrl = computed(() =>
-    resolveAvatarPublicUrl(this.profile())
+    resolveAvatarPublicUrl(this.profile()),
   );
 
   // Notification data
@@ -123,8 +135,29 @@ export class NavbarComponent implements OnInit, OnDestroy {
       ).length ?? 0,
   );
 
-  protected readonly recentNotifications = computed(() =>
-    this.notifications().slice(0, 5),
+  private readonly matchingNotifications = computed(() => {
+    const filter = this.notificationFilter();
+    const notifications = this.notifications();
+
+    if (filter === 'all') {
+      return notifications;
+    }
+
+    const status =
+      filter === 'unread' ? NotificationStatus.UNREAD : NotificationStatus.READ;
+
+    return notifications.filter(
+      (notification) => notification.status === status,
+    );
+  });
+
+  protected readonly filteredNotifications = computed(() =>
+    this.matchingNotifications().slice(0, this.notificationPreviewLimit()),
+  );
+
+  protected readonly hasOlderNotifications = computed(
+    () =>
+      this.matchingNotifications().length > this.filteredNotifications().length,
   );
 
   ngOnInit(): void {
@@ -143,29 +176,116 @@ export class NavbarComponent implements OnInit, OnDestroy {
     event.stopPropagation();
     this.isNotificationOpen.update((open) => !open);
     this.isUserMenuOpen.set(false);
+    this.openNotificationMenuId.set(null);
   }
 
   protected toggleUserMenu(event: MouseEvent): void {
     event.stopPropagation();
     this.isUserMenuOpen.update((open) => !open);
     this.isNotificationOpen.set(false);
+    this.openNotificationMenuId.set(null);
+  }
+
+  protected setNotificationFilter(filter: NotificationFilter): void {
+    this.notificationFilter.set(filter);
+    this.notificationPreviewLimit.set(NOTIFICATION_PREVIEW_LIMIT);
+    this.notificationListHeight.set(null);
+    this.openNotificationMenuId.set(null);
+  }
+
+  protected showOlderNotifications(): void {
+    if (this.notificationPreviewLimit() === NOTIFICATION_PREVIEW_LIMIT) {
+      const root: HTMLElement = this.elementRef.nativeElement;
+      const list = root.querySelector<HTMLElement>('[data-notification-list]');
+      this.notificationListHeight.set(list?.offsetHeight || null);
+    }
+
+    this.notificationPreviewLimit.update(
+      (limit) => limit + NOTIFICATION_PREVIEW_LIMIT,
+    );
+  }
+
+  protected toggleNotificationMenu(notification: NotificationInterface): void {
+    this.openNotificationMenuId.update((openId) =>
+      openId === notification.id ? null : notification.id,
+    );
+  }
+
+  protected isDeletingNotification(id: string): boolean {
+    return this.deletingNotificationIds().has(id);
   }
 
   @HostListener('document:click', ['$event'])
   protected handleDocumentClick(event: MouseEvent): void {
+    const target = event.target as HTMLElement;
+    if (!target.closest('[data-notification-menu]')) {
+      this.openNotificationMenuId.set(null);
+    }
+
     if (!this.elementRef.nativeElement.contains(event.target as Node)) {
       this.closeAllDropdowns();
     }
   }
 
   protected markAsRead(notification: NotificationInterface): void {
+    void this.markNotificationAsRead(notification);
+  }
+
+  protected async openNotification(
+    notification: NotificationInterface,
+  ): Promise<void> {
+    await this.markNotificationAsRead(notification);
+
+    if (
+      !notification.referenceId ||
+      (notification.type !== NotificationType.BOOKING &&
+        notification.type !== NotificationType.SESSION)
+    ) {
+      return;
+    }
+
+    this.closeAllDropdowns();
+    await this.router.navigate([APP_ROUTES.BOOKING_OVERVIEW], {
+      queryParams: { bookingId: notification.referenceId },
+    });
+  }
+
+  private async markNotificationAsRead(
+    notification: NotificationInterface,
+  ): Promise<void> {
+    this.openNotificationMenuId.set(null);
+
     if (notification.status === NotificationStatus.READ) {
       return;
     }
 
-    void firstValueFrom(
+    if (this.notificationFilter() === 'unread') {
+      this.moveFocusFromUnreadNotification();
+    }
+
+    await firstValueFrom(
       this.notificationService.markAsRead(notification.id),
     ).catch(() => undefined);
+  }
+
+  protected async deleteNotification(
+    notification: NotificationInterface,
+  ): Promise<void> {
+    if (this.isDeletingNotification(notification.id)) {
+      return;
+    }
+
+    this.moveFocusBeforeDeletingNotification(notification.id);
+    this.openNotificationMenuId.set(null);
+    this.updateDeletingNotification(notification.id, true);
+
+    try {
+      await firstValueFrom(
+        this.notificationService.deleteNotification(notification.id),
+      );
+    } finally {
+      this.updateDeletingNotification(notification.id, false);
+    }
   }
 
   protected logout(): void {
@@ -176,5 +296,62 @@ export class NavbarComponent implements OnInit, OnDestroy {
   private closeAllDropdowns(): void {
     this.isNotificationOpen.set(false);
     this.isUserMenuOpen.set(false);
+    this.openNotificationMenuId.set(null);
+  }
+
+  private updateDeletingNotification(id: string, deleting: boolean): void {
+    this.deletingNotificationIds.update((ids) => {
+      const updatedIds = new Set(ids);
+      if (deleting) {
+        updatedIds.add(id);
+      } else {
+        updatedIds.delete(id);
+      }
+      return updatedIds;
+    });
+  }
+
+  private moveFocusBeforeDeletingNotification(id: string): void {
+    const root: HTMLElement = this.elementRef.nativeElement;
+    const notificationItems = Array.from(
+      root.querySelectorAll<HTMLElement>('app-navbar-notification-item'),
+    );
+    const itemIndex = notificationItems.findIndex(
+      (item) => item.dataset['notificationId'] === id,
+    );
+    const nextItem =
+      notificationItems[itemIndex + 1] ?? notificationItems[itemIndex - 1];
+    const nextFocusTarget =
+      nextItem?.querySelector<HTMLButtonElement>('[data-notification-body]') ??
+      root.querySelector<HTMLButtonElement>(
+        `[data-notification-filter="${this.notificationFilter()}"]`,
+      );
+
+    nextFocusTarget?.focus();
+  }
+
+  private moveFocusFromUnreadNotification(): void {
+    const root: HTMLElement = this.elementRef.nativeElement;
+    const activeElement = root.ownerDocument.activeElement;
+    const notificationItems = Array.from(
+      root.querySelectorAll<HTMLElement>('app-navbar-notification-item'),
+    );
+    const activeIndex = notificationItems.findIndex((item) =>
+      item.contains(activeElement),
+    );
+
+    if (activeIndex < 0) {
+      return;
+    }
+
+    const nextItem =
+      notificationItems[activeIndex + 1] ?? notificationItems[activeIndex - 1];
+    const nextFocusTarget =
+      nextItem?.querySelector<HTMLButtonElement>('[data-notification-body]') ??
+      root.querySelector<HTMLButtonElement>(
+        '[data-notification-filter="unread"]',
+      );
+
+    nextFocusTarget?.focus();
   }
 }
