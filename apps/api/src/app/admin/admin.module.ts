@@ -15,6 +15,8 @@ import { AdminMentorController } from './admin-mentor.controller';
 import { AdminMentorService } from './admin-mentor.service';
 import { AdminInquiryController } from './admin-inquiry.controller';
 import { AdminInquiryService } from './admin-inquiry.service';
+import { AdminNotificationRecipientsController } from './admin-notification-recipients.controller';
+import { AdminNotificationRecipientsService } from './admin-notification-recipients.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SupabaseModule } from '../supabase/supabase.module';
 import { AuthModule } from '../auth/auth.module';
@@ -40,6 +42,7 @@ import { NotificationGatewayModule } from '../gateway/notification-gateway.modul
     AdminRolesController,
     AdminMentorController,
     AdminInquiryController,
+    AdminNotificationRecipientsController,
   ],
   providers: [
     AdminService,
@@ -50,6 +53,7 @@ import { NotificationGatewayModule } from '../gateway/notification-gateway.modul
     AdminRolesService,
     AdminMentorService,
     AdminInquiryService,
+    AdminNotificationRecipientsService,
   ],
 })
 export class AdminModule {}

@@ -72,6 +72,8 @@ enum LogsActionType {
   admin_feature_mentor
   admin_unfeature_mentor
   signin_google
+  admin_add_notification_recipient
+  admin_remove_notification_recipient
 
   @@map("logs_action_type")
 }
@@ -359,4 +361,16 @@ model Inquiry {
 
   @@index([createdAt])
   @@map("inquiries")
+}
+
+/// Email addresses that receive admin alerts (e.g. a new mentor waiting for
+/// approval). Managed from the Admin Portal, not tied to admin accounts so a
+/// shared inbox can be added too.
+model AdminNotificationRecipient {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  createdById String   @map("created_by_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  @@map("admin_notification_recipients")
 }
