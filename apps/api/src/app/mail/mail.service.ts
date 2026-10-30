@@ -94,6 +94,51 @@ export class MailService {
     }
   }
 
+  /**
+   * Tells admins a new mentor is waiting for approval. Throws on failure so the
+   * caller can log the outcome; registration must never wait on or fail
+   * because of this email.
+   */
+  async sendNewMentorRegistrationEmail(
+    to: string[],
+    mentor: { fullName: string; email: string; registeredAt: Date },
+    reviewUrl: string | null,
+  ): Promise<void> {
+    const registeredAt = mentor.registeredAt.toLocaleString('en-PH', {
+      timeZone: 'Asia/Manila',
+      dateStyle: 'medium',
+      timeStyle: 'short',
+    });
+    const reviewButton = reviewUrl
+      ? `
+          <p>
+            <a
+              href="${this.escapeHtml(reviewUrl)}"
+              style="display:inline-block;padding:12px 20px;background:#f97316;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;"
+            >
+              Review in Admin Portal
+            </a>
+          </p>`
+      : '';
+
+    await this.transporter.sendMail({
+      from: this.from,
+      to,
+      subject: 'New Mentor Waiting for Approval',
+      html: `
+          <p>Hi Admin,</p>
+          <p>A new mentor has registered on Gurokonekt and needs your approval.</p>
+          <p>
+            <strong>Name:</strong> ${this.escapeHtml(mentor.fullName)}<br />
+            <strong>Email:</strong> ${this.escapeHtml(mentor.email)}<br />
+            <strong>Registered:</strong> ${this.escapeHtml(registeredAt)} (PHT)<br />
+            <strong>Status:</strong> Pending Approval
+          </p>${reviewButton}
+          <p>-- The Gurokonekt Team</p>
+        `,
+    });
+  }
+
   async sendAccountDeactivationEmail(
     to: string,
     firstName: string,

@@ -1,0 +1,62 @@
+<div class="bg-white rounded-xl border border-gray-200 p-5">
+  <h2 class="text-lg font-semibold text-gray-900 mb-1">New mentor email alerts</h2>
+  <p class="text-sm text-gray-500 mb-4">
+    These emails are notified when a new mentor registers and is waiting for approval.
+  </p>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-8">
+      <div class="h-6 w-6 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+    </div>
+  } @else if (loadError()) {
+    <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+      {{ loadError() }}
+    </div>
+  } @else {
+    <form class="flex flex-col sm:flex-row gap-2 mb-3" (ngSubmit)="add()">
+      <input
+        type="email"
+        name="email"
+        placeholder="admin@example.com"
+        aria-label="Email to notify"
+        class="flex-1 rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-orange-500"
+        [ngModel]="email()"
+        (ngModelChange)="email.set($event)"
+        [disabled]="adding()"
+      />
+      <button
+        type="submit"
+        class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+        [disabled]="adding() || !email().trim()"
+      >
+        {{ adding() ? 'Adding…' : 'Add email' }}
+      </button>
+    </form>
+
+    @if (actionError()) {
+      <p class="text-sm text-red-600 mb-3">{{ actionError() }}</p>
+    }
+
+    @if (recipients().length === 0) {
+      <p class="rounded-lg bg-yellow-50 border border-yellow-200 px-4 py-3 text-sm text-yellow-800">
+        No emails added yet. Admins won't be notified about new mentor registrations.
+      </p>
+    } @else {
+      <ul class="divide-y divide-gray-100 rounded-lg border border-gray-200">
+        @for (recipient of recipients(); track recipient.id) {
+          <li class="flex items-center justify-between px-4 py-2.5">
+            <span class="text-sm text-gray-700 break-all">{{ recipient.email }}</span>
+            <button
+              type="button"
+              class="ml-4 shrink-0 text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+              [disabled]="removingId() === recipient.id"
+              (click)="remove(recipient)"
+            >
+              {{ removingId() === recipient.id ? 'Removing…' : 'Remove' }}
+            </button>
+          </li>
+        }
+      </ul>
+    }
+  }
+</div>

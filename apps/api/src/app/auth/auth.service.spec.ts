@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { SupabaseService } from '../supabase/supabase.service';
 import { StorageService } from '../storage/storage.service';
+import { MailService } from '../mail/mail.service';
 import {
   AuthValidationService,
   AuthLoggingService,
@@ -29,6 +30,7 @@ describe('AuthService.getSession', () => {
         { provide: AuthLoggingService, useValue: {} },
         { provide: AuthRateLimiterService, useValue: {} },
         { provide: AuthErrorHandlerService, useValue: { handleUnexpectedError: jest.fn() } },
+        { provide: MailService, useValue: {} },
       ],
     }).compile();
 
@@ -101,6 +103,7 @@ describe('AuthService', () => {
       {} as any,
       {} as any,
       {} as any,
+      {} as any,
     );
 
     beforeEach(() => {
@@ -169,6 +172,7 @@ describe('AuthService', () => {
       supabase as any,
       {} as any,
       validation as any,
+      {} as any,
       {} as any,
       {} as any,
       {} as any,
@@ -320,6 +324,7 @@ describe('AuthService.signInWithGoogle', () => {
     logging as any,
     {} as any,
     errorHandler as any,
+    {} as any,
   );
 
   const signIn = () =>
@@ -439,5 +444,141 @@ describe('AuthService.signInWithGoogle', () => {
     for (const [entry] of logging.log.mock.calls) {
       expect(entry.actionType).toBe(LogsActionType.SignInGoogle);
     }
+  });
+});
+
+describe('AuthService.registerMentor admin notification', () => {
+  const createdAt = new Date('2026-10-29T02:30:00.000Z');
+  const mentor = {
+    id: 'mentor-1',
+    firstName: 'Juan',
+    middleName: null,
+    lastName: 'Dela Cruz',
+    email: 'juan@example.com',
+    createdAt,
+  };
+  const dto = {
+    firstName: 'Juan',
+    lastName: 'Dela Cruz',
+    email: 'Juan@Example.com',
+    password: 'Password1!',
+    country: 'PH',
+    timezone: 'Asia/Manila',
+    phoneNumber: '+639171234567',
+    areasOfExpertise: ['Engineering'],
+  };
+
+  const tx = {
+    user: { create: jest.fn() },
+    mentorProfile: { create: jest.fn() },
+    logs: { create: jest.fn() },
+  };
+  const prisma = {
+    db: {
+      $transaction: jest.fn((fn: (t: typeof tx) => unknown) => fn(tx)),
+      adminNotificationRecipient: { findMany: jest.fn() },
+    },
+  };
+  const supabase = {
+    client: { auth: { signUp: jest.fn() } },
+  };
+  const validation = { userExists: jest.fn() };
+  const mailService = { sendNewMentorRegistrationEmail: jest.fn() };
+
+  const service = new AuthService(
+    prisma as any,
+    supabase as any,
+    {} as any,
+    validation as any,
+    {} as any,
+    {} as any,
+    {} as any,
+    mailService as any,
+  );
+
+  const register = () =>
+    service.registerMentor(dto as any, [], '127.0.0.1', 'Jest', 'http://localhost:4200');
+  // The email is sent in the background; let it settle before asserting.
+  const flush = () => new Promise((resolve) => setImmediate(resolve));
+  const originalAdminPortalUrl = process.env['ADMIN_PORTAL_URL'];
+
+  beforeEach(() => {
+    jest.clearAllMocks();
+    process.env['ADMIN_PORTAL_URL'] = 'https://admin.example.com/';
+    validation.userExists.mockResolvedValue(false);
+    supabase.client.auth.signUp.mockResolvedValue({
+      data: { user: { id: mentor.id, email_confirmed_at: null }, session: null },
+      error: null,
+    });
+    tx.user.create.mockResolvedValue(mentor);
+    tx.mentorProfile.create.mockResolvedValue({ userId: mentor.id });
+    tx.logs.create.mockResolvedValue(undefined);
+    prisma.db.adminNotificationRecipient.findMany.mockResolvedValue([
+      { email: 'admin1@example.com' },
+      { email: 'admin2@example.com' },
+    ]);
+    mailService.sendNewMentorRegistrationEmail.mockResolvedValue(undefined);
+  });
+
+  afterAll(() => {
+    process.env['ADMIN_PORTAL_URL'] = originalAdminPortalUrl;
+  });
+
+  it('emails every configured admin once with the mentor details and review link', async () => {
+    const response = await register();
+    await flush();
+
+    expect(response.status).toBe(ResponseStatus.Success);
+    expect(mailService.sendNewMentorRegistrationEmail).toHaveBeenCalledTimes(1);
+    expect(mailService.sendNewMentorRegistrationEmail).toHaveBeenCalledWith(
+      ['admin1@example.com', 'admin2@example.com'],
+      { fullName: 'Juan Dela Cruz', email: 'juan@example.com', registeredAt: createdAt },
+      'https://admin.example.com/mentor-management',
+    );
+  });
+
+  it('still registers the mentor when the email fails to send', async () => {
+    mailService.sendNewMentorRegistrationEmail.mockRejectedValue(new Error('SMTP down'));
+
+    const response = await register();
+    await flush();
+
+    expect(response.status).toBe(ResponseStatus.Success);
+    expect(mailService.sendNewMentorRegistrationEmail).toHaveBeenCalledTimes(1);
+  });
+
+  it('skips the email when no admin recipients are configured', async () => {
+    prisma.db.adminNotificationRecipient.findMany.mockResolvedValue([]);
+
+    const response = await register();
+    await flush();
+
+    expect(response.status).toBe(ResponseStatus.Success);
+    expect(mailService.sendNewMentorRegistrationEmail).not.toHaveBeenCalled();
+  });
+
+  it('sends without a review link when ADMIN_PORTAL_URL is not set', async () => {
+    delete process.env['ADMIN_PORTAL_URL'];
+
+    await register();
+    await flush();
+
+    expect(mailService.sendNewMentorRegistrationEmail).toHaveBeenCalledWith(
+      expect.any(Array),
+      expect.any(Object),
+      null,
+    );
+  });
+
+  it('does not email admins when the registration fails', async () => {
+    validation.userExists.mockResolvedValue(true);
+
+    const response = await register();
+    await flush();
+
+    expect(response.status).toBe(ResponseStatus.Error);
+    expect(response.statusCode).toBe(API_RESPONSE.ERROR.USER_ALREADY_EXISTS.code);
+    expect(prisma.db.adminNotificationRecipient.findMany).not.toHaveBeenCalled();
+    expect(mailService.sendNewMentorRegistrationEmail).not.toHaveBeenCalled();
   });
 });

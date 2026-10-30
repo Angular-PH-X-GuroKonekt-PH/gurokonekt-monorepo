@@ -354,6 +354,18 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Admin roles retrieved successfully',
     },
+    ADMIN_GET_NOTIFICATION_RECIPIENTS: {
+      code: 200,
+      message: 'Notification recipients retrieved successfully',
+    },
+    ADMIN_ADD_NOTIFICATION_RECIPIENT: {
+      code: 201,
+      message: 'Notification recipient added successfully',
+    },
+    ADMIN_REMOVE_NOTIFICATION_RECIPIENT: {
+      code: 200,
+      message: 'Notification recipient removed successfully',
+    },
 
     /**
      * ADMIN MENTOR MANAGEMENT
@@ -976,6 +988,26 @@ export const API_RESPONSE = {
     ADMIN_GET_ROLES: {
       code: 500,
       message: 'Failed to retrieve admin roles',
+    },
+    ADMIN_GET_NOTIFICATION_RECIPIENTS: {
+      code: 500,
+      message: 'Failed to retrieve notification recipients',
+    },
+    ADMIN_ADD_NOTIFICATION_RECIPIENT: {
+      code: 500,
+      message: 'Failed to add notification recipient',
+    },
+    ADMIN_REMOVE_NOTIFICATION_RECIPIENT: {
+      code: 500,
+      message: 'Failed to remove notification recipient',
+    },
+    NOTIFICATION_RECIPIENT_ALREADY_EXISTS: {
+      code: 409,
+      message: 'This email is already on the notification list',
+    },
+    NOTIFICATION_RECIPIENT_NOT_FOUND: {
+      code: 404,
+      message: 'Notification recipient not found',
     },
 
     /**
