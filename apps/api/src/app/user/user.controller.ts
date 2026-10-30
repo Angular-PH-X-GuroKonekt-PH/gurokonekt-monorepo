@@ -601,7 +601,7 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Password is incorrect.' })
+  @ApiResponse({ status: 400, description: 'Password is incorrect.' })
   @ApiResponse({
     status: 403,
     description: 'Access denied for the account owner.',
@@ -675,7 +675,7 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Password is incorrect.' })
+  @ApiResponse({ status: 400, description: 'Password is incorrect.' })
   @ApiResponse({
     status: 403,
     description: 'Access denied — account is not a Mentor.',

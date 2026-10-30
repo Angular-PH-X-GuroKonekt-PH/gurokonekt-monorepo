@@ -490,8 +490,11 @@ export const API_RESPONSE = {
       code: 401,
       message: 'Refresh token is invalid or expired. Please log in again.',
     },
+    // 400, not 401: the user is signed in, they just typed the wrong password.
+    // The web app treats any 401 on a signed-in request as an expired session
+    // and logs the user out (issue #80).
     PASSWORD_INCORRECT: {
-      code: 401,
+      code: 400,
       message: 'Password incorrect',
     },
     UPDATE_PASSWORD_TOO_MANY_ATTEMPTS: {

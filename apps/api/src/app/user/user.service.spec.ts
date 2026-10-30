@@ -1,9 +1,12 @@
 import {
+  API_RESPONSE,
   BookingStatus,
   ResponseStatus,
   UserRole,
   UserStatus,
 } from '@gurokonekt/models';
+
+import bcrypt from 'bcrypt';
 
 import { UserService } from './user.service';
 
@@ -125,5 +128,38 @@ describe('UserService.getMentorDashboard', () => {
       quickStats: { upcomingSessions: 0 },
       nextUpcomingSession: null,
     });
+  });
+});
+
+describe('UserService.downgradeMentorToMentee wrong password', () => {
+  it('returns 400, not 401, so the web app does not log the user out (issue #80)', async () => {
+    const prisma = {
+      db: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: 'mentor-1',
+            email: 'mentor@example.com',
+            firstName: 'Maria',
+            role: UserRole.Mentor,
+            hashPassword: bcrypt.hashSync('right-password', 4),
+          }),
+        },
+        $transaction: jest.fn(),
+      },
+    };
+    const service = new UserService(prisma as never, {} as never, {} as never, {} as never);
+
+    const response = await service.downgradeMentorToMentee(
+      'mentor-1',
+      { password: 'wrong-password' } as never,
+      '127.0.0.1',
+      'Jest',
+      'http://localhost:4200',
+    );
+
+    expect(response.status).toBe(ResponseStatus.Error);
+    expect(response.statusCode).toBe(400);
+    expect(response.message).toBe(API_RESPONSE.ERROR.PASSWORD_INCORRECT.message);
+    expect(prisma.db.$transaction).not.toHaveBeenCalled();
   });
 });

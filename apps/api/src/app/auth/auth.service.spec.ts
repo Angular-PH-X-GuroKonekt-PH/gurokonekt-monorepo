@@ -441,3 +441,46 @@ describe('AuthService.signInWithGoogle', () => {
     }
   });
 });
+
+describe('AuthService.updatePassword wrong current password', () => {
+  it('returns 400, not 401, so the web app does not log the user out (issue #80)', async () => {
+    const prisma = {
+      db: {
+        user: {
+          findUnique: jest.fn().mockResolvedValue({
+            id: 'user-1',
+            email: 'user@example.com',
+            hashPassword: 'hash',
+          }),
+        },
+      },
+    };
+    const validation = { validatePassword: jest.fn().mockResolvedValue(false) };
+    const logging = { log: jest.fn() };
+
+    const service = new AuthService(
+      prisma as any,
+      {} as any,
+      {} as any,
+      validation as any,
+      logging as any,
+      {} as any,
+      {} as any,
+    );
+
+    const response = await service.updatePassword(
+      {
+        userId: 'user-1',
+        currentPassword: 'wrong-password',
+        newPassword: 'NewPassword@123',
+        confirmNewPassword: 'NewPassword@123',
+      } as any,
+      '127.0.0.1',
+      'Jest',
+    );
+
+    expect(response.status).toBe(ResponseStatus.Error);
+    expect(response.statusCode).toBe(400);
+    expect(response.message).toBe(API_RESPONSE.ERROR.PASSWORD_INCORRECT.message);
+  });
+});
