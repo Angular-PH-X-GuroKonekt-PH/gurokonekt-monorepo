@@ -601,7 +601,7 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Password is incorrect.' })
+  @ApiResponse({ status: 400, description: 'Password is incorrect.' })
   @ApiResponse({
     status: 403,
     description: 'Access denied for the account owner.',
@@ -675,7 +675,7 @@ export class UserController {
       },
     },
   })
-  @ApiResponse({ status: 401, description: 'Password is incorrect.' })
+  @ApiResponse({ status: 400, description: 'Password is incorrect.' })
   @ApiResponse({
     status: 403,
     description: 'Access denied — account is not a Mentor.',
@@ -1256,9 +1256,10 @@ export class UserController {
   // POST - Submit Deactivation Feedback
   // ====================================================
 
+  // Deliberately no JwtGuardGuard: the emailed token already proves ownership,
+  // and the link is often opened on another device (e.g. a phone) where the
+  // user is not signed in. The service checks userId + token + expiry.
   @Post(':userId/deactivate/feedback')
-  @UseGuards(JwtGuardGuard)
-  @ApiBearerAuth()
   @ApiOperation({
     summary: SWAGGER_DOCUMENTATION.DEACTIVATION_FEEDBACK.summary,
     description: SWAGGER_DOCUMENTATION.DEACTIVATION_FEEDBACK.description,
@@ -1308,6 +1309,30 @@ export class UserController {
       ipAddress,
       userAgent,
     );
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        {
+          status: response.status,
+          statusCode: response.statusCode,
+          message: response.message,
+          data: response.data,
+        },
+        response.statusCode || HttpStatus.BAD_REQUEST,
+      );
+    }
+    return response;
+  }
+
+  @Get(':userId/activation-request')
+  @UseGuards(JwtGuardGuard)
+  @ApiBearerAuth()
+  @ApiOperation({ summary: "Get the signed-in user's latest account activation request" })
+  @ApiParam({ name: 'userId', type: String, description: 'UUID of the authenticated user' })
+  async getActivationRequest(
+    @Param('userId') userId: string,
+    @Req() req: Request & { user: { id: string } },
+  ) {
+    const response = await this.userService.getActivationRequest(userId, req.user.id);
     if (response.status === ResponseStatus.Error) {
       throw new HttpException(
         {

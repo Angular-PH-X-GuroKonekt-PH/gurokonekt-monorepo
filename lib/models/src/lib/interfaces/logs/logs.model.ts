@@ -25,6 +25,9 @@ export enum LogsActionType {
   AdminFeatureMentor = "admin_feature_mentor",
   AdminUnfeatureMentor = "admin_unfeature_mentor",
   SignInGoogle = "signin_google",
+  AdminApproveMentorReactivation = "admin_approve_mentor_reactivation",
+  AdminRejectMentorReactivation = "admin_reject_mentor_reactivation",
+  AccountAutoDeleted = "account_auto_deleted",
 }
 
 export interface LogsInterface {

@@ -581,4 +581,174 @@ export class AdminMentorService {
       };
     }
   }
+
+  /** Inactive mentors who asked to come back and are waiting for an admin. */
+  async getReactivationRequests(): Promise<ResponseDto> {
+    try {
+      const requests = await this.prisma.db.accountActivationRequest.findMany({
+        where: { status: 'pending', user: { role: UserRole.Mentor, status: UserStatus.Inactive } },
+        select: {
+          reason: true,
+          createdAt: true,
+          user: {
+            select: {
+              id: true,
+              firstName: true,
+              lastName: true,
+              email: true,
+              deactivatedAt: true,
+              deactivationFeedback: { select: { reason: true } },
+            },
+          },
+        },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.ADMIN_GET_REACTIVATION_REQUESTS.code,
+        message: API_RESPONSE.SUCCESS.ADMIN_GET_REACTIVATION_REQUESTS.message,
+        data: requests.map((r) => ({
+          mentorId: r.user.id,
+          firstName: r.user.firstName,
+          lastName: r.user.lastName,
+          email: r.user.email,
+          reactivationReason: r.reason,
+          deactivationReason: r.user.deactivationFeedback?.reason ?? null,
+          deactivatedAt: r.user.deactivatedAt?.toISOString() ?? null,
+          requestedAt: r.createdAt.toISOString(),
+        })),
+      };
+    } catch (error: any) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.ADMIN_GET_REACTIVATION_REQUESTS.code,
+        message: API_RESPONSE.ERROR.ADMIN_GET_REACTIVATION_REQUESTS.message,
+        data: error,
+      };
+    }
+  }
+
+  async approveReactivation(mentorId: string, adminId: string, ipAddress: string, userAgent: string): Promise<ResponseDto> {
+    try {
+      const mentor = await this.findMentorWithPendingReactivation(mentorId);
+      if (!mentor) return this.reactivationNotPending();
+
+      // Return the mentor to where they were before deactivating: approved if an
+      // admin had already approved them, otherwise back into the approval queue.
+      const restoredStatus = mentor.isMentorApproved ? UserStatus.Approved : UserStatus.PendingApproval;
+
+      await this.prisma.db.$transaction(async (tx) => {
+        await tx.accountActivationRequest.update({
+          where: { userId: mentorId },
+          data: { status: 'approved', reviewedAt: new Date(), reviewedById: adminId, reviewNote: null },
+        });
+        await tx.user.update({
+          where: { id: mentorId },
+          data: { status: restoredStatus, deactivatedAt: null, updatedById: adminId },
+        });
+        await tx.logs.create({
+          data: {
+            actionType: LogsActionType.AdminApproveMentorReactivation,
+            targetId: mentorId,
+            details: API_RESPONSE.SUCCESS.ADMIN_APPROVE_MENTOR_REACTIVATION.message,
+            metadata: { mentorId, restoredStatus },
+            ipAddress,
+            userAgent,
+            createdById: adminId,
+          },
+        });
+      });
+
+      this.mailService.sendMentorReactivationApprovedEmail(mentor.email, mentor.firstName);
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.ADMIN_APPROVE_MENTOR_REACTIVATION.code,
+        message: API_RESPONSE.SUCCESS.ADMIN_APPROVE_MENTOR_REACTIVATION.message,
+        data: { status: restoredStatus },
+      };
+    } catch (error: any) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.ADMIN_APPROVE_MENTOR_REACTIVATION.code,
+        message: API_RESPONSE.ERROR.ADMIN_APPROVE_MENTOR_REACTIVATION.message,
+        data: error,
+      };
+    }
+  }
+
+  async rejectReactivation(
+    mentorId: string,
+    dto: AdminRejectMentorDto,
+    adminId: string,
+    ipAddress: string,
+    userAgent: string,
+  ): Promise<ResponseDto> {
+    try {
+      const mentor = await this.findMentorWithPendingReactivation(mentorId);
+      if (!mentor) return this.reactivationNotPending();
+
+      const reason = dto.reason.trim();
+
+      // The account stays inactive; the mentor can submit a new request later.
+      await this.prisma.db.$transaction(async (tx) => {
+        await tx.accountActivationRequest.update({
+          where: { userId: mentorId },
+          data: { status: 'rejected', reviewedAt: new Date(), reviewedById: adminId, reviewNote: reason },
+        });
+        await tx.logs.create({
+          data: {
+            actionType: LogsActionType.AdminRejectMentorReactivation,
+            targetId: mentorId,
+            details: API_RESPONSE.SUCCESS.ADMIN_REJECT_MENTOR_REACTIVATION.message,
+            metadata: { mentorId, reason },
+            ipAddress,
+            userAgent,
+            createdById: adminId,
+          },
+        });
+      });
+
+      this.mailService.sendMentorReactivationRejectedEmail(mentor.email, mentor.firstName, reason);
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.ADMIN_REJECT_MENTOR_REACTIVATION.code,
+        message: API_RESPONSE.SUCCESS.ADMIN_REJECT_MENTOR_REACTIVATION.message,
+        data: null,
+      };
+    } catch (error: any) {
+      this.logger.error(error.message, error.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.ADMIN_REJECT_MENTOR_REACTIVATION.code,
+        message: API_RESPONSE.ERROR.ADMIN_REJECT_MENTOR_REACTIVATION.message,
+        data: error,
+      };
+    }
+  }
+
+  private findMentorWithPendingReactivation(mentorId: string) {
+    return this.prisma.db.user.findFirst({
+      where: {
+        id: mentorId,
+        role: UserRole.Mentor,
+        status: UserStatus.Inactive,
+        activationRequest: { is: { status: 'pending' } },
+      },
+      select: { id: true, firstName: true, email: true, isMentorApproved: true },
+    });
+  }
+
+  private reactivationNotPending(): ResponseDto {
+    return {
+      status: ResponseStatus.Error,
+      statusCode: API_RESPONSE.ERROR.REACTIVATION_REQUEST_NOT_PENDING.code,
+      message: API_RESPONSE.ERROR.REACTIVATION_REQUEST_NOT_PENDING.message,
+      data: null,
+    };
+  }
 }

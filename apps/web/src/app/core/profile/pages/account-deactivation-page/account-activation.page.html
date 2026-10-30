@@ -62,6 +62,13 @@
         }
       </p>
 
+      @if (rejectionNote()) {
+      <div class="mt-4 rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900" role="status">
+        <p class="font-semibold">Your last request was not approved</p>
+        <p class="mt-1">{{ rejectionNote() }}</p>
+        <p class="mt-1">You can submit a new request below.</p>
+      </div>
+      }
       @if (errorMessage()) {
       <p class="mt-4 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
         {{ errorMessage() }}

@@ -100,7 +100,7 @@ export class MentorTableComponent implements OnInit, OnDestroy {
     this.destroy$.complete();
   }
 
-  protected loadMentors(): void {
+  loadMentors(): void {
     this.isLoading.set(true);
     const params: MentorsQueryParams = {
       status: this.statusFilter(),

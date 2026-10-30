@@ -72,6 +72,9 @@ enum LogsActionType {
   admin_feature_mentor
   admin_unfeature_mentor
   signin_google
+  admin_approve_mentor_reactivation
+  admin_reject_mentor_reactivation
+  account_auto_deleted
 
   @@map("logs_action_type")
 }
@@ -129,6 +132,9 @@ model User {
   updatedById                String?    @map("updated_by_id")
   deactivationToken          String?    @map("deactivation_token")
   deactivationTokenExpiresAt DateTime?  @map("deactivation_token_expires_at")
+  /// When the user deactivated their own account (email link flow). Drives the
+  /// 30-day automatic deletion; null for accounts an admin deactivated.
+  deactivatedAt              DateTime?  @map("deactivated_at")
   pendingHashPassword        String?    @map("pending_hash_password")
   pendingPasswordChangeAt    DateTime?  @map("pending_password_change_at")
   createdAt                  DateTime   @default(now()) @map("created_at")
@@ -323,6 +329,10 @@ model AccountActivationRequest {
   status     AccountActivationRequestStatus @default(pending)
   createdAt  DateTime                       @default(now()) @map("created_at")
   reviewedAt DateTime?                      @map("reviewed_at")
+  /// Admin who approved/rejected a mentor request (null for auto-approved mentees).
+  reviewedById String?                      @map("reviewed_by_id")
+  /// Reason shown to the mentor when an admin rejects the request.
+  reviewNote String?                        @map("review_note")
 
   user User @relation(fields: [userId], references: [id])
 
