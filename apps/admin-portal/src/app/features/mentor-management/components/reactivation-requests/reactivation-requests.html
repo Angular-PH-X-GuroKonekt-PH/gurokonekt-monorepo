@@ -1,0 +1,102 @@
+@if (loadError()) {
+  <div class="mb-6 rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">
+    {{ loadError() }}
+  </div>
+} @else if (requests().length) {
+  <section class="mb-6 bg-white rounded-xl border border-orange-200 p-5">
+    <h2 class="text-lg font-semibold text-gray-900">
+      Reactivation requests
+      <span class="ml-2 inline-flex items-center rounded-full bg-orange-100 px-2.5 py-0.5 text-xs font-medium text-orange-800">
+        {{ requests().length }}
+      </span>
+    </h2>
+    <p class="text-sm text-gray-500 mb-4">
+      These mentors deactivated their account and are asking to come back.
+    </p>
+
+    @if (actionError()) {
+      <p class="mb-3 text-sm text-red-600" role="alert">{{ actionError() }}</p>
+    }
+
+    <ul class="divide-y divide-gray-100 rounded-lg border border-gray-200">
+      @for (r of requests(); track r.mentorId) {
+        <li class="px-4 py-4">
+          <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+            <div class="min-w-0">
+              <p class="text-sm font-semibold text-gray-900">{{ fullName(r) }}</p>
+              <p class="text-sm text-gray-500 break-all">{{ r.email }}</p>
+              <dl class="mt-2 grid gap-1 text-sm">
+                <div>
+                  <dt class="inline font-medium text-gray-700">Why they're returning:</dt>
+                  <dd class="inline text-gray-600">{{ r.reactivationReason }}</dd>
+                </div>
+                @if (r.deactivationReason) {
+                  <div>
+                    <dt class="inline font-medium text-gray-700">Why they left:</dt>
+                    <dd class="inline text-gray-600">{{ r.deactivationReason }}</dd>
+                  </div>
+                }
+                <div class="text-xs text-gray-400">
+                  Deactivated {{ formatDate(r.deactivatedAt) }} · Requested {{ formatDate(r.requestedAt) }}
+                </div>
+              </dl>
+            </div>
+
+            @if (rejectingId() !== r.mentorId) {
+              <div class="flex shrink-0 gap-2">
+                <button
+                  type="button"
+                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                  [disabled]="busyId() === r.mentorId"
+                  (click)="startReject(r)"
+                >
+                  Reject
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+                  [disabled]="busyId() === r.mentorId"
+                  (click)="approve(r)"
+                >
+                  {{ busyId() === r.mentorId ? 'Approving…' : 'Approve' }}
+                </button>
+              </div>
+            }
+          </div>
+
+          @if (rejectingId() === r.mentorId) {
+            <div class="mt-3">
+              <label class="block text-sm font-medium text-gray-700" [for]="'reject-' + r.mentorId">
+                Reason (sent to the mentor)
+              </label>
+              <textarea
+                [id]="'reject-' + r.mentorId"
+                rows="2"
+                class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:ring-orange-500"
+                [ngModel]="rejectReason()"
+                (ngModelChange)="rejectReason.set($event)"
+              ></textarea>
+              <div class="mt-2 flex justify-end gap-2">
+                <button
+                  type="button"
+                  class="rounded-lg border border-gray-300 px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                  (click)="cancelReject()"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  class="rounded-lg bg-red-600 px-4 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                  [disabled]="busyId() === r.mentorId"
+                  (click)="confirmReject(r)"
+                >
+                  {{ busyId() === r.mentorId ? 'Rejecting…' : 'Reject request' }}
+                </button>
+              </div>
+            </div>
+          }
+        </li>
+      }
+    </ul>
+  </section>
+}
