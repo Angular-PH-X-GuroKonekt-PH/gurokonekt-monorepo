@@ -501,8 +501,7 @@ export class AuthController {
       },
     },
   })
-  @ApiResponse({ status: 400, description: 'New password does not meet requirements or does not match confirmPassword.' })
-  @ApiResponse({ status: 400, description: 'Current password is incorrect.' })
+  @ApiResponse({ status: 400, description: 'Current password is incorrect, or the new password does not meet requirements or does not match confirmPassword.' })
   @ApiResponse({ status: 404, description: 'User not found.' })
   @ApiResponse({ status: 429, description: 'Too many incorrect password attempts. Try again later.' })
   async updatePassword(
