@@ -19,5 +19,6 @@ export const API_ENDPOINTS = {
     verifyDeactivation: '/user/deactivate/verify',
     submitDeactivationFeedback: (userId: string) => `/user/${userId}/deactivate/feedback`,
     activateAccount: (userId: string) => `/user/${userId}/activate`,
+    activationRequest: (userId: string) => `/user/${userId}/activation-request`,
   },
 } as const;
