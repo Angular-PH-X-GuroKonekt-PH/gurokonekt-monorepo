@@ -61,3 +61,10 @@ describe('UserController.getUserDashboard', () => {
     expect(getUserDashboard).not.toHaveBeenCalled();
   });
 });
+
+describe('UserController deactivation link', () => {
+  it('does not require a login for the final step, so the email link works on any device', () => {
+    const guards = Reflect.getMetadata('__guards__', UserController.prototype.submitDeactivationFeedback);
+    expect(guards).toBeUndefined();
+  });
+});

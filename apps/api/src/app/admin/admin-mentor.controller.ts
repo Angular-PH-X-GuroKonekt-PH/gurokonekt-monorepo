@@ -44,6 +44,57 @@ export class AdminMentorController {
     return response;
   }
 
+  // Static path: must be declared before the ':mentorId' routes.
+  @Get('reactivation-requests')
+  @ApiOperation({ summary: 'List inactive mentors waiting for reactivation approval' })
+  async getReactivationRequests() {
+    const response = await this.adminMentorService.getReactivationRequests();
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return response;
+  }
+
+  @Patch(':mentorId/reactivation/approve')
+  @ApiOperation({ summary: "Approve an inactive mentor's reactivation request" })
+  async approveReactivation(
+    @Param('mentorId') mentorId: string,
+    @Request() req: { user: { id: string } },
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const response = await this.adminMentorService.approveReactivation(mentorId, req.user.id, ipAddress, userAgent);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return response;
+  }
+
+  @Patch(':mentorId/reactivation/reject')
+  @ApiOperation({ summary: "Reject an inactive mentor's reactivation request with a reason" })
+  async rejectReactivation(
+    @Param('mentorId') mentorId: string,
+    @Body() dto: AdminRejectMentorDto,
+    @Request() req: { user: { id: string } },
+    @Ip() ipAddress: string,
+    @Headers('user-agent') userAgent: string,
+  ) {
+    const response = await this.adminMentorService.rejectReactivation(mentorId, dto, req.user.id, ipAddress, userAgent);
+    if (response.status === ResponseStatus.Error) {
+      throw new HttpException(
+        { status: response.status, statusCode: response.statusCode, message: response.message, data: response.data },
+        response.statusCode || HttpStatus.INTERNAL_SERVER_ERROR,
+      );
+    }
+    return response;
+  }
+
   @Get(':mentorId/rejection-log')
   @ApiOperation({ summary: 'Get the most recent rejection log for a mentor' })
   async getMentorRejectionLog(@Param('mentorId') mentorId: string) {

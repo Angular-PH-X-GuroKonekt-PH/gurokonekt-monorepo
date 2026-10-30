@@ -354,6 +354,22 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Admin roles retrieved successfully',
     },
+    ADMIN_GET_REACTIVATION_REQUESTS: {
+      code: 200,
+      message: 'Reactivation requests retrieved successfully',
+    },
+    ADMIN_APPROVE_MENTOR_REACTIVATION: {
+      code: 200,
+      message: 'Mentor reactivated successfully',
+    },
+    ADMIN_REJECT_MENTOR_REACTIVATION: {
+      code: 200,
+      message: 'Mentor reactivation request rejected',
+    },
+    GET_ACTIVATION_REQUEST: {
+      code: 200,
+      message: 'Activation request retrieved successfully',
+    },
 
     /**
      * ADMIN MENTOR MANAGEMENT
@@ -980,6 +996,26 @@ export const API_RESPONSE = {
       code: 500,
       message: 'Failed to retrieve admin roles',
     },
+    ADMIN_GET_REACTIVATION_REQUESTS: {
+      code: 500,
+      message: 'Failed to retrieve reactivation requests',
+    },
+    ADMIN_APPROVE_MENTOR_REACTIVATION: {
+      code: 500,
+      message: 'Failed to reactivate mentor',
+    },
+    ADMIN_REJECT_MENTOR_REACTIVATION: {
+      code: 500,
+      message: 'Failed to reject mentor reactivation request',
+    },
+    REACTIVATION_REQUEST_NOT_PENDING: {
+      code: 409,
+      message: 'This mentor has no pending reactivation request',
+    },
+    GET_ACTIVATION_REQUEST: {
+      code: 500,
+      message: 'Failed to retrieve activation request',
+    },
 
     /**
      * ADMIN MENTOR MANAGEMENT
@@ -1362,9 +1398,11 @@ Step 1 of the account deactivation flow for mentee accounts.
   DEACTIVATION_FEEDBACK: {
     summary: 'Submit deactivation feedback and finalise account deactivation',
     description: `
-Final step of the account deactivation flow. Validates the deactivation token (from the email link) one more time, records the user's reason for leaving, and marks the account as \`deleted\` in both Supabase and the local database.
+Final step of the account deactivation flow. Validates the deactivation token (from the email link) one more time, records the user's reason for leaving, and marks the account as \`inactive\`.
 
-**After this call:** the user's JWT will be rejected on all subsequent requests. The account cannot be recovered without admin intervention.
+**No sign-in required:** the emailed token proves ownership, so the link works on any device.
+
+**After this call:** the user can still sign in, but only reaches the reactivation page. Mentees reactivate instantly; mentors need admin approval. If the account stays inactive for 30 days (with no pending mentor request), it is automatically marked \`deleted\`.
 `,
     bodyExample: {
       token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...',

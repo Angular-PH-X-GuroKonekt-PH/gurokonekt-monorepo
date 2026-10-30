@@ -94,6 +94,44 @@ export class MailService {
     }
   }
 
+  async sendMentorReactivationApprovedEmail(to: string, firstName: string): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: this.from,
+        to,
+        subject: 'Your Mentor Account Has Been Reactivated',
+        html: `
+          <p>Hi ${this.escapeHtml(firstName)},</p>
+          <p>Good news! Your request to reactivate your mentor account on Gurokonekt has been approved.</p>
+          <p>You can log in again and continue mentoring.</p>
+          <p>Welcome back!</p>
+          <p>— The Gurokonekt Team</p>
+        `,
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to send reactivation approval email to ${to}: ${error.message}`, error.stack);
+    }
+  }
+
+  async sendMentorReactivationRejectedEmail(to: string, firstName: string, reason: string): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: this.from,
+        to,
+        subject: 'Update on Your Reactivation Request',
+        html: `
+          <p>Hi ${this.escapeHtml(firstName)},</p>
+          <p>We reviewed your request to reactivate your mentor account on Gurokonekt and are unable to approve it at this time.</p>
+          <p><strong>Reason:</strong> ${this.escapeHtml(reason)}</p>
+          <p>You can log in and submit a new request at any time. If you have questions, please contact our support team.</p>
+          <p>— The Gurokonekt Team</p>
+        `,
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to send reactivation rejection email to ${to}: ${error.message}`, error.stack);
+    }
+  }
+
   async sendAccountDeactivationEmail(
     to: string,
     firstName: string,
