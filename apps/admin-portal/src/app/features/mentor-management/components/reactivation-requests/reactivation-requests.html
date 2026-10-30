@@ -28,12 +28,12 @@
               <dl class="mt-2 grid gap-1 text-sm">
                 <div>
                   <dt class="inline font-medium text-gray-700">Why they're returning:</dt>
-                  <dd class="inline text-gray-600">{{ r.reactivationReason }}</dd>
+                  <dd class="ml-1 inline text-gray-600">{{ r.reactivationReason }}</dd>
                 </div>
                 @if (r.deactivationReason) {
                   <div>
                     <dt class="inline font-medium text-gray-700">Why they left:</dt>
-                    <dd class="inline text-gray-600">{{ r.deactivationReason }}</dd>
+                    <dd class="ml-1 inline text-gray-600">{{ r.deactivationReason }}</dd>
                   </div>
                 }
                 <div class="text-xs text-gray-400">
