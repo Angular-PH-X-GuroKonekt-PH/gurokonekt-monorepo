@@ -218,25 +218,28 @@ export class StorageService {
   }
 
   // ====================================================
-  // ACHIEVEMENT PROOFS (private bucket)
+  // ACHIEVEMENT PROOFS
   // ====================================================
 
+  /**
+   * Proofs live in the existing mentor documents bucket, under their own folder.
+   * Only the storage path is saved (never a public URL), and admins open files
+   * through short-lived signed links. Note: that bucket is public, so a file is
+   * reachable by anyone who has its exact URL; paths contain a random UUID, so
+   * they can't be guessed. Move to a private bucket before production.
+   */
+  static readonly PROOF_BUCKET = BUCKET_NAMES.MENTOR_DOCUMENTS;
+  static readonly PROOF_FOLDER = 'achievements';
   /** Signed links to proof files expire quickly; they are only for admin review. */
   static readonly PROOF_LINK_TTL_SECONDS = 10 * 60;
 
-  private proofBucketReady = false;
-
-  /**
-   * Uploads one proof file to the private achievement bucket and returns its
-   * storage path. Throws on failure so the caller can abort the application.
-   */
+  /** Uploads one proof file and returns its storage path. Throws on failure. */
   async uploadAchievementProof(file: Express.Multer.File, mentorId: string): Promise<string> {
-    await this.ensureProofBucket();
     const fileExt = file.originalname.split('.').pop() || 'bin';
-    const path = `${mentorId}/${crypto.randomUUID()}.${fileExt}`;
+    const path = `${StorageService.PROOF_FOLDER}/${mentorId}/${crypto.randomUUID()}.${fileExt}`;
 
     const { error } = await this.supabase.clientAdmin.storage
-      .from(BUCKET_NAMES.ACHIEVEMENT_PROOFS)
+      .from(StorageService.PROOF_BUCKET)
       .upload(path, file.buffer, { contentType: file.mimetype, upsert: false });
     if (error) {
       throw new Error(`Proof upload failed: ${error.message}`);
@@ -246,7 +249,7 @@ export class StorageService {
 
   async getAchievementProofUrl(path: string): Promise<string> {
     const { data, error } = await this.supabase.clientAdmin.storage
-      .from(BUCKET_NAMES.ACHIEVEMENT_PROOFS)
+      .from(StorageService.PROOF_BUCKET)
       .createSignedUrl(path, StorageService.PROOF_LINK_TTL_SECONDS);
     if (error || !data?.signedUrl) {
       throw new Error(`Could not sign proof link: ${error?.message ?? 'no URL returned'}`);
@@ -258,24 +261,10 @@ export class StorageService {
   async removeAchievementProof(path: string | null | undefined): Promise<void> {
     if (!path) return;
     const { error } = await this.supabase.clientAdmin.storage
-      .from(BUCKET_NAMES.ACHIEVEMENT_PROOFS)
+      .from(StorageService.PROOF_BUCKET)
       .remove([path]);
     if (error) {
       this.logger.warn(`Could not remove old proof ${path}: ${error.message}`);
     }
-  }
-
-  /** Creates the private proof bucket the first time it is needed. */
-  private async ensureProofBucket(): Promise<void> {
-    if (this.proofBucketReady) return;
-    const storage = this.supabase.clientAdmin.storage;
-    const { data } = await storage.getBucket(BUCKET_NAMES.ACHIEVEMENT_PROOFS);
-    if (!data) {
-      const { error } = await storage.createBucket(BUCKET_NAMES.ACHIEVEMENT_PROOFS, { public: false });
-      if (error && !/already exists/i.test(error.message)) {
-        throw new Error(`Could not create proof bucket: ${error.message}`);
-      }
-    }
-    this.proofBucketReady = true;
   }
 }

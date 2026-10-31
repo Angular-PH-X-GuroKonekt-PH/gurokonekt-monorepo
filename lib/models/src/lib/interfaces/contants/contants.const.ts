@@ -2124,8 +2124,6 @@ export const BUCKET_NAMES = {
   AVATARS: 'avatars',
   MENTOR_DOCUMENTS: 'mentor_documents',
   MENTEE_DOCUMENTS: 'mentee_documents',
-  /** Private bucket: proof files are only ever served through short-lived signed links. */
-  ACHIEVEMENT_PROOFS: 'achievement_proofs',
 };
 
 export const DOCUMENTS_ALLOWED_TYPES = ['application/pdf'];
