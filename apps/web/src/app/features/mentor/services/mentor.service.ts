@@ -58,6 +58,7 @@ export class MentorService {
         : [],
       updatedAt: String(mentor.updatedAt),
       updatedBy: this.buildFallbackUpdatedBy(),
+      badges: mentor.badges ?? [],
       user: {
         id: mentor.user.id,
         firstName: mentor.user.firstName,
