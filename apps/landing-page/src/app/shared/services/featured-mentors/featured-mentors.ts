@@ -22,6 +22,8 @@ export interface FeaturedMentor {
   /** Mean of all mentee ratings, rounded to one decimal. `null` when unrated. */
   averageRating: number | null;
   ratingCount: number;
+  /** Verified achievement badges (#419). Optional so older API responses still render. */
+  badges?: { id: string; name: string; icon: string; description: string }[];
 }
 
 interface FeaturedMentorsResponse {

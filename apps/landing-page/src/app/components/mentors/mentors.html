@@ -23,6 +23,16 @@
                             <h2 appScrollReveal="up" [revealDelay]="160" class="text-2xl sm:text-3xl lg:text-4xl font-bold text-white mb-2">{{ fullName() }}</h2>
                             <p appScrollReveal="up" [revealDelay]="220" class="text-lg sm:text-xl text-blue-300 mb-2">{{ displayTitle(mentor) }}</p>
 
+                            @if (mentor.badges?.length) {
+                            <ul appScrollReveal="up" [revealDelay]="240" data-testid="mentor-badges" aria-label="Verified achievements" class="mb-4 flex flex-wrap gap-2">
+                                @for (badge of mentor.badges; track badge.id) {
+                                <li [title]="badge.description" class="inline-flex items-center gap-1.5 rounded-full border border-white/20 bg-white/10 px-3 py-1 text-xs sm:text-sm font-semibold text-white">
+                                    <span aria-hidden="true">{{ badge.icon }}</span>{{ badge.name }}
+                                </li>
+                                }
+                            </ul>
+                            }
+
                             @if (showExpertiseLine(mentor)) {
                             <p appScrollReveal="up" [revealDelay]="250" class="text-sm sm:text-base text-gray-400 mb-4 lg:mb-6">{{ currentMentorExpertise() }}</p>
                             }

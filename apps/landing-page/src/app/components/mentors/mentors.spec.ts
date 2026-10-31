@@ -113,6 +113,24 @@ describe('Mentors', () => {
       expect(el.textContent).not.toContain('Rating 0');
     });
 
+    it("shows the mentor's verified badges", async () => {
+      const el = await setup([
+        buildMentor({
+          badges: [{ id: 'mvp', name: 'Microsoft MVP', icon: '🏆', description: 'Recognised by Microsoft' }],
+        }),
+      ]);
+
+      const badges = el.querySelector('[data-testid="mentor-badges"]');
+      expect(badges?.textContent).toContain('Microsoft MVP');
+      expect(badges?.querySelector('li')?.getAttribute('title')).toBe('Recognised by Microsoft');
+    });
+
+    it('shows no badge list when the mentor has none (or the API is older)', async () => {
+      const el = await setup([buildMentor()]);
+
+      expect(el.querySelector('[data-testid="mentor-badges"]')).toBeNull();
+    });
+
     it('omits the bio paragraph when there is no bio', async () => {
       const el = await setup([buildMentor({ bio: null })]);
 
