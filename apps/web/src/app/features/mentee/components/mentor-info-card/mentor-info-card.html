@@ -19,6 +19,12 @@
         {{ profile()?.areasOfExpertise?.join(', ') }}
       </p>
       }
+
+      @if (mentorProfile.badges?.length) {
+      <div class="mt-2">
+        <app-mentor-badges [badges]="mentorProfile.badges ?? []" [max]="3" size="sm" />
+      </div>
+      }
     </div>
   </div>
 

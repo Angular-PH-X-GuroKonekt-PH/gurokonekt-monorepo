@@ -1,3 +1,4 @@
+import type { MentorBadgeInterface } from '../achievement/achievement.model';
 import { AvatarAttachmentsInterface } from '../attachments/attachments.model';
 
 export enum UserRole {
@@ -98,6 +99,8 @@ export interface MentorProfileInterface {
   availabilityTimezone: string;
   availabilityOverrides: AvailabilityOverrideInterface[];
   user: UserInterface;
+  /** Approved, unexpired achievement badges (issue #419). */
+  badges?: MentorBadgeInterface[];
   updatedAt: string;
   updatedBy: UserFlatInterface;
 }

@@ -7,6 +7,7 @@ import {
 import { UserAvailabilityInterface } from '@gurokonekt/models/interfaces/user/user.model';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { MentorBadgesComponent } from '../../../../shared/components/mentor-badges/mentor-badges';
 import { getLanguageLabel } from '../../../../shared/utils';
 import { APP_ROUTES } from '../../../../shared/constants/routes';
 import {
@@ -17,7 +18,7 @@ import {
 @Component({
   selector: 'app-mentor-info-card',
   standalone: true,
-  imports: [IconComponent, RouterLink],
+  imports: [IconComponent, RouterLink, MentorBadgesComponent],
   templateUrl: './mentor-info-card.html',
 })
 export class MentorInfoCard {

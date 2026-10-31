@@ -37,6 +37,12 @@
           {{ getMentorLocation() }}
         </p>
         }
+
+        @if (mentorProfile().badges?.length) {
+        <div class="mt-3">
+          <app-mentor-badges [badges]="mentorProfile().badges ?? []" variant="dark" />
+        </div>
+        }
       </div>
     </div>
 

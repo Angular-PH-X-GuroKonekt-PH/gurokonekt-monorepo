@@ -1,0 +1,151 @@
+<section class="rounded-2xl border border-slate-200/80 bg-white p-6 shadow-sm">
+  <h2 class="text-2xl font-bold text-slate-900">Achievements</h2>
+  <p class="mt-1 text-sm text-slate-500">
+    Verified badges show on your mentor card and profile, and help you appear higher when mentees search.
+  </p>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-16" aria-live="polite">
+      <span class="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></span>
+    </div>
+  } @else if (loadError()) {
+    <p class="mt-6 rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700" role="alert">{{ loadError() }}</p>
+  } @else {
+    <div class="mt-6 rounded-xl bg-slate-50 p-4">
+      <p class="mb-2 text-xs font-semibold uppercase tracking-wider text-slate-400">What mentees see</p>
+      @if (myBadges().length) {
+        <app-mentor-badges [badges]="myBadges()" />
+      } @else {
+        <p class="text-sm text-slate-500">No badges yet. Apply for one below, or earn them automatically by mentoring.</p>
+      }
+    </div>
+
+    @if (!items().length) {
+      <p class="mt-6 text-sm text-slate-500">There are no achievements available right now.</p>
+    }
+
+    <ul class="mt-6 space-y-4">
+      @for (item of items(); track item.achievement.id) {
+        <li class="rounded-xl border border-slate-200 p-5">
+          <div class="flex flex-wrap items-center gap-2">
+            <span class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-semibold" [class]="chipClasses(item.achievement.color)">
+              <span aria-hidden="true">{{ item.achievement.icon }}</span>{{ item.achievement.name }}
+            </span>
+            @if (item.mine) {
+              <span class="rounded-full px-2.5 py-0.5 text-xs font-medium" [class]="statusInfo[item.mine.status].classes">
+                {{ statusInfo[item.mine.status].label }}
+              </span>
+            }
+          </div>
+          <p class="mt-2 text-sm text-slate-600">{{ item.achievement.description }}</p>
+
+          @if (item.mine?.status === Status.Approved) {
+            <p class="mt-1 text-xs text-slate-500">
+              Given {{ formatDate(item.mine!.awardedAt) }}
+              @if (item.mine!.expiresAt) { · valid until {{ formatDate(item.mine!.expiresAt) }} }
+            </p>
+          }
+          @if (item.mine?.status === Status.Expired && item.mine?.expiresAt) {
+            <p class="mt-1 text-xs text-slate-500">Expired on {{ formatDate(item.mine!.expiresAt) }}</p>
+          }
+          @if (item.mine?.reviewNote && (item.mine?.status === Status.Rejected || item.mine?.status === Status.Revoked)) {
+            <p class="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-900">
+              <span class="font-semibold">Admin's reason:</span> {{ item.mine!.reviewNote }}
+            </p>
+          }
+
+          @if (item.achievement.awardType === AwardType.Automatic) {
+            <!-- Automatic: show progress towards each rule -->
+            <div class="mt-3 space-y-2">
+              <p class="text-xs font-medium text-slate-500">
+                {{ item.mine?.status === Status.Approved ? 'You earned this automatically.' : 'Given automatically when you reach:' }}
+              </p>
+              @for (p of item.progress; track p.metric) {
+                <div>
+                  <div class="flex justify-between text-xs text-slate-600">
+                    <span>{{ metricLabel(p.metric) }}</span>
+                    <span [class.text-green-700]="p.met" [class.font-semibold]="p.met">{{ p.current }} / {{ p.min }}</span>
+                  </div>
+                  <div class="mt-1 h-1.5 overflow-hidden rounded-full bg-slate-100" role="progressbar"
+                    [attr.aria-label]="metricLabel(p.metric)" [attr.aria-valuenow]="p.current" [attr.aria-valuemax]="p.min">
+                    <div class="h-full rounded-full" [class]="p.met ? 'bg-green-500' : 'bg-orange-400'" [style.width.%]="percent(p.current, p.min)"></div>
+                  </div>
+                </div>
+              }
+            </div>
+          } @else {
+            <!-- By application -->
+            @if (item.achievement.requirements) {
+              <div class="mt-3 rounded-lg bg-slate-50 px-3 py-2 text-sm text-slate-700">
+                <span class="font-semibold">Requirements:</span> {{ item.achievement.requirements }}
+              </div>
+            }
+            @if (item.mine?.proofFileName) {
+              <p class="mt-2 text-xs text-slate-500">Proof on file: {{ item.mine!.proofFileName }}</p>
+            }
+
+            @if (editingId() === item.achievement.id) {
+              <div class="mt-4 space-y-3 rounded-lg border border-slate-200 p-4">
+                <div>
+                  <label class="block text-sm font-medium text-slate-700" [for]="'details-' + item.achievement.id">Details <span class="text-slate-400">(optional)</span></label>
+                  <input [id]="'details-' + item.achievement.id" maxlength="300" placeholder="e.g. MVP – Developer Technologies"
+                    class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-100"
+                    [value]="form().details" (input)="patchForm({ details: $any($event.target).value })" />
+                </div>
+                <div class="grid gap-3 sm:grid-cols-2">
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700" [for]="'earned-' + item.achievement.id">Date earned <span class="text-slate-400">(optional)</span></label>
+                    <input type="date" [id]="'earned-' + item.achievement.id"
+                      class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      [value]="form().earnedAt" (input)="patchForm({ earnedAt: $any($event.target).value })" />
+                  </div>
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700" [for]="'expires-' + item.achievement.id">Valid until <span class="text-slate-400">(optional)</span></label>
+                    <input type="date" [id]="'expires-' + item.achievement.id"
+                      class="mt-1 w-full rounded-lg border border-slate-300 px-3 py-2 text-sm"
+                      [value]="form().expiresAt" (input)="patchForm({ expiresAt: $any($event.target).value })" />
+                  </div>
+                </div>
+                @if (item.achievement.requiresProof) {
+                  <div>
+                    <label class="block text-sm font-medium text-slate-700" [for]="'proof-' + item.achievement.id">
+                      Proof {{ item.mine?.proofFileName ? '(leave empty to keep the current file)' : '' }}
+                    </label>
+                    <input type="file" [id]="'proof-' + item.achievement.id" [accept]="acceptTypes"
+                      class="mt-1 block w-full text-sm text-slate-600 file:mr-3 file:rounded-lg file:border-0 file:bg-orange-50 file:px-3 file:py-2 file:text-sm file:font-medium file:text-orange-700"
+                      (change)="onFile($event)" />
+                    <p class="mt-1 text-xs text-slate-400">PDF or image, up to 10 MB. Only admins can see it.</p>
+                  </div>
+                }
+                @if (formError()) {
+                  <p class="text-sm text-red-600" role="alert">{{ formError() }}</p>
+                }
+                <p class="text-xs text-slate-500">{{ submitHint(item) }}</p>
+                <div class="flex justify-end gap-2">
+                  <button type="button" class="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    [disabled]="saving()" (click)="closeForm()">Cancel</button>
+                  <button type="button" class="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+                    [disabled]="saving()" (click)="submit(item)">{{ saving() ? 'Submitting…' : 'Submit' }}</button>
+                </div>
+              </div>
+            } @else {
+              <div class="mt-4 flex flex-wrap gap-2">
+                @if (!item.mine) {
+                  <button type="button" class="rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+                    (click)="openForm(item)">Apply</button>
+                } @else {
+                  <button type="button" class="rounded-full border border-slate-300 px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-50"
+                    (click)="openForm(item)">
+                    {{ item.mine.status === Status.Expired ? 'Renew' : item.mine.status === Status.Rejected || item.mine.status === Status.Revoked ? 'Update and resubmit' : 'Edit' }}
+                  </button>
+                  <button type="button" class="rounded-full px-4 py-2 text-sm font-semibold text-red-600 hover:bg-red-50"
+                    (click)="withdraw(item)">{{ item.mine.status === Status.Pending ? 'Withdraw' : 'Remove' }}</button>
+                }
+              </div>
+            }
+          }
+        </li>
+      }
+    </ul>
+  }
+</section>

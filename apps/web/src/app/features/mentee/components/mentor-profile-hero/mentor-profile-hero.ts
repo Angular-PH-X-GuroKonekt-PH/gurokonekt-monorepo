@@ -3,13 +3,14 @@ import { AvatarAttachmentsInterface } from '@gurokonekt/models/interfaces/attach
 import { MentorProfileInterface } from '@gurokonekt/models/interfaces/user/user.model';
 
 import { IconComponent } from '../../../../shared/components/icon/icon.component';
+import { MentorBadgesComponent } from '../../../../shared/components/mentor-badges/mentor-badges';
 import { getCountryDisplayName } from '../../../../shared/utils/location-data.util';
 import { getLanguageLabel } from '../../../../shared/utils';
 
 @Component({
   selector: 'app-mentor-profile-hero',
   standalone: true,
-  imports: [IconComponent],
+  imports: [IconComponent, MentorBadgesComponent],
   templateUrl: './mentor-profile-hero.html',
 })
 export class MentorProfileHero {

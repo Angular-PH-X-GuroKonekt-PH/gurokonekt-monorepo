@@ -20,4 +20,8 @@ export const API_ENDPOINTS = {
     submitDeactivationFeedback: (userId: string) => `/user/${userId}/deactivate/feedback`,
     activateAccount: (userId: string) => `/user/${userId}/activate`,
   },
+  achievements: {
+    catalog: '/achievements',
+    application: (achievementId: string) => `/achievements/${achievementId}/application`,
+  },
 } as const;

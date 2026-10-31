@@ -49,7 +49,7 @@ export class ProfileSettingsPage {
   protected readonly accountEmail = computed(
     () => this.user()?.email?.trim() ?? '',
   );
-  protected readonly sections: SettingsNavItem[] = [
+  protected readonly sections = computed<SettingsNavItem[]>(() => [
     {
       route: `/${APP_ROUTES.SETTINGS_OVERVIEW}`,
       label: 'Overview',
@@ -62,7 +62,17 @@ export class ProfileSettingsPage {
       description: 'Details & picture',
       icon: 'pencil-square',
     },
-  ];
+    ...(this.user()?.role === 'mentor'
+      ? [
+          {
+            route: `/${APP_ROUTES.SETTINGS_ACHIEVEMENTS}`,
+            label: 'Achievements',
+            description: 'Badges & certifications',
+            icon: 'verified-badge' as IconName,
+          },
+        ]
+      : []),
+  ]);
 
   protected openChangePasswordModal(): void {
     if (!this.accountEmail()) {

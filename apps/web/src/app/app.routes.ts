@@ -249,6 +249,15 @@ export const appRoutes: Route[] = [
           ),
         title: 'Edit Profile',
       },
+      {
+        path: 'achievements',
+        canMatch: [mentorCanMatch],
+        loadComponent: () =>
+          import('./core/profile/pages/profile-achievements-section-page/profile-achievements-section.page').then(
+            (m) => m.ProfileAchievementsSectionPage
+          ),
+        title: 'Achievements',
+      },
     ],
   },
   {
