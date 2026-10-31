@@ -100,6 +100,14 @@ export const appRoutes: Route[] = [
         title: 'Reporting & Analytics',
       },
       {
+        path: APP_ROUTES.ACHIEVEMENTS,
+        loadComponent: () =>
+          import('./features/achievements/pages/achievements-page/achievements.page').then(
+            (m) => m.AchievementsPage
+          ),
+        title: 'Achievements & Badges',
+      },
+      {
         path: APP_ROUTES.ADMIN_ROLES,
         loadComponent: () =>
           import('./features/admin-roles/pages/admin-roles-page/admin-roles.page').then(

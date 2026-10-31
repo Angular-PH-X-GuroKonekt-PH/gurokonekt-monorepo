@@ -1,0 +1,93 @@
+<div class="mb-4 flex flex-wrap gap-2" role="tablist" aria-label="Filter by status">
+  @for (f of filters; track f.value) {
+    <button type="button" role="tab" [attr.aria-selected]="filter() === f.value"
+      class="rounded-full border px-3 py-1.5 text-sm font-medium transition-colors"
+      [class]="filter() === f.value ? 'border-orange-500 bg-orange-50 text-orange-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50'"
+      (click)="setFilter(f.value)">{{ f.label }}</button>
+  }
+</div>
+
+@if (loading()) {
+  <div class="flex items-center justify-center py-16">
+    <div class="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+  </div>
+} @else if (loadError()) {
+  <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{{ loadError() }}</div>
+} @else if (!rows().length) {
+  <div class="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center text-sm text-gray-500">
+    {{ filter() === Status.Pending ? 'Nothing waiting for review.' : 'No applications here.' }}
+  </div>
+} @else {
+  <ul class="divide-y divide-gray-100 overflow-hidden rounded-xl border border-gray-200 bg-white">
+    @for (row of rows(); track row.id) {
+      <li class="px-5 py-4">
+        <div class="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
+          <div class="min-w-0 space-y-1.5">
+            <div class="flex flex-wrap items-center gap-2">
+              <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium" [class]="badgeClasses(row.achievement.color)">
+                <span aria-hidden="true">{{ row.achievement.icon }}</span>{{ row.achievement.name }}
+              </span>
+              <span class="rounded-full px-2 py-0.5 text-xs font-medium" [class]="statusLabels[row.status].classes">
+                {{ statusLabels[row.status].label }}
+              </span>
+              @if (row.achievement.awardType === AwardType.Automatic) {
+                <span class="text-xs text-gray-400">Given automatically</span>
+              }
+            </div>
+            <p class="text-sm font-semibold text-gray-900">
+              {{ row.mentor.firstName }} {{ row.mentor.lastName }}
+              <span class="font-normal text-gray-500 break-all">· {{ row.mentor.email }}</span>
+            </p>
+            @if (row.details) {
+              <p class="text-sm text-gray-700">"{{ row.details }}"</p>
+            }
+            <p class="text-xs text-gray-500">
+              @if (row.earnedAt) { Earned {{ formatDate(row.earnedAt) }} · }
+              @if (row.expiresAt) { Valid until {{ formatDate(row.expiresAt) }} · } @else { No expiry · }
+              Updated {{ formatDate(row.updatedAt) }}
+            </p>
+            @if (row.reviewNote) {
+              <p class="text-xs text-gray-600"><span class="font-medium">Admin note:</span> {{ row.reviewNote }}</p>
+            }
+          </div>
+
+          <div class="flex shrink-0 flex-wrap gap-2">
+            @if (row.hasProof) {
+              <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                (click)="viewProof(row)">View proof</button>
+            }
+            @if (row.status === Status.Pending && reasonFor()?.id !== row.id) {
+              <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50"
+                [disabled]="busyId() === row.id" (click)="askReason(row, 'reject')">Reject</button>
+              <button type="button" class="rounded-lg bg-orange-500 px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 disabled:opacity-50"
+                [disabled]="busyId() === row.id" (click)="approve(row)">{{ busyId() === row.id ? 'Approving…' : 'Approve' }}</button>
+            }
+            @if ((row.status === Status.Approved || row.status === Status.Expired) && reasonFor()?.id !== row.id) {
+              <button type="button" class="rounded-lg border border-red-200 px-3 py-2 text-sm font-medium text-red-600 hover:bg-red-50"
+                (click)="askReason(row, 'revoke')">Revoke</button>
+            }
+          </div>
+        </div>
+
+        @if (reasonFor()?.id === row.id) {
+          <div class="mt-3">
+            <label class="block text-sm font-medium text-gray-700" [for]="'reason-' + row.id">
+              Reason (sent to the mentor)
+            </label>
+            <textarea [id]="'reason-' + row.id" rows="2" maxlength="500"
+              class="mt-1 w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              [ngModel]="reason()" (ngModelChange)="reason.set($event)"></textarea>
+            <div class="mt-2 flex justify-end gap-2">
+              <button type="button" class="rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50"
+                (click)="reasonFor.set(null)">Cancel</button>
+              <button type="button" class="rounded-lg bg-red-600 px-3 py-2 text-sm font-medium text-white hover:bg-red-700 disabled:opacity-50"
+                [disabled]="!reason().trim() || busyId() === row.id" (click)="confirmReason(row)">
+                {{ reasonFor()?.action === 'reject' ? 'Reject application' : 'Revoke badge' }}
+              </button>
+            </div>
+          </div>
+        }
+      </li>
+    }
+  </ul>
+}

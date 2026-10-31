@@ -17,6 +17,13 @@ export const API_ENDPOINTS = {
     reportsSessions: '/admin/reports/sessions',
     reportsMentors: '/admin/reports/mentors',
     roles: '/admin/roles',
+    achievements: '/admin/achievements',
+    achievementById: (id: string) => `/admin/achievements/${id}`,
+    achievementEvaluate: (id: string) => `/admin/achievements/${id}/evaluate`,
+    achievementSubmissions: '/admin/achievements/submissions',
+    achievementSubmissionProof: (id: string) => `/admin/achievements/submissions/${id}/proof`,
+    achievementSubmissionAction: (id: string, action: 'approve' | 'reject' | 'revoke') =>
+      `/admin/achievements/submissions/${id}/${action}`,
     mentees: '/admin/mentees',
     menteeById: (id: string) => `/admin/mentees/${id}`,
     menteeActivate: (id: string) => `/admin/mentees/${id}/activate`,

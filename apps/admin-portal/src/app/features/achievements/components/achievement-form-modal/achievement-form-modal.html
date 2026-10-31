@@ -1,0 +1,162 @@
+<div class="fixed inset-0 z-50 flex items-center justify-center bg-black/40 px-4 py-6">
+  <div class="flex max-h-full w-full max-w-2xl flex-col rounded-2xl bg-white shadow-xl">
+    <div class="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+      <h2 class="text-lg font-semibold text-gray-900">{{ isEdit() ? 'Edit achievement' : 'New achievement' }}</h2>
+      <button type="button" (click)="closed.emit()" class="text-gray-400 transition-colors hover:text-gray-600" aria-label="Close">
+        <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12" />
+        </svg>
+      </button>
+    </div>
+
+    <div class="space-y-5 overflow-y-auto px-6 py-5">
+      <!-- Preview -->
+      <div class="flex items-center gap-3">
+        <span class="text-sm text-gray-500">Preview:</span>
+        <span class="inline-flex items-center gap-1.5 rounded-full border px-3 py-1 text-sm font-medium" [class]="badgeClasses(color())">
+          <span aria-hidden="true">{{ icon() }}</span>{{ name() || 'Badge name' }}
+        </span>
+      </div>
+
+      <div class="grid gap-4 sm:grid-cols-2">
+        <div class="sm:col-span-2">
+          <label for="ach-name" class="mb-1 block text-sm font-medium text-gray-700">Name <span class="text-red-500">*</span></label>
+          <input id="ach-name" maxlength="80" class="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            placeholder="e.g. Microsoft MVP" [ngModel]="name()" (ngModelChange)="name.set($event)" />
+        </div>
+        <div class="sm:col-span-2">
+          <label for="ach-desc" class="mb-1 block text-sm font-medium text-gray-700">Description <span class="text-red-500">*</span></label>
+          <textarea id="ach-desc" rows="2" maxlength="500" class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+            placeholder="What this badge tells mentees" [ngModel]="description()" (ngModelChange)="description.set($event)"></textarea>
+        </div>
+        <div>
+          <span class="mb-1 block text-sm font-medium text-gray-700">Icon</span>
+          <div class="flex flex-wrap gap-1.5">
+            @for (i of icons; track i) {
+              <button type="button" class="h-9 w-9 rounded-lg border text-lg"
+                [class]="icon() === i ? 'border-orange-500 bg-orange-50' : 'border-gray-200 hover:bg-gray-50'"
+                [attr.aria-pressed]="icon() === i" (click)="icon.set(i)">{{ i }}</button>
+            }
+          </div>
+        </div>
+        <div>
+          <span class="mb-1 block text-sm font-medium text-gray-700">Colour</span>
+          <div class="flex flex-wrap gap-1.5">
+            @for (c of colors; track c) {
+              <button type="button" class="rounded-full border px-3 py-1 text-xs font-medium capitalize"
+                [class]="badgeClasses(c) + (color() === c ? ' ring-2 ring-orange-500 ring-offset-1' : '')"
+                [attr.aria-pressed]="color() === c" (click)="color.set(c)">{{ c }}</button>
+            }
+          </div>
+        </div>
+      </div>
+
+      <!-- How it's earned -->
+      <fieldset>
+        <legend class="mb-2 text-sm font-medium text-gray-700">How mentors get it</legend>
+        @if (isEdit()) {
+          <p class="text-sm text-gray-600">
+            {{ isAutomatic() ? 'Automatic: given by the system when the rules are met.' : 'By application: mentors apply for it.' }}
+            <span class="text-gray-400">(Can't be changed after creating.)</span>
+          </p>
+        } @else {
+          <div class="grid gap-2 sm:grid-cols-2">
+            <label class="flex cursor-pointer gap-3 rounded-lg border p-3"
+              [class]="!isAutomatic() ? 'border-orange-500 bg-orange-50' : 'border-gray-200'">
+              <input type="radio" name="awardType" class="mt-1" [checked]="!isAutomatic()" (change)="awardType.set(AwardType.Application)" />
+              <span>
+                <span class="block text-sm font-semibold text-gray-900">By application</span>
+                <span class="block text-xs text-gray-500">Mentors apply and can upload proof, e.g. a certificate.</span>
+              </span>
+            </label>
+            <label class="flex cursor-pointer gap-3 rounded-lg border p-3"
+              [class]="isAutomatic() ? 'border-orange-500 bg-orange-50' : 'border-gray-200'">
+              <input type="radio" name="awardType" class="mt-1" [checked]="isAutomatic()" (change)="awardType.set(AwardType.Automatic)" />
+              <span>
+                <span class="block text-sm font-semibold text-gray-900">Automatic</span>
+                <span class="block text-xs text-gray-500">Given by the system when a mentor meets the rules you set.</span>
+              </span>
+            </label>
+          </div>
+        }
+      </fieldset>
+
+      @if (isAutomatic()) {
+        <div>
+          <span class="mb-1 block text-sm font-medium text-gray-700">Rules (all must be met)</span>
+          <div class="space-y-2">
+            @for (c of criteria(); track $index; let i = $index) {
+              <div class="flex flex-wrap items-center gap-2">
+                <select class="rounded-lg border border-gray-300 px-2 py-2 text-sm" [attr.aria-label]="'Rule ' + (i + 1)"
+                  [ngModel]="c.metric" (ngModelChange)="setCriterion(i, { metric: $event })">
+                  @for (m of metrics; track m.key) {
+                    <option [value]="m.key">{{ m.label }}</option>
+                  }
+                </select>
+                <span class="text-sm text-gray-500">at least</span>
+                <input type="number" min="0" [step]="stepFor(c.metric)" class="w-24 rounded-lg border border-gray-300 px-2 py-2 text-sm"
+                  [attr.aria-label]="'Minimum for rule ' + (i + 1)" [ngModel]="c.min" (ngModelChange)="setCriterion(i, { min: $event })" />
+                <span class="text-sm text-gray-500">{{ unitFor(c.metric) }}</span>
+                @if (criteria().length > 1) {
+                  <button type="button" class="text-sm text-red-600 hover:text-red-700" (click)="removeCriterion(i)">Remove</button>
+                }
+              </div>
+            }
+          </div>
+          @if (criteria().length < metrics.length) {
+            <button type="button" class="mt-2 text-sm font-medium text-orange-600 hover:text-orange-700" (click)="addCriterion()">+ Add rule</button>
+          }
+        </div>
+      } @else {
+        <div class="space-y-3">
+          <div>
+            <label for="ach-req" class="mb-1 block text-sm font-medium text-gray-700">Requirements shown to mentors</label>
+            <textarea id="ach-req" rows="3" maxlength="1000" class="w-full resize-none rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-500"
+              placeholder="e.g. Must be a current or former Microsoft MVP. Upload your MVP award certificate."
+              [ngModel]="requirements()" (ngModelChange)="requirements.set($event)"></textarea>
+          </div>
+          <label class="flex items-start gap-2 text-sm text-gray-700">
+            <input type="checkbox" class="mt-0.5" [ngModel]="requiresProof()" (ngModelChange)="requiresProof.set($event)" />
+            <span>Proof file required <span class="text-gray-400">(PDF or image, up to 10 MB)</span></span>
+          </label>
+          <label class="flex items-start gap-2 text-sm text-gray-700">
+            <input type="checkbox" class="mt-0.5" [ngModel]="autoApprove()" (ngModelChange)="autoApprove.set($event)" />
+            <span>Approve automatically <span class="text-gray-400">(no admin review; the badge shows right away)</span></span>
+          </label>
+        </div>
+      }
+
+      <div class="space-y-2">
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" [ngModel]="expires()" (ngModelChange)="expires.set($event)" />
+          Badge expires
+        </label>
+        @if (expires()) {
+          <div class="flex items-center gap-2 pl-6 text-sm text-gray-600">
+            Valid for
+            <input type="number" min="1" max="120" aria-label="Months valid" class="w-20 rounded-lg border border-gray-300 px-2 py-1.5 text-sm"
+              [ngModel]="validityMonths()" (ngModelChange)="validityMonths.set($event)" />
+            months after it's given
+          </div>
+        }
+        <label class="flex items-center gap-2 text-sm text-gray-700">
+          <input type="checkbox" [ngModel]="isActive()" (ngModelChange)="isActive.set($event)" />
+          Active <span class="text-gray-400">(inactive achievements are hidden from mentors and mentees)</span>
+        </label>
+      </div>
+
+      @if (error()) {
+        <p class="text-sm text-red-600" role="alert">{{ error() }}</p>
+      }
+    </div>
+
+    <div class="flex gap-3 border-t border-gray-200 px-6 py-4">
+      <button type="button" (click)="closed.emit()"
+        class="flex-1 rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200">Cancel</button>
+      <button type="button" (click)="submit()" [disabled]="submitting()"
+        class="flex-1 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-orange-600 disabled:opacity-50">
+        {{ submitting() ? 'Saving…' : isEdit() ? 'Save changes' : 'Create achievement' }}
+      </button>
+    </div>
+  </div>
+</div>

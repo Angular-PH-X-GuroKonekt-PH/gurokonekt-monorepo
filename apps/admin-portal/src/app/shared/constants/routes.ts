@@ -13,4 +13,5 @@ export const APP_ROUTES = {
   REPORTS: 'reports',
   USER_INQUIRIES: 'user-inquiries',
   ADMIN_ROLES: 'admin-roles',
+  ACHIEVEMENTS: 'achievements',
 } as const;

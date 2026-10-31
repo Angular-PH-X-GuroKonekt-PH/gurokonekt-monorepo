@@ -15,6 +15,7 @@ export class Layout {
     { label: 'Dashboard',                    route: APP_ROUTES.DASHBOARD,          icon: 'squares-2x2' },
     { label: 'Mentor Management',            route: APP_ROUTES.MENTOR_MANAGEMENT,  icon: 'academic-cap' },
     { label: 'Mentee Management',            route: APP_ROUTES.MENTEE_MANAGEMENT,  icon: 'users' },
+    { label: 'Achievements & Badges',        route: APP_ROUTES.ACHIEVEMENTS,       icon: 'verified-badge' },
     { label: 'Booking Management',           route: APP_ROUTES.BOOKING_MANAGEMENT, icon: 'calendar-days' },
     { label: 'User Inquiries',               route: APP_ROUTES.USER_INQUIRIES,     icon: 'mail' },
     { label: 'Notifications & Announcements',route: APP_ROUTES.NOTIFICATIONS,      icon: 'bell' },

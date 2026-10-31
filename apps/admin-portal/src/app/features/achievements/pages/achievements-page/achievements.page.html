@@ -1,0 +1,119 @@
+<div>
+  <div class="mb-6 flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+    <div>
+      <h1 class="mb-1 text-2xl font-bold text-gray-900">Achievements & Badges</h1>
+      <p class="text-sm text-gray-500">Badges show on mentor cards and profiles, and help mentors rank higher in search.</p>
+    </div>
+    <button type="button" class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-white hover:bg-orange-600"
+      (click)="editing.set(null)">+ New achievement</button>
+  </div>
+
+  <div class="mb-5 flex gap-6 border-b border-gray-200" role="tablist">
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'review'"
+      class="-mb-px border-b-2 pb-3 text-sm font-medium"
+      [class]="tab() === 'review' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+      (click)="showTab('review')">
+      Review
+      @if (pendingTotal()) {
+        <span class="ml-1 rounded-full bg-orange-100 px-2 py-0.5 text-xs text-orange-700">{{ pendingTotal() }}</span>
+      }
+    </button>
+    <button type="button" role="tab" [attr.aria-selected]="tab() === 'catalog'"
+      class="-mb-px border-b-2 pb-3 text-sm font-medium"
+      [class]="tab() === 'catalog' ? 'border-orange-500 text-orange-600' : 'border-transparent text-gray-500 hover:text-gray-700'"
+      (click)="showTab('catalog')">
+      Achievements ({{ achievements().length }})
+    </button>
+  </div>
+
+  <div [hidden]="tab() !== 'review'">
+    <app-review-queue (changed)="onQueueChanged()" />
+  </div>
+
+  @if (tab() === 'catalog') {
+    @if (loading()) {
+      <div class="flex items-center justify-center py-16">
+        <div class="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+      </div>
+    } @else if (loadError()) {
+      <div class="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">{{ loadError() }}</div>
+    } @else if (!achievements().length) {
+      <div class="rounded-xl border border-dashed border-gray-300 bg-white px-6 py-12 text-center">
+        <p class="text-sm text-gray-500">No achievements yet.</p>
+        <button type="button" class="mt-3 text-sm font-medium text-orange-600 hover:text-orange-700" (click)="editing.set(null)">
+          Create the first one
+        </button>
+      </div>
+    } @else {
+      <div class="overflow-x-auto rounded-xl border border-gray-200 bg-white">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-gray-50">
+            <tr>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Badge</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">How it's earned</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Expires</th>
+              <th class="px-4 py-3 text-left text-xs font-semibold uppercase tracking-wider text-gray-500">Mentors</th>
+              <th class="px-4 py-3 text-right text-xs font-semibold uppercase tracking-wider text-gray-500">Actions</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-100">
+            @for (a of achievements(); track a.id) {
+              <tr [class.opacity-60]="!a.isActive">
+                <td class="px-4 py-3 align-top">
+                  <span class="inline-flex items-center gap-1.5 rounded-full border px-2.5 py-0.5 text-sm font-medium" [class]="badgeClasses(a.color)">
+                    <span aria-hidden="true">{{ a.icon }}</span>{{ a.name }}
+                  </span>
+                  @if (!a.isActive) {
+                    <span class="ml-2 rounded bg-gray-100 px-1.5 py-0.5 text-xs text-gray-500">Inactive</span>
+                  }
+                  <p class="mt-1 max-w-xs text-xs text-gray-500">{{ a.description }}</p>
+                </td>
+                <td class="px-4 py-3 align-top text-sm text-gray-700">
+                  @if (a.awardType === AwardType.Automatic) {
+                    <span class="font-medium">Automatic</span>
+                    <p class="text-xs text-gray-500">{{ describeCriteria(a.criteria) }}</p>
+                  } @else {
+                    <span class="font-medium">By application</span>
+                    <p class="text-xs text-gray-500">
+                      {{ a.requiresProof ? 'Proof required' : 'No proof needed' }} ·
+                      {{ a.autoApprove ? 'Approved automatically' : 'Admin review' }}
+                    </p>
+                  }
+                </td>
+                <td class="px-4 py-3 align-top text-sm text-gray-600">
+                  {{ a.validityMonths ? a.validityMonths + ' months' : 'Never' }}
+                </td>
+                <td class="px-4 py-3 align-top text-sm text-gray-600">
+                  {{ a.holderCount }} have it
+                  @if (a.pendingCount) {
+                    <span class="block text-xs text-orange-600">{{ a.pendingCount }} waiting</span>
+                  }
+                </td>
+                <td class="px-4 py-3 align-top text-right">
+                  <div class="flex flex-wrap justify-end gap-2">
+                    @if (a.awardType === AwardType.Automatic && a.isActive) {
+                      <button type="button" class="text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50"
+                        [disabled]="busyId() === a.id" (click)="evaluate(a)">Check now</button>
+                    }
+                    <button type="button" class="text-sm font-medium text-orange-600 hover:text-orange-700" (click)="editing.set(a)">Edit</button>
+                    <button type="button" class="text-sm font-medium text-gray-600 hover:text-gray-900 disabled:opacity-50"
+                      [disabled]="busyId() === a.id" (click)="toggleActive(a)">{{ a.isActive ? 'Deactivate' : 'Activate' }}</button>
+                    @if (!a.holderCount && !a.pendingCount) {
+                      <button type="button" class="text-sm font-medium text-red-600 hover:text-red-700 disabled:opacity-50"
+                        [disabled]="busyId() === a.id" (click)="remove(a)">Delete</button>
+                    }
+                  </div>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+    }
+  }
+
+  @if (editing() !== undefined) {
+    <app-achievement-form-modal [achievement]="editing() ?? null" [submitting]="saving()"
+      (saved)="save($event)" (closed)="editing.set(undefined)" />
+  }
+</div>
