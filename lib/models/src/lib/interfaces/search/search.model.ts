@@ -1,6 +1,9 @@
 import { DaysInWeek, UserAvailabilityInterface } from '../user/user.model';
+import { MentorBadgeInterface } from '../achievement/achievement.model';
 
 export interface MentorSearchItemInterface {
+  /** Approved, unexpired achievement badges (issue #419). */
+  badges?: MentorBadgeInterface[];
   id: string;
   firstName: string;
   middleName: string | null;
@@ -56,6 +59,8 @@ export interface MentorProfileDetailInterface {
     timezone: string | null;
     avatarAttachments: { publicUrl: string; fileName: string }[];
   };
+  /** Approved, unexpired achievement badges (issue #419). */
+  badges: MentorBadgeInterface[];
 }
 
 export interface MenttorAttachmentSearch {
@@ -91,6 +96,8 @@ export const MAX_RECOMMENDED_MENTOR_LIMIT = 20;
 // in the service once the backend exposes them.
 
 export enum SearchSortBy {
+  /** Default: mentors with more active badges first, then newest (issue #419). */
+  RECOMMENDED = 'recommended',
   NEWEST = 'newest',
   SESSION_RATE = 'sessionRate',
   YEARS_EXPERIENCE = 'yearsExperience',

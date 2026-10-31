@@ -150,8 +150,29 @@ export class SelectFields {
           firstName: true,
           lastName: true,
           avatarAttachments: { select: this.getAvatarAttachmentSelect() },
+          achievements: this.getActiveBadgesSelect(),
         },
       },
+    };
+  }
+
+  /**
+   * A mentor's badges as shown to mentees: approved and not yet expired.
+   * Use on the `achievements` relation of `User`.
+   */
+  static getActiveBadgesSelect(now: Date = new Date()) {
+    return {
+      where: {
+        status: 'approved' as const,
+        achievement: { isActive: true },
+        OR: [{ expiresAt: null }, { expiresAt: { gt: now } }],
+      },
+      select: {
+        awardedAt: true,
+        expiresAt: true,
+        achievement: { select: { id: true, name: true, icon: true, color: true, description: true } },
+      },
+      orderBy: { awardedAt: 'asc' as const },
     };
   }
 

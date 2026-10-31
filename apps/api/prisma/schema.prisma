@@ -72,8 +72,35 @@ enum LogsActionType {
   admin_feature_mentor
   admin_unfeature_mentor
   signin_google
+  admin_create_achievement
+  admin_update_achievement
+  admin_delete_achievement
+  admin_approve_achievement
+  admin_reject_achievement
+  admin_revoke_achievement
+  mentor_apply_achievement
+  achievement_auto_awarded
 
   @@map("logs_action_type")
+}
+
+enum AchievementAwardType {
+  /// Granted by the system when a mentor meets the achievement's criteria.
+  automatic
+  /// The mentor applies (optionally with proof); approved by an admin or instantly.
+  application
+
+  @@map("achievement_award_type")
+}
+
+enum MentorAchievementStatus {
+  pending
+  approved
+  rejected
+  expired
+  revoked
+
+  @@map("mentor_achievement_status")
 }
 
 enum BookingStatus {
@@ -157,6 +184,9 @@ model User {
   adminRejections       AdminRejectionLog[]   @relation("mentee_rejections")
   mentorRejections      AdminRejectionLog[]   @relation("mentor_rejections")
   adminRejectionActions AdminRejectionLog[]   @relation("admin_rejection_actions")
+  achievements          MentorAchievement[]   @relation("mentor_achievements")
+  achievementsReviewed  MentorAchievement[]   @relation("achievement_reviewer")
+  achievementsCreated   Achievement[]         @relation("achievement_creator")
 
   @@map("users")
 }
@@ -359,4 +389,70 @@ model Inquiry {
 
   @@index([createdAt])
   @@map("inquiries")
+}
+
+/// An achievement admins define in the Admin Portal (e.g. "Microsoft MVP",
+/// "50 Sessions"). Mentors hold it as a badge through MentorAchievement.
+model Achievement {
+  id             String               @id @default(uuid())
+  name           String
+  description    String
+  /// Emoji shown on the badge, from ACHIEVEMENT_ICONS.
+  icon           String
+  /// Badge colour key, from ACHIEVEMENT_COLORS.
+  color          String
+  awardType      AchievementAwardType @map("award_type")
+  /// What a mentor must do or show (application type).
+  requirements   String?
+  /// Application type: a proof file must be uploaded.
+  requiresProof  Boolean              @default(true) @map("requires_proof")
+  /// Application type: grant immediately instead of waiting for an admin.
+  autoApprove    Boolean              @default(false) @map("auto_approve")
+  /// Automatic type: [{ metric, min }], all must be met (see ACHIEVEMENT_METRICS).
+  criteria       Json                 @default("[]")
+  /// Months a badge stays valid after it is granted; null = never expires.
+  validityMonths Int?                 @map("validity_months")
+  isActive       Boolean              @default(true) @map("is_active")
+  createdById    String?              @map("created_by_id")
+  createdAt      DateTime             @default(now()) @map("created_at")
+  updatedAt      DateTime             @updatedAt @map("updated_at")
+
+  createdBy          User?               @relation("achievement_creator", fields: [createdById], references: [id])
+  mentorAchievements MentorAchievement[]
+
+  @@map("achievements")
+}
+
+/// A mentor's application for, or badge of, one achievement.
+model MentorAchievement {
+  id               String                  @id @default(uuid())
+  achievementId    String                  @map("achievement_id")
+  mentorId         String                  @map("mentor_id")
+  status           MentorAchievementStatus @default(pending)
+  /// Mentor's note, e.g. "MVP – Developer Technologies".
+  details          String?
+  /// When the mentor earned it outside the platform (application type).
+  earnedAt         DateTime?               @map("earned_at")
+  /// When it was granted here.
+  awardedAt        DateTime?               @map("awarded_at")
+  /// Badge stops showing after this; null = never expires.
+  expiresAt        DateTime?               @map("expires_at")
+  /// Private storage path of the proof file (never a public URL).
+  proofPath        String?                 @map("proof_path")
+  proofFileName    String?                 @map("proof_file_name")
+  proofFileType    String?                 @map("proof_file_type")
+  proofFileSize    Int?                    @map("proof_file_size")
+  reviewNote       String?                 @map("review_note")
+  reviewedById     String?                 @map("reviewed_by_id")
+  reviewedAt       DateTime?               @map("reviewed_at")
+  createdAt        DateTime                @default(now()) @map("created_at")
+  updatedAt        DateTime                @updatedAt @map("updated_at")
+
+  achievement Achievement @relation(fields: [achievementId], references: [id])
+  mentor      User        @relation("mentor_achievements", fields: [mentorId], references: [id])
+  reviewedBy  User?       @relation("achievement_reviewer", fields: [reviewedById], references: [id])
+
+  @@unique([mentorId, achievementId])
+  @@index([status])
+  @@map("mentor_achievements")
 }

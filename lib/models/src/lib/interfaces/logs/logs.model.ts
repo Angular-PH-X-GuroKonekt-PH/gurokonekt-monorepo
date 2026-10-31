@@ -25,6 +25,14 @@ export enum LogsActionType {
   AdminFeatureMentor = "admin_feature_mentor",
   AdminUnfeatureMentor = "admin_unfeature_mentor",
   SignInGoogle = "signin_google",
+  AdminCreateAchievement = "admin_create_achievement",
+  AdminUpdateAchievement = "admin_update_achievement",
+  AdminDeleteAchievement = "admin_delete_achievement",
+  AdminApproveAchievement = "admin_approve_achievement",
+  AdminRejectAchievement = "admin_reject_achievement",
+  AdminRevokeAchievement = "admin_revoke_achievement",
+  MentorApplyAchievement = "mentor_apply_achievement",
+  AchievementAutoAwarded = "achievement_auto_awarded",
 }
 
 export interface LogsInterface {

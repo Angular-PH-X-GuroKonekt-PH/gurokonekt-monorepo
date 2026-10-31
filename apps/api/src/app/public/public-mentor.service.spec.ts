@@ -181,6 +181,7 @@ describe('PublicMentorService', () => {
         avatarUrl: 'https://cdn.test/avatar.png',
         averageRating: null,
         ratingCount: 0,
+        badges: [],
       });
     });
 

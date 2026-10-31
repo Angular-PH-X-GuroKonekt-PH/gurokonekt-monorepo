@@ -17,6 +17,8 @@ import {
   MentorAccess,
   SelectFields,
   UserRole,
+  toMentorBadges,
+  ActiveBadgeRow,
 } from '@gurokonekt/models';
 
 @Injectable()
@@ -35,7 +37,7 @@ export class SearchService {
     try {
       const page = dto.page ?? 1;
       const limit = dto.limit ?? 10;
-      const sortBy = dto.sortBy ?? SearchSortBy.NEWEST;
+      const sortBy = dto.sortBy ?? SearchSortBy.RECOMMENDED;
       const sortOrder = dto.sortOrder ?? SearchSortOrder.DESC;
 
       // Pre-compute mentor IDs whose skills/expertise match the keyword (case-insensitive).
@@ -62,6 +64,7 @@ export class SearchService {
       // For profile-level sorts (sessionRate, yearsExperience) we fetch all matches and
       // sort + paginate in memory (acceptable for typical mentor dataset sizes).
       const needsInMemorySort =
+        sortBy === SearchSortBy.RECOMMENDED ||
         sortBy === SearchSortBy.SESSION_RATE ||
         sortBy === SearchSortBy.YEARS_EXPERIENCE;
 
@@ -71,11 +74,11 @@ export class SearchService {
       if (needsInMemorySort) {
         const all = await this.prisma.db.user.findMany({
           where,
-          select: SelectFields.getMentorSearchSelect(),
+          select: this.searchSelect(),
         });
 
         const sorted = this.sortInMemory(
-          all as unknown as MentorSearchItemInterface[],
+          this.withBadges(all),
           sortBy,
           sortOrder,
         );
@@ -85,13 +88,15 @@ export class SearchService {
         const orderBy = this.buildOrderBy(sortBy, sortOrder);
         [total, results] = await Promise.all([
           this.prisma.db.user.count({ where }),
-          this.prisma.db.user.findMany({
-            where,
-            select: SelectFields.getMentorSearchSelect(),
-            orderBy,
-            skip: (page - 1) * limit,
-            take: limit,
-          }) as unknown as Promise<MentorSearchItemInterface[]>,
+          this.prisma.db.user
+            .findMany({
+              where,
+              select: this.searchSelect(),
+              orderBy,
+              skip: (page - 1) * limit,
+              take: limit,
+            })
+            .then((rows) => this.withBadges(rows)),
         ]);
       }
 
@@ -147,7 +152,8 @@ export class SearchService {
         statusCode: API_RESPONSE.SUCCESS.GET_RECOMMENDED_MENTORS.code,
         message: API_RESPONSE.SUCCESS.GET_RECOMMENDED_MENTORS.message,
         data: {
-          results: [...matched, ...padding],
+          // Within each group, mentors with more badges come first.
+          results: [...this.byBadges(matched), ...this.byBadges(padding)],
           isPersonalized: matched.length > 0,
         },
       };
@@ -301,10 +307,10 @@ export class SearchService {
       where: {
         AND: [MentorAccess.approvedMentorWhere(), { id: { in: matchedIds } }],
       },
-      select: SelectFields.getMentorSearchSelect(),
+      select: this.searchSelect(),
       orderBy: { createdAt: 'desc' },
       take,
-    }) as unknown as Promise<MentorSearchItemInterface[]>;
+    }).then((rows) => this.withBadges(rows));
   }
 
   private async findNewestMentors(
@@ -320,10 +326,31 @@ export class SearchService {
           ...(excludeIds.length ? [{ id: { notIn: excludeIds } }] : []),
         ],
       },
-      select: SelectFields.getMentorSearchSelect(),
+      select: this.searchSelect(),
       orderBy: { createdAt: 'desc' },
       take,
-    }) as unknown as Promise<MentorSearchItemInterface[]>;
+    }).then((rows) => this.withBadges(rows));
+  }
+
+  // ====================================================
+  // PRIVATE – BADGES (issue #419)
+  // ====================================================
+
+  /** The shared search select plus the mentor's active badges. */
+  private searchSelect() {
+    return { ...SelectFields.getMentorSearchSelect(), achievements: SelectFields.getActiveBadgesSelect() };
+  }
+
+  /** Replaces the raw `achievements` rows with the flat `badges` list the apps display. */
+  private withBadges(rows: unknown[]): MentorSearchItemInterface[] {
+    return (rows as (MentorSearchItemInterface & { achievements?: ActiveBadgeRow[] })[]).map(
+      ({ achievements, ...mentor }) => ({ ...mentor, badges: toMentorBadges(achievements) }),
+    );
+  }
+
+  /** Stable sort: more active badges first, original order otherwise. */
+  private byBadges(mentors: MentorSearchItemInterface[]): MentorSearchItemInterface[] {
+    return [...mentors].sort((a, b) => (b.badges?.length ?? 0) - (a.badges?.length ?? 0));
   }
 
   // ====================================================
@@ -479,6 +506,15 @@ export class SearchService {
   ): MentorSearchItemInterface[] {
     const direction = sortOrder === SearchSortOrder.ASC ? 1 : -1;
 
+    if (sortBy === SearchSortBy.RECOMMENDED) {
+      // More active badges first; ties keep the newest mentors on top.
+      return [...mentors].sort(
+        (a, b) =>
+          (b.badges?.length ?? 0) - (a.badges?.length ?? 0) ||
+          new Date(b.createdAt as unknown as string).getTime() - new Date(a.createdAt as unknown as string).getTime(),
+      );
+    }
+
     return [...mentors].sort((a, b) => {
       const profileA = a.mentorProfiles[0];
       const profileB = b.mentorProfiles[0];
@@ -543,6 +579,7 @@ export class SearchService {
               avatarAttachments: {
                 select: { publicUrl: true, fileName: true },
               },
+              achievements: SelectFields.getActiveBadgesSelect(),
             },
           },
         },
@@ -571,6 +608,7 @@ export class SearchService {
         availabilityOverrides: profile.availabilityOverrides,
         linkedInUrl: profile.linkedInUrl,
         updatedAt: profile.updatedAt,
+        badges: toMentorBadges(user.achievements),
         user: {
           id: user.id,
           firstName: user.firstName,

@@ -2,6 +2,7 @@ import { Test, TestingModule } from '@nestjs/testing';
 import {
   RecommendedMentorsDto,
   SearchMentorDto,
+  SearchSortBy,
   UserRole,
 } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
@@ -121,7 +122,8 @@ describe('SearchService', () => {
       prisma.db.user.findMany.mockResolvedValue([buildMentorRow('m1')]);
 
       const response = await service.searchMentors(
-        buildDto({ availabilityDay: 'monday', limit: 1 }),
+        // DB-paginated sort, so `total` comes from count().
+        buildDto({ availabilityDay: 'monday', limit: 1, sortBy: SearchSortBy.NEWEST }),
       );
 
       expect(response.data?.total).toBe(25);
@@ -170,6 +172,55 @@ describe('SearchService', () => {
       expect(response.statusCode).toBe(500);
       expect(prisma.db.user.findMany).not.toHaveBeenCalled();
       expect(prisma.db.user.count).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('badges and recommended ranking (#419)', () => {
+    const badge = (name: string) => ({
+      awardedAt: new Date('2026-10-01T00:00:00.000Z'),
+      expiresAt: null,
+      achievement: { id: name, name, icon: '🏆', color: 'amber', description: name },
+    });
+    const row = (id: string, createdAt: string, badgeNames: string[]) => ({
+      ...buildMentorRow(id),
+      createdAt: new Date(createdAt),
+      achievements: badgeNames.map(badge),
+    });
+
+    it('ranks mentors with more badges first by default, newest breaking ties', async () => {
+      prisma.db.user.findMany.mockResolvedValue([
+        row('none-new', '2026-10-01', []),
+        row('one', '2026-01-01', ['MVP']),
+        row('two', '2026-01-01', ['MVP', '50 Sessions']),
+        row('none-old', '2026-01-01', []),
+      ]);
+
+      const response = await service.searchMentors(buildDto());
+
+      expect(response.data?.results.map((m) => m.id)).toEqual(['two', 'one', 'none-new', 'none-old']);
+      expect(prisma.db.user.count).not.toHaveBeenCalled();
+    });
+
+    it('returns flat badges instead of raw achievement rows', async () => {
+      prisma.db.user.findMany.mockResolvedValue([row('m1', '2026-01-01', ['MVP'])]);
+
+      const response = await service.searchMentors(buildDto());
+      const mentor = response.data!.results[0] as unknown as Record<string, unknown>;
+
+      expect(mentor['achievements']).toBeUndefined();
+      expect(mentor['badges']).toEqual([
+        { id: 'MVP', name: 'MVP', icon: '🏆', color: 'amber', description: 'MVP', awardedAt: '2026-10-01T00:00:00.000Z', expiresAt: null },
+      ]);
+    });
+
+    it('only asks the database for approved, unexpired badges', async () => {
+      prisma.db.user.findMany.mockResolvedValue([]);
+
+      await service.searchMentors(buildDto());
+
+      const badgeWhere = prisma.db.user.findMany.mock.calls[0][0].select.achievements.where;
+      expect(badgeWhere.status).toBe('approved');
+      expect(badgeWhere.OR).toEqual([{ expiresAt: null }, { expiresAt: { gt: expect.any(Date) } }]);
     });
   });
 

@@ -216,4 +216,66 @@ export class StorageService {
       }
     }
   }
+
+  // ====================================================
+  // ACHIEVEMENT PROOFS (private bucket)
+  // ====================================================
+
+  /** Signed links to proof files expire quickly; they are only for admin review. */
+  static readonly PROOF_LINK_TTL_SECONDS = 10 * 60;
+
+  private proofBucketReady = false;
+
+  /**
+   * Uploads one proof file to the private achievement bucket and returns its
+   * storage path. Throws on failure so the caller can abort the application.
+   */
+  async uploadAchievementProof(file: Express.Multer.File, mentorId: string): Promise<string> {
+    await this.ensureProofBucket();
+    const fileExt = file.originalname.split('.').pop() || 'bin';
+    const path = `${mentorId}/${crypto.randomUUID()}.${fileExt}`;
+
+    const { error } = await this.supabase.clientAdmin.storage
+      .from(BUCKET_NAMES.ACHIEVEMENT_PROOFS)
+      .upload(path, file.buffer, { contentType: file.mimetype, upsert: false });
+    if (error) {
+      throw new Error(`Proof upload failed: ${error.message}`);
+    }
+    return path;
+  }
+
+  async getAchievementProofUrl(path: string): Promise<string> {
+    const { data, error } = await this.supabase.clientAdmin.storage
+      .from(BUCKET_NAMES.ACHIEVEMENT_PROOFS)
+      .createSignedUrl(path, StorageService.PROOF_LINK_TTL_SECONDS);
+    if (error || !data?.signedUrl) {
+      throw new Error(`Could not sign proof link: ${error?.message ?? 'no URL returned'}`);
+    }
+    return data.signedUrl;
+  }
+
+  /** Best effort: a leftover file is harmless, so failures are only logged. */
+  async removeAchievementProof(path: string | null | undefined): Promise<void> {
+    if (!path) return;
+    const { error } = await this.supabase.clientAdmin.storage
+      .from(BUCKET_NAMES.ACHIEVEMENT_PROOFS)
+      .remove([path]);
+    if (error) {
+      this.logger.warn(`Could not remove old proof ${path}: ${error.message}`);
+    }
+  }
+
+  /** Creates the private proof bucket the first time it is needed. */
+  private async ensureProofBucket(): Promise<void> {
+    if (this.proofBucketReady) return;
+    const storage = this.supabase.clientAdmin.storage;
+    const { data } = await storage.getBucket(BUCKET_NAMES.ACHIEVEMENT_PROOFS);
+    if (!data) {
+      const { error } = await storage.createBucket(BUCKET_NAMES.ACHIEVEMENT_PROOFS, { public: false });
+      if (error && !/already exists/i.test(error.message)) {
+        throw new Error(`Could not create proof bucket: ${error.message}`);
+      }
+    }
+    this.proofBucketReady = true;
+  }
 }

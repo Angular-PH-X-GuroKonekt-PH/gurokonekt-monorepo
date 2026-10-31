@@ -119,8 +119,8 @@ export class SearchMentorDto {
 
   @ApiPropertyOptional({
     enum: SearchSortBy,
-    description: 'Field to sort results by',
-    default: SearchSortBy.NEWEST,
+    description: 'Field to sort results by. `recommended` ranks mentors with more active badges first.',
+    default: SearchSortBy.RECOMMENDED,
   })
   @IsOptional()
   @IsEnum(SearchSortBy)

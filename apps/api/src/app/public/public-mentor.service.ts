@@ -8,6 +8,7 @@ import {
   ResponseDto,
   ResponseStatus,
   SelectFields,
+  toMentorBadges,
 } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
 
@@ -76,6 +77,7 @@ export class PublicMentorService {
             ? Math.round((tally.sum / tally.count) * 10) / 10
             : null,
           ratingCount: tally?.count ?? 0,
+          badges: toMentorBadges(profile.user.achievements),
         };
       });
 

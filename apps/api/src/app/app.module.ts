@@ -14,6 +14,7 @@ import { MetricsModule } from './metrics/metrics.module';
 import { AdminModule } from './admin/admin.module';
 import { ReviewModule } from './review/review.module';
 import { PublicModule } from './public/public.module';
+import { AchievementsModule } from './achievements/achievements.module';
 
 @Module({
   imports: [
@@ -28,6 +29,7 @@ import { PublicModule } from './public/public.module';
     AdminModule,
     ReviewModule,
     PublicModule,
+    AchievementsModule,
     NotificationGatewayModule,
   ],
   controllers: [AppController],

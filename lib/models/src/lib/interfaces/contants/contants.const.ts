@@ -354,6 +354,58 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Admin roles retrieved successfully',
     },
+    ACHIEVEMENTS_LIST: {
+      code: 200,
+      message: 'Achievements retrieved successfully',
+    },
+    ACHIEVEMENT_CREATE: {
+      code: 201,
+      message: 'Achievement created successfully',
+    },
+    ACHIEVEMENT_UPDATE: {
+      code: 200,
+      message: 'Achievement updated successfully',
+    },
+    ACHIEVEMENT_DELETE: {
+      code: 200,
+      message: 'Achievement deleted successfully',
+    },
+    ACHIEVEMENT_SUBMISSIONS: {
+      code: 200,
+      message: 'Achievement submissions retrieved successfully',
+    },
+    ACHIEVEMENT_APPLY: {
+      code: 201,
+      message: 'Your application has been submitted for review',
+    },
+    ACHIEVEMENT_AUTO_APPROVED: {
+      code: 201,
+      message: 'Your badge has been added to your profile',
+    },
+    ACHIEVEMENT_WITHDRAW: {
+      code: 200,
+      message: 'Achievement removed successfully',
+    },
+    ACHIEVEMENT_APPROVE: {
+      code: 200,
+      message: 'Achievement approved successfully',
+    },
+    ACHIEVEMENT_REJECT: {
+      code: 200,
+      message: 'Achievement rejected',
+    },
+    ACHIEVEMENT_REVOKE: {
+      code: 200,
+      message: 'Achievement revoked',
+    },
+    ACHIEVEMENT_PROOF_URL: {
+      code: 200,
+      message: 'Proof link created successfully',
+    },
+    ACHIEVEMENT_EVALUATE: {
+      code: 200,
+      message: 'Achievement criteria checked successfully',
+    },
 
     /**
      * ADMIN MENTOR MANAGEMENT
@@ -976,6 +1028,98 @@ export const API_RESPONSE = {
     ADMIN_GET_ROLES: {
       code: 500,
       message: 'Failed to retrieve admin roles',
+    },
+    ACHIEVEMENTS_LIST: {
+      code: 500,
+      message: 'Failed to retrieve achievements',
+    },
+    ACHIEVEMENT_CREATE: {
+      code: 500,
+      message: 'Failed to create achievement',
+    },
+    ACHIEVEMENT_UPDATE: {
+      code: 500,
+      message: 'Failed to update achievement',
+    },
+    ACHIEVEMENT_DELETE: {
+      code: 500,
+      message: 'Failed to delete achievement',
+    },
+    ACHIEVEMENT_SUBMISSIONS: {
+      code: 500,
+      message: 'Failed to retrieve achievement submissions',
+    },
+    ACHIEVEMENT_APPLY: {
+      code: 500,
+      message: 'Failed to submit your application',
+    },
+    ACHIEVEMENT_WITHDRAW: {
+      code: 500,
+      message: 'Failed to remove achievement',
+    },
+    ACHIEVEMENT_REVIEW: {
+      code: 500,
+      message: 'Failed to review achievement',
+    },
+    ACHIEVEMENT_PROOF_URL: {
+      code: 500,
+      message: 'Failed to open proof file',
+    },
+    ACHIEVEMENT_EVALUATE: {
+      code: 500,
+      message: 'Failed to check achievement criteria',
+    },
+    ACHIEVEMENT_NOT_FOUND: {
+      code: 404,
+      message: 'Achievement not found',
+    },
+    ACHIEVEMENT_INACTIVE: {
+      code: 400,
+      message: 'This achievement is not available right now',
+    },
+    ACHIEVEMENT_NOT_APPLICATION: {
+      code: 400,
+      message: 'This achievement is awarded automatically and cannot be applied for',
+    },
+    ACHIEVEMENT_NOT_AUTOMATIC: {
+      code: 400,
+      message: 'Only automatic achievements can be checked against criteria',
+    },
+    ACHIEVEMENT_PROOF_REQUIRED: {
+      code: 400,
+      message: 'Please upload proof for this achievement',
+    },
+    ACHIEVEMENT_INVALID_CRITERIA: {
+      code: 400,
+      message: 'Automatic achievements need at least one criterion',
+    },
+    ACHIEVEMENT_INVALID_DATES: {
+      code: 400,
+      message: 'The expiry date must be after the date earned',
+    },
+    ACHIEVEMENT_IN_USE: {
+      code: 409,
+      message: 'This achievement has been awarded or applied for. Deactivate it instead of deleting it',
+    },
+    ACHIEVEMENT_ALREADY_APPLIED: {
+      code: 409,
+      message: 'You already applied for this achievement. Edit your application instead',
+    },
+    ACHIEVEMENT_SUBMISSION_NOT_FOUND: {
+      code: 404,
+      message: 'Achievement application not found',
+    },
+    ACHIEVEMENT_INVALID_STATUS: {
+      code: 409,
+      message: 'This application cannot be changed in its current state',
+    },
+    ACHIEVEMENT_NO_PROOF: {
+      code: 404,
+      message: 'No proof file was uploaded for this application',
+    },
+    ACHIEVEMENT_NOT_MENTOR: {
+      code: 403,
+      message: 'Only approved mentors can apply for achievements',
     },
 
     /**
@@ -1980,6 +2124,8 @@ export const BUCKET_NAMES = {
   AVATARS: 'avatars',
   MENTOR_DOCUMENTS: 'mentor_documents',
   MENTEE_DOCUMENTS: 'mentee_documents',
+  /** Private bucket: proof files are only ever served through short-lived signed links. */
+  ACHIEVEMENT_PROOFS: 'achievement_proofs',
 };
 
 export const DOCUMENTS_ALLOWED_TYPES = ['application/pdf'];

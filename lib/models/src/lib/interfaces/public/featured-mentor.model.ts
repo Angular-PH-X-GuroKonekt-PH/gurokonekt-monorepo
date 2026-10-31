@@ -1,3 +1,5 @@
+import { MentorBadgeInterface } from '../achievement/achievement.model';
+
 /**
  * A mentor as rendered on the public marketing site.
  *
@@ -18,6 +20,8 @@ export interface FeaturedMentorInterface {
   /** Mean of all mentee ratings, rounded to one decimal. `null` when unrated. */
   averageRating: number | null;
   ratingCount: number;
+  /** Approved, unexpired achievement badges (issue #419). */
+  badges: MentorBadgeInterface[];
 }
 
 export interface FeaturedMentorsResponseInterface {

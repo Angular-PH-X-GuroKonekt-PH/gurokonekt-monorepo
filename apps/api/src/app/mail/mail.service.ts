@@ -94,6 +94,51 @@ export class MailService {
     }
   }
 
+  async sendAchievementApprovedEmail(to: string, firstName: string, achievementName: string): Promise<void> {
+    try {
+      await this.transporter.sendMail({
+        from: this.from,
+        to,
+        subject: `Your "${achievementName}" badge is approved`,
+        html: `
+          <p>Hi ${this.escapeHtml(firstName)},</p>
+          <p>Congratulations! Your <strong>${this.escapeHtml(achievementName)}</strong> badge has been approved.</p>
+          <p>It now shows on your mentor profile, so mentees can see it when they look for a mentor.</p>
+          <p>— The Gurokonekt Team</p>
+        `,
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to send achievement approval email to ${to}: ${error.message}`, error.stack);
+    }
+  }
+
+  /** Used for both a rejected application and a revoked badge. */
+  async sendAchievementDeclinedEmail(
+    to: string,
+    firstName: string,
+    achievementName: string,
+    reason: string,
+    revoked: boolean,
+  ): Promise<void> {
+    const what = revoked ? 'has been removed from your profile' : 'application was not approved';
+    try {
+      await this.transporter.sendMail({
+        from: this.from,
+        to,
+        subject: `Update on your "${achievementName}" badge`,
+        html: `
+          <p>Hi ${this.escapeHtml(firstName)},</p>
+          <p>Your <strong>${this.escapeHtml(achievementName)}</strong> badge ${what}.</p>
+          <p><strong>Reason:</strong> ${this.escapeHtml(reason)}</p>
+          <p>You can update your application from Profile Settings → Achievements.</p>
+          <p>— The Gurokonekt Team</p>
+        `,
+      });
+    } catch (error: any) {
+      this.logger.error(`Failed to send achievement update email to ${to}: ${error.message}`, error.stack);
+    }
+  }
+
   async sendAccountDeactivationEmail(
     to: string,
     firstName: string,
