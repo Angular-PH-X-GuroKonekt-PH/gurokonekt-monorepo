@@ -29,6 +29,29 @@
       </p>
     </div>
 
+    <!-- Google sign-up in progress -->
+    @if (googleRegistration(); as google) {
+    <div
+      class="mx-auto -mt-8 mb-16 flex max-w-3xl flex-col gap-3 rounded-2xl border-2 border-blue-100 bg-white p-6 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+      role="status"
+    >
+      <div>
+        <p class="font-semibold text-gray-900">Signing up with Google</p>
+        <p class="mt-1 text-sm text-gray-600">
+          Continuing as <span class="font-medium text-gray-900">{{ google.prefill.email }}</span>.
+          Choose your role, then fill in the remaining details.
+        </p>
+      </div>
+      <button
+        type="button"
+        class="text-sm font-semibold text-orange-600 hover:text-orange-700 whitespace-nowrap"
+        (click)="useDifferentMethod()"
+      >
+        Use email and password instead
+      </button>
+    </div>
+    }
+
     <div class="grid gap-12 md:grid-cols-2 mb-20">
       <button
         type="button"
@@ -209,6 +232,22 @@
           ><app-icon name="rocket-launch" class="h-6 w-6"></app-icon></span
         >
       </button>
+
+      <!-- Google Sign-Up -->
+      @if (googleSignInEnabled && !googleRegistration()) {
+      <div class="w-full max-w-sm">
+        <div class="mb-6 flex items-center gap-3" aria-hidden="true">
+          <span class="h-px flex-1 bg-gray-200"></span>
+          <span class="text-sm text-gray-500">or sign up faster with</span>
+          <span class="h-px flex-1 bg-gray-200"></span>
+        </div>
+        <app-google-sign-in-button
+          text="signup_with"
+          [disabled]="isGoogleLoading()"
+          (credential)="onGoogleCredential($event)"
+        />
+      </div>
+      }
     </div>
   </div>
 </section>

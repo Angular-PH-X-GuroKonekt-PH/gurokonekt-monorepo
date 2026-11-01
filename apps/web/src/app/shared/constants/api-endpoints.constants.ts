@@ -4,6 +4,8 @@ export const API_ENDPOINTS = {
     registerMentor: '/auth/register-mentor',
     login: '/auth/login',
     googleLogin: '/auth/signin/google',
+    googleRegisterMentee: '/auth/register-mentee/google',
+    googleRegisterMentor: '/auth/register-mentor/google',
     refreshToken: '/auth/refresh-token',
     session: '/auth/session',
     verifyEmail: '/auth/verify-email',

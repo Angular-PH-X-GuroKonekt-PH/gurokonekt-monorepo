@@ -337,9 +337,7 @@ export class BookingService {
             'Failed to update booking.',
           ),
         ),
-        catchError(
-          handleApiErrorWithFallback(null, 'Failed to update booking'),
-        ),
+        catchError(handleApiError),
       );
   }
 }
