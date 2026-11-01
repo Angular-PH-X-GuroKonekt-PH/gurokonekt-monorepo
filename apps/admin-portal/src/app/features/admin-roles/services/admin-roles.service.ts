@@ -20,6 +20,12 @@ export interface AdminRolesData {
   admins: AdminAccount[];
 }
 
+export interface NotificationRecipient {
+  id: string;
+  email: string;
+  createdAt: string;
+}
+
 @Injectable({ providedIn: 'root' })
 export class AdminRolesService {
   private readonly http = inject(HttpClient);
@@ -27,6 +33,25 @@ export class AdminRolesService {
   getAdmins(): Observable<ApiResponse<AdminRolesData>> {
     return this.http.get<ApiResponse<AdminRolesData>>(
       buildApiUrl(API_CONFIG.endpoints.admin.roles)
+    );
+  }
+
+  getNotificationRecipients(): Observable<ApiResponse<NotificationRecipient[]>> {
+    return this.http.get<ApiResponse<NotificationRecipient[]>>(
+      buildApiUrl(API_CONFIG.endpoints.admin.notificationRecipients)
+    );
+  }
+
+  addNotificationRecipient(email: string): Observable<ApiResponse<NotificationRecipient>> {
+    return this.http.post<ApiResponse<NotificationRecipient>>(
+      buildApiUrl(API_CONFIG.endpoints.admin.notificationRecipients),
+      { email }
+    );
+  }
+
+  removeNotificationRecipient(id: string): Observable<ApiResponse<null>> {
+    return this.http.delete<ApiResponse<null>>(
+      buildApiUrl(API_CONFIG.endpoints.admin.notificationRecipientById(id))
     );
   }
 }

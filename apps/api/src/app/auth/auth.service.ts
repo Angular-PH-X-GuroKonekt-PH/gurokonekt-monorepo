@@ -7,6 +7,7 @@ import { ResponseStatus, API_RESPONSE, RESEND_EMAIL_CONFIRMATION, UserRole, User
 import { SupabaseService } from '../supabase/supabase.service';
 import { PrismaService } from '../prisma/prisma.service';
 import { StorageService } from '../storage/storage.service';
+import { MailService } from '../mail/mail.service';
 import {
   AuthResponseFactory,
   AuthValidationService,
@@ -75,6 +76,7 @@ export class AuthService {
     private readonly logging: AuthLoggingService,
     private readonly rateLimiter: AuthRateLimiterService,
     private readonly errorHandler: AuthErrorHandlerService,
+    private readonly mailService: MailService,
   ) {}
 
   /**
@@ -217,6 +219,10 @@ export class AuthService {
         ipAddress,
         userAgent,
       });
+
+      // Not awaited: the mentor should not wait on SMTP, and a mail failure
+      // must not fail a registration that has already been saved.
+      void this.notifyAdminsOfNewMentor(transaction.user);
 
       let uploadResult = null;
       if (files?.length) {
@@ -624,13 +630,15 @@ export class AuthService {
         return AuthResponseFactory.errorByKey('USER_ALREADY_EXISTS');
       }
 
-      const { profile } = await this.createMentorAccount(
+      const { user, profile } = await this.createMentorAccount(
         authUser.id,
         email,
         await this.unusablePasswordHash(),
         dto,
         { ipAddress, userAgent, provider: 'google' }
       );
+      // Same admin alert as password registration (#429); never awaited.
+      void this.notifyAdminsOfNewMentor(user);
       const uploadResult = files?.length
         ? await this.storage.uploadDocument(files, authUser.id, UserRole.Mentor)
         : null;
@@ -1754,6 +1762,45 @@ export class AuthService {
         message: API_RESPONSE.ERROR.INTERNAL_SERVER_ERROR.message,
         data: error,
       };
+    }
+  }
+
+  /**
+   * Emails everyone on the admin notification list (managed in the Admin
+   * Portal) that a new mentor is waiting for approval. Never throws.
+   */
+  private async notifyAdminsOfNewMentor(mentor: {
+    firstName: string;
+    middleName?: string | null;
+    lastName: string;
+    email: string;
+    createdAt: Date;
+  }): Promise<void> {
+    try {
+      const recipients = await this.prisma.db.adminNotificationRecipient.findMany({
+        select: { email: true },
+      });
+      if (!recipients.length) {
+        this.logger.warn(`No admin notification recipients configured — skipped new mentor email for ${mentor.email}`);
+        return;
+      }
+
+      const adminPortalUrl = process.env['ADMIN_PORTAL_URL']?.trim().replace(/\/+$/, '');
+      if (!adminPortalUrl) {
+        this.logger.warn('ADMIN_PORTAL_URL is not set — new mentor email will not include a review link');
+      }
+
+      await this.mailService.sendNewMentorRegistrationEmail(
+        recipients.map((r) => r.email),
+        {
+          fullName: [mentor.firstName, mentor.middleName, mentor.lastName].filter(Boolean).join(' '),
+          email: mentor.email,
+          registeredAt: mentor.createdAt,
+        },
+        adminPortalUrl ? `${adminPortalUrl}/mentor-management` : null,
+      );
+    } catch (error: any) {
+      this.logger.error(`Failed to send new mentor email for ${mentor.email}: ${error?.message}`, error?.stack);
     }
   }
 

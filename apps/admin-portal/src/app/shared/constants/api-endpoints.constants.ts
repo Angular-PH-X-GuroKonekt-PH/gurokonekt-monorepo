@@ -17,6 +17,8 @@ export const API_ENDPOINTS = {
     reportsSessions: '/admin/reports/sessions',
     reportsMentors: '/admin/reports/mentors',
     roles: '/admin/roles',
+    notificationRecipients: '/admin/notification-recipients',
+    notificationRecipientById: (id: string) => `/admin/notification-recipients/${id}`,
     mentees: '/admin/mentees',
     menteeById: (id: string) => `/admin/mentees/${id}`,
     menteeActivate: (id: string) => `/admin/mentees/${id}/activate`,

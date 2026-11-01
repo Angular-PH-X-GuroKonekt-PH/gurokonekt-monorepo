@@ -25,6 +25,8 @@ export enum LogsActionType {
   AdminFeatureMentor = "admin_feature_mentor",
   AdminUnfeatureMentor = "admin_unfeature_mentor",
   SignInGoogle = "signin_google",
+  AdminAddNotificationRecipient = "admin_add_notification_recipient",
+  AdminRemoveNotificationRecipient = "admin_remove_notification_recipient",
 }
 
 export interface LogsInterface {
