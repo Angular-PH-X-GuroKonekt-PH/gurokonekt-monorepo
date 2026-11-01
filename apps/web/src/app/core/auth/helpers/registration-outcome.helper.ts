@@ -11,7 +11,8 @@ import { ClearAuthMessages } from '../store/auth.actions';
 export function watchRegistrationOutcome(options: {
   successMessage: Signal<string | null | undefined>;
   errorMessage: Signal<string | null | undefined>;
-  confirmationRoute: string;
+  /** Where to go after success; a function when it depends on how the person registered. */
+  confirmationRoute: string | (() => string);
   store: Store;
   toastService: ToastService;
   router: Router;
@@ -30,7 +31,10 @@ export function watchRegistrationOutcome(options: {
       options.onSuccess();
       options.toastService.success(successMsg, 'Welcome to GuroKonekt!');
       options.store.dispatch(new ClearAuthMessages());
-      options.router.navigate([options.confirmationRoute]);
+      const route =
+        typeof options.confirmationRoute === 'function' ? options.confirmationRoute() : options.confirmationRoute;
+      // navigateByUrl so a route may carry a query string (e.g. ?via=google).
+      options.router.navigateByUrl(`/${route}`);
     }
 
     if (errorMsg && errorMsg !== lastErrorNotified) {

@@ -1,5 +1,5 @@
 import { Selector } from "@ngxs/store";
-import { RegistrationStateModel, RegistrationStep } from "../models/registration.state.model";
+import { GoogleRegistrationContext, RegistrationStateModel, RegistrationStep } from "../models/registration.state.model";
 import { RegistrationState } from "./registration.state";
 
 export class RegistrationSelectors {
@@ -21,5 +21,10 @@ export class RegistrationSelectors {
   @Selector([RegistrationState])
   static isMentorStep(state: RegistrationStateModel): boolean {
     return state.currentStep === 'mentor';
+  }
+
+  @Selector([RegistrationState])
+  static googleRegistration(state: RegistrationStateModel): GoogleRegistrationContext | null {
+    return state.googleRegistration;
   }
 }
