@@ -5,12 +5,18 @@ import { vi } from 'vitest';
 
 const browser = vi.hoisted(() => ({
   startRegistration: vi.fn(),
+  startAuthentication: vi.fn(),
   browserSupportsWebAuthn: vi.fn(() => true),
 }));
 
 vi.mock('@simplewebauthn/browser', async (importOriginal) => {
   const actual = await importOriginal<typeof import('@simplewebauthn/browser')>();
-  return { ...actual, startRegistration: browser.startRegistration, browserSupportsWebAuthn: browser.browserSupportsWebAuthn };
+  return {
+    ...actual,
+    startRegistration: browser.startRegistration,
+    startAuthentication: browser.startAuthentication,
+    browserSupportsWebAuthn: browser.browserSupportsWebAuthn,
+  };
 });
 
 import { WebAuthnError } from '@simplewebauthn/browser';
@@ -37,6 +43,7 @@ describe('PasskeyService', () => {
     service = TestBed.inject(PasskeyService);
     httpMock = TestBed.inject(HttpTestingController);
     browser.startRegistration.mockResolvedValue(BROWSER_RESPONSE);
+    browser.startAuthentication.mockResolvedValue(BROWSER_RESPONSE);
   });
 
   afterEach(() => httpMock.verify());
@@ -136,6 +143,72 @@ describe('PasskeyService', () => {
     expect(await result).toEqual({
       status: 'reauth-required',
       message: 'For your security, please sign in again to remove a passkey.',
+    });
+  });
+
+  describe('signIn', () => {
+    const answerSignInOptions = async () => {
+      httpMock
+        .expectOne((req) => req.url.endsWith('/auth/passkeys/authentication/options'))
+        .flush({ data: { challenge: 'login-challenge', rpId: 'localhost' } });
+      await Promise.resolve();
+      await new Promise((resolve) => setTimeout(resolve));
+    };
+
+    it('signs in with the picked passkey and returns the session like a login', async () => {
+      const result = service.signIn();
+      await answerSignInOptions();
+
+      expect(browser.startAuthentication).toHaveBeenCalledWith({
+        optionsJSON: { challenge: 'login-challenge', rpId: 'localhost' },
+      });
+      const verify = httpMock.expectOne((req) => req.url.endsWith('/auth/passkeys/authentication/verify'));
+      expect(verify.request.body).toEqual({ response: BROWSER_RESPONSE });
+      verify.flush({
+        message: 'Signed in with passkey successfully',
+        data: {
+          user: { id: 'u1', email: 'jane@example.com', firstName: 'Jane', lastName: 'Dela Cruz', role: 'mentee', status: 'active', isProfileComplete: true },
+          session: { access_token: 'access-token', refresh_token: 'refresh-token' },
+        },
+      });
+
+      expect(await result).toEqual({
+        status: 'signed-in',
+        user: {
+          id: 'u1',
+          email: 'jane@example.com',
+          fullName: 'Jane Dela Cruz',
+          role: 'mentee',
+          status: 'active',
+          isProfileComplete: true,
+          isMentorProfileComplete: false,
+        },
+        token: 'access-token',
+        refreshToken: 'refresh-token',
+        message: 'Signed in with passkey successfully',
+      });
+    });
+
+    it('treats a closed passkey prompt as cancelled', async () => {
+      browser.startAuthentication.mockRejectedValue(Object.assign(new Error('closed'), { name: 'NotAllowedError' }));
+
+      const result = service.signIn();
+      await answerSignInOptions();
+
+      expect(await result).toEqual({ status: 'cancelled' });
+      httpMock.expectNone((req) => req.url.endsWith('/authentication/verify'));
+    });
+
+    it("shows the server's message when the passkey is rejected", async () => {
+      const message = "We couldn't sign you in with this passkey. Please try again or use another sign-in method.";
+      const result = service.signIn();
+      await answerSignInOptions();
+
+      httpMock
+        .expectOne((req) => req.url.endsWith('/auth/passkeys/authentication/verify'))
+        .flush({ message }, { status: 401, statusText: 'Unauthorized' });
+
+      expect(await result).toEqual({ status: 'failed', message });
     });
   });
 

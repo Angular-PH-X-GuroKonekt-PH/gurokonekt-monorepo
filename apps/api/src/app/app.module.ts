@@ -14,6 +14,7 @@ import { MetricsModule } from './metrics/metrics.module';
 import { AdminModule } from './admin/admin.module';
 import { ReviewModule } from './review/review.module';
 import { PasskeyModule } from './passkey/passkey.module';
+import { SignInMethodsModule } from './sign-in-methods/sign-in-methods.module';
 import { PublicModule } from './public/public.module';
 
 @Module({
@@ -29,6 +30,7 @@ import { PublicModule } from './public/public.module';
     AdminModule,
     ReviewModule,
     PasskeyModule,
+    SignInMethodsModule,
     PublicModule,
     NotificationGatewayModule,
   ],
