@@ -2415,6 +2415,7 @@ export class UserService {
             status: UserStatus.Inactive,
             deactivationToken: null,
             deactivationTokenExpiresAt: null,
+            deactivatedAt: new Date(),
           },
         });
       });
@@ -2500,13 +2501,15 @@ export class UserService {
           ON CONFLICT ("user_id") DO UPDATE SET
             "reason" = EXCLUDED."reason",
             "status" = EXCLUDED."status",
-            "reviewed_at" = EXCLUDED."reviewed_at"
+            "reviewed_at" = EXCLUDED."reviewed_at",
+            "reviewed_by_id" = NULL,
+            "review_note" = NULL
         `;
 
         if (isMentee) {
           await tx.user.update({
             where: { id: userId },
-            data: { status: UserStatus.Active },
+            data: { status: UserStatus.Active, deactivatedAt: null },
           });
         }
       });
@@ -2543,6 +2546,44 @@ export class UserService {
         status: ResponseStatus.Error,
         statusCode: 500,
         message: 'Failed to process account activation',
+        data: null,
+      };
+    }
+  }
+
+  /**
+   * The signed-in user's latest activation request, so the activation page can
+   * show "waiting for approval" or a rejection note instead of an empty form.
+   */
+  async getActivationRequest(userId: string, requesterId: string): Promise<ResponseDto> {
+    if (userId !== requesterId) {
+      return {
+        status: ResponseStatus.Error,
+        statusCode: 403,
+        message: 'You can only view your own activation request',
+        data: null,
+      };
+    }
+
+    try {
+      const request = await this.prisma.db.accountActivationRequest.findUnique({
+        where: { userId },
+        select: { status: true, reason: true, reviewNote: true, createdAt: true, reviewedAt: true },
+      });
+
+      return {
+        status: ResponseStatus.Success,
+        statusCode: API_RESPONSE.SUCCESS.GET_ACTIVATION_REQUEST.code,
+        message: API_RESPONSE.SUCCESS.GET_ACTIVATION_REQUEST.message,
+        data: request,
+      };
+    } catch (error) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      this.logger.error(err.message, err.stack);
+      return {
+        status: ResponseStatus.Error,
+        statusCode: API_RESPONSE.ERROR.GET_ACTIVATION_REQUEST.code,
+        message: API_RESPONSE.ERROR.GET_ACTIVATION_REQUEST.message,
         data: null,
       };
     }

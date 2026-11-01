@@ -189,7 +189,7 @@ export class AdminService {
 
       await this.prisma.db.user.update({
         where: { id: menteeId },
-        data: { status: UserStatus.Active, updatedById: adminId },
+        data: { status: UserStatus.Active, deactivatedAt: null, updatedById: adminId },
       });
 
       await this.prisma.db.logs.create({

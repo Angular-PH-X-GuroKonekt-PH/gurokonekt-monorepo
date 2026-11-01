@@ -14,6 +14,7 @@ import { API_CONFIG } from '../config/api.config';
 import type {
   DeactivationFeedbackRequest,
   ActivateAccountResponse,
+  ActivationRequestStatus,
   InitiateDeactivationRequest,
   VerifyDeactivationTokenResponse,
 } from '../../shared/interfaces/account-deactivation.interface';
@@ -147,6 +148,15 @@ export class ProfileService {
         ),
         catchError(this.handleError),
       );
+  }
+
+  /** The user's latest activation request, or null if they never sent one. */
+  getActivationRequest(userId: string): Observable<ApiResponse<ActivationRequestStatus | null>> {
+    return this.http
+      .get<ApiResponse<ActivationRequestStatus | null>>(
+        buildApiUrl(API_CONFIG.endpoints.user.activationRequest(userId)),
+      )
+      .pipe(catchError(this.handleError));
   }
 
   private buildMenteeProfileFormData(
