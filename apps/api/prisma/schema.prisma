@@ -104,6 +104,14 @@ enum NotificationStatus {
   @@map("notification_status")
 }
 
+enum EmailDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+
+  @@map("email_delivery_status")
+}
+
 /* =======================
   MODELS
 ======================= */
@@ -270,24 +278,47 @@ model Notification {
 }
 
 model Booking {
-  id                 String        @id @default(uuid())
-  menteeId           String        @map("mentee_id")
-  mentorId           String        @map("mentor_id")
-  sessionDateTime    DateTime      @map("session_date_time")
-  status             BookingStatus @default(PENDING)
-  sessionLink        String?       @map("session_link")
-  menteeNotes String? @map("mentee_notes")
-  mentorNotes String? @map("mentor_notes")
-  cancelReason       String?       @map("cancel_reason")
-  isDeleted          Boolean       @default(false) @map("is_deleted")
-  createdAt          DateTime      @default(now()) @map("created_at")
-  updatedAt          DateTime      @updatedAt @map("updated_at")
+  id              String        @id @default(uuid())
+  menteeId        String        @map("mentee_id")
+  mentorId        String        @map("mentor_id")
+  sessionDateTime DateTime      @map("session_date_time")
+  status          BookingStatus @default(PENDING)
+  sessionLink     String?       @map("session_link")
+  menteeNotes     String?       @map("mentee_notes")
+  mentorNotes     String?       @map("mentor_notes")
+  cancelReason    String?       @map("cancel_reason")
+  isDeleted       Boolean       @default(false) @map("is_deleted")
+  createdAt       DateTime      @default(now()) @map("created_at")
+  updatedAt       DateTime      @updatedAt @map("updated_at")
 
-  mentee   User              @relation("MenteeBookings", fields: [menteeId], references: [id])
-  mentor   User              @relation("MentorBookings", fields: [mentorId], references: [id])
-  feedback BookingFeedback[]
+  mentee          User              @relation("MenteeBookings", fields: [menteeId], references: [id])
+  mentor          User              @relation("MentorBookings", fields: [mentorId], references: [id])
+  feedback        BookingFeedback[]
+  emailDeliveries EmailDelivery[]
 
   @@map("bookings")
+}
+
+model EmailDelivery {
+  id                String              @id @default(uuid())
+  eventKey          String              @unique @map("event_key")
+  eventType         String              @map("event_type")
+  bookingId         String?             @map("booking_id")
+  recipientEmail    String              @map("recipient_email")
+  status            EmailDeliveryStatus @default(PENDING)
+  attemptCount      Int                 @default(0) @map("attempt_count")
+  providerMessageId String?             @map("provider_message_id")
+  lastError         String?             @map("last_error")
+  attemptedAt       DateTime?           @map("attempted_at")
+  sentAt            DateTime?           @map("sent_at")
+  createdAt         DateTime            @default(now()) @map("created_at")
+  updatedAt         DateTime            @updatedAt @map("updated_at")
+
+  booking Booking? @relation(fields: [bookingId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+  @@index([bookingId])
+  @@map("email_deliveries")
 }
 
 model BookingFeedback {
