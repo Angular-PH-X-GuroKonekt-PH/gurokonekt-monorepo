@@ -1,3 +1,7 @@
+import type {
+  RegisterMenteeWithGoogleRequest,
+  RegisterMentorWithGoogleRequest,
+} from '../services/auth.service';
 import { AuthUser } from '@gurokonekt/models/interfaces/auth/auth-user.interface';
 import { RegisterMenteeRequest } from '@gurokonekt/models/interfaces/auth/register-mentee-request.interface';
 import { RegisterMentorRequest } from '@gurokonekt/models/interfaces/auth/register-mentor-request.interface';
@@ -115,4 +119,15 @@ export class ClearAuthMessages {
 
 export class ResetAuthState {
   static readonly type = '[Auth] Reset State';
+}
+
+/** Finish a registration started with Google (see RegistrationState.googleRegistration). */
+export class RegisterMenteeWithGoogle {
+  static readonly type = '[Auth] Register Mentee With Google';
+  constructor(public payload: RegisterMenteeWithGoogleRequest) {}
+}
+
+export class RegisterMentorWithGoogle {
+  static readonly type = '[Auth] Register Mentor With Google';
+  constructor(public payload: RegisterMentorWithGoogleRequest, public email: string) {}
 }
