@@ -1,29 +1,29 @@
 <section
   class="min-h-screen bg-gradient-to-br from-blue-50 via-orange-50 to-blue-50"
 >
-  <div class="mx-auto max-w-6xl px-4 py-16 sm:px-6 lg:px-8">
+  <div class="mx-auto max-w-6xl px-4 py-8 sm:px-6 sm:py-12 lg:px-8 lg:py-16 2xl:max-w-7xl">
     <!-- Logo Section -->
-    <div class="mb-12 text-center">
-      <img src="assets/logos/logo-light.svg" alt="GuroKonekt Logo" class="h-20 w-20 mx-auto" />
+    <div class="mb-8 text-center sm:mb-10 lg:mb-12">
+      <img src="assets/logos/logo-light.svg" alt="GuroKonekt Logo" class="mx-auto h-14 w-14 sm:h-20 sm:w-20" />
       <div class="mt-4 flex items-center justify-center gap-1">
-        <span class="text-4xl font-bold text-blue-900">Guro</span>
-        <span class="text-4xl font-bold text-orange-500">Konekt</span>
+        <span class="text-3xl font-bold text-blue-900 sm:text-4xl">Guro</span>
+        <span class="text-3xl font-bold text-orange-500 sm:text-4xl">Konekt</span>
       </div>
     </div>
 
     <!-- Header Section -->
-    <div class="text-center max-w-3xl mx-auto mb-20">
+    <div class="mx-auto mb-10 max-w-3xl text-center sm:mb-14 lg:mb-20">
       <p
         class="text-sm font-semibold uppercase tracking-[0.15em] text-orange-600"
       >
         Getting Started
       </p>
       <h1
-        class="mt-6 text-4xl sm:text-5xl font-bold bg-gradient-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent"
+        class="mt-4 text-3xl font-bold sm:mt-6 sm:text-4xl lg:text-5xl bg-gradient-to-r from-blue-900 via-orange-600 to-blue-900 bg-clip-text text-transparent"
       >
         Choose Your Path
       </h1>
-      <p class="mt-8 text-lg text-gray-700">
+      <p class="mt-4 text-base text-gray-700 sm:mt-6 sm:text-lg lg:mt-8">
         Whether you're seeking mentorship or ready to share your knowledge,
         there's a perfect role for you.
       </p>
@@ -52,10 +52,10 @@
     </div>
     }
 
-    <div class="grid gap-12 md:grid-cols-2 mb-20">
+    <div class="mb-10 grid gap-6 sm:gap-8 md:grid-cols-2 lg:mb-20 lg:gap-12">
       <button
         type="button"
-        class="group w-full rounded-3xl border-2 bg-white p-10 text-left shadow-lg transition duration-300 hover:-translate-y-3 hover:shadow-2xl flex flex-col h-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
+        class="group w-full rounded-2xl border-2 bg-white p-6 text-left shadow-lg transition duration-300 hover:-translate-y-1 sm:rounded-3xl sm:p-8 lg:p-10 lg:hover:-translate-y-3 hover:shadow-2xl flex flex-col h-full focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2"
         [class.border-gray-100]="selectedRole() !== 'mentee'"
         [class.border-orange-300]="selectedRole() === 'mentee'"
         [class.bg-gradient-to-br]="selectedRole() === 'mentee'"
@@ -67,20 +67,20 @@
         [class.shadow-2xl]="selectedRole() === 'mentee'"
         (click)="selectRole('mentee')"
       >
-        <div class="flex items-start justify-between gap-6 mb-10">
+        <div class="mb-6 flex items-start justify-between gap-4 sm:gap-6 lg:mb-10">
           <div class="flex-1">
             <span
               class="inline-block px-4 py-2 rounded-full bg-orange-100 text-xs font-bold uppercase tracking-wider text-orange-700 mb-4"
               >Mentee Path</span
             >
-            <h2 class="text-3xl font-bold text-gray-900 mt-2">Learn & Grow</h2>
+            <h2 class="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">Learn & Grow</h2>
             <p class="mt-4 text-base text-gray-600 leading-relaxed">
               Get personalized guidance from experienced mentors and accelerate your professional growth.
             </p>
           </div>
           <span
             class="text-6xl group-hover:scale-125 transition-transform flex-shrink-0"
-            ><app-icon name="book-open" class="h-12 w-12 text-orange-500"></app-icon></span
+            ><app-icon name="book-open" class="h-10 w-10 text-orange-500 sm:h-12 sm:w-12"></app-icon></span
           >
         </div>
         <div class="flex-1 flex flex-col gap-6">
@@ -118,7 +118,7 @@
         </div>
         <div class="mt-8 pt-6 border-t-2 border-orange-100">
           <div
-            class="inline-flex items-center gap-3 rounded-full bg-orange-100 px-6 py-3 text-base font-semibold text-orange-700 transition-all"
+            class="inline-flex items-center gap-3 rounded-full bg-orange-100 px-4 py-2 text-sm font-semibold sm:px-6 sm:py-3 sm:text-base text-orange-700 transition-all"
             [class.bg-orange-600]="selectedRole() === 'mentee'"
             [class.text-white]="selectedRole() === 'mentee'"
             [class.ring-2]="selectedRole() === 'mentee'"
@@ -136,7 +136,7 @@
       <button
         type="button"
         (click)="selectRole('mentor')"
-        class="group w-full rounded-3xl border-2 bg-white p-10 text-left shadow-lg transition duration-300 hover:-translate-y-3 hover:shadow-2xl flex flex-col h-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
+        class="group w-full rounded-2xl border-2 bg-white p-6 text-left shadow-lg transition duration-300 hover:-translate-y-1 sm:rounded-3xl sm:p-8 lg:p-10 lg:hover:-translate-y-3 hover:shadow-2xl flex flex-col h-full focus:outline-none focus:ring-2 focus:ring-blue-600 focus:ring-offset-2"
         [class.border-gray-100]="selectedRole() !== 'mentor'"
         [class.border-blue-300]="selectedRole() === 'mentor'"
         [class.bg-gradient-to-br]="selectedRole() === 'mentor'"
@@ -147,13 +147,13 @@
         [class.ring-blue-600]="selectedRole() === 'mentor'"
         [class.shadow-2xl]="selectedRole() === 'mentor'"
       >
-        <div class="flex items-start justify-between gap-6 mb-10">
+        <div class="mb-6 flex items-start justify-between gap-4 sm:gap-6 lg:mb-10">
           <div class="flex-1">
             <span
               class="inline-block px-4 py-2 rounded-full bg-blue-100 text-xs font-bold uppercase tracking-wider text-blue-700 mb-4"
               >Mentor Path</span
             >
-            <h2 class="text-3xl font-bold text-gray-900 mt-2">
+            <h2 class="mt-2 text-2xl font-bold text-gray-900 sm:text-3xl">
               Lead & Inspire
             </h2>
             <p class="mt-4 text-base text-gray-600 leading-relaxed">
@@ -163,7 +163,7 @@
           </div>
           <span
             class="text-6xl group-hover:scale-125 transition-transform flex-shrink-0"
-            ><app-icon name="user-group" class="h-12 w-12 text-blue-500"></app-icon></span
+            ><app-icon name="user-group" class="h-10 w-10 text-blue-500 sm:h-12 sm:w-12"></app-icon></span
           >
         </div>
         <div class="flex-1 flex flex-col gap-6">
@@ -201,7 +201,7 @@
         </div>
         <div class="mt-8 pt-6 border-t-2 border-blue-100">
           <div
-            class="inline-flex items-center gap-3 rounded-full bg-blue-100 px-6 py-3 text-base font-semibold text-blue-700 transition-all"
+            class="inline-flex items-center gap-3 rounded-full bg-blue-100 px-4 py-2 text-sm font-semibold sm:px-6 sm:py-3 sm:text-base text-blue-700 transition-all"
             [class.bg-blue-600]="selectedRole() === 'mentor'"
             [class.text-white]="selectedRole() === 'mentor'"
             [class.ring-2]="selectedRole() === 'mentor'"
@@ -219,7 +219,7 @@
 
     <!-- CTA Section -->
     <div
-      class="mt-24 flex flex-col items-center gap-8 pt-16 border-t-2 border-gray-200"
+      class="mt-10 flex flex-col items-center gap-6 border-t-2 border-gray-200 pt-10 sm:mt-16 sm:gap-8 sm:pt-12 lg:mt-24 lg:pt-16"
     >
       <button
         type="button"
@@ -235,7 +235,7 @@
 
       <!-- Google Sign-Up -->
       @if (googleSignInEnabled && !googleRegistration()) {
-      <div class="w-full max-w-sm">
+      <div class="w-full max-w-[400px]">
         <div class="mb-6 flex items-center gap-3" aria-hidden="true">
           <span class="h-px flex-1 bg-gray-200"></span>
           <span class="text-sm text-gray-500">or sign up faster with</span>
