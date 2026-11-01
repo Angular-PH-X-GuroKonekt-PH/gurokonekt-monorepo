@@ -14,6 +14,7 @@ import { APP_ROUTES } from '../../../shared/constants/routes';
 import { ToastService } from '../../../shared/services/toast.service';
 import { isSessionExpiredError, SESSION_EXPIRED_MESSAGE } from '../../../shared/utils/http-error.util';
 import * as AuthActions from './auth.actions';
+import * as RegistrationActions from './registration.actions';
 
 @State<AuthStateModel>({
   name: 'auth',
@@ -71,7 +72,16 @@ export class AuthState {
     });
 
     return this.authService.loginWithGoogle(action.payload).pipe(
-      tap((response: AuthResponse) => {
+      tap((result) => {
+        if (result.kind === 'registration-required') {
+          // A new person: not signed in yet. The page sends them to registration.
+          ctx.patchState({ isLoginLoading: false, isLoading: false });
+          ctx.dispatch(new RegistrationActions.StartGoogleRegistration(result.context));
+          return;
+        }
+
+        const response = result.auth;
+        ctx.dispatch(new RegistrationActions.ClearGoogleRegistration());
         ctx.dispatch(new AuthActions.LoginSuccess({
           user: response.user,
           token: response.accessToken,
@@ -82,6 +92,61 @@ export class AuthState {
       catchError((error: { message?: string }) => {
         // The service already turned the API error into a user-facing message.
         ctx.dispatch(new AuthActions.LoginFailure(error?.message || 'Google sign-in failed. Please try again.'));
+        return throwError(() => error);
+      })
+    );
+  }
+
+  @Action(AuthActions.RegisterMenteeWithGoogle)
+  registerMenteeWithGoogle(ctx: StateContext<AuthStateModel>, action: AuthActions.RegisterMenteeWithGoogle) {
+    ctx.patchState({
+      isMenteeRegisterLoading: true,
+      isLoading: true,
+      errorMessage: null,
+      successMessage: null
+    });
+
+    return this.authService.registerMenteeWithGoogle(action.payload).pipe(
+      tap((response: AuthResponse) => {
+        // Google already verified the email, so the new mentee is signed in
+        // straight away; the page continues to profile setup.
+        ctx.dispatch(new RegistrationActions.ClearGoogleRegistration());
+        ctx.patchState({ isMenteeRegisterLoading: false });
+        ctx.dispatch(new AuthActions.LoginSuccess({
+          user: response.user,
+          token: response.accessToken,
+          refreshToken: response.refreshToken,
+          message: 'Your GuroKonekt account is ready! Let\'s finish setting up your profile.'
+        }));
+      }),
+      catchError((error: { message?: string; statusCode?: number }) => {
+        this.clearExpiredGoogleRegistration(ctx, error);
+        ctx.dispatch(new AuthActions.RegisterMenteeFailure(error?.message || 'Registration failed. Please try again.'));
+        return throwError(() => error);
+      })
+    );
+  }
+
+  @Action(AuthActions.RegisterMentorWithGoogle)
+  registerMentorWithGoogle(ctx: StateContext<AuthStateModel>, action: AuthActions.RegisterMentorWithGoogle) {
+    ctx.patchState({
+      isMentorRegisterLoading: true,
+      isLoading: true,
+      errorMessage: null,
+      successMessage: null
+    });
+
+    return this.authService.registerMentorWithGoogle(action.payload).pipe(
+      tap(() => {
+        ctx.dispatch(new RegistrationActions.ClearGoogleRegistration());
+        ctx.dispatch(new AuthActions.RegisterMentorSuccess({
+          message: 'Your mentor application has been submitted!',
+          email: action.email
+        }));
+      }),
+      catchError((error: { message?: string; statusCode?: number }) => {
+        this.clearExpiredGoogleRegistration(ctx, error);
+        ctx.dispatch(new AuthActions.RegisterMentorFailure(error?.message || 'Registration failed. Please try again.'));
         return throwError(() => error);
       })
     );
@@ -447,6 +512,16 @@ export class AuthState {
     if (serverMessage) return serverMessage;
 
     return 'An unexpected error occurred. Please try again.';
+  }
+
+  /**
+   * A 401 from a Google registration means its tokens expired. They cannot be
+   * reused, so drop them and let the person continue with Google again.
+   */
+  private clearExpiredGoogleRegistration(ctx: StateContext<AuthStateModel>, error: { statusCode?: number }): void {
+    if (error?.statusCode === 401) {
+      ctx.dispatch(new RegistrationActions.ClearGoogleRegistration());
+    }
   }
 
   private isSessionExpiredFailure(error: unknown): boolean {
