@@ -27,6 +27,46 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Signed in with Google successfully',
     },
+    PASSKEY_REGISTRATION_OPTIONS: {
+      code: 200,
+      message: 'Passkey registration started',
+    },
+    PASSKEY_REGISTERED: {
+      code: 201,
+      message: 'Your passkey has been added.',
+    },
+    PASSKEYS_LISTED: {
+      code: 200,
+      message: 'Passkeys retrieved successfully',
+    },
+    PASSKEY_RENAMED: {
+      code: 200,
+      message: 'Passkey renamed.',
+    },
+    PASSKEY_REMOVED: {
+      code: 200,
+      message: 'Passkey removed. It can no longer be used to sign in.',
+    },
+    PASSKEY_AUTHENTICATION_OPTIONS: {
+      code: 200,
+      message: 'Passkey sign-in started',
+    },
+    SIGN_WITH_PASSKEY: {
+      code: 200,
+      message: 'Signed in with passkey successfully',
+    },
+    SIGN_IN_METHODS_LISTED: {
+      code: 200,
+      message: 'Sign-in methods retrieved successfully',
+    },
+    GOOGLE_CONNECTED: {
+      code: 200,
+      message: 'Google is now connected. You can use it to sign in.',
+    },
+    GOOGLE_DISCONNECTED: {
+      code: 200,
+      message: 'Google has been disconnected from your account.',
+    },
     SIGN_WITH_GOOGLE_REGISTRATION_REQUIRED: {
       code: 200,
       message: 'Finish creating your GuroKonekt account to continue.',
@@ -464,6 +504,34 @@ export const API_RESPONSE = {
       message:
         'Too many failed login attempts. Try again later, or reset your password to regain access now.',
     },
+    PASSKEY_NOT_AVAILABLE: {
+      code: 403,
+      message: 'Passkeys are not available for this account.',
+    },
+    PASSKEY_CHALLENGE_EXPIRED: {
+      code: 400,
+      message: 'Passkey setup timed out. Please try again.',
+    },
+    PASSKEY_VERIFICATION_FAILED: {
+      code: 400,
+      message: "We couldn't verify this passkey. Please try again.",
+    },
+    PASSKEY_ALREADY_REGISTERED: {
+      code: 409,
+      message: 'This passkey is already added.',
+    },
+    PASSKEY_NOT_FOUND: {
+      code: 404,
+      message: 'Passkey not found.',
+    },
+    PASSKEY_REAUTH_REQUIRED: {
+      code: 403,
+      message: 'For your security, please sign in again to remove a passkey.',
+    },
+    PASSKEY_SIGNIN_FAILED: {
+      code: 401,
+      message: "We couldn't sign you in with this passkey. Please try again or use another sign-in method.",
+    },
     SIGNIN_GOOGLE_FAILED: {
       code: 401,
       message: 'Google sign-in failed. Please try again.',
@@ -484,6 +552,35 @@ export const API_RESPONSE = {
     SIGNIN_ACCOUNT_BLOCKED: {
       code: 403,
       message: 'This account cannot sign in. Please contact support if you believe this is a mistake.',
+    },
+    GOOGLE_NOT_CONNECTED: {
+      code: 403,
+      message:
+        'This email already has a GuroKonekt account. Sign in with your password, then connect Google in Settings > Sign-in methods.',
+    },
+    GOOGLE_ALREADY_LINKED: {
+      code: 409,
+      message: 'This Google account is already connected to another GuroKonekt account.',
+    },
+    GOOGLE_LINK_FAILED: {
+      code: 400,
+      message: "We couldn't connect your Google account. Please try again.",
+    },
+    GOOGLE_LINKING_UNAVAILABLE: {
+      code: 503,
+      message: "Connecting Google isn't available right now. Please try again later.",
+    },
+    GOOGLE_NOT_LINKED: {
+      code: 404,
+      message: "Google isn't connected to this account.",
+    },
+    GOOGLE_DISCONNECT_NOT_ALLOWED: {
+      code: 400,
+      message: "Google is the only way to sign in to this account, so it can't be disconnected.",
+    },
+    SIGN_IN_METHOD_REAUTH_REQUIRED: {
+      code: 403,
+      message: 'For your security, please sign in again to change how you sign in.',
     },
     SIGNIN_MENTOR_PENDING_REVIEW: {
       code: 403,
@@ -1184,6 +1281,111 @@ Exchanges a Google ID token for a Gurokonekt session.
 `,
     bodyExample: {
       idToken: 'eyJhbGciOiJSUzI1NiIsImtpZCI6Ij...',
+    },
+  },
+
+  PASSKEY_REGISTRATION_OPTIONS: {
+    summary: 'Start adding a passkey',
+    description: `
+Returns WebAuthn registration options for the signed-in user. Pass them to the browser's passkey prompt
+(e.g. \`startRegistration({ optionsJSON })\` from @simplewebauthn/browser), then send the result to
+\`POST /auth/passkeys/registration/verify\` within 5 minutes.
+
+Passkeys are discoverable (resident keys) and require user verification (biometrics, PIN or device lock), so
+they can later be used to sign in without typing an email. Passkeys the user already has are excluded, so the
+same authenticator can't be added twice. Admin accounts get \`403\`.
+`,
+  },
+
+  PASSKEY_REGISTRATION_VERIFY: {
+    summary: 'Finish adding a passkey',
+    description: `
+Verifies the browser's WebAuthn registration response against the challenge issued by
+\`POST /auth/passkeys/registration/options\` and saves the passkey. Only the public key is stored; the private
+key never leaves the user's device or password manager. Each challenge works once.
+`,
+    bodyExample: {
+      response: { id: 'base64url-credential-id', rawId: 'base64url-credential-id', type: 'public-key', response: {} },
+      name: 'Chrome on Windows',
+    },
+  },
+
+  PASSKEYS_LIST: {
+    summary: "List the signed-in user's passkeys",
+    description: `
+Returns the signed-in user's passkeys, newest first: name, type (synced or single device), when each was added
+and last used. Key material is never returned. Only the caller's own passkeys are ever listed.
+`,
+  },
+
+  PASSKEY_RENAME: {
+    summary: 'Rename a passkey',
+    description: `
+Changes the label of one of the signed-in user's passkeys. Another user's passkey ID returns \`404\`.
+`,
+    bodyExample: { name: 'Work laptop' },
+  },
+
+  PASSKEY_REMOVE: {
+    summary: 'Remove a passkey',
+    description: `
+Deletes one of the signed-in user's passkeys; it stops working for sign-in immediately.
+
+**Requires a recent sign-in:** the session must come from a sign-in within the last 10 minutes (Supabase's
+\`amr\` claim, which token refreshes don't change). Otherwise the API returns \`403\` with
+\`data.reauthRequired: true\` and the user signs in again first. Another user's passkey ID returns \`404\`.
+`,
+  },
+
+  SIGN_IN_METHODS_LIST: {
+    summary: "The signed-in user's sign-in methods",
+    description: `
+Which ways the signed-in user can sign in: password, Google (with the connected Google email) and how many passkeys.
+`,
+  },
+
+  GOOGLE_CONNECT: {
+    summary: 'Connect Google to my account',
+    description: `
+Links a Google account to the signed-in user, so "Continue with Google" signs them in. Send a Google ID token from the
+Google Sign-In button, plus the user's refresh token (Supabase only lets users link identities to their own session).
+The response includes the user's current tokens, which replace the stored ones.
+
+**Requires a sign-in from the last 10 minutes** (\`403\` with \`data.reauthRequired: true\` otherwise). A Google account
+already connected to someone else returns \`409\`. Needs "Allow manual linking" enabled in Supabase.
+`,
+  },
+
+  GOOGLE_DISCONNECT: {
+    summary: 'Disconnect Google from my account',
+    description: `
+Unlinks Google from the signed-in user. Only allowed when the account also has a password, so the user can still sign
+in. Same recent sign-in rule and refresh token as connecting; the response includes the user's current tokens.
+`,
+  },
+
+  PASSKEY_AUTHENTICATION_OPTIONS: {
+    summary: 'Start signing in with a passkey',
+    description: `
+Public. Returns WebAuthn authentication options with a one-time challenge (valid 5 minutes). No email is needed:
+the browser lets the person pick one of their passkeys for this site. Pass the options to
+\`startAuthentication({ optionsJSON })\` from @simplewebauthn/browser, then send the result to
+\`POST /auth/passkeys/authentication/verify\`.
+`,
+  },
+
+  PASSKEY_AUTHENTICATION_VERIFY: {
+    summary: 'Finish signing in with a passkey',
+    description: `
+Public. Verifies the browser's passkey response against the challenge and the saved public key, then signs the
+person in. The response has the same shape as \`POST /auth/login\`: \`{ user, session }\`.
+
+Every failure (unknown passkey, wrong signature, expired or reused challenge) returns the same \`401\`, so nothing
+is revealed about which passkeys or accounts exist. Pending or rejected mentors and blocked accounts get \`403\`
+with the same messages as password login.
+`,
+    bodyExample: {
+      response: { id: 'base64url-credential-id', rawId: 'base64url-credential-id', type: 'public-key', response: {} },
     },
   },
 

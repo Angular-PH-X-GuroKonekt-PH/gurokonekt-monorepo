@@ -104,6 +104,7 @@ export class JwtGuardStrategy extends PassportStrategy(Strategy) {
       sub?: string;
       email?: string;
       role?: string;
+      amr?: { method?: string; timestamp?: number }[];
     };
 
     if (!user.sub) {
@@ -135,10 +136,23 @@ export class JwtGuardStrategy extends PassportStrategy(Strategy) {
         id: user.sub,
         email: user.email,
         role: dbUser.role,
+        authenticatedAt: lastSignInAt(user.amr),
       };
     } catch (err) {
       this.logger.error(`DB error during JWT validation: ${(err as Error).message}`);
       return null;
     }
   }
+}
+
+/**
+ * When the person last actually signed in, from Supabase's `amr` claim. Unlike
+ * `iat`, these timestamps survive token refreshes, so they tell a fresh
+ * sign-in apart from a long-lived session. Null when the token has none.
+ */
+export function lastSignInAt(amr: { timestamp?: number }[] | undefined): Date | null {
+  const timestamps = (amr ?? [])
+    .map((entry) => entry?.timestamp)
+    .filter((timestamp): timestamp is number => typeof timestamp === 'number');
+  return timestamps.length ? new Date(Math.max(...timestamps) * 1000) : null;
 }
