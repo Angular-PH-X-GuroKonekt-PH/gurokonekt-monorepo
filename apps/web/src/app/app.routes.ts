@@ -249,6 +249,22 @@ export const appRoutes: Route[] = [
           ),
         title: 'Edit Profile',
       },
+      {
+        path: 'passkeys',
+        loadComponent: () =>
+          import('./core/profile/pages/passkeys-section-page/passkeys-section.page').then(
+            (m) => m.PasskeysSectionPage
+          ),
+        title: 'Passkeys',
+      },
+      {
+        path: 'sign-in-methods',
+        loadComponent: () =>
+          import('./core/profile/pages/sign-in-methods-section-page/sign-in-methods-section.page').then(
+            (m) => m.SignInMethodsSectionPage
+          ),
+        title: 'Sign-in methods',
+      },
     ],
   },
   {
