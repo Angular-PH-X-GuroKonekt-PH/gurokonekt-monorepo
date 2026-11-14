@@ -9,6 +9,7 @@
       "executor": "nx:run-commands",
       "options": {
         "commands": ["npx prisma generate", "webpack-cli build"],
+        "parallel": false,
         "cwd": "apps/api",
         "env": {
           "NODE_ENV": "production"

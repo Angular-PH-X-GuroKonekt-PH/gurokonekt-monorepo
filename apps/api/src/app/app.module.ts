@@ -13,6 +13,8 @@ import { NotificationGatewayModule } from './gateway/notification-gateway.module
 import { MetricsModule } from './metrics/metrics.module';
 import { AdminModule } from './admin/admin.module';
 import { ReviewModule } from './review/review.module';
+import { PasskeyModule } from './passkey/passkey.module';
+import { SignInMethodsModule } from './sign-in-methods/sign-in-methods.module';
 import { PublicModule } from './public/public.module';
 import { AccountCleanupModule } from './account-cleanup/account-cleanup.module';
 
@@ -28,6 +30,8 @@ import { AccountCleanupModule } from './account-cleanup/account-cleanup.module';
     MetricsModule,
     AdminModule,
     ReviewModule,
+    PasskeyModule,
+    SignInMethodsModule,
     PublicModule,
     AccountCleanupModule,
     NotificationGatewayModule,
