@@ -1,8 +1,10 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { AdminRolesService, AdminAccount } from '../../services/admin-roles.service';
+import { NotificationRecipientsComponent } from '../../components/notification-recipients/notification-recipients';
 
 @Component({
   selector: 'app-admin-roles-page',
+  imports: [NotificationRecipientsComponent],
   templateUrl: './admin-roles.page.html',
 })
 export class AdminRolesPage implements OnInit {

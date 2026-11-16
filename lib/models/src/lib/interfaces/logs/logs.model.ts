@@ -31,6 +31,8 @@ export enum LogsActionType {
   SignInGoogle = "signin_google",
   GoogleConnect = "google_connect",
   GoogleDisconnect = "google_disconnect",
+  AdminAddNotificationRecipient = "admin_add_notification_recipient",
+  AdminRemoveNotificationRecipient = "admin_remove_notification_recipient",
 }
 
 export interface LogsInterface {
