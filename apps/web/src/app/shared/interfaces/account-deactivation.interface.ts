@@ -15,3 +15,12 @@ export interface ActivateAccountResponse {
   status: string;
   activationStatus: 'approved' | 'pending';
 }
+
+export interface ActivationRequestStatus {
+  status: 'pending' | 'approved' | 'rejected';
+  reason: string;
+  /** Admin's reason when a mentor request was rejected. */
+  reviewNote: string | null;
+  createdAt: string;
+  reviewedAt: string | null;
+}

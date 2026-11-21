@@ -33,6 +33,8 @@ export class AccountActivationPage implements OnInit {
   protected readonly errorMessage = signal<string | null>(null);
   protected readonly activationRequestSubmitted = signal(false);
   protected readonly activationReason = signal('');
+  /** Admin's reason, when the mentor's previous request was rejected. */
+  protected readonly rejectionNote = signal<string | null>(null);
   protected readonly profile = signal<ActivationProfile | null>(null);
 
   protected readonly isMentor = computed(() => this.profile()?.role.toLowerCase() === 'mentor');
@@ -62,6 +64,15 @@ export class AccountActivationPage implements OnInit {
       const response = await firstValueFrom(this.profileService.getUserProfile(user.id));
       if (response.data && typeof response.data === 'object') {
         this.profile.set(this.toActivationProfile(response.data as Record<string, unknown>));
+      }
+
+      // Coming back while a mentor request is still under review should show
+      // that, not an empty form inviting them to submit again.
+      const request = (await firstValueFrom(this.profileService.getActivationRequest(user.id))).data;
+      if (request?.status === 'pending') {
+        this.activationRequestSubmitted.set(true);
+      } else if (request?.status === 'rejected') {
+        this.rejectionNote.set(request.reviewNote || 'No reason was given.');
       }
     } catch (error) {
       this.errorMessage.set(this.getErrorMessage(error, 'Unable to load your account details.'));

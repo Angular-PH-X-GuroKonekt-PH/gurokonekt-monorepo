@@ -33,6 +33,9 @@ export enum LogsActionType {
   GoogleDisconnect = "google_disconnect",
   AdminAddNotificationRecipient = "admin_add_notification_recipient",
   AdminRemoveNotificationRecipient = "admin_remove_notification_recipient",
+  AdminApproveMentorReactivation = "admin_approve_mentor_reactivation",
+  AdminRejectMentorReactivation = "admin_reject_mentor_reactivation",
+  AccountAutoDeleted = "account_auto_deleted",
 }
 
 export interface LogsInterface {

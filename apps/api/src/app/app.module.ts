@@ -16,6 +16,7 @@ import { ReviewModule } from './review/review.module';
 import { PasskeyModule } from './passkey/passkey.module';
 import { SignInMethodsModule } from './sign-in-methods/sign-in-methods.module';
 import { PublicModule } from './public/public.module';
+import { AccountCleanupModule } from './account-cleanup/account-cleanup.module';
 
 @Module({
   imports: [
@@ -32,6 +33,7 @@ import { PublicModule } from './public/public.module';
     PasskeyModule,
     SignInMethodsModule,
     PublicModule,
+    AccountCleanupModule,
     NotificationGatewayModule,
   ],
   controllers: [AppController],

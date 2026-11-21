@@ -72,6 +72,17 @@ export interface MentorDeactivationFeedback {
   createdAt: string;
 }
 
+export interface MentorReactivationRequest {
+  mentorId: string;
+  firstName: string;
+  lastName: string;
+  email: string;
+  reactivationReason: string;
+  deactivationReason: string | null;
+  deactivatedAt: string | null;
+  requestedAt: string;
+}
+
 export interface SetFeaturedResult {
   mentorId: string;
   isFeatured: boolean;
@@ -129,6 +140,26 @@ export class MentorManagementService {
   rejectMentor(id: string, reason: string): Observable<ApiResponse<null>> {
     return this.http.patch<ApiResponse<null>>(
       buildApiUrl(API_CONFIG.endpoints.admin.rejectMentor(id)),
+      { reason }
+    );
+  }
+
+  getReactivationRequests(): Observable<ApiResponse<MentorReactivationRequest[]>> {
+    return this.http.get<ApiResponse<MentorReactivationRequest[]>>(
+      buildApiUrl(API_CONFIG.endpoints.admin.mentorReactivationRequests)
+    );
+  }
+
+  approveReactivation(id: string): Observable<ApiResponse<{ status: string }>> {
+    return this.http.patch<ApiResponse<{ status: string }>>(
+      buildApiUrl(API_CONFIG.endpoints.admin.approveMentorReactivation(id)),
+      {}
+    );
+  }
+
+  rejectReactivation(id: string, reason: string): Observable<ApiResponse<null>> {
+    return this.http.patch<ApiResponse<null>>(
+      buildApiUrl(API_CONFIG.endpoints.admin.rejectMentorReactivation(id)),
       { reason }
     );
   }

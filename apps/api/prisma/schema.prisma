@@ -80,6 +80,9 @@ enum LogsActionType {
   google_disconnect
   admin_add_notification_recipient
   admin_remove_notification_recipient
+  admin_approve_mentor_reactivation
+  admin_reject_mentor_reactivation
+  account_auto_deleted
 
   @@map("logs_action_type")
 }
@@ -145,6 +148,9 @@ model User {
   updatedById                String?    @map("updated_by_id")
   deactivationToken          String?    @map("deactivation_token")
   deactivationTokenExpiresAt DateTime?  @map("deactivation_token_expires_at")
+  /// When the user deactivated their own account (email link flow). Drives the
+  /// 30-day automatic deletion; null for accounts an admin deactivated.
+  deactivatedAt              DateTime?  @map("deactivated_at")
   pendingHashPassword        String?    @map("pending_hash_password")
   pendingPasswordChangeAt    DateTime?  @map("pending_password_change_at")
   /// Supabase identity_id of the Google account the user connected in Settings
@@ -366,6 +372,10 @@ model AccountActivationRequest {
   status     AccountActivationRequestStatus @default(pending)
   createdAt  DateTime                       @default(now()) @map("created_at")
   reviewedAt DateTime?                      @map("reviewed_at")
+  /// Admin who approved/rejected a mentor request (null for auto-approved mentees).
+  reviewedById String?                      @map("reviewed_by_id")
+  /// Reason shown to the mentor when an admin rejects the request.
+  reviewNote String?                        @map("review_note")
 
   user User @relation(fields: [userId], references: [id])
 

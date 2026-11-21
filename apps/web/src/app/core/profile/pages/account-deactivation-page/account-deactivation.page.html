@@ -41,6 +41,7 @@
           </h2>
           <p class="mt-2 text-sm leading-6 text-slate-600">
             Your account is now inactive. You can log in again when you are ready to reactivate it.
+            If you don't log back in within 30 days, your account will be deleted.
           </p>
           <button
             type="button"
@@ -69,6 +70,11 @@
           <label for="deactivation-reason" class="block text-sm font-semibold text-slate-700">
             Reason for deactivating your account
           </label>
+          @if (errorMessage()) {
+            <p class="mb-3 rounded-lg border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700" role="alert">
+              {{ errorMessage() }}
+            </p>
+          }
           <textarea
             #reasonInput
             id="deactivation-reason"
