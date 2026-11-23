@@ -17,6 +17,7 @@
   "plugins": [
     {
       "plugin": "@nx/webpack/plugin",
+      "exclude": ["apps/mobile/**/*"],
       "options": {
         "buildTargetName": "build",
         "serveTargetName": "serve",
