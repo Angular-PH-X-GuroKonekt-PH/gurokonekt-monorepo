@@ -7,6 +7,7 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationGateway } from '../gateway/notification-gateway.gateway';
 import { ReviewService } from './review.service';
+import { BadgesService } from '../badges/badges.service';
 
 const MENTEE_ID = 'mentee-1';
 const MENTOR_ID = 'mentor-1';
@@ -69,16 +70,19 @@ describe('ReviewService', () => {
   let service: ReviewService;
   let prisma: PrismaMock;
   let gateway: { sendNotificationToUser: jest.Mock };
+  let badges: { evaluateUsers: jest.Mock };
 
   beforeEach(async () => {
     prisma = createPrismaMock();
     gateway = { sendNotificationToUser: jest.fn() };
+    badges = { evaluateUsers: jest.fn() };
 
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         ReviewService,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationGateway, useValue: gateway },
+        { provide: BadgesService, useValue: badges },
       ],
     }).compile();
 
@@ -119,6 +123,7 @@ describe('ReviewService', () => {
           data: { bookingId: BOOKING_ID, userId: MENTEE_ID, rating: 5, comment: 'Great session' },
         }),
       );
+      expect(badges.evaluateUsers).toHaveBeenCalledWith([MENTOR_ID, MENTEE_ID]);
       expect(prisma.db.notification.create).toHaveBeenCalledWith(
         expect.objectContaining({
           data: expect.objectContaining({ userId: MENTOR_ID, referenceId: BOOKING_ID }),

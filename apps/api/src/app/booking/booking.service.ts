@@ -31,6 +31,7 @@ import {
   NotificationGateway,
 } from '../gateway/notification-gateway.gateway';
 import { EmailDeliveryService } from '../email-delivery/email-delivery.service';
+import { BadgesService } from '../badges/badges.service';
 
 /** Fields selected for mentor/mentee when returning a booking list entry. */
 const BOOKING_USER_SELECT = {
@@ -50,6 +51,7 @@ export class BookingService {
     private readonly prisma: PrismaService,
     private readonly notificationGateway: NotificationGateway,
     private readonly emailDelivery: EmailDeliveryService,
+    private readonly badges: BadgesService,
   ) {}
 
   // ====================================================
@@ -1060,6 +1062,8 @@ export class BookingService {
         NotificationType.SESSION,
         id,
       );
+
+      this.badges.evaluateUsers([existing.mentorId, existing.menteeId]);
 
       return {
         status: ResponseStatus.Success,

@@ -4,6 +4,7 @@ import {
   API_RESPONSE,
   DaysInWeek,
   DEFAULT_RECOMMENDED_MENTOR_LIMIT,
+  FeaturedBadgeInterface,
   MentorProfileDetailInterface,
   MentorRecommendationResultInterface,
   MentorSearchItemInterface,
@@ -543,6 +544,14 @@ export class SearchService {
               avatarAttachments: {
                 select: { publicUrl: true, fileName: true },
               },
+              badges: {
+                where: { featured: true, unlocked: true },
+                orderBy: { unlockedAt: 'asc' },
+                select: {
+                  unlockedAt: true,
+                  badge: { select: { code: true, name: true, description: true, category: true, rarity: true } },
+                },
+              },
             },
           },
         },
@@ -582,6 +591,7 @@ export class SearchService {
           timezone: user.timezone,
           avatarAttachments: user.avatarAttachments,
         },
+        featuredBadges: user.badges.map((b) => ({ ...b.badge, unlockedAt: b.unlockedAt }) as FeaturedBadgeInterface),
       };
 
       return {

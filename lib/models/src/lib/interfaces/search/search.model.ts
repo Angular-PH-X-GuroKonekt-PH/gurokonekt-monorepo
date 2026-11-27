@@ -1,3 +1,4 @@
+import { FeaturedBadgeInterface } from '../badge/badge.model';
 import { DaysInWeek, UserAvailabilityInterface } from '../user/user.model';
 
 export interface MentorSearchItemInterface {
@@ -56,6 +57,7 @@ export interface MentorProfileDetailInterface {
     timezone: string | null;
     avatarAttachments: { publicUrl: string; fileName: string }[];
   };
+  featuredBadges: FeaturedBadgeInterface[];
 }
 
 export interface MenttorAttachmentSearch {

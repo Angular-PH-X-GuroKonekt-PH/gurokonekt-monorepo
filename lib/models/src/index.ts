@@ -55,3 +55,5 @@ export * from './lib/interfaces/public/featured-mentor.model';
 export * from './lib/dto/public/featured-mentors.dto';
 export * from './lib/interfaces/inquiry/inquiry.model';
 export * from './lib/dto/inquiry/inquiry.dto';
+export * from './lib/interfaces/badge/badge.model';
+export * from './lib/dto/badge/badge.dto';
