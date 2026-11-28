@@ -83,8 +83,28 @@ enum LogsActionType {
   admin_approve_mentor_reactivation
   admin_reject_mentor_reactivation
   account_auto_deleted
+  admin_update_badge
+  admin_award_badge
 
   @@map("logs_action_type")
+}
+
+enum BadgeCategory {
+  MENTOR
+  MENTEE
+  SPECIAL
+
+  @@map("badge_category")
+}
+
+enum BadgeRarity {
+  COMMON
+  UNCOMMON
+  RARE
+  EPIC
+  LEGENDARY
+
+  @@map("badge_rarity")
 }
 
 enum BookingStatus {
@@ -183,6 +203,8 @@ model User {
   adminRejectionActions AdminRejectionLog[]   @relation("admin_rejection_actions")
   passkeys              Passkey[]
   passkeyChallenges     PasskeyChallenge[]
+  badges                UserBadge[]           @relation("user_badges")
+  badgesAwarded         UserBadge[]           @relation("badge_awarded_by")
 
   @@map("users")
 }
@@ -473,4 +495,50 @@ model AdminNotificationRecipient {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("admin_notification_recipients")
+}
+
+/// A badge definition. Seeded from BADGE_DEFINITIONS by `code`; admins can
+/// change rarity, category, target and active status afterwards.
+model Badge {
+  id               String        @id @default(uuid())
+  code             String        @unique
+  name             String
+  description      String
+  category         BadgeCategory
+  rarity           BadgeRarity
+  /// What is counted (BadgeRequirementType); `manual` for special badges.
+  requirementType  String        @map("requirement_type")
+  requirementValue Int           @map("requirement_value")
+  active           Boolean       @default(true)
+  createdAt        DateTime      @default(now()) @map("created_at")
+  updatedAt        DateTime      @updatedAt @map("updated_at")
+
+  userBadges UserBadge[]
+
+  @@map("badges")
+}
+
+/// A user's progress toward, or ownership of, one badge. Once unlocked it
+/// stays unlocked, even if the activity behind it is later removed.
+model UserBadge {
+  id          String    @id @default(uuid())
+  userId      String    @map("user_id")
+  badgeId     String    @map("badge_id")
+  progress    Int       @default(0)
+  target      Int
+  unlocked    Boolean   @default(false)
+  unlockedAt  DateTime? @map("unlocked_at")
+  featured    Boolean   @default(false)
+  /// Admin who awarded a special badge; null for automatic unlocks.
+  awardedById String?   @map("awarded_by_id")
+  createdAt   DateTime  @default(now()) @map("created_at")
+  updatedAt   DateTime  @updatedAt @map("updated_at")
+
+  user      User  @relation("user_badges", fields: [userId], references: [id])
+  badge     Badge @relation(fields: [badgeId], references: [id])
+  awardedBy User? @relation("badge_awarded_by", fields: [awardedById], references: [id])
+
+  @@unique([userId, badgeId])
+  @@index([userId, featured])
+  @@map("user_badges")
 }

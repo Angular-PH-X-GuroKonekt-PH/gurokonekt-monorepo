@@ -10,6 +10,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationGateway } from '../gateway/notification-gateway.gateway';
 import { EmailDeliveryService } from '../email-delivery/email-delivery.service';
 import { BookingService } from './booking.service';
+import { BadgesService } from '../badges/badges.service';
 
 const MENTEE_ID = 'mentee-1';
 const MENTOR_ID = 'mentor-1';
@@ -90,6 +91,7 @@ describe('BookingService — backdated bookings (issue #374)', () => {
   let service: BookingService;
   let prisma: PrismaMock;
   let gateway: { sendNotificationToUser: jest.Mock };
+  let badges: { evaluateUsers: jest.Mock };
   let emailDelivery: {
     sendBookingCreated: jest.Mock;
     sendBookingAccepted: jest.Mock;
@@ -111,12 +113,15 @@ describe('BookingService — backdated bookings (issue #374)', () => {
       callback(prisma.db),
     );
 
+    badges = { evaluateUsers: jest.fn() };
+
     const module: TestingModule = await Test.createTestingModule({
       providers: [
         BookingService,
         { provide: PrismaService, useValue: prisma },
         { provide: NotificationGateway, useValue: gateway },
         { provide: EmailDeliveryService, useValue: emailDelivery },
+        { provide: BadgesService, useValue: badges },
       ],
     }).compile();
 

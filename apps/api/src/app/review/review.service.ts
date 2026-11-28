@@ -14,6 +14,7 @@ import {
   UserRole,
 } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
+import { BadgesService } from '../badges/badges.service';
 import {
   NOTIFICATION_EVENTS,
   NotificationGateway,
@@ -49,6 +50,7 @@ export class ReviewService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly notificationGateway: NotificationGateway,
+    private readonly badges: BadgesService,
   ) {}
 
   // ====================================================
@@ -104,6 +106,9 @@ export class ReviewService {
         NotificationType.SESSION,
         booking.id,
       );
+
+      // 5-star reviews count for the mentor; reviewing counts as participation for the mentee.
+      this.badges.evaluateUsers([booking.mentorId, menteeId]);
 
       return {
         status: ResponseStatus.Success,

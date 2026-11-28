@@ -17,6 +17,7 @@ import { PasskeyModule } from './passkey/passkey.module';
 import { SignInMethodsModule } from './sign-in-methods/sign-in-methods.module';
 import { PublicModule } from './public/public.module';
 import { AccountCleanupModule } from './account-cleanup/account-cleanup.module';
+import { BadgesModule } from './badges/badges.module';
 
 @Module({
   imports: [
@@ -34,6 +35,7 @@ import { AccountCleanupModule } from './account-cleanup/account-cleanup.module';
     SignInMethodsModule,
     PublicModule,
     AccountCleanupModule,
+    BadgesModule,
     NotificationGatewayModule,
   ],
   controllers: [AppController],

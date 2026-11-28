@@ -474,6 +474,12 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Inquiries retrieved successfully',
     },
+    GET_MY_BADGES: { code: 200, message: 'Achievements retrieved successfully' },
+    UPDATE_FEATURED_BADGES: { code: 200, message: 'Featured badges updated successfully' },
+    ADMIN_GET_BADGES: { code: 200, message: 'Badges retrieved successfully' },
+    ADMIN_UPDATE_BADGE: { code: 200, message: 'Badge updated successfully' },
+    ADMIN_AWARD_BADGE: { code: 201, message: 'Badge awarded successfully' },
+    ADMIN_EVALUATE_BADGES: { code: 200, message: 'Badge progress re-evaluated successfully' },
   },
   ERROR: {
     /**
@@ -1243,6 +1249,20 @@ export const API_RESPONSE = {
     RECAPTCHA_NOT_CONFIGURED: {
       code: 500,
       message: 'Verification is not configured on this server.',
+    },
+    GET_MY_BADGES: { code: 500, message: 'Failed to retrieve achievements' },
+    UPDATE_FEATURED_BADGES: { code: 500, message: 'Failed to update featured badges' },
+    ADMIN_GET_BADGES: { code: 500, message: 'Failed to retrieve badges' },
+    ADMIN_UPDATE_BADGE: { code: 500, message: 'Failed to update badge' },
+    ADMIN_AWARD_BADGE: { code: 500, message: 'Failed to award badge' },
+    ADMIN_EVALUATE_BADGES: { code: 500, message: 'Failed to re-evaluate badge progress' },
+    BADGE_NOT_FOUND: { code: 404, message: 'Badge not found' },
+    BADGE_NOT_UNLOCKED: { code: 400, message: 'Only badges you have unlocked can be featured' },
+    BADGE_NOT_SPECIAL: { code: 400, message: 'Only active special badges can be awarded by an admin' },
+    BADGE_ALREADY_AWARDED: { code: 409, message: 'This user already has this badge' },
+    BADGE_REQUIREMENT_UNSUPPORTED: {
+      code: 400,
+      message: 'This requirement type cannot be tracked yet, so the badge cannot be enabled',
     },
   },
 };
