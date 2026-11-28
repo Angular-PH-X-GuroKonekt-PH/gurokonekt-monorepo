@@ -22,12 +22,14 @@ import {
 } from '@gurokonekt/models';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
 import { SignInMethodsService } from './sign-in-methods.service';
+import { AllowIncompleteAuthSetup } from '../auth-requirements/allow-incomplete-auth-setup.decorator';
 
 type SignInMethodsRequest = Request & { user: { id: string; authenticatedAt?: Date | null } };
 
 @ApiTags('sign-in-methods')
 @ApiBearerAuth()
 @UseGuards(JwtGuardGuard)
+@AllowIncompleteAuthSetup()
 @Controller('auth/sign-in-methods')
 export class SignInMethodsController {
   constructor(private readonly signInMethodsService: SignInMethodsService) {}

@@ -5,6 +5,7 @@ import { dashboardAccessGuard } from './shared/guards/dashboard-access.guard';
 import { profileSettingsAccessGuard } from './shared/guards/profile-settings-access.guard';
 import { profileSetupAccessGuard } from './shared/guards/profile-setup-access.guard';
 import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
+import { securitySetupGuard, securitySetupPageGuard } from './shared/guards/security-setup.guard';
 import { registrationConfirmationGuard } from './shared/guards/registration-confirmation.guard';
 import { menteeCanMatch } from './shared/guards/mentee-can-match.guard';
 import { mentorCanMatch } from './shared/guards/mentor-can-match.guard';
@@ -115,11 +116,20 @@ export const appRoutes: Route[] = [
     title: 'Email Already Verified',
   },
 
+  // Required sign-in methods (#463) come before everything else after sign-in.
+  {
+    path: APP_ROUTES.SECURITY_SETUP,
+    canActivate: [securitySetupPageGuard],
+    loadComponent: () =>
+      import('./core/security-setup/security-setup.page').then((m) => m.SecuritySetupPage),
+    title: 'Account Security Setup',
+  },
+
   // profile-setup — mentee sees MenteePostLoginPage, mentor sees MentorPostLoginPage
   {
     path: APP_ROUTES.PROFILE_SETUP,
     canMatch: [menteeCanMatch],
-    canActivate: [profileSetupAccessGuard],
+    canActivate: [securitySetupGuard, profileSetupAccessGuard],
     loadComponent: () =>
       import('./features/mentee/pages/mentee-post-login-page/mentee-post-login.page').then(
         (m) => m.MenteePostLoginPage
@@ -129,7 +139,7 @@ export const appRoutes: Route[] = [
   {
     path: APP_ROUTES.PROFILE_SETUP,
     canMatch: [mentorCanMatch],
-    canActivate: [profileSetupAccessGuard],
+    canActivate: [securitySetupGuard, profileSetupAccessGuard],
     loadComponent: () =>
       import('./features/mentor/pages/mentor-post-login-page/mentor-post-login.page').then(
         (m) => m.MentorPostLoginPage
@@ -141,7 +151,7 @@ export const appRoutes: Route[] = [
   {
     path: '',
     canMatch: [menteeCanMatch],
-    canActivate: [dashboardAccessGuard],
+    canActivate: [securitySetupGuard, dashboardAccessGuard],
     component: Layout,
     children: [
       {
@@ -190,7 +200,7 @@ export const appRoutes: Route[] = [
   {
     path: '',
     canMatch: [mentorCanMatch],
-    canActivate: [dashboardAccessGuard],
+    canActivate: [securitySetupGuard, dashboardAccessGuard],
     component: Layout,
     children: [
       {
@@ -221,7 +231,7 @@ export const appRoutes: Route[] = [
   },
   {
     path: APP_ROUTES.SETTINGS.replace('/', ''),
-    canActivate: [profileSettingsAccessGuard],
+    canActivate: [securitySetupGuard, profileSettingsAccessGuard],
     loadComponent: () =>
       import('./core/profile/pages/profile-settings-page/profile-settings.page').then(
         (m) => m.ProfileSettingsPage

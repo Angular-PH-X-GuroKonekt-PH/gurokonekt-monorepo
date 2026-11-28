@@ -6,8 +6,11 @@ import {
   HttpInterceptorFn,
 } from '@angular/common/http';
 import { inject } from '@angular/core';
+import { Router } from '@angular/router';
 import { Store } from '@ngxs/store';
 import { Observable, catchError, finalize, of, shareReplay, switchMap, throwError } from 'rxjs';
+import { AUTH_SETUP_REQUIRED_ERROR_CODE } from '@gurokonekt/models/interfaces/auth-requirements/auth-requirements.model';
+import { APP_ROUTES } from '../../../shared/constants/routes';
 import { AuthStorageService } from '../../storage/auth-storage.service';
 import { buildApiUrl } from '../../../shared/utils/api.util';
 import { API_CONFIG } from '../../config/api.config';
@@ -122,6 +125,7 @@ function isSessionExpiredClientError(error: unknown): boolean {
 export const authInterceptor: HttpInterceptorFn = (req, next) => {
   const storage = inject(AuthStorageService);
   const store = inject(Store);
+  const router = inject(Router);
   const refreshHttp = new HttpClient(inject(HttpBackend));
 
   const token = storage.getToken();
@@ -133,6 +137,11 @@ export const authInterceptor: HttpInterceptorFn = (req, next) => {
 
     return next(authReq).pipe(
       catchError((error: HttpErrorResponse) => {
+        if (error.status === 403 && error.error?.errorCode === AUTH_SETUP_REQUIRED_ERROR_CODE) {
+          // A required sign-in method is missing, e.g. one switched on mid-session (#463).
+          void router.navigate([`/${APP_ROUTES.SECURITY_SETUP}`]);
+          return throwError(() => error);
+        }
         if (!isRecoverableUnauthorized(error, req.url, !!bearer)) {
           return throwError(() => error);
         }

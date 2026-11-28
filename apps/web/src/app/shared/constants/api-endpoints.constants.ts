@@ -12,6 +12,8 @@ export const API_ENDPOINTS = {
     resendConfirmation: '/auth/resend-confirmation-link',
     forgotPassword: '/auth/forgot-password',
     completePasswordReset: '/auth/complete-password-reset',
+    securitySetup: '/auth/security-setup',
+    securitySetupPassword: '/auth/security-setup/password',
   },
   signInMethods: {
     list: '/auth/sign-in-methods',

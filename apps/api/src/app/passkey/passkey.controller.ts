@@ -24,6 +24,7 @@ import {
   VerifyPasskeyRegistrationDto,
 } from '@gurokonekt/models';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
+import { AllowIncompleteAuthSetup } from '../auth-requirements/allow-incomplete-auth-setup.decorator';
 import { PasskeyRequester, PasskeyService } from './passkey.service';
 
 type PasskeyRequest = Request & { user: PasskeyRequester };
@@ -31,6 +32,7 @@ type PasskeyRequest = Request & { user: PasskeyRequester };
 @ApiTags('passkeys')
 @ApiBearerAuth()
 @UseGuards(JwtGuardGuard)
+@AllowIncompleteAuthSetup()
 @Controller('auth/passkeys')
 export class PasskeyController {
   constructor(private readonly passkeyService: PasskeyService) {}
@@ -46,7 +48,6 @@ export class PasskeyController {
   })
   @ApiResponse({ status: 200, description: 'WebAuthn registration options for the browser.', type: ResponseDto })
   @ApiResponse({ status: 401, description: 'Unauthorized — missing or invalid JWT.' })
-  @ApiResponse({ status: 403, description: 'Admin accounts cannot add passkeys.' })
   async registrationOptions(@Req() req: PasskeyRequest) {
     const response = await this.passkeyService.getRegistrationOptions(req.user.id);
     return this.unwrap(response);

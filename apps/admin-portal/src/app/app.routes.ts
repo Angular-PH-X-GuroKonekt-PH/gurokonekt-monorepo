@@ -2,6 +2,7 @@ import { Route } from '@angular/router';
 import { APP_ROUTES } from './shared/constants/routes';
 import { authGuard } from './shared/guards/auth.guard';
 import { unauthenticatedGuard } from './shared/guards/unauthenticated.guard';
+import { securitySetupGuard } from './shared/guards/security-setup.guard';
 import { Layout } from './layouts/layout';
 
 export const appRoutes: Route[] = [
@@ -31,8 +32,15 @@ export const appRoutes: Route[] = [
     title: 'Reset Password',
   },
   {
-    path: '',
+    path: APP_ROUTES.SECURITY_SETUP,
     canActivate: [authGuard],
+    loadComponent: () =>
+      import('./core/security-setup/security-setup.page').then((m) => m.SecuritySetupPage),
+    title: 'Account Security Setup',
+  },
+  {
+    path: '',
+    canActivate: [authGuard, securitySetupGuard],
     component: Layout,
     children: [
       {
@@ -106,6 +114,14 @@ export const appRoutes: Route[] = [
             (m) => m.AdminRolesPage
           ),
         title: 'Admin Roles & Permissions',
+      },
+      {
+        path: APP_ROUTES.AUTHENTICATION_SETTINGS,
+        loadComponent: () =>
+          import('./features/authentication-settings/pages/authentication-settings-page/authentication-settings.page').then(
+            (m) => m.AuthenticationSettingsPage
+          ),
+        title: 'Authentication Settings',
       },
       {
         path: '',

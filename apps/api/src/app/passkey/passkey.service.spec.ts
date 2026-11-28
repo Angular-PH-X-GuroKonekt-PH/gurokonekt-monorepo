@@ -91,13 +91,13 @@ describe('PasskeyService', () => {
       expect(data.expiresAt.getTime() - before).toBeLessThanOrEqual(5 * 60 * 1000 + 1000);
     });
 
-    it('is not available to admins', async () => {
+    it('lets admins add a passkey, since setup can require one', async () => {
       prisma.db.user.findUnique.mockResolvedValue({ ...user, role: 'admin' });
 
       const response = await service.getRegistrationOptions('user-1');
 
-      expect(response.statusCode).toBe(API_RESPONSE.ERROR.PASSKEY_NOT_AVAILABLE.code);
-      expect(generateOptions).not.toHaveBeenCalled();
+      expect(response.status).toBe('success');
+      expect(generateOptions).toHaveBeenCalled();
     });
   });
 

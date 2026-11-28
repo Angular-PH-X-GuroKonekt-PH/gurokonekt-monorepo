@@ -22,6 +22,7 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { JwtGuardGuard } from '../jwt-guard/jwt-guard.guard';
+import { AllowIncompleteAuthSetup } from '../auth-requirements/allow-incomplete-auth-setup.decorator';
 import {
   ForgotPasswordDto,
   CompletePasswordResetDto,
@@ -346,6 +347,7 @@ export class AuthController {
 
   @Get('session')
   @UseGuards(JwtGuardGuard)
+  @AllowIncompleteAuthSetup()
   @ApiBearerAuth()
   @ApiOperation({
     summary: 'Get the current authenticated user',

@@ -17,12 +17,14 @@ interface LoginResponseData {
   };
   session: {
     access_token: string;
+    refresh_token?: string;
   };
 }
 
 export interface AuthResponse {
   user: AdminUser;
   accessToken: string;
+  refreshToken: string | null;
   message: string;
 }
 
@@ -49,6 +51,7 @@ export class AuthService {
             lastName: response.data.user.lastName,
           },
           accessToken: response.data.session.access_token,
+          refreshToken: response.data.session.refresh_token ?? null,
           message: response.message,
         };
       }),

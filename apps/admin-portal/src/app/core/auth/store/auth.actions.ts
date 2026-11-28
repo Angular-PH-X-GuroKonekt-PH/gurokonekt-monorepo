@@ -7,7 +7,7 @@ export class Login {
 
 export class LoginSuccess {
   static readonly type = '[Auth] Login Success';
-  constructor(public payload: { user: AdminUser; token: string; message?: string }) {}
+  constructor(public payload: { user: AdminUser; token: string; refreshToken?: string | null; message?: string }) {}
 }
 
 export class LoginFailure {

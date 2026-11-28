@@ -6,6 +6,7 @@ import { throwError } from 'rxjs';
 
 import { AuthService } from '../services/auth.service';
 import { AuthStorageService } from '../../storage/auth-storage.service';
+import { SecuritySetupService } from '../../security-setup/security-setup.service';
 import { AuthStateModel, initialAuthState } from '../models/auth.state.model';
 import { APP_ROUTES } from '../../../shared/constants/routes';
 import * as AuthActions from './auth.actions';
@@ -19,6 +20,7 @@ export class AuthState {
   private readonly authService = inject(AuthService);
   private readonly storage = inject(AuthStorageService);
   private readonly router = inject(Router);
+  private readonly securitySetup = inject(SecuritySetupService);
 
   @Action(AuthActions.Login)
   login(ctx: StateContext<AuthStateModel>, action: AuthActions.Login) {
@@ -29,6 +31,7 @@ export class AuthState {
         ctx.dispatch(new AuthActions.LoginSuccess({
           user: response.user,
           token: response.accessToken,
+          refreshToken: response.refreshToken,
           message: response.message,
         }));
       }),
@@ -41,9 +44,11 @@ export class AuthState {
 
   @Action(AuthActions.LoginSuccess)
   loginSuccess(ctx: StateContext<AuthStateModel>, action: AuthActions.LoginSuccess) {
-    const { user, token, message } = action.payload;
+    const { user, token, refreshToken, message } = action.payload;
 
     this.storage.setToken(token);
+    if (refreshToken) this.storage.setRefreshToken(refreshToken);
+    this.securitySetup.clear();
     this.storage.setUser(user);
 
     ctx.patchState({
@@ -89,6 +94,7 @@ export class AuthState {
   @Action(AuthActions.Logout)
   logout(ctx: StateContext<AuthStateModel>) {
     this.storage.clear();
+    this.securitySetup.clear();
     ctx.setState(initialAuthState);
     this.router.navigate([APP_ROUTES.LOGIN]);
   }

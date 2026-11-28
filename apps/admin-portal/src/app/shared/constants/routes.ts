@@ -13,4 +13,6 @@ export const APP_ROUTES = {
   REPORTS: 'reports',
   USER_INQUIRIES: 'user-inquiries',
   ADMIN_ROLES: 'admin-roles',
+  AUTHENTICATION_SETTINGS: 'authentication-settings',
+  SECURITY_SETUP: 'security-setup',
 } as const;

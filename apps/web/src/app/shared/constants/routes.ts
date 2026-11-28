@@ -24,6 +24,7 @@ export const APP_ROUTES = {
   SETTINGS_PASSKEYS: 'settings/passkeys',
   SETTINGS_SIGN_IN_METHODS: 'settings/sign-in-methods',
   MANAGE_AVAILABILITY: 'manage-availability',
+  SECURITY_SETUP: 'security-setup',
 } as const;
 
 export const SIDEBAR_PREFIX_ROUTES: readonly string[] = [

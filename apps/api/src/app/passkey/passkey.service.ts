@@ -10,7 +10,6 @@ import {
   PasskeySummaryInterface,
   RenamePasskeyDto,
   ResponseDto,
-  UserRole,
   VerifyPasskeyRegistrationDto,
 } from '@gurokonekt/models';
 import { PrismaService } from '../prisma/prisma.service';
@@ -80,10 +79,8 @@ export class PasskeyService {
       if (!user) {
         return AuthResponseFactory.errorByKey('USER_NOT_FOUND');
       }
-      if (user.role === UserRole.Admin) {
-        return AuthResponseFactory.errorByKey('PASSKEY_NOT_AVAILABLE');
-      }
-
+      // Admins may add passkeys too, since setup can require one (#463).
+      // Signing in with one stays mentee/mentor only (see passkey-login).
       const existing = await this.prisma.db.passkey.findMany({
         where: { userId },
         select: { credentialId: true, transports: true },
