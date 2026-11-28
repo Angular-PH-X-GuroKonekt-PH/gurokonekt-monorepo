@@ -36,6 +36,8 @@ export enum LogsActionType {
   AdminApproveMentorReactivation = "admin_approve_mentor_reactivation",
   AdminRejectMentorReactivation = "admin_reject_mentor_reactivation",
   AccountAutoDeleted = "account_auto_deleted",
+  AdminUpdateAuthSettings = "admin_update_auth_settings",
+  PasswordSet = "password_set",
 }
 
 export interface LogsInterface {

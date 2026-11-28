@@ -67,6 +67,22 @@ export const API_RESPONSE = {
       code: 200,
       message: 'Google has been disconnected from your account.',
     },
+    AUTH_SETUP_STATUS: {
+      code: 200,
+      message: 'Sign-in setup status retrieved successfully',
+    },
+    PASSWORD_SET: {
+      code: 200,
+      message: 'Password set. You can now sign in with your email and password.',
+    },
+    AUTH_SETTINGS_RETRIEVED: {
+      code: 200,
+      message: 'Authentication settings retrieved successfully',
+    },
+    AUTH_SETTINGS_UPDATED: {
+      code: 200,
+      message: 'Authentication settings saved. They apply to every account right away.',
+    },
     SIGN_WITH_GOOGLE_REGISTRATION_REQUIRED: {
       code: 200,
       message: 'Finish creating your GuroKonekt account to continue.',
@@ -609,6 +625,30 @@ export const API_RESPONSE = {
     SIGN_IN_METHOD_REAUTH_REQUIRED: {
       code: 403,
       message: 'For your security, please sign in again to change how you sign in.',
+    },
+    AUTH_SETUP_REQUIRED: {
+      code: 403,
+      message: 'Finish setting up how you sign in before using GuroKonekt.',
+    },
+    AUTH_SETUP_STATUS: {
+      code: 500,
+      message: "We couldn't check your sign-in setup. Please try again.",
+    },
+    PASSWORD_ALREADY_SET: {
+      code: 409,
+      message: 'This account already has a password. Use "Forgot password?" to change it.',
+    },
+    PASSWORD_SET: {
+      code: 500,
+      message: "We couldn't set your password. Please try again.",
+    },
+    AUTH_SETTINGS_RETRIEVED: {
+      code: 500,
+      message: 'Failed to retrieve authentication settings',
+    },
+    AUTH_SETTINGS_UPDATED: {
+      code: 500,
+      message: 'Failed to save authentication settings',
     },
     SIGNIN_MENTOR_PENDING_REVIEW: {
       code: 403,

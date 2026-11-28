@@ -15,6 +15,7 @@ import { AdminModule } from './admin/admin.module';
 import { ReviewModule } from './review/review.module';
 import { PasskeyModule } from './passkey/passkey.module';
 import { SignInMethodsModule } from './sign-in-methods/sign-in-methods.module';
+import { AuthRequirementsModule } from './auth-requirements/auth-requirements.module';
 import { PublicModule } from './public/public.module';
 import { AccountCleanupModule } from './account-cleanup/account-cleanup.module';
 
@@ -32,6 +33,7 @@ import { AccountCleanupModule } from './account-cleanup/account-cleanup.module';
     ReviewModule,
     PasskeyModule,
     SignInMethodsModule,
+    AuthRequirementsModule,
     PublicModule,
     AccountCleanupModule,
     NotificationGatewayModule,

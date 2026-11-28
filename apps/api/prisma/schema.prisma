@@ -6,9 +6,11 @@ datasource db {
   provider = "postgresql"
 }
 
-/* =======================
-  ENUMS
-======================= */
+/**
+ * =======================
+ * ENUMS
+ * =======================
+ */
 
 enum UserRole {
   mentee
@@ -83,6 +85,8 @@ enum LogsActionType {
   admin_approve_mentor_reactivation
   admin_reject_mentor_reactivation
   account_auto_deleted
+  admin_update_auth_settings
+  password_set
 
   @@map("logs_action_type")
 }
@@ -123,9 +127,11 @@ enum EmailDeliveryStatus {
   @@map("email_delivery_status")
 }
 
-/* =======================
-  MODELS
-======================= */
+/**
+ * =======================
+ * MODELS
+ * =======================
+ */
 
 model User {
   id                         String     @id @default(uuid()) @map("id")
@@ -170,19 +176,20 @@ model User {
   avatarAttachments     AvatarAttachment[]
   documentAttachments   DocumentAttachment[]
 
-  logsCreated           Logs[]                @relation("logs_created_by")
-  logsUpdated           Logs[]                @relation("logs_updated_by")
+  logsCreated           Logs[]                    @relation("logs_created_by")
+  logsUpdated           Logs[]                    @relation("logs_updated_by")
   notifications         Notification[]
-  bookingsAsMentee      Booking[]             @relation("MenteeBookings")
-  bookingsAsMentor      Booking[]             @relation("MentorBookings")
+  bookingsAsMentee      Booking[]                 @relation("MenteeBookings")
+  bookingsAsMentor      Booking[]                 @relation("MentorBookings")
   deactivationFeedback  DeactivationFeedback?
   activationRequest     AccountActivationRequest?
   bookingFeedback       BookingFeedback[]
-  adminRejections       AdminRejectionLog[]   @relation("mentee_rejections")
-  mentorRejections      AdminRejectionLog[]   @relation("mentor_rejections")
-  adminRejectionActions AdminRejectionLog[]   @relation("admin_rejection_actions")
+  adminRejections       AdminRejectionLog[]       @relation("mentee_rejections")
+  mentorRejections      AdminRejectionLog[]       @relation("mentor_rejections")
+  adminRejectionActions AdminRejectionLog[]       @relation("admin_rejection_actions")
   passkeys              Passkey[]
   passkeyChallenges     PasskeyChallenge[]
+  authSettingsUpdated   AuthenticationSettings[]  @relation("auth_settings_updated_by")
 
   @@map("users")
 }
@@ -366,16 +373,16 @@ model DeactivationFeedback {
 }
 
 model AccountActivationRequest {
-  id         String                         @id @default(uuid())
-  userId     String                         @unique @map("user_id")
-  reason     String
-  status     AccountActivationRequestStatus @default(pending)
-  createdAt  DateTime                       @default(now()) @map("created_at")
-  reviewedAt DateTime?                      @map("reviewed_at")
+  id           String                         @id @default(uuid())
+  userId       String                         @unique @map("user_id")
+  reason       String
+  status       AccountActivationRequestStatus @default(pending)
+  createdAt    DateTime                       @default(now()) @map("created_at")
+  reviewedAt   DateTime?                      @map("reviewed_at")
   /// Admin who approved/rejected a mentor request (null for auto-approved mentees).
-  reviewedById String?                      @map("reviewed_by_id")
+  reviewedById String?                        @map("reviewed_by_id")
   /// Reason shown to the mentor when an admin rejects the request.
-  reviewNote String?                        @map("review_note")
+  reviewNote   String?                        @map("review_note")
 
   user User @relation(fields: [userId], references: [id])
 
@@ -473,4 +480,18 @@ model AdminNotificationRecipient {
   createdAt   DateTime @default(now()) @map("created_at")
 
   @@map("admin_notification_recipients")
+}
+
+/// Platform-wide sign-in requirements set by admins (#463). One row, id 1.
+/// Email and password is always required, so it has no column.
+model AuthenticationSettings {
+  id              Int      @id @default(1)
+  passkeyRequired Boolean  @default(true) @map("passkey_required")
+  googleRequired  Boolean  @default(true) @map("google_required")
+  updatedById     String?  @map("updated_by_id")
+  updatedAt       DateTime @updatedAt @map("updated_at")
+
+  updatedBy User? @relation("auth_settings_updated_by", fields: [updatedById], references: [id])
+
+  @@map("authentication_settings")
 }

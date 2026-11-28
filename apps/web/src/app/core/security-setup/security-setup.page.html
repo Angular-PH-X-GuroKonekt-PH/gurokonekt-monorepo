@@ -1,0 +1,137 @@
+<main class="min-h-screen bg-slate-50 px-4 py-10 sm:py-16">
+  <div class="mx-auto w-full max-w-xl">
+    <div class="mb-8 text-center">
+      <h1 class="text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">Complete your account security setup</h1>
+      <p class="mt-2 text-sm text-slate-500">
+        Welcome to GuroKonekt! Before continuing, set up the sign-in methods your account needs. You can do them in any order.
+      </p>
+    </div>
+
+    @if (reauthMessage(); as message) {
+      <div class="mb-6 flex flex-col gap-3 rounded-xl border border-amber-200 bg-amber-50 px-4 py-4 text-sm text-amber-900 sm:flex-row sm:items-center sm:justify-between" role="alert">
+        <p>{{ message }}</p>
+        <button type="button" (click)="signOut()"
+          class="shrink-0 rounded-full bg-amber-600 px-4 py-2 font-semibold text-white hover:bg-amber-700 focus:outline-none focus:ring-2 focus:ring-amber-300">
+          Sign in again
+        </button>
+      </div>
+    }
+
+    @if (isLoading() && !status()) {
+      <div class="flex items-center gap-3 rounded-xl border border-orange-100 bg-orange-50/80 px-4 py-4 text-sm text-orange-700">
+        <div class="h-5 w-5 animate-spin rounded-full border-2 border-orange-400 border-t-transparent"></div>
+        Checking your account...
+      </div>
+    } @else if (loadFailed() && !status()) {
+      <div class="flex flex-col gap-3 rounded-xl border border-red-200 bg-red-50 px-4 py-4 text-sm text-red-700 sm:flex-row sm:items-center sm:justify-between">
+        <p>We couldn't check your account.</p>
+        <button type="button" (click)="load()" class="font-semibold underline hover:no-underline">Try again</button>
+      </div>
+    } @else if (status(); as s) {
+      <ul class="divide-y divide-slate-100 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+        <!-- Email and password: always required -->
+        <li class="p-5 sm:p-6">
+          <div class="flex items-start justify-between gap-4">
+            <div>
+              <p class="font-semibold text-slate-900">Email and password</p>
+              <p class="mt-1 text-sm text-slate-500">
+                {{ s.usernamePasswordConfigured ? 'Set up.' : 'Your account was created with Google. Add a password so you can also sign in with your email.' }}
+              </p>
+            </div>
+            <span class="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
+              [class]="s.usernamePasswordConfigured ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'">
+              {{ s.usernamePasswordConfigured ? 'Completed' : 'Required' }}
+            </span>
+          </div>
+
+          @if (!s.usernamePasswordConfigured) {
+            <form class="mt-4 grid gap-3 sm:max-w-sm" (submit)="$event.preventDefault(); setPassword()">
+              <label class="text-sm font-medium text-slate-700">
+                New password
+                <input type="password" autocomplete="new-password" [value]="newPassword()" (input)="newPassword.set(inputValue($event))"
+                  class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200" />
+              </label>
+              <label class="text-sm font-medium text-slate-700">
+                Confirm password
+                <input type="password" autocomplete="new-password" [value]="confirmPassword()" (input)="confirmPassword.set(inputValue($event))"
+                  class="mt-1 block w-full rounded-lg border border-slate-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200" />
+              </label>
+              @if (passwordError(); as error) {
+                <p class="text-sm text-red-600" role="alert">{{ error }}</p>
+              }
+              <button type="submit" [disabled]="busy() !== null"
+                class="justify-self-start rounded-full bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:cursor-not-allowed disabled:bg-orange-300">
+                {{ busy() === 'password' ? 'Saving...' : 'Set password' }}
+              </button>
+            </form>
+          }
+        </li>
+
+        @if (s.passkeyRequired) {
+          <li class="p-5 sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-semibold text-slate-900">Passkey</p>
+                <p class="mt-1 text-sm text-slate-500">
+                  {{ s.passkeyConfigured ? 'Added.' : 'Register a passkey to securely access your GuroKonekt account with your fingerprint, face or screen lock.' }}
+                </p>
+              </div>
+              <span class="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
+                [class]="s.passkeyConfigured ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'">
+                {{ s.passkeyConfigured ? 'Completed' : 'Required' }}
+              </span>
+            </div>
+            @if (!s.passkeyConfigured) {
+              @if (passkeysSupported) {
+                <button type="button" (click)="addPasskey()" [disabled]="busy() !== null"
+                  class="mt-4 rounded-full bg-orange-500 px-5 py-2 text-sm font-semibold text-white hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:cursor-not-allowed disabled:bg-orange-300">
+                  {{ busy() === 'passkey' ? 'Waiting for your device...' : 'Register passkey' }}
+                </button>
+              } @else {
+                <p class="mt-3 text-sm text-red-600">This browser can't create passkeys. Try a recent version of Chrome, Edge, Safari or Firefox.</p>
+              }
+            }
+          </li>
+        }
+
+        @if (s.googleIdpRequired) {
+          <li class="p-5 sm:p-6">
+            <div class="flex items-start justify-between gap-4">
+              <div>
+                <p class="font-semibold text-slate-900">Google account</p>
+                <p class="mt-1 text-sm text-slate-500">
+                  {{ s.googleIdpConnected ? 'Connected.' : 'Connect your Google account so you can also sign in with Google.' }}
+                </p>
+              </div>
+              <span class="shrink-0 rounded-full px-3 py-1 text-xs font-semibold"
+                [class]="s.googleIdpConnected ? 'bg-emerald-50 text-emerald-700' : 'bg-orange-50 text-orange-700'">
+                {{ s.googleIdpConnected ? 'Completed' : 'Required' }}
+              </span>
+            </div>
+            @if (!s.googleIdpConnected) {
+              <div class="mt-4 max-w-sm">
+                @if (googleAvailable) {
+                  <app-google-sign-in-button text="continue_with" [disabled]="busy() !== null" [loading]="busy() === 'google'" (credential)="connectGoogle($event)" />
+                } @else {
+                  <p class="text-sm text-red-600">Google isn't available on this site yet. Please contact support.</p>
+                }
+              </div>
+            }
+          </li>
+        }
+      </ul>
+
+      <button type="button" (click)="continue()" [disabled]="!completed()"
+        class="mt-6 w-full rounded-full bg-orange-500 px-5 py-3 text-sm font-semibold text-white hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-300 disabled:cursor-not-allowed disabled:bg-slate-300">
+        Continue to GuroKonekt
+      </button>
+      @if (!completed()) {
+        <p class="mt-2 text-center text-xs text-slate-500">Available once every required item is completed.</p>
+      }
+    }
+
+    <p class="mt-8 text-center text-sm text-slate-500">
+      Not you? <button type="button" (click)="signOut()" class="font-semibold text-orange-600 hover:underline">Sign out</button>
+    </p>
+  </div>
+</main>

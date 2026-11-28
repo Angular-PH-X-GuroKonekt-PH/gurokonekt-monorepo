@@ -1,0 +1,74 @@
+<div class="max-w-3xl">
+  <h1 class="text-2xl font-bold text-gray-900 mb-1">Authentication Settings</h1>
+  <p class="text-sm text-gray-500 mb-6">
+    Choose the sign-in methods every account must set up before using GuroKonekt. This applies to mentees, mentors
+    and admins, including people who are already signed in.
+  </p>
+
+  @if (loading()) {
+    <div class="flex items-center justify-center py-20">
+      <div class="h-8 w-8 animate-spin rounded-full border-4 border-orange-500 border-t-transparent"></div>
+    </div>
+  } @else if (error()) {
+    <div class="rounded-lg bg-red-50 border border-red-200 px-4 py-3 text-sm text-red-800">{{ error() }}</div>
+  } @else {
+    <div class="divide-y divide-gray-100 rounded-xl border border-gray-200 bg-white">
+      <div class="flex items-start justify-between gap-6 p-5">
+        <div>
+          <p class="font-semibold text-gray-900">Email and password</p>
+          <p class="mt-1 text-sm text-gray-500">All accounts must have an email and password. This can't be turned off.</p>
+        </div>
+        <label class="inline-flex shrink-0 cursor-not-allowed items-center opacity-60">
+          <input type="checkbox" class="peer sr-only" checked disabled aria-label="Email and password required" />
+          <span class="relative h-6 w-11 rounded-full bg-orange-500 after:absolute after:start-[22px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:bg-white"></span>
+        </label>
+      </div>
+
+      <div class="flex items-start justify-between gap-6 p-5">
+        <div>
+          <p class="font-semibold text-gray-900">Passkey</p>
+          <p class="mt-1 text-sm text-gray-500">When on, every account must add at least one passkey.</p>
+        </div>
+        <label class="inline-flex shrink-0 cursor-pointer items-center">
+          <input type="checkbox" class="peer sr-only" aria-label="Require a passkey"
+            [checked]="passkeyRequired()" (change)="passkeyRequired.set($any($event.target).checked)" />
+          <span class="relative h-6 w-11 rounded-full bg-gray-200 transition-colors after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:bg-orange-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-4 peer-focus:ring-orange-200"></span>
+        </label>
+      </div>
+
+      <div class="flex items-start justify-between gap-6 p-5">
+        <div>
+          <p class="font-semibold text-gray-900">Google account</p>
+          <p class="mt-1 text-sm text-gray-500">When on, every account must connect a Google account.</p>
+        </div>
+        <label class="inline-flex shrink-0 cursor-pointer items-center">
+          <input type="checkbox" class="peer sr-only" aria-label="Require a Google account"
+            [checked]="googleIdpRequired()" (change)="googleIdpRequired.set($any($event.target).checked)" />
+          <span class="relative h-6 w-11 rounded-full bg-gray-200 transition-colors after:absolute after:start-[2px] after:top-[2px] after:h-5 after:w-5 after:rounded-full after:border after:border-gray-300 after:bg-white after:transition-all peer-checked:bg-orange-500 peer-checked:after:translate-x-full peer-checked:after:border-white peer-focus:ring-4 peer-focus:ring-orange-200"></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="mt-5 flex flex-col-reverse gap-3 sm:flex-row sm:items-center sm:justify-between">
+      <p class="text-xs text-gray-500">
+        @if (saved()?.updatedBy; as by) {
+          Last changed by {{ by.firstName }} {{ by.lastName }} on {{ saved()?.updatedAt | date: 'MMM d, y, h:mm a' }}
+        } @else {
+          Using the default settings.
+        }
+      </p>
+      <div class="flex gap-3">
+        @if (dirty()) {
+          <button type="button" (click)="reset()" [disabled]="saving()"
+            class="rounded-lg border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+            Cancel
+          </button>
+        }
+        <button type="button" (click)="save()" [disabled]="!dirty() || saving()"
+          class="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 focus:outline-none focus:ring-4 focus:ring-orange-200 disabled:cursor-not-allowed disabled:bg-gray-300">
+          {{ saving() ? 'Saving...' : 'Save changes' }}
+        </button>
+      </div>
+    </div>
+  }
+</div>

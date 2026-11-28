@@ -2,6 +2,8 @@ import { Injectable } from '@angular/core';
 
 const TOKEN_KEY = 'admin_auth_token';
 const USER_KEY = 'admin_auth_user';
+// Connecting Google needs the full Supabase session, not just the access token.
+const REFRESH_TOKEN_KEY = 'admin_auth_refresh_token';
 
 export interface AdminUser {
   id: string;
@@ -21,6 +23,14 @@ export class AuthStorageService {
     localStorage.setItem(TOKEN_KEY, token);
   }
 
+  getRefreshToken(): string | null {
+    return localStorage.getItem(REFRESH_TOKEN_KEY);
+  }
+
+  setRefreshToken(token: string): void {
+    localStorage.setItem(REFRESH_TOKEN_KEY, token);
+  }
+
   getUser(): AdminUser | null {
     const raw = localStorage.getItem(USER_KEY);
     if (!raw) return null;
@@ -38,5 +48,6 @@ export class AuthStorageService {
   clear(): void {
     localStorage.removeItem(TOKEN_KEY);
     localStorage.removeItem(USER_KEY);
+    localStorage.removeItem(REFRESH_TOKEN_KEY);
   }
 }

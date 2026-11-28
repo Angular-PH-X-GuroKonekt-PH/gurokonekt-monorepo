@@ -20,6 +20,7 @@ export class Layout {
     { label: 'Notifications & Announcements',route: APP_ROUTES.NOTIFICATIONS,      icon: 'bell' },
     { label: 'Reporting & Analytics',        route: APP_ROUTES.REPORTS,            icon: 'chart-bar-square' },
     { label: 'Admin Roles & Permissions',    route: APP_ROUTES.ADMIN_ROLES,        icon: 'wrench-screwdriver' },
+    { label: 'Authentication Settings',      route: APP_ROUTES.AUTHENTICATION_SETTINGS, icon: 'cog-6-tooth' },
     { label: 'System Settings',              route: '',                             icon: 'cog-6-tooth', disabled: true, badge: 'Phase 2' },
   ];
 }

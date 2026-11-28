@@ -7,6 +7,10 @@ export const API_ENDPOINTS = {
     // also clears any sign-in lockout on the account.
     forgotPassword: '/auth/forgot-password',
     completePasswordReset: '/auth/complete-password-reset',
+    securitySetup: '/auth/security-setup',
+    googleConnect: '/auth/sign-in-methods/google',
+    passkeyRegistrationOptions: '/auth/passkeys/registration/options',
+    passkeyRegistrationVerify: '/auth/passkeys/registration/verify',
   },
   admin: {
     dashboard: '/admin/dashboard',
@@ -41,5 +45,6 @@ export const API_ENDPOINTS = {
     bookings: '/admin/bookings',
     bookingById: (id: string) => `/admin/bookings/${id}`,
     bookingForceCancel: (id: string) => `/admin/bookings/${id}/force-cancel`,
+    authenticationSettings: '/admin/authentication-settings',
   },
 } as const;
